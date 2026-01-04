@@ -1,0 +1,512 @@
+CREATE TABLE sessions (
+  id TEXT NOT NULL PRIMARY KEY,
+  title TEXT NOT NULL,
+  mode TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  message_count INTEGER NOT NULL,
+  metadata_json TEXT
+);
+
+CREATE TABLE stories (
+  id TEXT NOT NULL PRIMARY KEY,
+  session_id TEXT NOT NULL UNIQUE REFERENCES sessions(id) ON DELETE CASCADE,
+  title TEXT,
+  genre TEXT,
+  setting TEXT,
+  plot_outline TEXT,
+  logline TEXT,
+  theme TEXT,
+  tone TEXT,
+  stakes TEXT,
+  pov TEXT,
+  tense TEXT,
+  target_audience TEXT,
+  pacing TEXT,
+  status TEXT,
+  style_refs_json TEXT,
+  emotional_beats_json TEXT,
+  key_locations_json TEXT,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+
+CREATE TABLE story_characters (
+  id TEXT NOT NULL PRIMARY KEY,
+  story_id TEXT NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  description TEXT,
+  traits_json TEXT,
+  roles_json TEXT,
+  goal TEXT,
+  motivation TEXT,
+  flaw TEXT,
+  arc TEXT,
+  temperament TEXT,
+  age TEXT,
+  pronouns TEXT,
+  occupation TEXT,
+  backstory TEXT,
+  voice TEXT,
+  internal_conflict TEXT,
+  quirks_json TEXT,
+  created_at INTEGER NOT NULL
+);
+
+CREATE TABLE story_volumes (
+  id TEXT NOT NULL PRIMARY KEY,
+  story_id TEXT NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
+  number INTEGER NOT NULL,
+  title TEXT NOT NULL,
+  summary TEXT,
+  arc TEXT,
+  target_word_count INTEGER,
+  key_events_json TEXT,
+  status TEXT,
+  notes TEXT,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  UNIQUE(story_id, number)
+);
+
+CREATE TABLE story_chapters (
+  id TEXT NOT NULL PRIMARY KEY,
+  volume_id TEXT NOT NULL REFERENCES story_volumes(id) ON DELETE CASCADE,
+  number INTEGER NOT NULL,
+  title TEXT NOT NULL,
+  summary TEXT,
+  content TEXT,
+  content_ref TEXT,
+  word_count INTEGER NOT NULL,
+  pov TEXT,
+  emotional_beat TEXT,
+  key_events_json TEXT,
+  target_word_count INTEGER,
+  location TEXT,
+  time_span TEXT,
+  status TEXT,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  UNIQUE(volume_id, number)
+);
+
+CREATE TABLE story_facts (
+  id TEXT NOT NULL PRIMARY KEY,
+  story_id TEXT NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
+  fact_type TEXT NOT NULL CHECK (
+    fact_type IN (
+      'WORLD_RULE',
+      'MAGIC_RULE',
+      'TECH_RULE',
+      'POLITICS',
+      'GEOGRAPHY',
+      'TIMELINE',
+      'HISTORY',
+      'CULTURE',
+      'RELIGION',
+      'ECONOMY',
+      'FACTION',
+      'ORGANIZATION',
+      'LOCATION',
+      'CHARACTER_FACT',
+      'RELATIONSHIP',
+      'ITEM',
+      'LORE',
+      'CONFLICT',
+      'STAKES',
+      'THEME',
+      'TONE',
+      'LANGUAGE',
+      'CUSTOM'
+    )
+  ),
+  content TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+);
+
+CREATE TABLE rag_documents (
+  doc_id TEXT NOT NULL PRIMARY KEY,
+  session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+  story_id TEXT REFERENCES stories(id) ON DELETE CASCADE,
+  volume_id TEXT REFERENCES story_volumes(id) ON DELETE CASCADE,
+  chapter_id TEXT REFERENCES story_chapters(id) ON DELETE CASCADE,
+  chunk_index INTEGER NOT NULL,
+  source_type TEXT NOT NULL,
+  source_ref TEXT,
+  checksum TEXT,
+  created_at INTEGER NOT NULL
+);
+
+CREATE INDEX sessions_updated_at_idx ON sessions(updated_at);
+CREATE INDEX stories_session_id_idx ON stories(session_id);
+CREATE INDEX story_volumes_story_id_idx ON story_volumes(story_id);
+CREATE INDEX story_chapters_volume_id_idx ON story_chapters(volume_id);
+CREATE INDEX rag_documents_session_id_idx ON rag_documents(session_id);
+CREATE INDEX rag_documents_story_id_idx ON rag_documents(story_id);
+CREATE INDEX rag_documents_chapter_id_idx ON rag_documents(chapter_id);
+
+insertSession:
+INSERT INTO sessions(
+  id,
+  title,
+  mode,
+  created_at,
+  updated_at,
+  message_count,
+  metadata_json
+) VALUES (
+  :id,
+  :title,
+  :mode,
+  :created_at,
+  :updated_at,
+  :message_count,
+  :metadata_json
+);
+
+updateSession:
+UPDATE sessions
+SET title = :title,
+    mode = :mode,
+    updated_at = :updated_at,
+    message_count = :message_count,
+    metadata_json = :metadata_json
+WHERE id = :id;
+
+selectSessionById:
+SELECT * FROM sessions
+WHERE id = :id;
+
+selectSessions:
+SELECT * FROM sessions
+ORDER BY updated_at DESC;
+
+deleteSession:
+DELETE FROM sessions
+WHERE id = :id;
+
+insertStory:
+INSERT INTO stories(
+  id,
+  session_id,
+  title,
+  genre,
+  setting,
+  plot_outline,
+  logline,
+  theme,
+  tone,
+  stakes,
+  pov,
+  tense,
+  target_audience,
+  pacing,
+  status,
+  style_refs_json,
+  emotional_beats_json,
+  key_locations_json,
+  created_at,
+  updated_at
+) VALUES (
+  :id,
+  :session_id,
+  :title,
+  :genre,
+  :setting,
+  :plot_outline,
+  :logline,
+  :theme,
+  :tone,
+  :stakes,
+  :pov,
+  :tense,
+  :target_audience,
+  :pacing,
+  :status,
+  :style_refs_json,
+  :emotional_beats_json,
+  :key_locations_json,
+  :created_at,
+  :updated_at
+);
+
+updateStory:
+UPDATE stories
+SET title = :title,
+    genre = :genre,
+    setting = :setting,
+    plot_outline = :plot_outline,
+    logline = :logline,
+    theme = :theme,
+    tone = :tone,
+    stakes = :stakes,
+    pov = :pov,
+    tense = :tense,
+    target_audience = :target_audience,
+    pacing = :pacing,
+    status = :status,
+    style_refs_json = :style_refs_json,
+    emotional_beats_json = :emotional_beats_json,
+    key_locations_json = :key_locations_json,
+    updated_at = :updated_at
+WHERE id = :id;
+
+selectStoryById:
+SELECT * FROM stories
+WHERE id = :id;
+
+selectStoriesBySessionId:
+SELECT * FROM stories
+WHERE session_id = :session_id
+ORDER BY updated_at DESC;
+
+deleteStory:
+DELETE FROM stories
+WHERE id = :id;
+
+insertStoryCharacter:
+INSERT INTO story_characters(
+  id,
+  story_id,
+  name,
+  description,
+  traits_json,
+  roles_json,
+  goal,
+  motivation,
+  flaw,
+  arc,
+  temperament,
+  age,
+  pronouns,
+  occupation,
+  backstory,
+  voice,
+  internal_conflict,
+  quirks_json,
+  created_at
+) VALUES (
+  :id,
+  :story_id,
+  :name,
+  :description,
+  :traits_json,
+  :roles_json,
+  :goal,
+  :motivation,
+  :flaw,
+  :arc,
+  :temperament,
+  :age,
+  :pronouns,
+  :occupation,
+  :backstory,
+  :voice,
+  :internal_conflict,
+  :quirks_json,
+  :created_at
+);
+
+deleteStoryCharactersByStoryId:
+DELETE FROM story_characters
+WHERE story_id = :story_id;
+
+selectCharactersByStoryId:
+SELECT * FROM story_characters
+WHERE story_id = :story_id
+ORDER BY name ASC;
+
+insertStoryVolume:
+INSERT INTO story_volumes(
+  id,
+  story_id,
+  number,
+  title,
+  summary,
+  arc,
+  target_word_count,
+  key_events_json,
+  status,
+  notes,
+  created_at,
+  updated_at
+) VALUES (
+  :id,
+  :story_id,
+  :number,
+  :title,
+  :summary,
+  :arc,
+  :target_word_count,
+  :key_events_json,
+  :status,
+  :notes,
+  :created_at,
+  :updated_at
+);
+
+updateStoryVolume:
+UPDATE story_volumes
+SET title = :title,
+    summary = :summary,
+    arc = :arc,
+    target_word_count = :target_word_count,
+    key_events_json = :key_events_json,
+    status = :status,
+    notes = :notes,
+    updated_at = :updated_at
+WHERE id = :id;
+
+selectVolumesByStoryId:
+SELECT * FROM story_volumes
+WHERE story_id = :story_id
+ORDER BY number ASC;
+
+selectVolumeById:
+SELECT * FROM story_volumes
+WHERE id = :id;
+
+deleteStoryVolume:
+DELETE FROM story_volumes
+WHERE id = :id;
+
+insertStoryChapter:
+INSERT INTO story_chapters(
+  id,
+  volume_id,
+  number,
+  title,
+  summary,
+  content,
+  content_ref,
+  word_count,
+  pov,
+  emotional_beat,
+  key_events_json,
+  target_word_count,
+  location,
+  time_span,
+  status,
+  created_at,
+  updated_at
+) VALUES (
+  :id,
+  :volume_id,
+  :number,
+  :title,
+  :summary,
+  :content,
+  :content_ref,
+  :word_count,
+  :pov,
+  :emotional_beat,
+  :key_events_json,
+  :target_word_count,
+  :location,
+  :time_span,
+  :status,
+  :created_at,
+  :updated_at
+);
+
+updateStoryChapter:
+UPDATE story_chapters
+SET title = :title,
+    summary = :summary,
+    content = :content,
+    content_ref = :content_ref,
+    word_count = :word_count,
+    pov = :pov,
+    emotional_beat = :emotional_beat,
+    key_events_json = :key_events_json,
+    target_word_count = :target_word_count,
+    location = :location,
+    time_span = :time_span,
+    status = :status,
+    updated_at = :updated_at
+WHERE id = :id;
+
+selectChaptersByVolumeId:
+SELECT * FROM story_chapters
+WHERE volume_id = :volume_id
+ORDER BY number ASC;
+
+selectChapterById:
+SELECT * FROM story_chapters
+WHERE id = :id;
+
+deleteStoryChapter:
+DELETE FROM story_chapters
+WHERE id = :id;
+
+insertStoryFact:
+INSERT INTO story_facts(
+  id,
+  story_id,
+  fact_type,
+  content,
+  created_at
+) VALUES (
+  :id,
+  :story_id,
+  :fact_type,
+  :content,
+  :created_at
+);
+
+selectFactsByStoryId:
+SELECT * FROM story_facts
+WHERE story_id = :story_id
+ORDER BY created_at DESC;
+
+deleteStoryFactsByStoryId:
+DELETE FROM story_facts
+WHERE story_id = :story_id;
+
+insertRagDocument:
+INSERT INTO rag_documents(
+  doc_id,
+  session_id,
+  story_id,
+  volume_id,
+  chapter_id,
+  chunk_index,
+  source_type,
+  source_ref,
+  checksum,
+  created_at
+) VALUES (
+  :doc_id,
+  :session_id,
+  :story_id,
+  :volume_id,
+  :chapter_id,
+  :chunk_index,
+  :source_type,
+  :source_ref,
+  :checksum,
+  :created_at
+);
+
+selectRagDocumentsBySessionId:
+SELECT * FROM rag_documents
+WHERE session_id = :session_id
+ORDER BY created_at DESC;
+
+selectRagDocumentsByStoryId:
+SELECT * FROM rag_documents
+WHERE story_id = :story_id
+ORDER BY created_at DESC;
+
+selectRagDocumentsByChapterId:
+SELECT * FROM rag_documents
+WHERE chapter_id = :chapter_id
+ORDER BY chunk_index ASC;
+
+deleteRagDocumentById:
+DELETE FROM rag_documents
+WHERE doc_id = :doc_id;
+
+deleteRagDocumentsByChapterId:
+DELETE FROM rag_documents
+WHERE chapter_id = :chapter_id;

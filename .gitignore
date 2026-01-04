@@ -1,0 +1,14 @@
+# Project exclude paths
+/.gradle/
+/build-logic/.gradle/
+/build-logic/build/
+/dispatch-core/build/
+/dispatch-koin/build/
+/dispatch-layout/build/
+/dispatch-lifecycle/build/
+/dispatch-navigation/build/
+/dispatch-renderer/build/
+/dispatch-runtime/build/
+/dispatch-sample/build/
+/dispatch-viewmodel/build/
+/dispatch-widgets/build/

@@ -1,0 +1,205 @@
+package com.ead.dispatch.sample.presentation.chat
+
+import ai.koog.prompt.message.Message
+import com.ead.dispatch.navigation.NavController
+import com.ead.dispatch.navigation.navigate
+import com.ead.dispatch.navigation.toRoute
+import com.ead.dispatch.runtime.SavedStateHandle
+import com.ead.dispatch.sample.domain.CommandManager
+import com.ead.dispatch.sample.domain.SessionManager
+import com.ead.dispatch.sample.domain.Storage
+import com.ead.dispatch.sample.domain.agents.ChatAgent
+import com.ead.dispatch.sample.domain.model.message.CliMessage
+import com.ead.dispatch.sample.domain.model.message.CliMessageRole
+import com.ead.dispatch.sample.domain.model.session.Session
+import com.ead.dispatch.sample.domain.model.story.WriterMode
+import com.ead.dispatch.sample.domain.util.extension.toCliMessage
+import com.ead.dispatch.sample.navigation.ChatRoute
+import com.ead.dispatch.sample.navigation.HelpRoute
+import com.ead.dispatch.sample.presentation.chat.event.ChatEvent
+import com.ead.dispatch.sample.presentation.commands.CommandAction
+import com.ead.dispatch.viewmodel.ViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+
+/**
+ * ViewModel for the chat screen with stub responses.
+ */
+class ChatViewModel(
+    private val commandManager: CommandManager,
+    private val sessionManager: SessionManager,
+    private val chatAgent: ChatAgent,
+    savedStateHandle: SavedStateHandle,
+) : ViewModel() {
+
+    private val route = savedStateHandle.toRoute<ChatRoute>()
+    private val storageProvider = Storage.provider
+
+
+    // Current session state
+    private val _currentSession = MutableStateFlow<Session?>(null)
+
+    private val _inputText = MutableStateFlow("")
+    val inputText: StateFlow<String> = _inputText.asStateFlow()
+    private val _isProcessing = MutableStateFlow(false)
+    val isProcessing: StateFlow<Boolean> = _isProcessing.asStateFlow()
+
+    private val _messages = MutableStateFlow(emptyList<CliMessage>())
+    val messages: StateFlow<List<CliMessage>> = _messages.asStateFlow()
+
+    // Writer Assistant mode state
+    private val _writerMode = MutableStateFlow(WriterMode.CHAT)
+    val writerMode: StateFlow<WriterMode> = _writerMode.asStateFlow()
+
+    private var countWriterMode = 0
+
+    /*private val executor = simpleOllamaAIExecutor(
+        baseUrl = "http://127.0.0.1:11434",
+    )
+
+    private val llmModel= LLModel(
+        provider = LLMProvider.Ollama,
+        id = "deepseek-r1:7b",
+        capabilities = listOf(
+            LLMCapability.Temperature,
+            LLMCapability.Tools,
+            LLMCapability.Schema.JSON.Basic
+        ),
+        contextLength = 4096L
+    )*/
+
+    init {
+        val sessionId = route.conversationId?.trim().takeIf { !it.isNullOrEmpty() }
+
+        if (sessionId != null) {
+            _currentSession.value = sessionManager.ensureSession(sessionId)
+
+            viewModelScope.launch(Dispatchers.IO) {
+                loadMessagesForSession(sessionId)
+            }
+        }
+    }
+
+    private suspend fun loadMessagesForSession(sessionId: String) {
+        val checkpoints = storageProvider.getCheckpoints(sessionId)
+
+        val history = checkpoints
+            .maxByOrNull { it.createdAt }
+            ?.messageHistory
+            ?.takeIf { it.isNotEmpty() }
+            ?: checkpoints.flatMap { it.messageHistory }
+
+        val messages = history
+            .filter { message -> message.role != Message.Role.System }
+            .sortedBy { message -> message.metaInfo.timestamp }
+            .distinctBy { message -> Triple(message.role, message.metaInfo.timestamp, message.content) }
+
+        _messages.value = messages.map { it.toCliMessage() }
+    }
+
+    fun onEvent(event: ChatEvent) {
+        when (event) {
+            is ChatEvent.OnClearTextField -> {
+                _inputText.value = ""
+            }
+            is ChatEvent.OnTextChanged -> {
+                _inputText.value = event.text
+            }
+            is ChatEvent.OnSubmitMessage -> {
+                val navController = event.navController
+                val text = event.text
+
+                val commandAction = commandManager.routing(text)
+
+                if (commandAction != null) {
+                    onCommandAction(navController,commandAction)
+                    onEvent(ChatEvent.OnClearTextField)
+                    return
+                }
+
+
+                onEvent(ChatEvent.OnClearTextField)
+                submitMessage(text = text)
+            }
+            is ChatEvent.OnChatModeChanged -> {
+                countWriterMode++
+
+                if (countWriterMode > WriterMode.entries.size - 1) {
+                    countWriterMode = 0
+                }
+
+                _writerMode.value =  when (countWriterMode) {
+                    0 -> WriterMode.CHAT
+                    1 -> WriterMode.CHAT_STORY
+                    else -> WriterMode.CHAT
+                }
+            }
+        }
+    }
+
+    private fun onCommandAction(navController : NavController, commandAction: CommandAction) {
+        when (commandAction) {
+            CommandAction.ShowHelp -> {
+                navController.navigate(HelpRoute(from = "chat"))
+            }
+            CommandAction.ClearContext -> {
+                _messages.value = emptyList()
+            }
+        }
+    }
+
+    /**
+     * Process a submitted message based on the current mode.
+     */
+    private fun submitMessage(text: String) {
+        val input = text.trim()
+        if (input.isBlank()) {
+            return
+        }
+
+        val session = activeSession(input)
+
+        _messages.update { messages ->
+            messages + CliMessage(
+                data = input,
+                role = CliMessageRole.USER
+            )
+        }
+
+        _isProcessing.value = true
+
+        viewModelScope.launch {
+            val assistantResponse  = chatAgent.create(session).run(text)
+
+            _messages.value = messages.value + CliMessage(
+                data = assistantResponse.content,
+                role = CliMessageRole.ASSISTANT
+            )
+
+            // Update session after receiving response (increment count again)
+            sessionManager.updateSession(
+                sessionId = session.id,
+                title = _messages.value.lastOrNull { it.role == CliMessageRole.USER }?.data,
+                incrementMessageCount = true
+            )
+
+            onEvent(ChatEvent.OnClearTextField)
+            _isProcessing.value = false
+        }
+    }
+
+    private fun activeSession(firstMessagePreview: String): Session {
+        val existing = _currentSession.value
+        if (existing != null) {
+            return existing
+        }
+
+        val session = sessionManager.createSession(title = firstMessagePreview)
+        _currentSession.value = session
+        return session
+    }
+}

@@ -1,0 +1,88 @@
+[versions]
+kotlin = "2.2.21"
+coroutines = "1.8.1"
+mordant = "3.0.2"
+serialization = "1.7.3"
+koog = "0.6.0"
+koin = "3.5.6"
+
+# Testing
+kotest = "5.9.1"
+junit = "5.10.2"
+
+# Quality tools
+detekt = "1.23.7"
+ktlint = "14.0.1"
+kover = "0.8.3"
+
+# Documentation & Publishing
+dokka = "1.9.20"
+maven-publish = "0.28.0"
+
+# Build tools
+graalvm-native = "0.9.28"
+binary-compatibility = "0.14.0"
+
+[libraries]
+# Mordant ecosystem
+mordant = { module = "com.github.ajalt.mordant:mordant", version.ref = "mordant" }
+mordant-coroutines = { module = "com.github.ajalt.mordant:mordant-coroutines", version.ref = "mordant" }
+mordant-markdown = { module = "com.github.ajalt.mordant:mordant-markdown", version.ref = "mordant" }
+mordant-jvm-jna = { module = "com.github.ajalt.mordant:mordant-jvm-jna", version.ref = "mordant" }
+
+# Kotlin coroutines
+coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
+coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "coroutines" }
+
+# Dependency Injection
+koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }
+
+# Serialization
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "serialization" }
+
+# Testing
+kotest = { module = "io.kotest:kotest-assertions-core", version.ref = "kotest" }
+junit-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit" }
+junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit" }
+systemrules = "com.github.stefanbirkner:system-rules:1.19.0"
+
+# Utilities
+colormath = "com.github.ajalt.colormath:colormath:3.6.0"
+markdown = "org.jetbrains:markdown:0.7.3"
+jna-core = "net.java.dev.jna:jna:5.14.0"
+r8 = "com.android.tools:r8:8.3.37"
+slf4j-nop = "org.slf4j:slf4j-nop:2.0.17"
+
+# GraalVM
+graalvm-svm = "org.graalvm.nativeimage:svm:23.1.0"
+
+# AI/IA Framework (Koog)
+koog-agents = { module = "ai.koog:koog-agents", version.ref = "koog" }
+koog-agents-planner = { module = "ai.koog:agents-planner", version.ref = "koog" }
+koog-tools = { module = "ai.koog:agents-tools", version.ref = "koog" }
+koog-features-event-handler = { module = "ai.koog:agents-features-event-handler", version.ref = "koog" }
+
+# Build logic plugins (for build-logic module)
+kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
+kotlin-serialization-plugin = { module = "org.jetbrains.kotlin:kotlin-serialization", version.ref = "kotlin" }
+detekt-gradle-plugin = { module = "io.gitlab.arturbosch.detekt:detekt-gradle-plugin", version.ref = "detekt" }
+ktlint-gradle-plugin = { module = "org.jlleitschuh.gradle.ktlint:org.jlleitschuh.gradle.ktlint.gradle.plugin", version.ref = "ktlint" }
+kover-gradle-plugin = { module = "org.jetbrains.kotlinx:kover-gradle-plugin", version.ref = "kover" }
+dokka = { module = "org.jetbrains.dokka:dokka-gradle-plugin", version.ref = "dokka" }
+publish = { module = "com.vanniktech:gradle-maven-publish-plugin", version.ref = "maven-publish" }
+
+[bundles]
+mordant = ["mordant", "mordant-coroutines", "mordant-markdown", "mordant-jvm-jna"]
+testing = ["kotest", "coroutines-test"]
+koog = ["koog-agents", "koog-tools", "koog-features-event-handler","koog-agents-planner"]
+
+[plugins]
+kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
+detekt = { id = "io.gitlab.arturbosch.detekt", version.ref = "detekt" }
+ktlint = { id = "org.jlleitschuh.gradle.ktlint", version.ref = "ktlint" }
+kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kover" }
+dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
+maven-publish = { id = "com.vanniktech.maven.publish", version.ref = "maven-publish" }
+graalvm-nativeimage = { id = "org.graalvm.buildtools.native", version.ref = "graalvm-native" }
+binary-compatibility = { id = "org.jetbrains.kotlinx.binary-compatibility-validator", version.ref = "binary-compatibility" }
