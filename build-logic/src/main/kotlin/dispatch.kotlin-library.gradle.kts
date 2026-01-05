@@ -3,7 +3,7 @@
  *
  * Provides:
  * - Kotlin JVM plugin configuration
- * - Java toolchain (JVM 21)
+ * - Java toolchain (JVM 23)
  * - Compiler options and warnings
  * - Sources and Javadoc JARs
  */
@@ -14,7 +14,7 @@ plugins {
 
 java {
     toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
+        languageVersion.set(JavaLanguageVersion.of(23))
     }
     withSourcesJar()
     withJavadocJar()
@@ -22,7 +22,7 @@ java {
 
 kotlin {
     compilerOptions {
-        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_23)
         allWarningsAsErrors.set(false)
         freeCompilerArgs.addAll(
             "-Xjsr305=strict",
@@ -34,6 +34,6 @@ kotlin {
 
 tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach {
     compilerOptions {
-        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
+        jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_23)
     }
 }

@@ -1,6 +1,8 @@
 plugins {
     alias(libs.plugins.kover)
     alias(libs.plugins.dokka)
+    alias(libs.plugins.kotlin.jvm) apply false
+    alias(libs.plugins.kotlin.serialization) apply false
 }
 
 allprojects {
