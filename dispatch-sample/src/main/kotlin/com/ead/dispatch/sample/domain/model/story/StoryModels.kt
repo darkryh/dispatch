@@ -13,17 +13,23 @@ data class Volume(
     val title: String,
     val chapters: List<Chapter> = emptyList(),
 ) {
-    fun totalWordCount(): Int = chapters.sumOf { it.wordCount() }
+    fun totalWordCount(): Int = chapters.sumOf { it.wordCount ?: 0 }
 }
 
 data class Chapter(
     val number: Int,
     val title: String,
-    val content: String = "",
+    val contentRef: String? = null,
+    val wordCount: Int? = null,
 ) {
-    fun wordCount(): Int = content.split(Regex("\\s+")).count { it.isNotBlank() }
-    fun isComplete(): Boolean = content.isNotBlank()
+    fun isComplete(): Boolean = !contentRef.isNullOrBlank()
 }
+
+data class Scene(
+    val number: Int,
+    val title: String? = null,
+    val contentRange: String? = null,
+)
 
 /**
  * Minimal position info for story progress display.

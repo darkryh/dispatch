@@ -1,4 +1,4 @@
-package com.ead.dispatch.sample.data.db
+package com.ead.dispatch.sample.data.db.type
 
 enum class StoryFactType {
     WORLD_RULE,
@@ -13,15 +13,11 @@ enum class StoryFactType {
     ECONOMY,
     FACTION,
     ORGANIZATION,
-    LOCATION,
     CHARACTER_FACT,
     RELATIONSHIP,
     ITEM,
     LORE,
     CONFLICT,
-    STAKES,
-    THEME,
-    TONE,
     LANGUAGE,
     CUSTOM;
 

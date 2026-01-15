@@ -141,7 +141,7 @@ class Composer(
         // Try to restore from saved state
         val restored = savedStateRegistry?.get(slotKey)?.let { saved ->
             @Suppress("UNCHECKED_CAST")
-            saver.restore(saved as Any)
+            saver.restore(saved)
         }
 
         val value = restored ?: run {

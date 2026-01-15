@@ -71,6 +71,7 @@ internal class DispatchApplicationBuilder(
 
     private val scrollingContentTracker = ScrollingContentTracker()
     private val keyboardInterceptor = KeyboardInterceptor()
+    private val focusRegistry = FocusRegistry()
     private val exitPromptState = ExitPromptState()
     private var ctrlCResetJob: Job? = null
 
@@ -229,6 +230,7 @@ internal class DispatchApplicationBuilder(
                             LocalTerminalHeight provides t.size.height.coerceAtLeast(10),
                             LocalTheme provides config.theme,
                             LocalKeyboardInterceptor provides keyboardInterceptor,
+                            LocalFocusRegistry provides focusRegistry,
                             LocalExitPromptState provides exitPromptState,
                         ) {
                             block()

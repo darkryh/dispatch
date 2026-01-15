@@ -20,3 +20,15 @@ data class HelpRoute(
 data class SessionRoute(
     val autoSelect: Boolean = false,
 )
+
+@Serializable
+@SerialName("character")
+data class CharacterRoute(
+    val storyId: String? = null,
+)
+
+@Serializable
+@SerialName("story-info")
+data class StoryInfoRoute(
+    val storyId: String? = null,
+)

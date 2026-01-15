@@ -32,6 +32,8 @@ import java.util.concurrent.CopyOnWriteArrayList
  */
 class KeyboardInterceptor {
     private val interceptors = CopyOnWriteArrayList<(KeyboardEvent) -> Boolean>()
+    private var lastEvent: KeyboardEvent? = null
+    private var lastEventConsumed: Boolean = false
 
     /**
      * Register an interceptor.
@@ -56,10 +58,18 @@ class KeyboardInterceptor {
      * @return `true` if any interceptor consumed the event, `false` otherwise.
      */
     fun tryIntercept(event: KeyboardEvent): Boolean {
+        // Avoid re-processing the same event when multiple handlers call tryIntercept.
+        if (event === lastEvent) return lastEventConsumed
+        lastEvent = event
+
         // Check handlers in reverse order (last registered = highest priority)
         for (index in interceptors.size - 1 downTo 0) {
-            if (interceptors[index](event)) return true
+            if (interceptors[index](event)) {
+                lastEventConsumed = true
+                return true
+            }
         }
+        lastEventConsumed = false
         return false
     }
 

@@ -11,6 +11,14 @@ class CommandManager {
         Command(
             label = "clear",
             description = "Clear conversation history and free up context"
+        ),
+        Command(
+            label = "character",
+            description = "Open the character screen"
+        ),
+        Command(
+            label = "story-info",
+            description = "Open the story info screen"
         )
     )
 
@@ -21,6 +29,10 @@ class CommandManager {
         return when (command) {
             "help" -> CommandAction.ShowHelp
             "clear" -> CommandAction.ClearContext
+            "character" -> CommandAction.OpenCharacter
+            "character-manual" -> CommandAction.OpenCharacter
+            "character-ai" -> CommandAction.OpenCharacter
+            "story-info" -> CommandAction.OpenStoryInfo
             else -> null
         }
     }

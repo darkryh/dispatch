@@ -9,6 +9,7 @@ import com.ead.dispatch.runtime.DispatchConfig
 import com.ead.dispatch.runtime.DispatchScope
 import com.ead.dispatch.runtime.KeyboardInterceptor
 import com.ead.dispatch.runtime.LocalDispatchScope
+import com.ead.dispatch.runtime.LocalFocusRegistry
 import com.ead.dispatch.runtime.LocalKeyboardInterceptor
 import com.ead.dispatch.runtime.LocalTerminal
 import com.ead.dispatch.runtime.LocalTerminalHeight
@@ -68,6 +69,7 @@ class InputTextFieldInputTest {
             interactive = false,
         )
         private val keyboardInterceptor = KeyboardInterceptor()
+        private val focusRegistry = com.ead.dispatch.runtime.FocusRegistry()
         private val dispatchScope = TestDispatchScope(terminal, DispatchTheme.Dark)
         private val composer = Composer()
         private val root = AtomicReference<Measurable?>(null)
@@ -87,6 +89,7 @@ class InputTextFieldInputTest {
                     LocalTerminalWidth provides terminal.size.width,
                     LocalTerminalHeight provides terminal.size.height,
                     LocalKeyboardInterceptor provides keyboardInterceptor,
+                    LocalFocusRegistry provides focusRegistry,
                     LocalDispatchScope provides dispatchScope,
                     LocalTheme provides DispatchTheme.Dark,
                 ) {

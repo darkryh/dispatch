@@ -16,4 +16,10 @@ if [ ! -f "$BIN_FILE" ]; then
 fi
 
 echo "Launching Dispatch Sample..."
-exec "$BIN_FILE" "$@"
+export DISPATCH_DB_IN_MEMORY=true
+if [ -t 0 ] && [ -t 1 ]; then
+    exec "$BIN_FILE" "$@"
+else
+    echo "Non-interactive terminal detected; skipping launch."
+    exit 0
+fi

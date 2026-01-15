@@ -1,6 +1,6 @@
 
 [versions]
-kotlin = "2.2.21"
+kotlin = "2.3.0"
 coroutines = "1.8.1"
 mordant = "3.0.2"
 serialization = "1.7.3"

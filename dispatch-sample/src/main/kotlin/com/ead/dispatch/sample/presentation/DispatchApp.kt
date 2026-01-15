@@ -7,11 +7,15 @@ import com.ead.dispatch.navigation.rememberNavController
 import com.ead.dispatch.navigation.screen
 import com.ead.dispatch.runtime.dispatchScope
 import com.ead.dispatch.sample.navigation.ChatRoute
+import com.ead.dispatch.sample.navigation.CharacterRoute
 import com.ead.dispatch.sample.navigation.HelpRoute
 import com.ead.dispatch.sample.navigation.SessionRoute
+import com.ead.dispatch.sample.navigation.StoryInfoRoute
 import com.ead.dispatch.sample.presentation.chat.ChatScreen
+import com.ead.dispatch.sample.presentation.characters.CharacterScreen
 import com.ead.dispatch.sample.presentation.help.HelpScreen
 import com.ead.dispatch.sample.presentation.session.SessionScreen
+import com.ead.dispatch.sample.presentation.story_info.StoryInfoScreen
 
 @Dispatchable
 fun DispatchSampleApp() {
@@ -42,6 +46,14 @@ fun DispatchSampleApp() {
 
         screen<ChatRoute> {
             ChatScreen(navController)
+        }
+
+        screen<CharacterRoute> {
+            CharacterScreen(navController)
+        }
+
+        screen<StoryInfoRoute> {
+            StoryInfoScreen(navController)
         }
 
         screen<HelpRoute> { route ->

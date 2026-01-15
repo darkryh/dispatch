@@ -1,11 +1,19 @@
 CREATE TABLE sessions (
   id TEXT NOT NULL PRIMARY KEY,
   title TEXT NOT NULL,
-  mode TEXT NOT NULL,
+  mode TEXT NOT NULL CHECK (
+    mode IN ('CHAT', 'CHAT_STORY')
+  ),
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL,
-  message_count INTEGER NOT NULL,
-  metadata_json TEXT
+  message_count INTEGER NOT NULL
+);
+
+CREATE TABLE session_metadata (
+  session_id TEXT NOT NULL REFERENCES sessions(id) ON DELETE CASCADE,
+  key TEXT NOT NULL,
+  value TEXT NOT NULL,
+  PRIMARY KEY (session_id, key)
 );
 
 CREATE TABLE stories (
@@ -23,12 +31,25 @@ CREATE TABLE stories (
   tense TEXT,
   target_audience TEXT,
   pacing TEXT,
-  status TEXT,
-  style_refs_json TEXT,
-  emotional_beats_json TEXT,
-  key_locations_json TEXT,
+  status TEXT CHECK (
+    status IN ('DRAFT', 'IN_PROGRESS', 'FINAL', 'ARCHIVED')
+  ),
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL
+);
+
+CREATE TABLE story_style_refs (
+  story_id TEXT NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
+  position INTEGER NOT NULL,
+  value TEXT NOT NULL,
+  PRIMARY KEY (story_id, position)
+);
+
+CREATE TABLE story_emotional_beats (
+  story_id TEXT NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
+  position INTEGER NOT NULL,
+  value TEXT NOT NULL,
+  PRIMARY KEY (story_id, position)
 );
 
 CREATE TABLE story_characters (
@@ -36,12 +57,9 @@ CREATE TABLE story_characters (
   story_id TEXT NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
   description TEXT,
-  traits_json TEXT,
-  roles_json TEXT,
   goal TEXT,
   motivation TEXT,
   flaw TEXT,
-  arc TEXT,
   temperament TEXT,
   age TEXT,
   pronouns TEXT,
@@ -49,8 +67,36 @@ CREATE TABLE story_characters (
   backstory TEXT,
   voice TEXT,
   internal_conflict TEXT,
-  quirks_json TEXT,
+  appearance TEXT,
+  height TEXT,
+  build TEXT,
+  hair TEXT,
+  eyes TEXT,
+  skin_tone TEXT,
+  distinguishing_marks TEXT,
+  style_notes TEXT,
   created_at INTEGER NOT NULL
+);
+
+CREATE TABLE story_character_traits (
+  character_id TEXT NOT NULL REFERENCES story_characters(id) ON DELETE CASCADE,
+  position INTEGER NOT NULL,
+  value TEXT NOT NULL,
+  PRIMARY KEY (character_id, position)
+);
+
+CREATE TABLE story_character_roles (
+  character_id TEXT NOT NULL REFERENCES story_characters(id) ON DELETE CASCADE,
+  position INTEGER NOT NULL,
+  value TEXT NOT NULL,
+  PRIMARY KEY (character_id, position)
+);
+
+CREATE TABLE story_character_quirks (
+  character_id TEXT NOT NULL REFERENCES story_characters(id) ON DELETE CASCADE,
+  position INTEGER NOT NULL,
+  value TEXT NOT NULL,
+  PRIMARY KEY (character_id, position)
 );
 
 CREATE TABLE story_volumes (
@@ -59,14 +105,21 @@ CREATE TABLE story_volumes (
   number INTEGER NOT NULL,
   title TEXT NOT NULL,
   summary TEXT,
-  arc TEXT,
   target_word_count INTEGER,
-  key_events_json TEXT,
-  status TEXT,
+  status TEXT CHECK (
+    status IN ('DRAFT', 'IN_PROGRESS', 'FINAL', 'ARCHIVED')
+  ),
   notes TEXT,
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL,
   UNIQUE(story_id, number)
+);
+
+CREATE TABLE story_volume_key_events (
+  volume_id TEXT NOT NULL REFERENCES story_volumes(id) ON DELETE CASCADE,
+  position INTEGER NOT NULL,
+  value TEXT NOT NULL,
+  PRIMARY KEY (volume_id, position)
 );
 
 CREATE TABLE story_chapters (
@@ -75,19 +128,85 @@ CREATE TABLE story_chapters (
   number INTEGER NOT NULL,
   title TEXT NOT NULL,
   summary TEXT,
-  content TEXT,
   content_ref TEXT,
-  word_count INTEGER NOT NULL,
-  pov TEXT,
-  emotional_beat TEXT,
-  key_events_json TEXT,
+  content_type TEXT CHECK (
+    content_type IN ('MARKDOWN', 'DOCX', 'PDF', 'TEXT')
+  ),
+  content_checksum TEXT,
+  content_updated_at INTEGER,
+  content_range TEXT,
+  word_count INTEGER,
   target_word_count INTEGER,
-  location TEXT,
-  time_span TEXT,
-  status TEXT,
+  status TEXT CHECK (
+    status IN ('DRAFT', 'IN_PROGRESS', 'FINAL', 'ARCHIVED')
+  ),
   created_at INTEGER NOT NULL,
   updated_at INTEGER NOT NULL,
   UNIQUE(volume_id, number)
+);
+
+CREATE TABLE story_chapter_key_events (
+  chapter_id TEXT NOT NULL REFERENCES story_chapters(id) ON DELETE CASCADE,
+  position INTEGER NOT NULL,
+  value TEXT NOT NULL,
+  PRIMARY KEY (chapter_id, position)
+);
+
+CREATE TABLE story_locations (
+  id TEXT NOT NULL PRIMARY KEY,
+  story_id TEXT NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  description TEXT,
+  created_at INTEGER NOT NULL
+);
+
+CREATE TABLE story_location_tags (
+  location_id TEXT NOT NULL REFERENCES story_locations(id) ON DELETE CASCADE,
+  position INTEGER NOT NULL,
+  value TEXT NOT NULL,
+  PRIMARY KEY (location_id, position)
+);
+
+CREATE TABLE story_arcs (
+  id TEXT NOT NULL PRIMARY KEY,
+  story_id TEXT NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
+  scope_type TEXT NOT NULL CHECK (
+    scope_type IN ('STORY', 'VOLUME', 'CHAPTER', 'SCENE', 'CHARACTER')
+  ),
+  scope_id TEXT,
+  title TEXT NOT NULL,
+  summary TEXT,
+  status TEXT CHECK (
+    status IN ('DRAFT', 'IN_PROGRESS', 'FINAL', 'ARCHIVED')
+  ),
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+
+CREATE TABLE story_scenes (
+  id TEXT NOT NULL PRIMARY KEY,
+  chapter_id TEXT NOT NULL REFERENCES story_chapters(id) ON DELETE CASCADE,
+  number INTEGER NOT NULL,
+  title TEXT,
+  summary TEXT,
+  content_range TEXT,
+  pov TEXT,
+  emotional_beat TEXT,
+  location_id TEXT REFERENCES story_locations(id) ON DELETE SET NULL,
+  time_span TEXT,
+  status TEXT CHECK (
+    status IN ('DRAFT', 'IN_PROGRESS', 'FINAL', 'ARCHIVED')
+  ),
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
+  UNIQUE(chapter_id, number)
+);
+
+CREATE TABLE story_scene_key_events (
+  scene_id TEXT NOT NULL REFERENCES story_scenes(id) ON DELETE CASCADE,
+  position INTEGER NOT NULL,
+  value TEXT NOT NULL,
+  PRIMARY KEY (scene_id, position)
 );
 
 CREATE TABLE story_facts (
@@ -107,15 +226,11 @@ CREATE TABLE story_facts (
       'ECONOMY',
       'FACTION',
       'ORGANIZATION',
-      'LOCATION',
       'CHARACTER_FACT',
       'RELATIONSHIP',
       'ITEM',
       'LORE',
       'CONFLICT',
-      'STAKES',
-      'THEME',
-      'TONE',
       'LANGUAGE',
       'CUSTOM'
     )
@@ -131,7 +246,9 @@ CREATE TABLE rag_documents (
   volume_id TEXT REFERENCES story_volumes(id) ON DELETE CASCADE,
   chapter_id TEXT REFERENCES story_chapters(id) ON DELETE CASCADE,
   chunk_index INTEGER NOT NULL,
-  source_type TEXT NOT NULL,
+  source_type TEXT NOT NULL CHECK (
+    source_type IN ('FILE', 'CHAT', 'NOTE')
+  ),
   source_ref TEXT,
   checksum TEXT,
   created_at INTEGER NOT NULL
@@ -141,6 +258,11 @@ CREATE INDEX sessions_updated_at_idx ON sessions(updated_at);
 CREATE INDEX stories_session_id_idx ON stories(session_id);
 CREATE INDEX story_volumes_story_id_idx ON story_volumes(story_id);
 CREATE INDEX story_chapters_volume_id_idx ON story_chapters(volume_id);
+CREATE INDEX story_locations_story_id_idx ON story_locations(story_id);
+CREATE INDEX story_arcs_story_id_idx ON story_arcs(story_id);
+CREATE INDEX story_arcs_scope_idx ON story_arcs(scope_type, scope_id);
+CREATE INDEX story_scenes_chapter_id_idx ON story_scenes(chapter_id);
+CREATE INDEX story_scenes_location_id_idx ON story_scenes(location_id);
 CREATE INDEX rag_documents_session_id_idx ON rag_documents(session_id);
 CREATE INDEX rag_documents_story_id_idx ON rag_documents(story_id);
 CREATE INDEX rag_documents_chapter_id_idx ON rag_documents(chapter_id);
@@ -152,16 +274,14 @@ INSERT INTO sessions(
   mode,
   created_at,
   updated_at,
-  message_count,
-  metadata_json
+  message_count
 ) VALUES (
   :id,
   :title,
   :mode,
   :created_at,
   :updated_at,
-  :message_count,
-  :metadata_json
+  :message_count
 );
 
 updateSession:
@@ -169,8 +289,7 @@ UPDATE sessions
 SET title = :title,
     mode = :mode,
     updated_at = :updated_at,
-    message_count = :message_count,
-    metadata_json = :metadata_json
+    message_count = :message_count
 WHERE id = :id;
 
 selectSessionById:
@@ -180,6 +299,26 @@ WHERE id = :id;
 selectSessions:
 SELECT * FROM sessions
 ORDER BY updated_at DESC;
+
+insertSessionMetadata:
+INSERT INTO session_metadata(
+  session_id,
+  key,
+  value
+) VALUES (
+  :session_id,
+  :key,
+  :value
+);
+
+selectSessionMetadataBySessionId:
+SELECT * FROM session_metadata
+WHERE session_id = :session_id
+ORDER BY key ASC;
+
+deleteSessionMetadataBySessionId:
+DELETE FROM session_metadata
+WHERE session_id = :session_id;
 
 deleteSession:
 DELETE FROM sessions
@@ -202,9 +341,6 @@ INSERT INTO stories(
   target_audience,
   pacing,
   status,
-  style_refs_json,
-  emotional_beats_json,
-  key_locations_json,
   created_at,
   updated_at
 ) VALUES (
@@ -223,9 +359,6 @@ INSERT INTO stories(
   :target_audience,
   :pacing,
   :status,
-  :style_refs_json,
-  :emotional_beats_json,
-  :key_locations_json,
   :created_at,
   :updated_at
 );
@@ -245,9 +378,6 @@ SET title = :title,
     target_audience = :target_audience,
     pacing = :pacing,
     status = :status,
-    style_refs_json = :style_refs_json,
-    emotional_beats_json = :emotional_beats_json,
-    key_locations_json = :key_locations_json,
     updated_at = :updated_at
 WHERE id = :id;
 
@@ -260,6 +390,46 @@ SELECT * FROM stories
 WHERE session_id = :session_id
 ORDER BY updated_at DESC;
 
+insertStoryStyleRef:
+INSERT INTO story_style_refs(
+  story_id,
+  position,
+  value
+) VALUES (
+  :story_id,
+  :position,
+  :value
+);
+
+deleteStoryStyleRefsByStoryId:
+DELETE FROM story_style_refs
+WHERE story_id = :story_id;
+
+selectStoryStyleRefsByStoryId:
+SELECT * FROM story_style_refs
+WHERE story_id = :story_id
+ORDER BY position ASC;
+
+insertStoryEmotionalBeat:
+INSERT INTO story_emotional_beats(
+  story_id,
+  position,
+  value
+) VALUES (
+  :story_id,
+  :position,
+  :value
+);
+
+deleteStoryEmotionalBeatsByStoryId:
+DELETE FROM story_emotional_beats
+WHERE story_id = :story_id;
+
+selectStoryEmotionalBeatsByStoryId:
+SELECT * FROM story_emotional_beats
+WHERE story_id = :story_id
+ORDER BY position ASC;
+
 deleteStory:
 DELETE FROM stories
 WHERE id = :id;
@@ -270,12 +440,9 @@ INSERT INTO story_characters(
   story_id,
   name,
   description,
-  traits_json,
-  roles_json,
   goal,
   motivation,
   flaw,
-  arc,
   temperament,
   age,
   pronouns,
@@ -283,19 +450,23 @@ INSERT INTO story_characters(
   backstory,
   voice,
   internal_conflict,
-  quirks_json,
+  appearance,
+  height,
+  build,
+  hair,
+  eyes,
+  skin_tone,
+  distinguishing_marks,
+  style_notes,
   created_at
 ) VALUES (
   :id,
   :story_id,
   :name,
   :description,
-  :traits_json,
-  :roles_json,
   :goal,
   :motivation,
   :flaw,
-  :arc,
   :temperament,
   :age,
   :pronouns,
@@ -303,7 +474,14 @@ INSERT INTO story_characters(
   :backstory,
   :voice,
   :internal_conflict,
-  :quirks_json,
+  :appearance,
+  :height,
+  :build,
+  :hair,
+  :eyes,
+  :skin_tone,
+  :distinguishing_marks,
+  :style_notes,
   :created_at
 );
 
@@ -316,6 +494,66 @@ SELECT * FROM story_characters
 WHERE story_id = :story_id
 ORDER BY name ASC;
 
+insertStoryCharacterTrait:
+INSERT INTO story_character_traits(
+  character_id,
+  position,
+  value
+) VALUES (
+  :character_id,
+  :position,
+  :value
+);
+
+deleteStoryCharacterTraitsByCharacterId:
+DELETE FROM story_character_traits
+WHERE character_id = :character_id;
+
+selectStoryCharacterTraitsByCharacterId:
+SELECT * FROM story_character_traits
+WHERE character_id = :character_id
+ORDER BY position ASC;
+
+insertStoryCharacterRole:
+INSERT INTO story_character_roles(
+  character_id,
+  position,
+  value
+) VALUES (
+  :character_id,
+  :position,
+  :value
+);
+
+deleteStoryCharacterRolesByCharacterId:
+DELETE FROM story_character_roles
+WHERE character_id = :character_id;
+
+selectStoryCharacterRolesByCharacterId:
+SELECT * FROM story_character_roles
+WHERE character_id = :character_id
+ORDER BY position ASC;
+
+insertStoryCharacterQuirk:
+INSERT INTO story_character_quirks(
+  character_id,
+  position,
+  value
+) VALUES (
+  :character_id,
+  :position,
+  :value
+);
+
+deleteStoryCharacterQuirksByCharacterId:
+DELETE FROM story_character_quirks
+WHERE character_id = :character_id;
+
+selectStoryCharacterQuirksByCharacterId:
+SELECT * FROM story_character_quirks
+WHERE character_id = :character_id
+ORDER BY position ASC;
+
 insertStoryVolume:
 INSERT INTO story_volumes(
   id,
@@ -323,9 +561,7 @@ INSERT INTO story_volumes(
   number,
   title,
   summary,
-  arc,
   target_word_count,
-  key_events_json,
   status,
   notes,
   created_at,
@@ -336,9 +572,7 @@ INSERT INTO story_volumes(
   :number,
   :title,
   :summary,
-  :arc,
   :target_word_count,
-  :key_events_json,
   :status,
   :notes,
   :created_at,
@@ -349,9 +583,7 @@ updateStoryVolume:
 UPDATE story_volumes
 SET title = :title,
     summary = :summary,
-    arc = :arc,
     target_word_count = :target_word_count,
-    key_events_json = :key_events_json,
     status = :status,
     notes = :notes,
     updated_at = :updated_at
@@ -366,6 +598,26 @@ selectVolumeById:
 SELECT * FROM story_volumes
 WHERE id = :id;
 
+insertStoryVolumeKeyEvent:
+INSERT INTO story_volume_key_events(
+  volume_id,
+  position,
+  value
+) VALUES (
+  :volume_id,
+  :position,
+  :value
+);
+
+deleteStoryVolumeKeyEventsByVolumeId:
+DELETE FROM story_volume_key_events
+WHERE volume_id = :volume_id;
+
+selectStoryVolumeKeyEventsByVolumeId:
+SELECT * FROM story_volume_key_events
+WHERE volume_id = :volume_id
+ORDER BY position ASC;
+
 deleteStoryVolume:
 DELETE FROM story_volumes
 WHERE id = :id;
@@ -377,15 +629,13 @@ INSERT INTO story_chapters(
   number,
   title,
   summary,
-  content,
   content_ref,
+  content_type,
+  content_checksum,
+  content_updated_at,
+  content_range,
   word_count,
-  pov,
-  emotional_beat,
-  key_events_json,
   target_word_count,
-  location,
-  time_span,
   status,
   created_at,
   updated_at
@@ -395,15 +645,13 @@ INSERT INTO story_chapters(
   :number,
   :title,
   :summary,
-  :content,
   :content_ref,
+  :content_type,
+  :content_checksum,
+  :content_updated_at,
+  :content_range,
   :word_count,
-  :pov,
-  :emotional_beat,
-  :key_events_json,
   :target_word_count,
-  :location,
-  :time_span,
   :status,
   :created_at,
   :updated_at
@@ -413,15 +661,13 @@ updateStoryChapter:
 UPDATE story_chapters
 SET title = :title,
     summary = :summary,
-    content = :content,
     content_ref = :content_ref,
+    content_type = :content_type,
+    content_checksum = :content_checksum,
+    content_updated_at = :content_updated_at,
+    content_range = :content_range,
     word_count = :word_count,
-    pov = :pov,
-    emotional_beat = :emotional_beat,
-    key_events_json = :key_events_json,
     target_word_count = :target_word_count,
-    location = :location,
-    time_span = :time_span,
     status = :status,
     updated_at = :updated_at
 WHERE id = :id;
@@ -430,6 +676,222 @@ selectChaptersByVolumeId:
 SELECT * FROM story_chapters
 WHERE volume_id = :volume_id
 ORDER BY number ASC;
+
+insertStoryChapterKeyEvent:
+INSERT INTO story_chapter_key_events(
+  chapter_id,
+  position,
+  value
+) VALUES (
+  :chapter_id,
+  :position,
+  :value
+);
+
+deleteStoryChapterKeyEventsByChapterId:
+DELETE FROM story_chapter_key_events
+WHERE chapter_id = :chapter_id;
+
+selectStoryChapterKeyEventsByChapterId:
+SELECT * FROM story_chapter_key_events
+WHERE chapter_id = :chapter_id
+ORDER BY position ASC;
+
+insertStoryLocation:
+INSERT INTO story_locations(
+  id,
+  story_id,
+  name,
+  description,
+  created_at
+) VALUES (
+  :id,
+  :story_id,
+  :name,
+  :description,
+  :created_at
+);
+
+updateStoryLocation:
+UPDATE story_locations
+SET name = :name,
+    description = :description
+WHERE id = :id;
+
+selectLocationsByStoryId:
+SELECT * FROM story_locations
+WHERE story_id = :story_id
+ORDER BY name ASC;
+
+selectLocationById:
+SELECT * FROM story_locations
+WHERE id = :id;
+
+insertStoryLocationTag:
+INSERT INTO story_location_tags(
+  location_id,
+  position,
+  value
+) VALUES (
+  :location_id,
+  :position,
+  :value
+);
+
+deleteStoryLocationTagsByLocationId:
+DELETE FROM story_location_tags
+WHERE location_id = :location_id;
+
+deleteStoryLocationTagsByStoryId:
+DELETE FROM story_location_tags
+WHERE location_id IN (
+  SELECT id
+  FROM story_locations
+  WHERE story_id = :story_id
+);
+
+selectStoryLocationTagsByLocationId:
+SELECT * FROM story_location_tags
+WHERE location_id = :location_id
+ORDER BY position ASC;
+
+deleteLocationsByStoryId:
+DELETE FROM story_locations
+WHERE story_id = :story_id;
+
+insertStoryArc:
+INSERT INTO story_arcs(
+  id,
+  story_id,
+  scope_type,
+  scope_id,
+  title,
+  summary,
+  status,
+  created_at,
+  updated_at
+) VALUES (
+  :id,
+  :story_id,
+  :scope_type,
+  :scope_id,
+  :title,
+  :summary,
+  :status,
+  :created_at,
+  :updated_at
+);
+
+updateStoryArc:
+UPDATE story_arcs
+SET scope_type = :scope_type,
+    scope_id = :scope_id,
+    title = :title,
+    summary = :summary,
+    status = :status,
+    updated_at = :updated_at
+WHERE id = :id;
+
+selectArcsByStoryId:
+SELECT * FROM story_arcs
+WHERE story_id = :story_id
+ORDER BY created_at ASC;
+
+selectArcsByScope:
+SELECT * FROM story_arcs
+WHERE scope_type = :scope_type
+  AND scope_id = :scope_id
+ORDER BY created_at ASC;
+
+selectArcById:
+SELECT * FROM story_arcs
+WHERE id = :id;
+
+deleteArcsByStoryId:
+DELETE FROM story_arcs
+WHERE story_id = :story_id;
+
+deleteArcsByScope:
+DELETE FROM story_arcs
+WHERE scope_type = :scope_type
+  AND scope_id = :scope_id;
+
+insertStoryScene:
+INSERT INTO story_scenes(
+  id,
+  chapter_id,
+  number,
+  title,
+  summary,
+  content_range,
+  pov,
+  emotional_beat,
+  location_id,
+  time_span,
+  status,
+  created_at,
+  updated_at
+) VALUES (
+  :id,
+  :chapter_id,
+  :number,
+  :title,
+  :summary,
+  :content_range,
+  :pov,
+  :emotional_beat,
+  :location_id,
+  :time_span,
+  :status,
+  :created_at,
+  :updated_at
+);
+
+updateStoryScene:
+UPDATE story_scenes
+SET title = :title,
+    summary = :summary,
+    content_range = :content_range,
+    pov = :pov,
+    emotional_beat = :emotional_beat,
+    location_id = :location_id,
+    time_span = :time_span,
+    status = :status,
+    updated_at = :updated_at
+WHERE id = :id;
+
+selectScenesByChapterId:
+SELECT * FROM story_scenes
+WHERE chapter_id = :chapter_id
+ORDER BY number ASC;
+
+selectSceneById:
+SELECT * FROM story_scenes
+WHERE id = :id;
+
+insertStorySceneKeyEvent:
+INSERT INTO story_scene_key_events(
+  scene_id,
+  position,
+  value
+) VALUES (
+  :scene_id,
+  :position,
+  :value
+);
+
+deleteStorySceneKeyEventsBySceneId:
+DELETE FROM story_scene_key_events
+WHERE scene_id = :scene_id;
+
+selectStorySceneKeyEventsBySceneId:
+SELECT * FROM story_scene_key_events
+WHERE scene_id = :scene_id
+ORDER BY position ASC;
+
+deleteScenesByChapterId:
+DELETE FROM story_scenes
+WHERE chapter_id = :chapter_id;
 
 selectChapterById:
 SELECT * FROM story_chapters

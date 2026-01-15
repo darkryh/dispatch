@@ -62,3 +62,8 @@ val LocalKeyboardInterceptor = staticCompositionLocalOf { KeyboardInterceptor() 
  * CompositionLocal providing the current exit prompt state.
  */
 val LocalExitPromptState = compositionLocalOf { ExitPromptState() }
+
+/**
+ * CompositionLocal providing focus management for input fields.
+ */
+val LocalFocusRegistry = staticCompositionLocalOf { FocusRegistry() }

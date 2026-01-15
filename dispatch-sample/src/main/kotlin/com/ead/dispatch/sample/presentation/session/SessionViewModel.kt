@@ -3,6 +3,7 @@ package com.ead.dispatch.sample.presentation.session
 import com.ead.dispatch.sample.domain.SessionManager
 import com.ead.dispatch.sample.domain.model.session.Session
 import com.ead.dispatch.viewmodel.ViewModel
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -32,7 +33,9 @@ class SessionViewModel(
     }
 
     fun deleteSession(session: Session) {
-        sessionManager.deleteSession(session.id)
+        viewModelScope.launch {
+            sessionManager.deleteSession(session.id)
+        }
     }
 
     fun formatRelativeTime(instant: Instant): String {

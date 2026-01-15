@@ -1,4 +1,4 @@
-package com.ead.dispatch.sample.data.db
+package com.ead.dispatch.sample.data.db.entities
 
 import app.cash.sqldelight.db.SqlDriver
 import app.cash.sqldelight.driver.jdbc.sqlite.JdbcSqliteDriver
@@ -24,8 +24,11 @@ class DispatchDatabaseFactory(
         val dataDir = Paths.get(
             AppDirsFactory.getInstance().getUserDataDir(appName, null, appAuthor)
         )
+
         Files.createDirectories(dataDir.toAbsolutePath())
         val dbPath = dataDir.resolve(dbFileName).toAbsolutePath().toString()
-        return JdbcSqliteDriver("jdbc:sqlite:$dbPath", Properties(), DispatchDatabase.Schema)
+        val useInMemory = System.getenv("DISPATCH_DB_IN_MEMORY")?.equals("true", ignoreCase = true) == true
+        val jdbcUrl = if (useInMemory) JdbcSqliteDriver.IN_MEMORY else "jdbc:sqlite:$dbPath"
+        return JdbcSqliteDriver(jdbcUrl, Properties(), DispatchDatabase.Schema)
     }
 }

@@ -9,6 +9,7 @@ import com.ead.dispatch.modifier.Modifier
 import com.ead.dispatch.modifier.applyToConstraints
 import com.ead.dispatch.runtime.Composer
 import com.ead.dispatch.runtime.DisposableEffect
+import com.ead.dispatch.runtime.LocalFocusRegistry
 import com.ead.dispatch.runtime.LocalKeyboardInterceptor
 import com.ead.dispatch.runtime.LocalTerminal
 import com.ead.dispatch.runtime.LocalTerminalWidth
@@ -546,9 +547,12 @@ fun InputTextField(
     textStyle: TextStyle? = null,
     placeholderStyle: TextStyle? = null,
     iconStyle: TextStyle? = null,
+    cursorPosition: Int? = null,
+    onCursorPositionChange: ((Int) -> Unit)? = null,
 ) {
     val onValueChangeCallback = com.ead.dispatch.runtime.rememberCallback(onValueChange)
     val onSubmitCallback = com.ead.dispatch.runtime.rememberCallback(onSubmit)
+    val onCursorPositionChangeCallback = com.ead.dispatch.runtime.rememberCallback(onCursorPositionChange)
 
     val terminal = LocalTerminal.current
     val terminalWidth = LocalTerminalWidth.current
@@ -566,32 +570,49 @@ fun InputTextField(
 
     // Keep local value and cursor so we can handle edits even between recompositions.
     var latestValue by remember { mutableStateOf(value) }
-    var cursorPosition by remember { mutableStateOf(value.length) }
+    var cursorPositionState by remember { mutableStateOf(cursorPosition ?: value.length) }
     val pasteTracker = remember { PasteTracker() }
 
     // Track external value changes without making them the source of truth for rendering.
     // This avoids dropping keystrokes when `value` is backed by an async flow collector.
     val externalValueTracker = remember { ExternalValueTracker(value) }
+    val externalCursorTracker = remember { ExternalValueTracker(cursorPosition ?: value.length) }
     if (value != externalValueTracker.value) {
         externalValueTracker.value = value
         if (value != latestValue) {
             latestValue = value
-            cursorPosition = value.length
+            cursorPositionState = (cursorPosition ?: value.length).coerceIn(0, value.length)
         } else {
-            cursorPosition = cursorPosition.coerceIn(0, value.length)
+            cursorPositionState = cursorPositionState.coerceIn(0, value.length)
         }
+    }
+    if (cursorPosition != null && cursorPosition != externalCursorTracker.value) {
+        externalCursorTracker.value = cursorPosition
+        cursorPositionState = cursorPosition.coerceIn(0, latestValue.length)
     }
 
     // Set up keyboard handling via DispatchScope.
     // Always register a handler so we don't keep a stale handler when `enabled` flips to false.
     val scope = dispatchScope()
     val keyboardInterceptor = LocalKeyboardInterceptor.current
+    val focusRegistry = LocalFocusRegistry.current
+    val focusToken = remember { Any() }
+
+    val isFocused = enabled && focusRegistry.isFocused(focusToken)
+
+    fun updateCursorPosition(nextPosition: Int) {
+        val bounded = nextPosition.coerceIn(0, latestValue.length)
+        if (cursorPositionState != bounded) {
+            cursorPositionState = bounded
+            onCursorPositionChangeCallback?.invoke(bounded)
+        }
+    }
 
     fun insertText(text: String) {
         if (text.isEmpty()) return
-        val result = applyInsertion(latestValue, cursorPosition, text)
+        val result = applyInsertion(latestValue, cursorPositionState, text)
         latestValue = result.value
-        cursorPosition = result.cursorPosition
+        updateCursorPosition(result.cursorPosition)
         onValueChangeCallback(latestValue)
     }
 
@@ -600,6 +621,7 @@ fun InputTextField(
             return@DisposableEffect onDispose {}
         }
 
+        val disposeFocus = focusRegistry.register(focusToken)
         val dispose = scope.addKeyEventHandler { event ->
             // Check if any interceptor wants to handle this event first
             // (e.g., CommandPalette intercepting Arrow keys when visible)
@@ -607,7 +629,24 @@ fun InputTextField(
                 return@addKeyEventHandler  // Event was consumed by interceptor
             }
 
-            cursorPosition = cursorPosition.coerceIn(0, latestValue.length)
+            if (!focusRegistry.isFocused(focusToken)) {
+                return@addKeyEventHandler
+            }
+            if (!focusRegistry.claimEvent(event)) {
+                return@addKeyEventHandler
+            }
+
+            if (event.key == "Tab" && !event.shift && !event.ctrl && !event.alt) {
+                focusRegistry.focusNext()
+                return@addKeyEventHandler
+            }
+
+            if (event.shift && (event.key == "Q" || event.key == "q")) {
+                focusRegistry.focusPrevious()
+                return@addKeyEventHandler
+            }
+
+            cursorPositionState = cursorPositionState.coerceIn(0, latestValue.length)
             when (event.key) {
                 "PasteStart" -> {
                     pasteTracker.increment()
@@ -630,67 +669,71 @@ fun InputTextField(
                         if (text.isNotBlank()) {
                             submit(text)
                             latestValue = ""
-                            cursorPosition = 0
+                            updateCursorPosition(0)
                             onValueChangeCallback("")
                         }
                     }
                 }
                 "Backspace" -> {
                     val currentValue = latestValue
-                    val safeCursor = cursorPosition.coerceIn(0, currentValue.length)
+                    val safeCursor = cursorPositionState.coerceIn(0, currentValue.length)
                     if (safeCursor > 0 && currentValue.isNotEmpty()) {
                         val before = currentValue.substring(0, safeCursor - 1)
                         val after = currentValue.substring(safeCursor)
                         latestValue = before + after
-                        cursorPosition = safeCursor - 1
+                        updateCursorPosition(safeCursor - 1)
                         onValueChangeCallback(latestValue)
                     } else {
-                        cursorPosition = safeCursor
+                        updateCursorPosition(safeCursor)
                     }
                 }
                 "Delete" -> {
                     val currentValue = latestValue
-                    val safeCursor = cursorPosition.coerceIn(0, currentValue.length)
+                    val safeCursor = cursorPositionState.coerceIn(0, currentValue.length)
                     if (safeCursor < currentValue.length && currentValue.isNotEmpty()) {
                         val before = currentValue.substring(0, safeCursor)
                         val after = currentValue.substring(safeCursor + 1)
                         latestValue = before + after
                         onValueChangeCallback(latestValue)
                     } else {
-                        cursorPosition = safeCursor
+                        updateCursorPosition(safeCursor)
                     }
                 }
                 "ArrowLeft" -> {
-                    val safeCursor = cursorPosition.coerceIn(0, latestValue.length)
-                    cursorPosition = (safeCursor - 1).coerceAtLeast(0)
+                    val safeCursor = cursorPositionState.coerceIn(0, latestValue.length)
+                    updateCursorPosition((safeCursor - 1).coerceAtLeast(0))
                 }
                 "ArrowRight" -> {
-                    val safeCursor = cursorPosition.coerceIn(0, latestValue.length)
-                    cursorPosition = (safeCursor + 1).coerceAtMost(latestValue.length)
+                    val safeCursor = cursorPositionState.coerceIn(0, latestValue.length)
+                    updateCursorPosition((safeCursor + 1).coerceAtMost(latestValue.length))
                 }
                 "ArrowUp" -> {
-                    cursorPosition = moveCursorVertical(
+                    updateCursorPosition(
+                        moveCursorVertical(
                         terminal = terminal,
                         text = latestValue,
-                        cursorPosition = cursorPosition,
+                        cursorPosition = cursorPositionState,
                         direction = -1,
                         wrapWidth = contentWidth,
+                        )
                     )
                 }
                 "ArrowDown" -> {
-                    cursorPosition = moveCursorVertical(
+                    updateCursorPosition(
+                        moveCursorVertical(
                         terminal = terminal,
                         text = latestValue,
-                        cursorPosition = cursorPosition,
+                        cursorPosition = cursorPositionState,
                         direction = 1,
                         wrapWidth = contentWidth,
+                        )
                     )
                 }
                 "Home" -> {
-                    cursorPosition = 0
+                    updateCursorPosition(0)
                 }
                 "End" -> {
-                    cursorPosition = latestValue.length
+                    updateCursorPosition(latestValue.length)
                 }
                 else -> {
                     // Handle printable characters or multi-codepoint text
@@ -702,7 +745,10 @@ fun InputTextField(
             }
         }
 
-        onDispose { dispose() }
+        onDispose {
+            dispose()
+            disposeFocus()
+        }
     }
 
     // Render the text field
@@ -715,13 +761,47 @@ fun InputTextField(
         enabled = enabled,
         singleLine = false, // allow wrapping so height grows with content
         onSubmit = onSubmit,
-        showCursor = showCursor,
+        showCursor = showCursor && isFocused,
         cursorChar = cursorChar,
-        cursorPosition = cursorPosition,
+        cursorPosition = cursorPositionState,
         maxLines = maxLines,
         textStyle = textStyle,
         placeholderStyle = placeholderStyle,
         iconStyle = iconStyle,
+    )
+}
+
+@Dispatchable
+fun InputTextField(
+    state: TextFieldState,
+    modifier: Modifier = Modifier,
+    icon: String = "",
+    placeholder: String = "",
+    enabled: Boolean = true,
+    onSubmit: ((String) -> Unit)? = null,
+    showCursor: Boolean = true,
+    cursorChar: String = "█",
+    maxLines: Int? = null,
+    textStyle: TextStyle? = null,
+    placeholderStyle: TextStyle? = null,
+    iconStyle: TextStyle? = null,
+) {
+    InputTextField(
+        value = state.value,
+        onValueChange = { state.value = it },
+        modifier = modifier,
+        icon = icon,
+        placeholder = placeholder,
+        enabled = enabled,
+        onSubmit = onSubmit,
+        showCursor = showCursor,
+        cursorChar = cursorChar,
+        maxLines = maxLines,
+        textStyle = textStyle,
+        placeholderStyle = placeholderStyle,
+        iconStyle = iconStyle,
+        cursorPosition = state.cursorPosition,
+        onCursorPositionChange = { state.cursorPosition = it },
     )
 }
 
@@ -805,7 +885,7 @@ private fun moveCursorVertical(
 
 private data class CursorVisual(val line: Int, val col: Int)
 
-private class ExternalValueTracker(var value: String)
+private class ExternalValueTracker<T>(var value: T)
 
 private class PasteTracker {
     private var depth = 0

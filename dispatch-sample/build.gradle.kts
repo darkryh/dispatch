@@ -27,6 +27,7 @@ dependencies {
     implementation("net.harawata:appdirs:1.5.0")
     implementation(libs.bundles.koog)
     implementation("app.cash.sqldelight:sqlite-driver:2.2.1")
+    implementation("app.cash.sqldelight:coroutines-extensions:2.2.1")
 
     // Prevent SLF4J's "no providers" warnings from printing to stderr and corrupting the TUI.
     runtimeOnly(libs.slf4j.nop)

@@ -2,10 +2,12 @@ package com.ead.dispatch.sample.presentation.chat
 
 import com.ead.dispatch.annotation.Dispatchable
 import com.ead.dispatch.koin.inject
+import com.ead.dispatch.layout.Row
 import com.ead.dispatch.layout.Spacer
 import com.ead.dispatch.modifier.Modifier
 import com.ead.dispatch.modifier.fillMaxWidth
 import com.ead.dispatch.modifier.height
+import com.ead.dispatch.modifier.width
 import com.ead.dispatch.navigation.NavController
 import com.ead.dispatch.runtime.DisposableEffect
 import com.ead.dispatch.runtime.LocalKeyboardInterceptor
@@ -19,6 +21,7 @@ import com.ead.dispatch.state.remember
 import com.ead.dispatch.viewmodel.collectAsState
 import com.ead.dispatch.viewmodel.viewModel
 import com.ead.dispatch.widget.*
+import com.ead.dispatch.widget.Text
 import com.github.ajalt.mordant.rendering.TextColors.Companion.rgb
 import com.github.ajalt.mordant.rendering.TextStyle
 
@@ -83,6 +86,18 @@ fun ChatScreen(navController: NavController) {
     LazyColumn(modifier = Modifier.fillMaxWidth()) {
         item {
             ChatHeader()
+        }
+        item {
+            Spacer(Modifier.height(1))
+        }
+        item {
+            Row(modifier = Modifier.fillMaxWidth()) {
+                Spacer(Modifier.width(2))
+                Text(
+                    text = "Quick jump: /character, /story-info",
+                    style = theme.muted,
+                )
+            }
         }
         item {
             Spacer(Modifier.height(1))

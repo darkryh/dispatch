@@ -9,13 +9,16 @@ import com.ead.dispatch.sample.domain.CommandManager
 import com.ead.dispatch.sample.domain.SessionManager
 import com.ead.dispatch.sample.domain.Storage
 import com.ead.dispatch.sample.domain.agents.ChatAgent
+import com.ead.dispatch.sample.domain.agents.chat_agent.ChatInputRequest
 import com.ead.dispatch.sample.domain.model.message.CliMessage
 import com.ead.dispatch.sample.domain.model.message.CliMessageRole
 import com.ead.dispatch.sample.domain.model.session.Session
 import com.ead.dispatch.sample.domain.model.story.WriterMode
 import com.ead.dispatch.sample.domain.util.extension.toCliMessage
 import com.ead.dispatch.sample.navigation.ChatRoute
+import com.ead.dispatch.sample.navigation.CharacterRoute
 import com.ead.dispatch.sample.navigation.HelpRoute
+import com.ead.dispatch.sample.navigation.StoryInfoRoute
 import com.ead.dispatch.sample.presentation.chat.event.ChatEvent
 import com.ead.dispatch.sample.presentation.commands.CommandAction
 import com.ead.dispatch.viewmodel.ViewModel
@@ -39,9 +42,8 @@ class ChatViewModel(
     private val route = savedStateHandle.toRoute<ChatRoute>()
     private val storageProvider = Storage.provider
 
-
     // Current session state
-    private val _currentSession = MutableStateFlow<Session?>(null)
+    private val _session = MutableStateFlow<Session?>(null)
 
     private val _inputText = MutableStateFlow("")
     val inputText: StateFlow<String> = _inputText.asStateFlow()
@@ -57,28 +59,12 @@ class ChatViewModel(
 
     private var countWriterMode = 0
 
-    /*private val executor = simpleOllamaAIExecutor(
-        baseUrl = "http://127.0.0.1:11434",
-    )
-
-    private val llmModel= LLModel(
-        provider = LLMProvider.Ollama,
-        id = "deepseek-r1:7b",
-        capabilities = listOf(
-            LLMCapability.Temperature,
-            LLMCapability.Tools,
-            LLMCapability.Schema.JSON.Basic
-        ),
-        contextLength = 4096L
-    )*/
-
     init {
         val sessionId = route.conversationId?.trim().takeIf { !it.isNullOrEmpty() }
 
         if (sessionId != null) {
-            _currentSession.value = sessionManager.ensureSession(sessionId)
-
             viewModelScope.launch(Dispatchers.IO) {
+                _session.value = sessionManager.ensureSession(sessionId)
                 loadMessagesForSession(sessionId)
             }
         }
@@ -149,6 +135,12 @@ class ChatViewModel(
             CommandAction.ClearContext -> {
                 _messages.value = emptyList()
             }
+            CommandAction.OpenCharacter -> {
+                navController.navigate(CharacterRoute())
+            }
+            CommandAction.OpenStoryInfo -> {
+                navController.navigate(StoryInfoRoute(storyId = _session.value?.id))
+            }
         }
     }
 
@@ -161,22 +153,28 @@ class ChatViewModel(
             return
         }
 
-        val session = activeSession(input)
-
-        _messages.update { messages ->
-            messages + CliMessage(
-                data = input,
-                role = CliMessageRole.USER
-            )
-        }
-
-        _isProcessing.value = true
-
         viewModelScope.launch {
-            val assistantResponse  = chatAgent.create(session).run(text)
+            val session = activeSession(input)
+
+            _messages.update { messages ->
+                messages + CliMessage(
+                    data = input,
+                    role = CliMessageRole.USER
+                )
+            }
+
+            _isProcessing.value = true
+
+            val assistantResponse  = chatAgent.run(
+                session = session,
+                input = ChatInputRequest(
+                    text = input,
+                )
+            )
+
 
             _messages.value = messages.value + CliMessage(
-                data = assistantResponse.content,
+                data = assistantResponse,
                 role = CliMessageRole.ASSISTANT
             )
 
@@ -192,14 +190,14 @@ class ChatViewModel(
         }
     }
 
-    private fun activeSession(firstMessagePreview: String): Session {
-        val existing = _currentSession.value
+    private suspend fun activeSession(firstMessagePreview: String): Session {
+        val existing = _session.value
         if (existing != null) {
             return existing
         }
 
         val session = sessionManager.createSession(title = firstMessagePreview)
-        _currentSession.value = session
+        _session.value = session
         return session
     }
 }
