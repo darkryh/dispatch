@@ -1,5 +1,6 @@
 package com.ead.dispatch.sample.presentation.chat.components
 
+import ai.koog.prompt.structure.markdown.markdownStreamingParser
 import com.ead.dispatch.annotation.Dispatchable
 import com.ead.dispatch.layout.Column
 import com.ead.dispatch.layout.Row
@@ -37,6 +38,7 @@ fun ChatProgressAnimation(isProcessing: Boolean) {
         }
     }
 
+
     if (isProcessing) {
         Column {
             Row {
@@ -52,7 +54,7 @@ fun ChatProgressAnimation(isProcessing: Boolean) {
                 )
             }
 
-            Spacer(Modifier.height( 1))
+            Spacer(Modifier.height(1))
         }
     }
 }

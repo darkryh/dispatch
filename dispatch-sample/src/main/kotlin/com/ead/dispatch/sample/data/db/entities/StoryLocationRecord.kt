@@ -1,5 +1,8 @@
 package com.ead.dispatch.sample.data.db.entities
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class StoryLocationRecord(
     /** Stable identifier for the location record. */
     val id: String,
@@ -12,6 +15,7 @@ data class StoryLocationRecord(
     /** Creation time for audits and sorting. */
     val createdAt: Long,
 ) {
+    @Serializable
     data class LocationProfile(
         /** Human-readable location name. */
         val name: String,

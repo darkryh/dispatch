@@ -22,7 +22,7 @@ object AIProvider {
     @Suppress("unused")
     val localLlmModel get() = LLModel(
         provider = LLMProvider.Ollama,
-        id = "deepseek-r1:8b",
+        id = "deepseek-r1:7b",
         capabilities =listOf(
             LLMCapability.Completion,
             LLMCapability.Temperature,
@@ -35,4 +35,7 @@ object AIProvider {
         contextLength = 64_000,
         maxOutputTokens = 64_000
     )
+
+    fun getChatAgentId(id : String) = "${id}:chat-agent"
+    fun getStoryAgentId(id : String) = "${id}:story-agent"
 }

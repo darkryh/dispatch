@@ -1,37 +1,30 @@
 package com.ead.dispatch.sample.data.repositories
 
-import com.ead.dispatch.sample.DispatchDatabase
-import com.ead.dispatch.sample.data.db.type.ArcScope
-import com.ead.dispatch.sample.data.db.type.ContentStatus
-import com.ead.dispatch.sample.data.db.type.ContentType
-import com.ead.dispatch.sample.data.db.entities.RagDocumentRecord
-import com.ead.dispatch.sample.data.db.type.RagSourceType
-import com.ead.dispatch.sample.data.db.type.SessionMode
-import com.ead.dispatch.sample.data.db.entities.SessionRecord
-import com.ead.dispatch.sample.data.db.entities.StoryArcRecord
-import com.ead.dispatch.sample.data.db.entities.StoryChapterRecord
-import com.ead.dispatch.sample.data.db.entities.StoryCharacterRecord
-import com.ead.dispatch.sample.data.db.entities.StoryFactRecord
-import com.ead.dispatch.sample.data.db.type.StoryFactType
-import com.ead.dispatch.sample.data.db.entities.StoryLocationRecord
-import com.ead.dispatch.sample.data.db.entities.StoryRecord
-import com.ead.dispatch.sample.data.db.entities.StorySceneRecord
-import com.ead.dispatch.sample.data.db.entities.StoryVolumeRecord
-import com.ead.dispatch.sample.domain.model.story.StoryChatContext
-import com.ead.dispatch.sample.domain.model.story.StoryModeContext
 import app.cash.sqldelight.coroutines.asFlow
 import app.cash.sqldelight.coroutines.mapToList
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import com.ead.dispatch.sample.DispatchDatabase
+import com.ead.dispatch.sample.data.db.entities.*
+import com.ead.dispatch.sample.data.db.type.*
+import com.ead.dispatch.sample.domain.model.story.StoryChatContext
+import com.ead.dispatch.sample.domain.model.story.StoryModeContext
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.withContext
+import java.util.concurrent.Executors
 
 class StructuredIndexRepository(
     private val database: DispatchDatabase,
 ) {
     private val queries = database.dispatchDatabaseQueries
+    private val coroutineDispatcher: CoroutineDispatcher = Executors.newSingleThreadExecutor { runnable ->
+        Thread(runnable, "dispatch-db")
+    }.asCoroutineDispatcher()
 
     private suspend inline fun <T> dbQuery(crossinline block: () -> T): T =
-        withContext(Dispatchers.IO) { block() }
+        withContext(coroutineDispatcher) { block() }
 
     private fun getSessionMetadata(sessionId: String): Map<String, String> =
         queries.selectSessionMetadataBySessionId(sessionId) { _, key, value ->
@@ -234,9 +227,17 @@ class StructuredIndexRepository(
                 stats = SessionRecord.SessionStats(
                     messageCount = messageCount,
                 ),
-                metadata = getSessionMetadata(id),
+                metadata = emptyMap(),
             )
-        }.asFlow().mapToList(Dispatchers.IO)
+        }
+            .asFlow()
+            .mapToList(coroutineDispatcher)
+            .map { sessions ->
+                sessions.map { session ->
+                    session.copy(metadata = getSessionMetadata(session.id))
+                }
+            }
+            .flowOn(coroutineDispatcher)
 
     suspend fun upsertSession(record: SessionRecord) = dbQuery {
         database.transaction {
@@ -271,7 +272,7 @@ class StructuredIndexRepository(
     }
 
     suspend fun getSessions(): List<SessionRecord> = dbQuery {
-        queries.selectSessions { id, title, mode, createdAt, updatedAt, messageCount ->
+        val sessions = queries.selectSessions { id, title, mode, createdAt, updatedAt, messageCount ->
             SessionRecord(
                 id = id,
                 profile = SessionRecord.SessionProfile(
@@ -283,9 +284,13 @@ class StructuredIndexRepository(
                 stats = SessionRecord.SessionStats(
                     messageCount = messageCount,
                 ),
-                metadata = getSessionMetadata(id),
+                metadata = emptyMap(),
             )
         }.executeAsList()
+
+        sessions.map { session ->
+            session.copy(metadata = getSessionMetadata(session.id))
+        }
     }
 
     suspend fun deleteSession(sessionId: String) = dbQuery {
@@ -354,7 +359,7 @@ class StructuredIndexRepository(
     }
 
     suspend fun getStoriesBySession(sessionId: String): List<StoryRecord> = dbQuery {
-        queries.selectStoriesBySessionId(sessionId) { id, sessionId, title, genre, setting, plotOutline, logline, theme, tone, stakes, pov, tense, targetAudience, pacing, status, createdAt, updatedAt ->
+        val stories = queries.selectStoriesBySessionId(sessionId) { id, sessionId, title, genre, setting, plotOutline, logline, theme, tone, stakes, pov, tense, targetAudience, pacing, status, createdAt, updatedAt ->
             StoryRecord(
                 id = id,
                 sessionId = sessionId,
@@ -373,16 +378,23 @@ class StructuredIndexRepository(
                     targetAudience = targetAudience,
                     pacing = pacing,
                 ),
-                styleRefs = getStoryStyleRefs(id),
-                emotionalBeats = getStoryEmotionalBeats(id),
+                styleRefs = emptyList(),
+                emotionalBeats = emptyList(),
                 createdAt = createdAt,
                 updatedAt = updatedAt,
             )
         }.executeAsList()
+
+        stories.map { story ->
+            story.copy(
+                styleRefs = getStoryStyleRefs(story.id),
+                emotionalBeats = getStoryEmotionalBeats(story.id),
+            )
+        }
     }
 
     suspend fun getStoryById(storyId: String): StoryRecord? = dbQuery {
-        queries.selectStoryById(storyId) { id, sessionId, title, genre, setting, plotOutline, logline, theme, tone, stakes, pov, tense, targetAudience, pacing, status, createdAt, updatedAt ->
+        val story = queries.selectStoryById(storyId) { id, sessionId, title, genre, setting, plotOutline, logline, theme, tone, stakes, pov, tense, targetAudience, pacing, status, createdAt, updatedAt ->
             StoryRecord(
                 id = id,
                 sessionId = sessionId,
@@ -401,12 +413,17 @@ class StructuredIndexRepository(
                     targetAudience = targetAudience,
                     pacing = pacing,
                 ),
-                styleRefs = getStoryStyleRefs(id),
-                emotionalBeats = getStoryEmotionalBeats(id),
+                styleRefs = emptyList(),
+                emotionalBeats = emptyList(),
                 createdAt = createdAt,
                 updatedAt = updatedAt,
             )
         }.executeAsOneOrNull()
+
+        story?.copy(
+            styleRefs = getStoryStyleRefs(story.id),
+            emotionalBeats = getStoryEmotionalBeats(story.id),
+        )
     }
 
     fun observeStoriesBySession(sessionId: String): Flow<List<StoryRecord>> =
@@ -429,12 +446,23 @@ class StructuredIndexRepository(
                     targetAudience = targetAudience,
                     pacing = pacing,
                 ),
-                styleRefs = getStoryStyleRefs(id),
-                emotionalBeats = getStoryEmotionalBeats(id),
+                styleRefs = emptyList(),
+                emotionalBeats = emptyList(),
                 createdAt = createdAt,
                 updatedAt = updatedAt,
             )
-        }.asFlow().mapToList(Dispatchers.IO)
+        }
+            .asFlow()
+            .mapToList(coroutineDispatcher)
+            .map { stories ->
+                stories.map { story ->
+                    story.copy(
+                        styleRefs = getStoryStyleRefs(story.id),
+                        emotionalBeats = getStoryEmotionalBeats(story.id),
+                    )
+                }
+            }
+            .flowOn(coroutineDispatcher)
 
     suspend fun getChatContext(storyId: String): StoryChatContext {
         val story = getStoryById(storyId)
@@ -470,68 +498,72 @@ class StructuredIndexRepository(
 
     suspend fun replaceStoryCharacters(storyId: String, characters: List<StoryCharacterRecord>) = dbQuery {
         database.transaction {
+            queries.deleteStoryCharacterTraitsByStoryId(storyId)
+            queries.deleteStoryCharacterRolesByStoryId(storyId)
+            queries.deleteStoryCharacterQuirksByStoryId(storyId)
             queries.deleteStoryCharactersByStoryId(storyId)
             characters.forEach { character ->
-                val physical = character.physical
-                queries.insertStoryCharacter(
-                    id = character.id,
-                    story_id = storyId,
-                    name = character.name,
-                    description = character.description,
-                    goal = character.goal,
-                    motivation = character.motivation,
-                    flaw = character.flaw,
-                    temperament = character.temperament,
-                    age = character.age,
-                    pronouns = character.pronouns,
-                    occupation = character.occupation,
-                    backstory = character.backstory,
-                    voice = character.voice,
-                    internal_conflict = character.internalConflict,
-                    appearance = physical?.appearance,
-                    height = physical?.height,
-                    build = physical?.build,
-                    hair = physical?.hair,
-                    eyes = physical?.eyes,
-                    skin_tone = physical?.skinTone,
-                    distinguishing_marks = physical?.distinguishingMarks,
-                    style_notes = physical?.styleNotes,
-                    created_at = character.createdAt,
-                )
-                character.traits.forEachIndexed { index, value ->
-                    queries.insertStoryCharacterTrait(
-                        character_id = character.id,
-                        position = index.toLong(),
-                        value = value,
-                    )
-                }
-                character.roles.forEachIndexed { index, value ->
-                    queries.insertStoryCharacterRole(
-                        character_id = character.id,
-                        position = index.toLong(),
-                        value = value,
-                    )
-                }
-                character.quirks.forEachIndexed { index, value ->
-                    queries.insertStoryCharacterQuirk(
-                        character_id = character.id,
-                        position = index.toLong(),
-                        value = value,
-                    )
-                }
+                insertStoryCharacterInternal(storyId, character)
+                replaceStoryCharacterDetails(character)
             }
         }
     }
 
+    suspend fun insertStoryCharacter(record: StoryCharacterRecord) = dbQuery {
+        database.transaction {
+            insertStoryCharacterInternal(record.storyId, record)
+            replaceStoryCharacterDetails(record)
+        }
+    }
+
+    suspend fun updateStoryCharacter(record: StoryCharacterRecord) = dbQuery {
+        database.transaction {
+            val physical = record.physical
+            queries.updateStoryCharacter(
+                id = record.id,
+                name = record.name,
+                description = record.description,
+                goal = record.goal,
+                motivation = record.motivation,
+                flaw = record.flaw,
+                temperament = record.temperament,
+                age = record.age,
+                pronouns = record.pronouns,
+                occupation = record.occupation,
+                backstory = record.backstory,
+                voice = record.voice,
+                internal_conflict = record.internalConflict,
+                appearance = physical?.appearance,
+                height = physical?.height,
+                build = physical?.build,
+                hair = physical?.hair,
+                eyes = physical?.eyes,
+                skin_tone = physical?.skinTone,
+                distinguishing_marks = physical?.distinguishingMarks,
+                style_notes = physical?.styleNotes,
+            )
+            replaceStoryCharacterDetails(record)
+        }
+    }
+
+    suspend fun deleteStoryCharacter(characterId: String) = dbQuery {
+        database.transaction {
+            queries.deleteStoryCharacterTraitsByCharacterId(characterId)
+            queries.deleteStoryCharacterRolesByCharacterId(characterId)
+            queries.deleteStoryCharacterQuirksByCharacterId(characterId)
+            queries.deleteStoryCharacterById(characterId)
+        }
+    }
+
     suspend fun getStoryCharacters(storyId: String): List<StoryCharacterRecord> = dbQuery {
-        queries.selectCharactersByStoryId(storyId) { id, storyId, name, description, goal, motivation, flaw, temperament, age, pronouns, occupation, backstory, voice, internalConflict, appearance, height, build, hair, eyes, skinTone, distinguishingMarks, styleNotes, createdAt ->
+        val characters = queries.selectCharactersByStoryId(storyId) { id, storyId, name, description, goal, motivation, flaw, temperament, age, pronouns, occupation, backstory, voice, internalConflict, appearance, height, build, hair, eyes, skinTone, distinguishingMarks, styleNotes, createdAt ->
             StoryCharacterRecord(
                 id = id,
                 storyId = storyId,
                 name = name,
                 description = description,
-                traits = getCharacterTraits(id),
-                roles = getCharacterRoles(id),
+                traits = emptyList(),
+                roles = emptyList(),
                 goal = goal,
                 motivation = motivation,
                 flaw = flaw,
@@ -542,7 +574,7 @@ class StructuredIndexRepository(
                 backstory = backstory,
                 voice = voice,
                 internalConflict = internalConflict,
-                quirks = getCharacterQuirks(id),
+                quirks = emptyList(),
                 physical = toPhysicalProfile(
                     appearance = appearance,
                     height = height,
@@ -556,6 +588,70 @@ class StructuredIndexRepository(
                 createdAt = createdAt,
             )
         }.executeAsList()
+
+        characters.map { character ->
+            character.copy(
+                traits = getCharacterTraits(character.id),
+                roles = getCharacterRoles(character.id),
+                quirks = getCharacterQuirks(character.id),
+            )
+        }
+    }
+
+    private fun insertStoryCharacterInternal(storyId: String, character: StoryCharacterRecord) {
+        val physical = character.physical
+        queries.insertStoryCharacter(
+            id = character.id,
+            story_id = storyId,
+            name = character.name,
+            description = character.description,
+            goal = character.goal,
+            motivation = character.motivation,
+            flaw = character.flaw,
+            temperament = character.temperament,
+            age = character.age,
+            pronouns = character.pronouns,
+            occupation = character.occupation,
+            backstory = character.backstory,
+            voice = character.voice,
+            internal_conflict = character.internalConflict,
+            appearance = physical?.appearance,
+            height = physical?.height,
+            build = physical?.build,
+            hair = physical?.hair,
+            eyes = physical?.eyes,
+            skin_tone = physical?.skinTone,
+            distinguishing_marks = physical?.distinguishingMarks,
+            style_notes = physical?.styleNotes,
+            created_at = character.createdAt,
+        )
+    }
+
+    private fun replaceStoryCharacterDetails(character: StoryCharacterRecord) {
+        queries.deleteStoryCharacterTraitsByCharacterId(character.id)
+        queries.deleteStoryCharacterRolesByCharacterId(character.id)
+        queries.deleteStoryCharacterQuirksByCharacterId(character.id)
+        character.traits.forEachIndexed { index, value ->
+            queries.insertStoryCharacterTrait(
+                character_id = character.id,
+                position = index.toLong(),
+                value = value,
+            )
+        }
+        character.roles.forEachIndexed { index, value ->
+            queries.insertStoryCharacterRole(
+                character_id = character.id,
+                position = index.toLong(),
+                value = value,
+            )
+        }
+        character.quirks.forEachIndexed { index, value ->
+            queries.insertStoryCharacterQuirk(
+                character_id = character.id,
+                position = index.toLong(),
+                value = value,
+            )
+        }
     }
 
     fun observeStoryCharacters(storyId: String): Flow<List<StoryCharacterRecord>> =
@@ -565,8 +661,8 @@ class StructuredIndexRepository(
                 storyId = storyId,
                 name = name,
                 description = description,
-                traits = getCharacterTraits(id),
-                roles = getCharacterRoles(id),
+                traits = emptyList(),
+                roles = emptyList(),
                 goal = goal,
                 motivation = motivation,
                 flaw = flaw,
@@ -577,7 +673,7 @@ class StructuredIndexRepository(
                 backstory = backstory,
                 voice = voice,
                 internalConflict = internalConflict,
-                quirks = getCharacterQuirks(id),
+                quirks = emptyList(),
                 physical = toPhysicalProfile(
                     appearance = appearance,
                     height = height,
@@ -590,7 +686,19 @@ class StructuredIndexRepository(
                 ),
                 createdAt = createdAt,
             )
-        }.asFlow().mapToList(Dispatchers.IO)
+        }
+            .asFlow()
+            .mapToList(coroutineDispatcher)
+            .map { characters ->
+                characters.map { character ->
+                    character.copy(
+                        traits = getCharacterTraits(character.id),
+                        roles = getCharacterRoles(character.id),
+                        quirks = getCharacterQuirks(character.id),
+                    )
+                }
+            }
+            .flowOn(coroutineDispatcher)
 
     suspend fun upsertVolume(record: StoryVolumeRecord) = dbQuery {
         database.transaction {
@@ -633,7 +741,7 @@ class StructuredIndexRepository(
     }
 
     suspend fun getVolumesByStory(storyId: String): List<StoryVolumeRecord> = dbQuery {
-        queries.selectVolumesByStoryId(storyId) { id, storyId, number, title, summary, targetWordCount, status, notes, createdAt, updatedAt ->
+        val volumes = queries.selectVolumesByStoryId(storyId) { id, storyId, number, title, summary, targetWordCount, status, notes, createdAt, updatedAt ->
             StoryVolumeRecord(
                 id = id,
                 storyId = storyId,
@@ -645,11 +753,15 @@ class StructuredIndexRepository(
                     status = status?.let(ContentStatus.Companion::fromDb),
                     notes = notes,
                 ),
-                keyEvents = getVolumeKeyEvents(id),
+                keyEvents = emptyList(),
                 createdAt = createdAt,
                 updatedAt = updatedAt,
             )
         }.executeAsList()
+
+        volumes.map { volume ->
+            volume.copy(keyEvents = getVolumeKeyEvents(volume.id))
+        }
     }
 
     fun observeVolumesByStory(storyId: String): Flow<List<StoryVolumeRecord>> =
@@ -665,11 +777,19 @@ class StructuredIndexRepository(
                     status = status?.let(ContentStatus.Companion::fromDb),
                     notes = notes,
                 ),
-                keyEvents = getVolumeKeyEvents(id),
+                keyEvents = emptyList(),
                 createdAt = createdAt,
                 updatedAt = updatedAt,
             )
-        }.asFlow().mapToList(Dispatchers.IO)
+        }
+            .asFlow()
+            .mapToList(coroutineDispatcher)
+            .map { volumes ->
+                volumes.map { volume ->
+                    volume.copy(keyEvents = getVolumeKeyEvents(volume.id))
+                }
+            }
+            .flowOn(coroutineDispatcher)
 
     suspend fun upsertChapter(record: StoryChapterRecord) = dbQuery {
         database.transaction {
@@ -722,7 +842,7 @@ class StructuredIndexRepository(
     }
 
     suspend fun getChaptersByVolume(volumeId: String): List<StoryChapterRecord> = dbQuery {
-        queries.selectChaptersByVolumeId(volumeId) { id, volumeId, number, title, summary, contentRef, contentType, contentChecksum, contentUpdatedAt, contentRange, wordCount, targetWordCount, status, createdAt, updatedAt ->
+        val chapters = queries.selectChaptersByVolumeId(volumeId) { id, volumeId, number, title, summary, contentRef, contentType, contentChecksum, contentUpdatedAt, contentRange, wordCount, targetWordCount, status, createdAt, updatedAt ->
             StoryChapterRecord(
                 id = id,
                 volumeId = volumeId,
@@ -737,13 +857,17 @@ class StructuredIndexRepository(
                     contentRange = contentRange,
                     wordCount = wordCount,
                 ),
-                keyEvents = getChapterKeyEvents(id),
+                keyEvents = emptyList(),
                 targetWordCount = targetWordCount,
                 status = status?.let(ContentStatus.Companion::fromDb),
                 createdAt = createdAt,
                 updatedAt = updatedAt,
             )
         }.executeAsList()
+
+        chapters.map { chapter ->
+            chapter.copy(keyEvents = getChapterKeyEvents(chapter.id))
+        }
     }
 
     fun observeChaptersByVolume(volumeId: String): Flow<List<StoryChapterRecord>> =
@@ -762,13 +886,21 @@ class StructuredIndexRepository(
                     contentRange = contentRange,
                     wordCount = wordCount,
                 ),
-                keyEvents = getChapterKeyEvents(id),
+                keyEvents = emptyList(),
                 targetWordCount = targetWordCount,
                 status = status?.let(ContentStatus.Companion::fromDb),
                 createdAt = createdAt,
                 updatedAt = updatedAt,
             )
-        }.asFlow().mapToList(Dispatchers.IO)
+        }
+            .asFlow()
+            .mapToList(coroutineDispatcher)
+            .map { chapters ->
+                chapters.map { chapter ->
+                    chapter.copy(keyEvents = getChapterKeyEvents(chapter.id))
+                }
+            }
+            .flowOn(coroutineDispatcher)
 
     suspend fun upsertLocation(record: StoryLocationRecord) = dbQuery {
         database.transaction {
@@ -799,8 +931,15 @@ class StructuredIndexRepository(
         }
     }
 
+    suspend fun deleteStoryLocation(locationId: String) = dbQuery {
+        database.transaction {
+            queries.deleteStoryLocationTagsByLocationId(locationId)
+            queries.deleteStoryLocationById(locationId)
+        }
+    }
+
     suspend fun getLocationsByStory(storyId: String): List<StoryLocationRecord> = dbQuery {
-        queries.selectLocationsByStoryId(storyId) { id, storyId, name, description, createdAt ->
+        val locations = queries.selectLocationsByStoryId(storyId) { id, storyId, name, description, createdAt ->
             StoryLocationRecord(
                 id = id,
                 storyId = storyId,
@@ -808,10 +947,14 @@ class StructuredIndexRepository(
                     name = name,
                     description = description,
                 ),
-                tags = getLocationTags(id),
+                tags = emptyList(),
                 createdAt = createdAt,
             )
         }.executeAsList()
+
+        locations.map { location ->
+            location.copy(tags = getLocationTags(location.id))
+        }
     }
 
     suspend fun replaceLocationsByStory(storyId: String, locations: List<StoryLocationRecord>) = dbQuery {
@@ -864,6 +1007,10 @@ class StructuredIndexRepository(
                 )
             }
         }
+    }
+
+    suspend fun deleteStoryArc(arcId: String) = dbQuery {
+        queries.deleteStoryArcById(arcId)
     }
 
     suspend fun getArcsByStory(storyId: String): List<StoryArcRecord> = dbQuery {
@@ -1007,6 +1154,7 @@ class StructuredIndexRepository(
 
     suspend fun replaceScenesByChapter(chapterId: String, scenes: List<StorySceneRecord>) = dbQuery {
         database.transaction {
+            queries.deleteStorySceneKeyEventsByChapterId(chapterId)
             queries.deleteScenesByChapterId(chapterId)
             scenes.forEach { scene ->
                 val context = scene.context
@@ -1049,6 +1197,28 @@ class StructuredIndexRepository(
                 )
             }
         }
+    }
+
+    suspend fun insertStoryFact(record: StoryFactRecord) = dbQuery {
+        queries.insertStoryFact(
+            id = record.id,
+            story_id = record.storyId,
+            fact_type = record.factType.name,
+            content = record.content,
+            created_at = record.createdAt,
+        )
+    }
+
+    suspend fun updateStoryFact(record: StoryFactRecord) = dbQuery {
+        queries.updateStoryFact(
+            id = record.id,
+            fact_type = record.factType.name,
+            content = record.content,
+        )
+    }
+
+    suspend fun deleteStoryFact(factId: String) = dbQuery {
+        queries.deleteStoryFactById(factId)
     }
 
     suspend fun getFactsByStory(storyId: String): List<StoryFactRecord> = dbQuery {

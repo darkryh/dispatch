@@ -1,33 +1,37 @@
 package com.ead.dispatch.sample.presentation.chat
 
 import ai.koog.prompt.message.Message
+import ai.koog.prompt.streaming.StreamFrame
 import com.ead.dispatch.navigation.NavController
 import com.ead.dispatch.navigation.navigate
 import com.ead.dispatch.navigation.toRoute
 import com.ead.dispatch.runtime.SavedStateHandle
+import com.ead.dispatch.sample.domain.AIProvider
 import com.ead.dispatch.sample.domain.CommandManager
 import com.ead.dispatch.sample.domain.SessionManager
 import com.ead.dispatch.sample.domain.Storage
 import com.ead.dispatch.sample.domain.agents.ChatAgent
-import com.ead.dispatch.sample.domain.agents.chat_agent.ChatInputRequest
+import com.ead.dispatch.sample.domain.agents.chat_agent.ChatRequest
 import com.ead.dispatch.sample.domain.model.message.CliMessage
 import com.ead.dispatch.sample.domain.model.message.CliMessageRole
 import com.ead.dispatch.sample.domain.model.session.Session
 import com.ead.dispatch.sample.domain.model.story.WriterMode
 import com.ead.dispatch.sample.domain.util.extension.toCliMessage
-import com.ead.dispatch.sample.navigation.ChatRoute
 import com.ead.dispatch.sample.navigation.CharacterRoute
+import com.ead.dispatch.sample.navigation.ChatRoute
 import com.ead.dispatch.sample.navigation.HelpRoute
 import com.ead.dispatch.sample.navigation.StoryInfoRoute
 import com.ead.dispatch.sample.presentation.chat.event.ChatEvent
 import com.ead.dispatch.sample.presentation.commands.CommandAction
 import com.ead.dispatch.viewmodel.ViewModel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlin.coroutines.coroutineContext
 
 /**
  * ViewModel for the chat screen with stub responses.
@@ -58,6 +62,8 @@ class ChatViewModel(
     val writerMode: StateFlow<WriterMode> = _writerMode.asStateFlow()
 
     private var countWriterMode = 0
+    private var activeStreamJob: Job? = null
+    private var cancelRequested = false
 
     init {
         val sessionId = route.conversationId?.trim().takeIf { !it.isNullOrEmpty() }
@@ -71,7 +77,7 @@ class ChatViewModel(
     }
 
     private suspend fun loadMessagesForSession(sessionId: String) {
-        val checkpoints = storageProvider.getCheckpoints(sessionId)
+        val checkpoints = storageProvider.getCheckpoints(AIProvider.getChatAgentId(sessionId))
 
         val history = checkpoints
             .maxByOrNull { it.createdAt }
@@ -124,6 +130,12 @@ class ChatViewModel(
                     else -> WriterMode.CHAT
                 }
             }
+            is ChatEvent.OnCancelProcessing -> {
+                cancelRequested = true
+                activeStreamJob?.cancel()
+                activeStreamJob = null
+                _isProcessing.value = false
+            }
         }
     }
 
@@ -165,28 +177,90 @@ class ChatViewModel(
 
             _isProcessing.value = true
 
-            val assistantResponse  = chatAgent.run(
+            val assistantStreamingResponse = chatAgent.run(
                 session = session,
-                input = ChatInputRequest(
+                input = ChatRequest(
                     text = input,
+                    storyId = session.id,
                 )
             )
 
+            cancelRequested = false
+            val job = viewModelScope.launch(Dispatchers.IO) {
+                val currentJob = coroutineContext[Job]
+                try {
+                    assistantStreamingResponse.collect { frame ->
+                        if (cancelRequested) {
+                            return@collect
+                        }
+                    when (frame) {
+                        is StreamFrame.Append -> {
+                            _isProcessing.value = true
+                            if (frame.text.isEmpty()) {
+                                return@collect
+                            }
+                            _messages.update { messages ->
+                                if (messages.isEmpty()) {
+                                    return@update messages + CliMessage(
+                                        data = frame.text,
+                                        role = CliMessageRole.ASSISTANT
+                                    )
+                                }
 
-            _messages.value = messages.value + CliMessage(
-                data = assistantResponse,
-                role = CliMessageRole.ASSISTANT
-            )
+                                val updated = messages.toMutableList()
+                                val lastIndex = updated.lastIndex
+                                val existing = updated[lastIndex]
 
-            // Update session after receiving response (increment count again)
-            sessionManager.updateSession(
-                sessionId = session.id,
-                title = _messages.value.lastOrNull { it.role == CliMessageRole.USER }?.data,
-                incrementMessageCount = true
-            )
+                                if (existing.role != CliMessageRole.ASSISTANT) {
+                                    updated.add(
+                                        CliMessage(
+                                            data = frame.text,
+                                            role = CliMessageRole.ASSISTANT
+                                        )
+                                    )
+                                } else {
+                                    updated[lastIndex] = existing.copy(data = existing.data + frame.text)
+                                }
+
+                                updated
+                            }
+                        }
+                        is StreamFrame.ToolCall -> {
+                            _isProcessing.value = true
+
+                            _messages.update { messages ->
+                                messages + CliMessage(
+                                    toolId = frame.id,
+                                    toolName = frame.name,
+                                    data = frame.content,
+                                    role = CliMessageRole.TOOL
+                                )
+                            }
+                        }
+                        is StreamFrame.End -> {
+                            // Update session after receiving response (increment count again)
+                            sessionManager.updateSession(
+                                sessionId = session.id,
+                                title = _messages.value.lastOrNull { it.role == CliMessageRole.USER }?.data,
+                                incrementMessageCount = true
+                            )
+                            _isProcessing.value = false
+                            if (activeStreamJob === currentJob) {
+                                activeStreamJob = null
+                            }
+                        }
+                    }
+                    }
+                } finally {
+                    if (activeStreamJob === currentJob) {
+                        activeStreamJob = null
+                    }
+                    _isProcessing.value = false
+                }
+            }
+            activeStreamJob = job
 
             onEvent(ChatEvent.OnClearTextField)
-            _isProcessing.value = false
         }
     }
 

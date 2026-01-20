@@ -1,7 +1,9 @@
 package com.ead.dispatch.sample.data.db.entities
 
 import com.ead.dispatch.sample.data.db.type.StoryFactType
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class StoryFactRecord(
     /** Stable identifier for the fact record. */
     val id: String,

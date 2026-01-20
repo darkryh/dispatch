@@ -9,6 +9,7 @@ enum class CliMessageRole {
 
     /** Response from the assistant */
     ASSISTANT,
+    TOOL,
 
     /** System message (commands, notifications) */
     SYSTEM

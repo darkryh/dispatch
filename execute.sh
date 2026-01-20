@@ -16,7 +16,6 @@ if [ ! -f "$BIN_FILE" ]; then
 fi
 
 echo "Launching Dispatch Sample..."
-export DISPATCH_DB_IN_MEMORY=true
 if [ -t 0 ] && [ -t 1 ]; then
     exec "$BIN_FILE" "$@"
 else

@@ -21,6 +21,12 @@ fun CliMessage.toMessage(): Message {
             content = this.data,
             metaInfo = ResponseMetaInfo(timestamp = this.timestamp)
         )
+        CliMessageRole.TOOL -> Message.Tool.Call(
+            id = this.toolId,
+            tool = requireNotNull(this.toolName),
+            content = this.data,
+            metaInfo = ResponseMetaInfo(timestamp = this.timestamp)
+        )
         CliMessageRole.SYSTEM -> Message.System(
             content = this.data,
             metaInfo = RequestMetaInfo(timestamp = this.timestamp)

@@ -5,7 +5,9 @@ import com.ead.dispatch.sample.data.db.entities.StoryCharacterRecord
 import com.ead.dispatch.sample.data.db.entities.StoryFactRecord
 import com.ead.dispatch.sample.data.db.entities.StoryLocationRecord
 import com.ead.dispatch.sample.data.db.entities.StoryRecord
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class StoryChatContext(
     val story: StoryRecord?,
     val characters: List<StoryCharacterRecord> = emptyList(),

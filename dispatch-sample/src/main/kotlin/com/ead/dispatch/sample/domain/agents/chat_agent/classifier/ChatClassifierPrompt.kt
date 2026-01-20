@@ -8,9 +8,9 @@ import ai.koog.prompt.markdown.markdown
 internal fun chatClassifierPrompt(
     flashModel: String,
     proModel: String,
-    promptScope : (PromptBuilder.() -> Unit)
+    promptBuilder : (PromptBuilder.() -> Unit)
 ): Prompt =
-    prompt("chat-mode-classifier") {
+    prompt("chat-mode.classifier") {
         system {
             markdown {
                 +"You are a specialized Task Routing AI for a writing assistant."
@@ -154,5 +154,5 @@ internal fun chatClassifierPrompt(
             }
         }
 
-        promptScope()
+        promptBuilder()
     }

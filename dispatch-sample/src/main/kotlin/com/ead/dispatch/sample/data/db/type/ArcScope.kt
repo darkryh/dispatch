@@ -1,5 +1,8 @@
 package com.ead.dispatch.sample.data.db.type
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 enum class ArcScope {
     STORY,
     VOLUME,

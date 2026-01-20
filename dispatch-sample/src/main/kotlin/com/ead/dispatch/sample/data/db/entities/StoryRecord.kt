@@ -1,7 +1,9 @@
 package com.ead.dispatch.sample.data.db.entities
 
 import com.ead.dispatch.sample.data.db.type.ContentStatus
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class StoryRecord(
     /** Stable identifier for the story record. */
     val id: String,
@@ -28,6 +30,7 @@ data class StoryRecord(
     /** Last update time for metadata changes. */
     val updatedAt: Long,
 ) {
+    @Serializable
     data class StoryStyleProfile(
         /** One-line logline for quick summaries. */
         val logline: String? = null,

@@ -7,6 +7,7 @@ import com.ead.dispatch.sample.data.repositories.StructuredIndexRepository
 import com.ead.dispatch.sample.domain.CommandManager
 import com.ead.dispatch.sample.domain.SessionManager
 import com.ead.dispatch.sample.domain.agents.ChatAgent
+import com.ead.dispatch.sample.domain.agents.chat_agent.tools.ChatCrudTools
 import com.ead.dispatch.sample.presentation.characters.CharacterViewModel
 import com.ead.dispatch.sample.presentation.chat.ChatViewModel
 import com.ead.dispatch.sample.presentation.session.SessionViewModel
@@ -19,7 +20,12 @@ val module = dispatchModule {
     single { CommandManager() }
     single { SessionManager(repository = get()) }
     single {
-        ChatAgent()
+        val repository : StructuredIndexRepository = get()
+
+        ChatAgent(
+            repository = repository,
+            chatCrudTools = ChatCrudTools(repository)
+        )
     }
 
     viewModel { (savedStateHandle: SavedStateHandle) ->

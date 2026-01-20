@@ -1,5 +1,8 @@
 package com.ead.dispatch.sample.data.db.entities
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class StoryCharacterRecord(
     /** Stable identifier for the character record. */
     val id: String,
@@ -40,6 +43,7 @@ data class StoryCharacterRecord(
     /** Creation time for audits. */
     val createdAt: Long,
 ) {
+    @Serializable
     data class PhysicalProfile(
         /** Short physical appearance summary. */
         val appearance: String? = null,

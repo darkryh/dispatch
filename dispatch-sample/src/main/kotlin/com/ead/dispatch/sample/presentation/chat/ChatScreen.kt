@@ -12,6 +12,7 @@ import com.ead.dispatch.navigation.NavController
 import com.ead.dispatch.runtime.DisposableEffect
 import com.ead.dispatch.runtime.LocalKeyboardInterceptor
 import com.ead.dispatch.runtime.LocalTheme
+import com.ead.dispatch.runtime.dispatchScope
 import com.ead.dispatch.sample.domain.CommandManager
 import com.ead.dispatch.sample.domain.model.story.WriterMode
 import com.ead.dispatch.sample.presentation.chat.components.*
@@ -48,6 +49,7 @@ fun ChatScreen(navController: NavController) {
 
     val writerMode by viewModel.writerMode.collectAsState()
     val theme = LocalTheme.current
+    val scope = dispatchScope()
 
     // Register Shift+Tab handler for mode switching without replacing InputTextField handlers.
     val keyboardInterceptor = LocalKeyboardInterceptor.current
@@ -61,7 +63,15 @@ fun ChatScreen(navController: NavController) {
                 false
             }
         }
-        onDispose { dispose() }
+        val disposeEsc = scope.addKeyEventHandler { event ->
+            if ((event.key == "Escape" || event.key == "Esc") && isProcessing) {
+                viewModel.onEvent(ChatEvent.OnCancelProcessing)
+            }
+        }
+        onDispose {
+            dispose()
+            disposeEsc()
+        }
     }
 
     // Define available commands for the command palette

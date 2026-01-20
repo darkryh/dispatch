@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package com.ead.dispatch.sample.domain.agents.chat_agent.tools
 
 import ai.koog.agents.core.tools.annotations.LLMDescription
@@ -9,425 +11,921 @@ import com.ead.dispatch.sample.data.db.entities.StoryFactRecord
 import com.ead.dispatch.sample.data.db.entities.StoryLocationRecord
 import com.ead.dispatch.sample.data.db.entities.StoryRecord
 import com.ead.dispatch.sample.data.db.type.ArcScope
-import com.ead.dispatch.sample.data.db.type.ContentStatus
 import com.ead.dispatch.sample.data.db.type.StoryFactType
 import com.ead.dispatch.sample.data.repositories.StructuredIndexRepository
+import com.ead.dispatch.sample.domain.agents.chat_agent.tools.model.CharacterPhysicalProfileRequest
+import com.ead.dispatch.sample.domain.agents.chat_agent.tools.model.CreateArcRequest
+import com.ead.dispatch.sample.domain.agents.chat_agent.tools.model.CreateCharacterRequest
+import com.ead.dispatch.sample.domain.agents.chat_agent.tools.model.CreateFactRequest
+import com.ead.dispatch.sample.domain.agents.chat_agent.tools.model.CreateLocationRequest
+import com.ead.dispatch.sample.domain.agents.chat_agent.tools.model.OperationEntity
+import com.ead.dispatch.sample.domain.agents.chat_agent.tools.model.OperationOutcome
+import com.ead.dispatch.sample.domain.agents.chat_agent.tools.model.QueryOutcome
+import com.ead.dispatch.sample.domain.agents.chat_agent.tools.model.StoryStyleProfileRequest
+import com.ead.dispatch.sample.domain.agents.chat_agent.tools.model.StoryUpsertRequest
+import com.ead.dispatch.sample.domain.agents.chat_agent.tools.model.ToolError
+import com.ead.dispatch.sample.domain.agents.chat_agent.tools.model.ToolResult
+import com.ead.dispatch.sample.domain.agents.chat_agent.tools.model.UpdateArcRequest
+import com.ead.dispatch.sample.domain.agents.chat_agent.tools.model.UpdateCharacterRequest
+import com.ead.dispatch.sample.domain.agents.chat_agent.tools.model.UpdateFactRequest
+import com.ead.dispatch.sample.domain.agents.chat_agent.tools.model.UpdateLocationRequest
+import com.ead.dispatch.sample.domain.model.story.StoryChatContext
 import kotlinx.datetime.Clock
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.contentOrNull
-import kotlinx.serialization.json.jsonPrimitive
 import java.util.UUID
 
 class ChatCrudTools(
     private val repository: StructuredIndexRepository,
 ) : ToolSet {
-    private val json = Json { ignoreUnknownKeys = true }
-
     @Tool
-    @LLMDescription("Apply a chat-mode CRUD action to story data (story, character, location, arc, fact).")
-    suspend fun applyAction(
-        @LLMDescription("Action: create|update|delete")
-        action: String,
-        @LLMDescription("Entity: story|character|location|arc|fact")
-        entity: String,
+    @LLMDescription("Upsert story metadata (title, genre, setting, plot outline, style).")
+    suspend fun upsertStory(
         @LLMDescription("Story/session id for scoping")
         storyId: String,
-        @LLMDescription("Entity id for update/delete; optional for story updates")
-        entityId: String? = null,
-        @LLMDescription("Fields json object as a string, e.g. {\"name\":\"Ava\",\"description\":\"...\"}")
-        fieldsJson: String = "{}",
-    ): String {
-        val fields = parseFields(fieldsJson)
-        val actionType = action.lowercase()
-        val entityType = entity.lowercase()
-        return when (entityType) {
-            "story" -> handleStoryAction(storyId, actionType, fields)
-            "character" -> handleCharacterAction(storyId, actionType, entityId, fields)
-            "location" -> handleLocationAction(storyId, actionType, entityId, fields)
-            "arc" -> handleArcAction(storyId, actionType, entityId, fields)
-            "fact" -> handleFactAction(storyId, actionType, entityId, fields)
-            else -> "Warning: Unsupported entity '$entity'."
-        }
+        @LLMDescription("Story metadata to upsert")
+        request: StoryUpsertRequest = StoryUpsertRequest(),
+    ): ToolResult<OperationOutcome> {
+        return onStoryUpdate(storyId, request)
     }
 
-    private suspend fun handleStoryAction(
+    @Tool
+    @LLMDescription("Get the full chat context (story, characters, locations, arcs, facts).")
+    suspend fun getChatContext(
+        @LLMDescription("Story/session id for scoping")
         storyId: String,
-        actionType: String,
-        fields: Map<String, String>,
-    ): String {
-        if (actionType == "delete") {
-            return "Warning: Story deletion is not supported in chat mode."
-        }
-
-        val existing = repository.getStoryById(storyId)
-            ?: return "Warning: Story record not found for session."
-
-        val currentStyle = existing.styleProfile
-        val updatedStyle = currentStyle?.copy(
-            logline = fields["logline"] ?: currentStyle.logline,
-            theme = fields["theme"] ?: currentStyle.theme,
-            tone = fields["tone"] ?: currentStyle.tone,
-            stakes = fields["stakes"] ?: currentStyle.stakes,
-            pov = fields["pov"] ?: currentStyle.pov,
-            tense = fields["tense"] ?: currentStyle.tense,
-            targetAudience = fields["target_audience"] ?: currentStyle.targetAudience,
-            pacing = fields["pacing"] ?: currentStyle.pacing,
-        ) ?: StoryRecord.StoryStyleProfile(
-            logline = fields["logline"],
-            theme = fields["theme"],
-            tone = fields["tone"],
-            stakes = fields["stakes"],
-            pov = fields["pov"],
-            tense = fields["tense"],
-            targetAudience = fields["target_audience"],
-            pacing = fields["pacing"],
+    ): ToolResult<QueryOutcome<StoryChatContext>> {
+        repository.getStoryById(storyId)
+            ?: return failure("NOT_FOUND", "Story record not found for session.")
+        val context = repository.getChatContext(storyId)
+        return querySuccess(
+            entity = OperationEntity.STORY,
+            storyId = storyId,
+            entityId = context.story?.id,
+            summary = "Loaded full chat context.",
+            payload = context,
         )
+    }
+
+    @Tool
+    @LLMDescription("Get story metadata for the current session.")
+    suspend fun getStory(
+        @LLMDescription("Story/session id for scoping")
+        storyId: String,
+    ): ToolResult<QueryOutcome<StoryRecord>> {
+        val story = repository.getStoryById(storyId)
+            ?: return failure("NOT_FOUND", "Story record not found for session.")
+        return querySuccess(
+            entity = OperationEntity.STORY,
+            storyId = storyId,
+            entityId = story.id,
+            summary = "Loaded story metadata.",
+            payload = story,
+        )
+    }
+
+    @Tool
+    @LLMDescription("List all characters in the story.")
+    suspend fun listCharacters(
+        @LLMDescription("Story/session id for scoping")
+        storyId: String,
+    ): ToolResult<QueryOutcome<List<StoryCharacterRecord>>> {
+        val story = repository.getStoryById(storyId)
+            ?: return failure("NOT_FOUND", "Story record not found for session.")
+        val characters = repository.getStoryCharacters(storyId)
+        return querySuccess(
+            entity = OperationEntity.CHARACTER,
+            storyId = storyId,
+            entityId = story.id,
+            summary = "Loaded ${characters.size} character(s).",
+            payload = characters,
+        )
+    }
+
+    @Tool
+    @LLMDescription("Get a character by id.")
+    suspend fun getCharacter(
+        @LLMDescription("Story/session id for scoping")
+        storyId: String,
+        @LLMDescription("Character id to fetch")
+        entityId: String,
+    ): ToolResult<QueryOutcome<StoryCharacterRecord>> {
+        repository.getStoryById(storyId)
+            ?: return failure("NOT_FOUND", "Story record not found for session.")
+        val character = repository.getStoryCharacters(storyId).firstOrNull { it.id == entityId }
+            ?: return failure("NOT_FOUND", "Character with id '$entityId' not found.")
+        return querySuccess(
+            entity = OperationEntity.CHARACTER,
+            storyId = storyId,
+            entityId = character.id,
+            summary = "Loaded character '${character.name}'.",
+            payload = character,
+        )
+    }
+
+    @Tool
+    @LLMDescription("Search characters by name and/or role. Returns a shortlist for disambiguation.")
+    suspend fun searchCharacters(
+        @LLMDescription("Story/session id for scoping")
+        storyId: String,
+        @LLMDescription("Case-insensitive substring match for character name")
+        nameContains: String? = null,
+        @LLMDescription("Filter by a role label")
+        role: String? = null,
+        @LLMDescription("Max results to return")
+        limit: Int = 5,
+    ): ToolResult<QueryOutcome<List<StoryCharacterRecord>>> {
+        val story = repository.getStoryById(storyId)
+            ?: return failure("NOT_FOUND", "Story record not found for session.")
+        val normalizedName = nameContains?.trim()?.lowercase()
+        val normalizedRole = role?.trim()?.lowercase()
+        val matches = repository.getStoryCharacters(storyId)
+            .asSequence()
+            .filter { character ->
+                val nameMatch = normalizedName?.let { character.name.lowercase().contains(it) } ?: true
+                val roleMatch = normalizedRole?.let { roleFilter ->
+                    character.roles.any { it.lowercase() == roleFilter }
+                } ?: true
+                nameMatch && roleMatch
+            }
+            .take(limit.coerceAtLeast(1))
+            .toList()
+        return querySuccess(
+            entity = OperationEntity.CHARACTER,
+            storyId = storyId,
+            entityId = story.id,
+            summary = "Found ${matches.size} matching character(s).",
+            payload = matches,
+        )
+    }
+
+    @Tool
+    @LLMDescription("List all locations in the story.")
+    suspend fun listLocations(
+        @LLMDescription("Story/session id for scoping")
+        storyId: String,
+    ): ToolResult<QueryOutcome<List<StoryLocationRecord>>> {
+        val story = repository.getStoryById(storyId)
+            ?: return failure("NOT_FOUND", "Story record not found for session.")
+        val locations = repository.getLocationsByStory(storyId)
+        return querySuccess(
+            entity = OperationEntity.LOCATION,
+            storyId = storyId,
+            entityId = story.id,
+            summary = "Loaded ${locations.size} location(s).",
+            payload = locations,
+        )
+    }
+
+    @Tool
+    @LLMDescription("Get a location by id.")
+    suspend fun getLocation(
+        @LLMDescription("Story/session id for scoping")
+        storyId: String,
+        @LLMDescription("Location id to fetch")
+        entityId: String,
+    ): ToolResult<QueryOutcome<StoryLocationRecord>> {
+        repository.getStoryById(storyId)
+            ?: return failure("NOT_FOUND", "Story record not found for session.")
+        val location = repository.getLocationsByStory(storyId).firstOrNull { it.id == entityId }
+            ?: return failure("NOT_FOUND", "Location with id '$entityId' not found.")
+        return querySuccess(
+            entity = OperationEntity.LOCATION,
+            storyId = storyId,
+            entityId = location.id,
+            summary = "Loaded location '${location.profile.name}'.",
+            payload = location,
+        )
+    }
+
+    @Tool
+    @LLMDescription("Search locations by name and/or tag. Returns a shortlist for disambiguation.")
+    suspend fun searchLocations(
+        @LLMDescription("Story/session id for scoping")
+        storyId: String,
+        @LLMDescription("Case-insensitive substring match for location name")
+        nameContains: String? = null,
+        @LLMDescription("Filter by a tag")
+        tag: String? = null,
+        @LLMDescription("Max results to return")
+        limit: Int = 5,
+    ): ToolResult<QueryOutcome<List<StoryLocationRecord>>> {
+        val story = repository.getStoryById(storyId)
+            ?: return failure("NOT_FOUND", "Story record not found for session.")
+        val normalizedName = nameContains?.trim()?.lowercase()
+        val normalizedTag = tag?.trim()?.lowercase()
+        val matches = repository.getLocationsByStory(storyId)
+            .asSequence()
+            .filter { location ->
+                val nameMatch = normalizedName?.let {
+                    location.profile.name.lowercase().contains(it)
+                } ?: true
+                val tagMatch = normalizedTag?.let { tagFilter ->
+                    location.tags.any { it.lowercase() == tagFilter }
+                } ?: true
+                nameMatch && tagMatch
+            }
+            .take(limit.coerceAtLeast(1))
+            .toList()
+        return querySuccess(
+            entity = OperationEntity.LOCATION,
+            storyId = storyId,
+            entityId = story.id,
+            summary = "Found ${matches.size} matching location(s).",
+            payload = matches,
+        )
+    }
+
+    @Tool
+    @LLMDescription("List all arcs in the story.")
+    suspend fun listArcs(
+        @LLMDescription("Story/session id for scoping")
+        storyId: String,
+    ): ToolResult<QueryOutcome<List<StoryArcRecord>>> {
+        val story = repository.getStoryById(storyId)
+            ?: return failure("NOT_FOUND", "Story record not found for session.")
+        val arcs = repository.getArcsByStory(storyId)
+        return querySuccess(
+            entity = OperationEntity.ARC,
+            storyId = storyId,
+            entityId = story.id,
+            summary = "Loaded ${arcs.size} arc(s).",
+            payload = arcs,
+        )
+    }
+
+    @Tool
+    @LLMDescription("Get an arc by id.")
+    suspend fun getArc(
+        @LLMDescription("Story/session id for scoping")
+        storyId: String,
+        @LLMDescription("Arc id to fetch")
+        entityId: String,
+    ): ToolResult<QueryOutcome<StoryArcRecord>> {
+        repository.getStoryById(storyId)
+            ?: return failure("NOT_FOUND", "Story record not found for session.")
+        val arc = repository.getArcsByStory(storyId).firstOrNull { it.id == entityId }
+            ?: return failure("NOT_FOUND", "Arc with id '$entityId' not found.")
+        return querySuccess(
+            entity = OperationEntity.ARC,
+            storyId = storyId,
+            entityId = arc.id,
+            summary = "Loaded arc '${arc.title}'.",
+            payload = arc,
+        )
+    }
+
+    @Tool
+    @LLMDescription("List all facts in the story.")
+    suspend fun listFacts(
+        @LLMDescription("Story/session id for scoping")
+        storyId: String,
+    ): ToolResult<QueryOutcome<List<StoryFactRecord>>> {
+        val story = repository.getStoryById(storyId)
+            ?: return failure("NOT_FOUND", "Story record not found for session.")
+        val facts = repository.getFactsByStory(storyId)
+        return querySuccess(
+            entity = OperationEntity.FACT,
+            storyId = storyId,
+            entityId = story.id,
+            summary = "Loaded ${facts.size} fact(s).",
+            payload = facts,
+        )
+    }
+
+    @Tool
+    @LLMDescription("Get a fact by id.")
+    suspend fun getFact(
+        @LLMDescription("Story/session id for scoping")
+        storyId: String,
+        @LLMDescription("Fact id to fetch")
+        entityId: String,
+    ): ToolResult<QueryOutcome<StoryFactRecord>> {
+        repository.getStoryById(storyId)
+            ?: return failure("NOT_FOUND", "Story record not found for session.")
+        val fact = repository.getFactsByStory(storyId).firstOrNull { it.id == entityId }
+            ?: return failure("NOT_FOUND", "Fact with id '$entityId' not found.")
+        return querySuccess(
+            entity = OperationEntity.FACT,
+            storyId = storyId,
+            entityId = fact.id,
+            summary = "Loaded fact '${fact.factType.name}'.",
+            payload = fact,
+        )
+    }
+
+    @Tool
+    @LLMDescription("Create a character in the story.")
+    suspend fun createCharacter(
+        @LLMDescription("Story/session id for scoping")
+        storyId: String,
+        @LLMDescription("Character fields to create")
+        request: CreateCharacterRequest,
+    ): ToolResult<OperationOutcome> {
+        return onCharacterCreate(storyId, request)
+    }
+
+    @Tool
+    @LLMDescription("Update a character in the story.")
+    suspend fun updateCharacter(
+        @LLMDescription("Story/session id for scoping")
+        storyId: String,
+        @LLMDescription("Character id to update")
+        entityId: String,
+        @LLMDescription("Character fields to update")
+        request: UpdateCharacterRequest = UpdateCharacterRequest(),
+    ): ToolResult<OperationOutcome> {
+        return onCharacterUpdate(storyId, entityId, request)
+    }
+
+    @Tool
+    @LLMDescription("Delete a character from the story.")
+    suspend fun deleteCharacter(
+        @LLMDescription("Story/session id for scoping")
+        storyId: String,
+        @LLMDescription("Character id to delete")
+        entityId: String,
+    ): ToolResult<OperationOutcome> =
+        onCharacterDelete(storyId, entityId)
+
+    @Tool
+    @LLMDescription("Create a location in the story.")
+    suspend fun createLocation(
+        @LLMDescription("Story/session id for scoping")
+        storyId: String,
+        @LLMDescription("Location fields to create")
+        request: CreateLocationRequest,
+    ): ToolResult<OperationOutcome> {
+        return onLocationCreate(storyId, request)
+    }
+
+    @Tool
+    @LLMDescription("Update a location in the story.")
+    suspend fun updateLocation(
+        @LLMDescription("Story/session id for scoping")
+        storyId: String,
+        @LLMDescription("Location id to update")
+        entityId: String,
+        @LLMDescription("Location fields to update")
+        request: UpdateLocationRequest = UpdateLocationRequest(),
+    ): ToolResult<OperationOutcome> {
+        return onLocationUpdate(storyId, entityId, request)
+    }
+
+    @Tool
+    @LLMDescription("Delete a location from the story.")
+    suspend fun deleteLocation(
+        @LLMDescription("Story/session id for scoping")
+        storyId: String,
+        @LLMDescription("Location id to delete")
+        entityId: String,
+    ): ToolResult<OperationOutcome> =
+        onLocationDelete(storyId, entityId)
+
+    @Tool
+    @LLMDescription("Create an arc in the story.")
+    suspend fun createArc(
+        @LLMDescription("Story/session id for scoping")
+        storyId: String,
+        @LLMDescription("Arc fields to create")
+        request: CreateArcRequest,
+    ): ToolResult<OperationOutcome> {
+        return onArcCreate(storyId, request)
+    }
+
+    @Tool
+    @LLMDescription("Update an arc in the story.")
+    suspend fun updateArc(
+        @LLMDescription("Story/session id for scoping")
+        storyId: String,
+        @LLMDescription("Arc id to update")
+        entityId: String,
+        @LLMDescription("Arc fields to update")
+        request: UpdateArcRequest = UpdateArcRequest(),
+    ): ToolResult<OperationOutcome> {
+        return onArcUpdate(storyId, entityId, request)
+    }
+
+    @Tool
+    @LLMDescription("Delete an arc from the story.")
+    suspend fun deleteArc(
+        @LLMDescription("Story/session id for scoping")
+        storyId: String,
+        @LLMDescription("Arc id to delete")
+        entityId: String,
+    ): ToolResult<OperationOutcome> =
+        onArcDelete(storyId, entityId)
+
+    @Tool
+    @LLMDescription("Create a fact in the story.")
+    suspend fun createFact(
+        @LLMDescription("Story/session id for scoping")
+        storyId: String,
+        @LLMDescription("Fact fields to create")
+        request: CreateFactRequest,
+    ): ToolResult<OperationOutcome> {
+        return onFactCreate(storyId, request)
+    }
+
+    @Tool
+    @LLMDescription("Update a fact in the story.")
+    suspend fun updateFact(
+        @LLMDescription("Story/session id for scoping")
+        storyId: String,
+        @LLMDescription("Fact id to update")
+        entityId: String,
+        @LLMDescription("Fact fields to update")
+        request: UpdateFactRequest = UpdateFactRequest(),
+    ): ToolResult<OperationOutcome> {
+        return onFactUpdate(storyId, entityId, request)
+    }
+
+    @Tool
+    @LLMDescription("Delete a fact from the story.")
+    suspend fun deleteFact(
+        @LLMDescription("Story/session id for scoping")
+        storyId: String,
+        @LLMDescription("Fact id to delete")
+        entityId: String,
+    ): ToolResult<OperationOutcome> =
+        onFactDelete(storyId, entityId)
+
+    private suspend fun onStoryUpdate(
+        storyId: String,
+        request: StoryUpsertRequest,
+    ): ToolResult<OperationOutcome> {
+        val existing = repository.getStoryById(storyId)
+            ?: return failure("NOT_FOUND", "Story record not found for session.")
 
         val updated = existing.copy(
-            title = fields["title"] ?: existing.title,
-            genre = fields["genre"] ?: existing.genre,
-            setting = fields["setting"] ?: existing.setting,
-            plotOutline = fields["plot_outline"] ?: existing.plotOutline,
-            styleProfile = updatedStyle,
+            title = request.title ?: existing.title,
+            genre = request.genre ?: existing.genre,
+            setting = request.setting ?: existing.setting,
+            plotOutline = request.plotOutline ?: existing.plotOutline,
+            status = request.status ?: existing.status,
+            styleProfile = mergeStyleProfile(existing.styleProfile, request.styleProfile),
+            styleRefs = request.styleRefs ?: existing.styleRefs,
+            emotionalBeats = request.emotionalBeats ?: existing.emotionalBeats,
             updatedAt = Clock.System.now().toEpochMilliseconds(),
         )
 
         repository.upsertStory(updated)
-        return "Updated story metadata."
-    }
 
-    private suspend fun handleCharacterAction(
-        storyId: String,
-        actionType: String,
-        entityId: String?,
-        fields: Map<String, String>,
-    ): String {
-        val characters = repository.getStoryCharacters(storyId).toMutableList()
-        val now = Clock.System.now().toEpochMilliseconds()
-
-        return when (actionType) {
-            "create" -> {
-                val name = fields["name"]?.trim().orEmpty()
-                if (name.isBlank()) {
-                    return "Warning: Character name is required."
-                }
-                val record = StoryCharacterRecord(
-                    id = UUID.randomUUID().toString(),
-                    storyId = storyId,
-                    name = name,
-                    description = fields["description"],
-                    traits = splitList(fields["traits"]),
-                    roles = splitList(fields["roles"]),
-                    goal = fields["goal"],
-                    motivation = fields["motivation"],
-                    flaw = fields["flaw"],
-                    temperament = fields["temperament"],
-                    age = fields["age"],
-                    pronouns = fields["pronouns"],
-                    occupation = fields["occupation"],
-                    backstory = fields["backstory"],
-                    voice = fields["voice"],
-                    internalConflict = fields["internal_conflict"],
-                    quirks = splitList(fields["quirks"]),
-                    physical = buildPhysicalProfile(fields),
-                    createdAt = now,
-                )
-                characters.add(record)
-                repository.replaceStoryCharacters(storyId, characters)
-                "Created character '${record.name}'."
-            }
-            "update" -> {
-                val targetId = entityId ?: return "Warning: Character id is required."
-                val index = characters.indexOfFirst { it.id == targetId }
-                if (index == -1) {
-                    return "Warning: Character with id '$targetId' not found."
-                }
-                val current = characters[index]
-                val updated = current.copy(
-                    name = fields["name"] ?: current.name,
-                    description = fields["description"] ?: current.description,
-                    traits = updateList(current.traits, fields["traits"]),
-                    roles = updateList(current.roles, fields["roles"]),
-                    goal = fields["goal"] ?: current.goal,
-                    motivation = fields["motivation"] ?: current.motivation,
-                    flaw = fields["flaw"] ?: current.flaw,
-                    temperament = fields["temperament"] ?: current.temperament,
-                    age = fields["age"] ?: current.age,
-                    pronouns = fields["pronouns"] ?: current.pronouns,
-                    occupation = fields["occupation"] ?: current.occupation,
-                    backstory = fields["backstory"] ?: current.backstory,
-                    voice = fields["voice"] ?: current.voice,
-                    internalConflict = fields["internal_conflict"] ?: current.internalConflict,
-                    quirks = updateList(current.quirks, fields["quirks"]),
-                    physical = mergePhysical(current.physical, fields),
-                )
-                characters[index] = updated
-                repository.replaceStoryCharacters(storyId, characters)
-                "Updated character '${updated.name}'."
-            }
-            "delete" -> {
-                val targetId = entityId ?: return "Warning: Character id is required."
-                val removed = characters.removeIf { it.id == targetId }
-                if (!removed) {
-                    return "Warning: Character with id '$targetId' not found."
-                }
-                repository.replaceStoryCharacters(storyId, characters)
-                "Deleted character '$targetId'."
-            }
-            else -> "Warning: Unsupported action '$actionType' for character."
-        }
-    }
-
-    private suspend fun handleLocationAction(
-        storyId: String,
-        actionType: String,
-        entityId: String?,
-        fields: Map<String, String>,
-    ): String {
-        val locations = repository.getLocationsByStory(storyId).toMutableList()
-        val now = Clock.System.now().toEpochMilliseconds()
-
-        return when (actionType) {
-            "create" -> {
-                val name = fields["name"]?.trim().orEmpty()
-                if (name.isBlank()) {
-                    return "Warning: Location name is required."
-                }
-                val record = StoryLocationRecord(
-                    id = UUID.randomUUID().toString(),
-                    storyId = storyId,
-                    profile = StoryLocationRecord.LocationProfile(
-                        name = name,
-                        description = fields["description"],
-                    ),
-                    tags = splitList(fields["tags"]),
-                    createdAt = now,
-                )
-                locations.add(record)
-                repository.replaceLocationsByStory(storyId, locations)
-                "Created location '${record.profile.name}'."
-            }
-            "update" -> {
-                val targetId = entityId ?: return "Warning: Location id is required."
-                val index = locations.indexOfFirst { it.id == targetId }
-                if (index == -1) {
-                    return "Warning: Location with id '$targetId' not found."
-                }
-                val current = locations[index]
-                val updated = current.copy(
-                    profile = StoryLocationRecord.LocationProfile(
-                        name = fields["name"] ?: current.profile.name,
-                        description = fields["description"] ?: current.profile.description,
-                    ),
-                    tags = updateList(current.tags, fields["tags"]),
-                )
-                locations[index] = updated
-                repository.replaceLocationsByStory(storyId, locations)
-                "Updated location '${updated.profile.name}'."
-            }
-            "delete" -> {
-                val targetId = entityId ?: return "Warning: Location id is required."
-                val removed = locations.removeIf { it.id == targetId }
-                if (!removed) {
-                    return "Warning: Location with id '$targetId' not found."
-                }
-                repository.replaceLocationsByStory(storyId, locations)
-                "Deleted location '$targetId'."
-            }
-            else -> "Warning: Unsupported action '$actionType' for location."
-        }
-    }
-
-    private suspend fun handleArcAction(
-        storyId: String,
-        actionType: String,
-        entityId: String?,
-        fields: Map<String, String>,
-    ): String {
-        val arcs = repository.getArcsByStory(storyId).toMutableList()
-        val now = Clock.System.now().toEpochMilliseconds()
-
-        return when (actionType) {
-            "create" -> {
-                val title = fields["title"]?.trim().orEmpty()
-                if (title.isBlank()) {
-                    return "Warning: Arc title is required."
-                }
-                val record = StoryArcRecord(
-                    id = UUID.randomUUID().toString(),
-                    storyId = storyId,
-                    scopeType = parseArcScope(fields["scope_type"]) ?: ArcScope.STORY,
-                    scopeId = fields["scope_id"],
-                    title = title,
-                    summary = fields["summary"],
-                    status = parseStatus(fields["status"]),
-                    createdAt = now,
-                    updatedAt = now,
-                )
-                arcs.add(record)
-                repository.replaceArcsByStory(storyId, arcs)
-                "Created arc '${record.title}'."
-            }
-            "update" -> {
-                val targetId = entityId ?: return "Warning: Arc id is required."
-                val index = arcs.indexOfFirst { it.id == targetId }
-                if (index == -1) {
-                    return "Warning: Arc with id '$targetId' not found."
-                }
-                val current = arcs[index]
-                val updated = current.copy(
-                    scopeType = parseArcScope(fields["scope_type"]) ?: current.scopeType,
-                    scopeId = fields["scope_id"] ?: current.scopeId,
-                    title = fields["title"] ?: current.title,
-                    summary = fields["summary"] ?: current.summary,
-                    status = parseStatus(fields["status"]) ?: current.status,
-                    updatedAt = now,
-                )
-                arcs[index] = updated
-                repository.replaceArcsByStory(storyId, arcs)
-                "Updated arc '${updated.title}'."
-            }
-            "delete" -> {
-                val targetId = entityId ?: return "Warning: Arc id is required."
-                val removed = arcs.removeIf { it.id == targetId }
-                if (!removed) {
-                    return "Warning: Arc with id '$targetId' not found."
-                }
-                repository.replaceArcsByStory(storyId, arcs)
-                "Deleted arc '$targetId'."
-            }
-            else -> "Warning: Unsupported action '$actionType' for arc."
-        }
-    }
-
-    private suspend fun handleFactAction(
-        storyId: String,
-        actionType: String,
-        entityId: String?,
-        fields: Map<String, String>,
-    ): String {
-        val facts = repository.getFactsByStory(storyId).toMutableList()
-        val now = Clock.System.now().toEpochMilliseconds()
-
-        return when (actionType) {
-            "create" -> {
-                val content = fields["content"]?.trim().orEmpty()
-                if (content.isBlank()) {
-                    return "Warning: Fact content is required."
-                }
-                val record = StoryFactRecord(
-                    id = UUID.randomUUID().toString(),
-                    storyId = storyId,
-                    factType = parseFactType(fields["fact_type"]) ?: StoryFactType.CUSTOM,
-                    content = content,
-                    createdAt = now,
-                )
-                facts.add(0, record)
-                repository.replaceStoryFacts(storyId, facts)
-                "Added fact '${record.factType.name}'."
-            }
-            "update" -> {
-                val targetId = entityId ?: return "Warning: Fact id is required."
-                val index = facts.indexOfFirst { it.id == targetId }
-                if (index == -1) {
-                    return "Warning: Fact with id '$targetId' not found."
-                }
-                val current = facts[index]
-                val updated = current.copy(
-                    factType = parseFactType(fields["fact_type"]) ?: current.factType,
-                    content = fields["content"] ?: current.content,
-                )
-                facts[index] = updated
-                repository.replaceStoryFacts(storyId, facts)
-                "Updated fact '$targetId'."
-            }
-            "delete" -> {
-                val targetId = entityId ?: return "Warning: Fact id is required."
-                val removed = facts.removeIf { it.id == targetId }
-                if (!removed) {
-                    return "Warning: Fact with id '$targetId' not found."
-                }
-                repository.replaceStoryFacts(storyId, facts)
-                "Deleted fact '$targetId'."
-            }
-            else -> "Warning: Unsupported action '$actionType' for fact."
-        }
-    }
-
-    private fun splitList(raw: String?): List<String> =
-        raw?.split(",")
-            ?.map { it.trim() }
-            ?.filter { it.isNotEmpty() }
-            ?: emptyList()
-
-    private fun updateList(current: List<String>, raw: String?): List<String> =
-        if (raw.isNullOrBlank()) current else splitList(raw)
-
-    private fun buildPhysicalProfile(fields: Map<String, String>): StoryCharacterRecord.PhysicalProfile? {
-        val physical = StoryCharacterRecord.PhysicalProfile(
-            appearance = fields["appearance"],
-            height = fields["height"],
-            build = fields["build"],
-            hair = fields["hair"],
-            eyes = fields["eyes"],
-            skinTone = fields["skin_tone"],
-            distinguishingMarks = fields["distinguishing_marks"],
-            styleNotes = fields["style_notes"],
+        return success(
+            action = "update",
+            entity = OperationEntity.STORY,
+            storyId = storyId,
+            entityId = null,
+            summary = "Updated story metadata.",
         )
-        return if (physical == StoryCharacterRecord.PhysicalProfile()) null else physical
+    }
+
+    private suspend fun onCharacterCreate(
+        storyId: String,
+        request: CreateCharacterRequest,
+    ): ToolResult<OperationOutcome> {
+        val now = Clock.System.now().toEpochMilliseconds()
+        val name = request.name.trim()
+        if (name.isBlank()) {
+            return failure("MISSING_FIELD", "Character name is required.")
+        }
+
+        val record = StoryCharacterRecord(
+            id = UUID.randomUUID().toString(),
+            storyId = storyId,
+            name = name,
+            description = request.description,
+            traits = request.traits ?: emptyList(),
+            roles = request.roles ?: emptyList(),
+            goal = request.goal,
+            motivation = request.motivation,
+            flaw = request.flaw,
+            temperament = request.temperament,
+            age = request.age,
+            pronouns = request.pronouns,
+            occupation = request.occupation,
+            backstory = request.backstory,
+            voice = request.voice,
+            internalConflict = request.internalConflict,
+            quirks = request.quirks ?: emptyList(),
+            physical = request.physical.toProfileOrNull(),
+            createdAt = now,
+        )
+        repository.insertStoryCharacter(record)
+
+        return success(
+            action = "create",
+            entity = OperationEntity.CHARACTER,
+            storyId = storyId,
+            entityId = record.id,
+            summary = "Created character '${record.name}'.",
+        )
+    }
+
+    private suspend fun onCharacterUpdate(
+        storyId: String,
+        entityId: String,
+        request: UpdateCharacterRequest,
+    ): ToolResult<OperationOutcome> {
+        val current = repository.getStoryCharacters(storyId).firstOrNull { it.id == entityId }
+        if (current == null) {
+            return failure("NOT_FOUND", "Character with id '$entityId' not found.")
+        }
+
+        if (request.name != null && request.name.isBlank()) {
+            return failure("MISSING_FIELD", "Character name cannot be blank.")
+        }
+
+        val updated = current.copy(
+            name = request.name ?: current.name,
+            description = request.description ?: current.description,
+            traits = request.traits ?: current.traits,
+            roles = request.roles ?: current.roles,
+            goal = request.goal ?: current.goal,
+            motivation = request.motivation ?: current.motivation,
+            flaw = request.flaw ?: current.flaw,
+            temperament = request.temperament ?: current.temperament,
+            age = request.age ?: current.age,
+            pronouns = request.pronouns ?: current.pronouns,
+            occupation = request.occupation ?: current.occupation,
+            backstory = request.backstory ?: current.backstory,
+            voice = request.voice ?: current.voice,
+            internalConflict = request.internalConflict ?: current.internalConflict,
+            quirks = request.quirks ?: current.quirks,
+            physical = mergePhysical(current.physical, request.physical),
+        )
+
+        repository.updateStoryCharacter(updated)
+        return success(
+            action = "update",
+            entity = OperationEntity.CHARACTER,
+            storyId = storyId,
+            entityId = updated.id,
+            summary = "Updated character '${updated.name}'.",
+        )
+    }
+
+    private suspend fun onCharacterDelete(
+        storyId: String,
+        entityId: String,
+    ): ToolResult<OperationOutcome> {
+        val existing = repository.getStoryCharacters(storyId).firstOrNull { it.id == entityId }
+        if (existing == null) {
+            return failure("NOT_FOUND", "Character with id '$entityId' not found.")
+        }
+
+        repository.deleteStoryCharacter(entityId)
+
+        return success(
+            action = "delete",
+            entity = OperationEntity.CHARACTER,
+            storyId = storyId,
+            entityId = entityId,
+            summary = "Deleted character '$entityId'.",
+        )
+    }
+
+    private suspend fun onLocationCreate(
+        storyId: String,
+        request: CreateLocationRequest,
+    ): ToolResult<OperationOutcome> {
+        val now = Clock.System.now().toEpochMilliseconds()
+        val name = request.name.trim()
+
+        if (name.isBlank()) {
+            return failure("MISSING_FIELD", "Location name is required.")
+        }
+
+        val record = StoryLocationRecord(
+            id = UUID.randomUUID().toString(),
+            storyId = storyId,
+            profile = StoryLocationRecord.LocationProfile(
+                name = name,
+                description = request.description,
+            ),
+            tags = request.tags ?: emptyList(),
+            createdAt = now,
+        )
+        repository.upsertLocation(record)
+
+        return success(
+            action = "create",
+            entity = OperationEntity.LOCATION,
+            storyId = storyId,
+            entityId = record.id,
+            summary = "Created location '${record.profile.name}'.",
+        )
+    }
+
+    private suspend fun onLocationUpdate(
+        storyId: String,
+        entityId: String,
+        request: UpdateLocationRequest,
+    ): ToolResult<OperationOutcome> {
+        val current = repository.getLocationsByStory(storyId).firstOrNull { it.id == entityId }
+        if (current == null) {
+            return failure("NOT_FOUND", "Location with id '$entityId' not found.")
+        }
+
+        if (request.name != null && request.name.isBlank()) {
+            return failure("MISSING_FIELD", "Location name cannot be blank.")
+        }
+
+        val updated = current.copy(
+            profile = StoryLocationRecord.LocationProfile(
+                name = request.name ?: current.profile.name,
+                description = request.description ?: current.profile.description,
+            ),
+            tags = request.tags ?: current.tags,
+        )
+
+        repository.upsertLocation(updated)
+
+        return success(
+            action = "update",
+            entity = OperationEntity.LOCATION,
+            storyId = storyId,
+            entityId = updated.id,
+            summary = "Updated location '${updated.profile.name}'.",
+        )
+    }
+
+    private suspend fun onLocationDelete(
+        storyId: String,
+        entityId: String,
+    ): ToolResult<OperationOutcome> {
+        val existing = repository.getLocationsByStory(storyId).firstOrNull { it.id == entityId }
+        if (existing == null) {
+            return failure("NOT_FOUND", "Location with id '$entityId' not found.")
+        }
+
+        repository.deleteStoryLocation(entityId)
+
+        return success(
+            action = "delete",
+            entity = OperationEntity.LOCATION,
+            storyId = storyId,
+            entityId = entityId,
+            summary = "Deleted location '$entityId'.",
+        )
+    }
+
+    private suspend fun onArcCreate(
+        storyId: String,
+        request: CreateArcRequest,
+    ): ToolResult<OperationOutcome> {
+        val now = Clock.System.now().toEpochMilliseconds()
+        val title = request.title.trim()
+
+        if (title.isBlank()) {
+            return failure("MISSING_FIELD", "Arc title is required.")
+        }
+
+        val record = StoryArcRecord(
+            id = UUID.randomUUID().toString(),
+            storyId = storyId,
+            scopeType = request.scopeType ?: ArcScope.STORY,
+            scopeId = request.scopeId,
+            title = title,
+            summary = request.summary,
+            status = request.status,
+            createdAt = now,
+            updatedAt = now,
+        )
+        repository.upsertArc(record)
+
+        return success(
+            action = "create",
+            entity = OperationEntity.ARC,
+            storyId = storyId,
+            entityId = record.id,
+            summary = "Created arc '${record.title}'.",
+        )
+    }
+
+    private suspend fun onArcUpdate(
+        storyId: String,
+        entityId: String,
+        request: UpdateArcRequest,
+    ): ToolResult<OperationOutcome> {
+        val arcs = repository.getArcsByStory(storyId)
+        val now = Clock.System.now().toEpochMilliseconds()
+        val current = arcs.firstOrNull { it.id == entityId }
+        if (current == null) {
+            return failure("NOT_FOUND", "Arc with id '$entityId' not found.")
+        }
+        val updated = current.copy(
+            scopeType = request.scopeType ?: current.scopeType,
+            scopeId = request.scopeId ?: current.scopeId,
+            title = request.title ?: current.title,
+            summary = request.summary ?: current.summary,
+            status = request.status ?: current.status,
+            updatedAt = now,
+        )
+        repository.upsertArc(updated)
+        return success(
+            action = "update",
+            entity = OperationEntity.ARC,
+            storyId = storyId,
+            entityId = updated.id,
+            summary = "Updated arc '${updated.title}'.",
+        )
+    }
+
+    private suspend fun onArcDelete(
+        storyId: String,
+        entityId: String,
+    ): ToolResult<OperationOutcome> {
+        val existing = repository.getArcsByStory(storyId).firstOrNull { it.id == entityId }
+        if (existing == null) {
+            return failure("NOT_FOUND", "Arc with id '$entityId' not found.")
+        }
+
+        repository.deleteStoryArc(entityId)
+
+        return success(
+            action = "delete",
+            entity = OperationEntity.ARC,
+            storyId = storyId,
+            entityId = entityId,
+            summary = "Deleted arc '$entityId'.",
+        )
+    }
+
+    private suspend fun onFactCreate(
+        storyId: String,
+        request: CreateFactRequest,
+    ): ToolResult<OperationOutcome> {
+        val now = Clock.System.now().toEpochMilliseconds()
+        val content = request.content.trim()
+
+        if (content.isBlank()) {
+            return failure("MISSING_FIELD", "Fact content is required.")
+        }
+
+        val record = StoryFactRecord(
+            id = UUID.randomUUID().toString(),
+            storyId = storyId,
+            factType = request.factType ?: StoryFactType.CUSTOM,
+            content = content,
+            createdAt = now,
+        )
+
+        repository.insertStoryFact(record)
+
+        return success(
+            action = "create",
+            entity = OperationEntity.FACT,
+            storyId = storyId,
+            entityId = record.id,
+            summary = "Added fact '${record.factType.name}'.",
+        )
+    }
+
+    private suspend fun onFactUpdate(
+        storyId: String,
+        entityId: String,
+        request: UpdateFactRequest,
+    ): ToolResult<OperationOutcome> {
+        val current = repository.getFactsByStory(storyId).firstOrNull { it.id == entityId }
+        if (current == null) {
+            return failure("NOT_FOUND", "Fact with id '$entityId' not found.")
+        }
+
+        if (request.content != null && request.content.isBlank()) {
+            return failure("MISSING_FIELD", "Fact content cannot be blank.")
+        }
+
+        val updated = current.copy(
+            factType = request.factType ?: current.factType,
+            content = request.content ?: current.content,
+        )
+
+        repository.updateStoryFact(updated)
+
+        return success(
+            action = "update",
+            entity = OperationEntity.FACT,
+            storyId = storyId,
+            entityId = updated.id,
+            summary = "Updated fact '$entityId'.",
+        )
+    }
+
+    private suspend fun onFactDelete(
+        storyId: String,
+        entityId: String,
+    ): ToolResult<OperationOutcome> {
+        val existing = repository.getFactsByStory(storyId).firstOrNull { it.id == entityId }
+        if (existing == null) {
+            return failure("NOT_FOUND", "Fact with id '$entityId' not found.")
+        }
+        repository.deleteStoryFact(entityId)
+        return success(
+            action = "delete",
+            entity = OperationEntity.FACT,
+            storyId = storyId,
+            entityId = entityId,
+            summary = "Deleted fact '$entityId'.",
+        )
     }
 
     private fun mergePhysical(
         current: StoryCharacterRecord.PhysicalProfile?,
-        fields: Map<String, String>,
+        request: CharacterPhysicalProfileRequest?,
     ): StoryCharacterRecord.PhysicalProfile? {
         val base = current ?: StoryCharacterRecord.PhysicalProfile()
-        val merged = base.copy(
-            appearance = fields["appearance"] ?: base.appearance,
-            height = fields["height"] ?: base.height,
-            build = fields["build"] ?: base.build,
-            hair = fields["hair"] ?: base.hair,
-            eyes = fields["eyes"] ?: base.eyes,
-            skinTone = fields["skin_tone"] ?: base.skinTone,
-            distinguishingMarks = fields["distinguishing_marks"] ?: base.distinguishingMarks,
-            styleNotes = fields["style_notes"] ?: base.styleNotes,
-        )
+        val merged = request?.let {
+            base.copy(
+                appearance = it.appearance ?: base.appearance,
+                height = it.height ?: base.height,
+                build = it.build ?: base.build,
+                hair = it.hair ?: base.hair,
+                eyes = it.eyes ?: base.eyes,
+                skinTone = it.skinTone ?: base.skinTone,
+                distinguishingMarks = it.distinguishingMarks ?: base.distinguishingMarks,
+                styleNotes = it.styleNotes ?: base.styleNotes,
+            )
+        } ?: base
         return if (merged == StoryCharacterRecord.PhysicalProfile()) null else merged
     }
-
-    private fun parseStatus(raw: String?): ContentStatus? =
-        raw?.trim()?.uppercase()?.let { value ->
-            ContentStatus.entries.firstOrNull { it.name == value }
-        }
-
-    private fun parseArcScope(raw: String?): ArcScope? =
-        raw?.trim()?.uppercase()?.let { value ->
-            ArcScope.entries.firstOrNull { it.name == value }
-        }
-
-    private fun parseFactType(raw: String?): StoryFactType? =
-        raw?.trim()?.uppercase()?.let { value ->
-            StoryFactType.entries.firstOrNull { it.name == value }
-        }
-
-    private fun parseFields(raw: String): Map<String, String> {
-        if (raw.isBlank()) return emptyMap()
-        return try {
-            val element = json.parseToJsonElement(raw)
-            val obj = when (element) {
-                is JsonObject -> element
-                else -> {
-                    val inner = element.jsonPrimitive.contentOrNull ?: return emptyMap()
-                    val parsed = json.parseToJsonElement(inner)
-                    parsed as? JsonObject ?: return emptyMap()
-                }
-            }
-            obj.entries
-                .mapNotNull { (key, value) -> value.jsonPrimitive.contentOrNull?.let { key to it } }
-                .toMap()
-        } catch (_: Exception) {
-            emptyMap()
-        }
+    private fun mergeStyleProfile(
+        current: StoryRecord.StoryStyleProfile?,
+        request: StoryStyleProfileRequest?,
+    ): StoryRecord.StoryStyleProfile? {
+        val base = current ?: StoryRecord.StoryStyleProfile()
+        val merged = request?.let {
+            base.copy(
+                logline = it.logline ?: base.logline,
+                theme = it.theme ?: base.theme,
+                tone = it.tone ?: base.tone,
+                stakes = it.stakes ?: base.stakes,
+                pov = it.pov ?: base.pov,
+                tense = it.tense ?: base.tense,
+                targetAudience = it.targetAudience ?: base.targetAudience,
+                pacing = it.pacing ?: base.pacing,
+            )
+        } ?: base
+        return if (merged == StoryRecord.StoryStyleProfile()) null else merged
     }
+
+    private fun CharacterPhysicalProfileRequest?.toProfileOrNull(): StoryCharacterRecord.PhysicalProfile? {
+        if (this == null) return null
+        val profile = StoryCharacterRecord.PhysicalProfile(
+            appearance = appearance,
+            height = height,
+            build = build,
+            hair = hair,
+            eyes = eyes,
+            skinTone = skinTone,
+            distinguishingMarks = distinguishingMarks,
+            styleNotes = styleNotes,
+        )
+        return if (profile == StoryCharacterRecord.PhysicalProfile()) null else profile
+    }
+
+    private fun <T> querySuccess(
+        entity: OperationEntity,
+        storyId: String,
+        entityId: String?,
+        summary: String,
+        payload: T,
+        warnings: List<String> = emptyList(),
+    ): ToolResult<QueryOutcome<T>> = ToolResult.Success(
+        data = QueryOutcome(
+            entity = entity,
+            storyId = storyId,
+            entityId = entityId,
+            summary = summary,
+            payload = payload,
+        ),
+        message = summary,
+        warnings = warnings,
+    )
+
+    private fun success(
+        action: String,
+        entity: OperationEntity,
+        storyId: String,
+        entityId: String?,
+        summary: String,
+        warnings: List<String> = emptyList(),
+    ): ToolResult<OperationOutcome> = ToolResult.Success(
+        data = OperationOutcome(
+            action = action,
+            entity = entity,
+            storyId = storyId,
+            entityId = entityId,
+            summary = summary,
+        ),
+        message = summary,
+        warnings = warnings,
+    )
+
+    private fun <T> failure(
+        code: String,
+        message: String,
+        details: String? = null,
+    ): ToolResult<T> = ToolResult.Failure(
+        error = ToolError(code = code, details = details),
+        message = message,
+    )
 }

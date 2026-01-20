@@ -7,4 +7,5 @@ sealed  class ChatEvent {
     data class OnTextChanged(val text: String) : ChatEvent()
     data class OnSubmitMessage(val navController: NavController,val text: String) : ChatEvent()
     data object OnChatModeChanged : ChatEvent()
+    data object OnCancelProcessing : ChatEvent()
 }
