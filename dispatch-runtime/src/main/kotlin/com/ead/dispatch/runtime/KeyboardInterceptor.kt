@@ -30,8 +30,20 @@ import java.util.concurrent.CopyOnWriteArrayList
  * }
  * ```
  */
-class KeyboardInterceptor {
-    private val interceptors = CopyOnWriteArrayList<(KeyboardEvent) -> Boolean>()
+class KeyboardInterceptor(
+    private val parent: KeyboardInterceptor? = null,
+) {
+    private data class InterceptorEntry(
+        val priority: Int,
+        val order: Long,
+        val handler: (KeyboardEvent) -> Boolean,
+    )
+
+    private val interceptors = CopyOnWriteArrayList<InterceptorEntry>()
+    @Volatile
+    private var orderedInterceptors: List<InterceptorEntry> = emptyList()
+    @Volatile
+    private var nextOrder = 0L
     private var lastEvent: KeyboardEvent? = null
     private var lastEventConsumed: Boolean = false
 
@@ -45,8 +57,24 @@ class KeyboardInterceptor {
      * @return A dispose function to unregister the handler.
      */
     fun register(handler: (KeyboardEvent) -> Boolean): () -> Unit {
-        interceptors.add(handler)
-        return { interceptors.remove(handler) }
+        return register(priority = 0, handler = handler)
+    }
+
+    /**
+     * Register an interceptor with a priority.
+     *
+     * Higher priority handlers run first. For equal priority, the most recently
+     * registered handler runs first.
+     */
+    fun register(priority: Int, handler: (KeyboardEvent) -> Boolean): () -> Unit {
+        val entry = InterceptorEntry(priority = priority, order = nextOrder, handler = handler)
+        nextOrder += 1
+        interceptors.add(entry)
+        rebuildOrder()
+        return {
+            interceptors.remove(entry)
+            rebuildOrder()
+        }
     }
 
     /**
@@ -62,19 +90,28 @@ class KeyboardInterceptor {
         if (event === lastEvent) return lastEventConsumed
         lastEvent = event
 
-        // Check handlers in reverse order (last registered = highest priority)
-        for (index in interceptors.size - 1 downTo 0) {
-            if (interceptors[index](event)) {
+        // Check handlers by priority, then registration order (last = highest).
+        for (entry in orderedInterceptors) {
+            if (entry.handler(event)) {
                 lastEventConsumed = true
                 return true
             }
         }
-        lastEventConsumed = false
-        return false
+
+        val handledByParent = parent?.tryIntercept(event) == true
+        lastEventConsumed = handledByParent
+        return handledByParent
     }
 
     /**
      * Check if there are any registered interceptors.
      */
-    fun hasInterceptors(): Boolean = interceptors.isNotEmpty()
+    fun hasInterceptors(): Boolean = interceptors.isNotEmpty() || (parent?.hasInterceptors() == true)
+
+    private fun rebuildOrder() {
+        orderedInterceptors = interceptors.sortedWith(
+            compareByDescending<InterceptorEntry> { it.priority }
+                .thenByDescending { it.order }
+        )
+    }
 }

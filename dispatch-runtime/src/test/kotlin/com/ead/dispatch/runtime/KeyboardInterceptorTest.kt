@@ -32,4 +32,33 @@ class KeyboardInterceptorTest {
         assertTrue(handled)
         assertEquals(listOf("consume"), calls)
     }
+
+    @Test
+    fun `interceptors honor priority then registration order`() {
+        val interceptor = KeyboardInterceptor()
+        val calls = mutableListOf<String>()
+
+        interceptor.register(priority = 1) { calls.add("p1-first"); false }
+        interceptor.register(priority = 0) { calls.add("p0-first"); false }
+        interceptor.register(priority = 1) { calls.add("p1-second"); false }
+
+        interceptor.tryIntercept(KeyboardEvent("ArrowUp"))
+
+        assertEquals(listOf("p1-second", "p1-first", "p0-first"), calls)
+    }
+
+    @Test
+    fun `child interceptor falls back to parent when not consumed`() {
+        val parent = KeyboardInterceptor()
+        val child = KeyboardInterceptor(parent)
+        val calls = mutableListOf<String>()
+
+        parent.register { calls.add("parent"); true }
+        child.register { calls.add("child"); false }
+
+        val handled = child.tryIntercept(KeyboardEvent("ArrowDown"))
+
+        assertTrue(handled)
+        assertEquals(listOf("child", "parent"), calls)
+    }
 }

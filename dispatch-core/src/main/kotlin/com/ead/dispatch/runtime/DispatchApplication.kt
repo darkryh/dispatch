@@ -248,7 +248,9 @@ internal class DispatchApplicationBuilder(
                             LocalFocusRegistry provides focusRegistry,
                             LocalExitPromptState provides exitPromptState,
                         ) {
-                            block()
+                            KeyboardInterceptorScope {
+                                block()
+                            }
                         }
                     } finally {
                         composer.setMeasurableCollector(null)

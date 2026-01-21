@@ -115,6 +115,7 @@ class TerminalRenderer(
             val oldLineCount = if (activeAreaInitialized) activeAreaLines.size else 0
             val newLineCount = displayedLines.size
             val maxLineCount = maxOf(oldLineCount, newLineCount)
+            val forceRedraw = oldLineCount != newLineCount
 
             // Build entire update in a buffer to send atomically (prevents flickering)
             val buffer = StringBuilder()
@@ -134,7 +135,7 @@ class TerminalRenderer(
                     newLine == null -> {
                         buffer.append(AnsiCodes.CLEAR_LINE)
                     }
-                    newLine != oldLine -> {
+                    forceRedraw || newLine != oldLine -> {
                         buffer.append(AnsiCodes.CLEAR_LINE)
                         buffer.append(newLine)
                     }

@@ -56,7 +56,7 @@ fun ChatScreen(navController: NavController) {
     val keyboardInterceptor = LocalKeyboardInterceptor.current
 
     DisposableEffect(Unit) {
-        val dispose = keyboardInterceptor.register { event ->
+        val disposeOption = keyboardInterceptor.register { event ->
             if (event.key == "Tab" && event.shift) {
                 viewModel.onEvent(ChatEvent.OnChatModeChanged)
                 true
@@ -64,14 +64,15 @@ fun ChatScreen(navController: NavController) {
                 false
             }
         }
-        val disposeEsc = scope.addKeyEventHandler { event ->
+
+        val disposeCancelAgentExecution = scope.addKeyEventHandler { event ->
             if ((event.key == "Escape" || event.key == "Esc") && isProcessing) {
                 viewModel.onEvent(ChatEvent.OnCancelProcessing)
             }
         }
         onDispose {
-            dispose()
-            disposeEsc()
+            disposeOption()
+            disposeCancelAgentExecution()
         }
     }
 
