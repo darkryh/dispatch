@@ -58,6 +58,7 @@ class DispatchConfig {
     var mouseTracking: MouseTracking = MouseTracking.Off
     var ctrlCExitRequiresDoublePress: Boolean = true
     var ctrlCExitTimeout: Duration = 1500.milliseconds
+    var captureSystemOutput: Boolean = true
 
     val flags = mutableMapOf<String, FlagDefinition>()
     val arguments = mutableMapOf<String, ArgumentDefinition>()

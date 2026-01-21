@@ -708,6 +708,11 @@ fun InputTextField(
                     updateCursorPosition((safeCursor + 1).coerceAtMost(latestValue.length))
                 }
                 "ArrowUp" -> {
+                    val info = cursorLineInfo(terminal, latestValue, cursorPositionState, contentWidth)
+                    if (info.line == 0 && cursorPositionState > 0) {
+                        updateCursorPosition(0)
+                        return@addKeyEventHandler
+                    }
                     updateCursorPosition(
                         moveCursorVertical(
                         terminal = terminal,
@@ -719,6 +724,11 @@ fun InputTextField(
                     )
                 }
                 "ArrowDown" -> {
+                    val info = cursorLineInfo(terminal, latestValue, cursorPositionState, contentWidth)
+                    if (info.line == info.maxLine && cursorPositionState < latestValue.length) {
+                        updateCursorPosition(latestValue.length)
+                        return@addKeyEventHandler
+                    }
                     updateCursorPosition(
                         moveCursorVertical(
                         terminal = terminal,
@@ -884,6 +894,47 @@ private fun moveCursorVertical(
 }
 
 private data class CursorVisual(val line: Int, val col: Int)
+
+private data class CursorLineInfo(val line: Int, val maxLine: Int)
+
+private fun cursorLineInfo(
+    terminal: com.github.ajalt.mordant.terminal.Terminal,
+    text: String,
+    cursorPosition: Int,
+    wrapWidth: Int,
+): CursorLineInfo {
+    val width = wrapWidth.coerceAtLeast(1)
+    val clampedCursor = cursorPosition.coerceIn(0, text.length)
+    val cache = HashMap<Int, CursorVisual>()
+    val marker = CURSOR_MARKER
+
+    fun visualAt(pos: Int): CursorVisual {
+        val safePos = pos.coerceIn(0, text.length)
+        return cache.getOrPut(safePos) {
+            val prefix = text.substring(0, safePos)
+            val suffixSpan = spanSuffixFrom(text, safePos)
+            val rendered = terminal.render(
+                prefix + marker + suffixSpan,
+                whitespace = Whitespace.PRE_WRAP,
+                overflowWrap = OverflowWrap.BREAK_WORD,
+                width = width,
+            )
+            val lines = rendered.lines()
+            val markerLineIndex = lines.indexOfFirst { it.contains(marker) }.let { index ->
+                if (index == -1) lines.lastIndex.coerceAtLeast(0) else index
+            }
+            val markerLine = lines.getOrNull(markerLineIndex).orEmpty()
+            val markerCol = markerLine.indexOf(marker).let { index ->
+                if (index == -1) markerLine.length else index
+            }
+            CursorVisual(line = markerLineIndex, col = markerCol)
+        }
+    }
+
+    val current = visualAt(clampedCursor)
+    val maxLine = visualAt(text.length).line
+    return CursorLineInfo(line = current.line, maxLine = maxLine)
+}
 
 private class ExternalValueTracker<T>(var value: T)
 

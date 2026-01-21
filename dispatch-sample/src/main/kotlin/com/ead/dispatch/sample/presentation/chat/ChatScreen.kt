@@ -132,7 +132,7 @@ fun ChatScreen(navController: NavController) {
                 placeholderStyle = rgb("#82858A"),
                 enabled = !isProcessing,
                 showCursor = !isProcessing,
-                onSubmit = { text -> viewModel.onEvent(event = ChatEvent.OnSubmitMessage(navController,text)) }
+                onSubmit = { text -> viewModel.onEvent(event = ChatEvent.OnSubmitMessage(navController,text)) },
             )
         }
 

@@ -3,7 +3,6 @@ package com.ead.dispatch.sample.presentation.chat.components
 import com.ead.dispatch.annotation.Dispatchable
 import com.ead.dispatch.modifier.Modifier
 import com.ead.dispatch.modifier.fillMaxWidth
-import com.ead.dispatch.sample.presentation.chat.event.ChatEvent
 import com.ead.dispatch.widget.Background
 import com.ead.dispatch.widget.BackgroundStyle
 import com.ead.dispatch.widget.InputTextField

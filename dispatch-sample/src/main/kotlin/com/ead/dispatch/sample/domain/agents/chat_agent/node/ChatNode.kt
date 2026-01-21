@@ -107,11 +107,8 @@ private fun AIAgentGraphContextBase.setupAndStreamChatMode(
                 val toolResults = toolCalls.map { executeToolWithFix(it) }
                 toolResults.forEach { result ->
                     if (result.resultKind !is ToolResultKind.Success) {
-                        println(
-                            "Tool failed: ${result.tool} (${result.resultKind})\n" +
-                                "Args: ${result.toolArgs}\n" +
-                                "Content: ${result.content}"
-                        )
+                        // Avoid stdout prints that corrupt the terminal UI.
+                        // Hook up a structured logger if needed.
                     }
                 }
 
@@ -124,7 +121,6 @@ private fun AIAgentGraphContextBase.setupAndStreamChatMode(
             }
         }
         } finally {
-            println("Chat node checkpoint saved after completion/cancellation.")
             saveCheckpointForHistory(agentContext, request, nodePath)
         }
     }

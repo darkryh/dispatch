@@ -87,8 +87,10 @@ class TerminalRenderer(
             }
 
             // Send everything atomically
-            terminal.rawPrint(buffer)
-            System.out.flush()
+            OutputCapture.suppress {
+                terminal.rawPrint(buffer)
+                System.out.flush()
+            }
         }
     }
 
@@ -152,8 +154,10 @@ class TerminalRenderer(
             }
 
             // Send everything atomically
-            terminal.rawPrint(buffer)
-            System.out.flush()
+            OutputCapture.suppress {
+                terminal.rawPrint(buffer)
+                System.out.flush()
+            }
 
             activeAreaLines = displayedLines
             activeAreaInitialized = true
@@ -176,8 +180,10 @@ class TerminalRenderer(
                         buffer.append(AnsiCodes.moveUp(1))
                     }
                 }
-                terminal.rawPrint(buffer)
-                System.out.flush()
+                OutputCapture.suppress {
+                    terminal.rawPrint(buffer)
+                    System.out.flush()
+                }
             }
             activeAreaLines = emptyList()
             activeAreaInitialized = false
@@ -242,12 +248,14 @@ class TerminalRenderer(
         val lines = frameBuffer.fullFrame()
 
         // Move to home, clear, then print buffer using Mordant cursor so capability detection applies.
-        terminal.cursor.move {
-            setPosition(0, 0)
-            clearScreen()
+        OutputCapture.suppress {
+            terminal.cursor.move {
+                setPosition(0, 0)
+                clearScreen()
+            }
+            terminal.print(lines.joinToString("\n"))
+            System.out.flush()
         }
-        terminal.print(lines.joinToString("\n"))
-        System.out.flush()
     }
 
     /**
@@ -268,8 +276,10 @@ class TerminalRenderer(
             output.append(change.text)
         }
 
-        terminal.rawPrint(output)
-        System.out.flush()
+        OutputCapture.suppress {
+            terminal.rawPrint(output)
+            System.out.flush()
+        }
     }
 
     /**
@@ -277,8 +287,10 @@ class TerminalRenderer(
      */
     fun showCursor() {
         renderLock.withLock {
-            terminal.cursor.show()
-            System.out.flush()
+            OutputCapture.suppress {
+                terminal.cursor.show()
+                System.out.flush()
+            }
         }
     }
 
@@ -287,8 +299,10 @@ class TerminalRenderer(
      */
     fun hideCursor() {
         renderLock.withLock {
-            terminal.cursor.hide()
-            System.out.flush()
+            OutputCapture.suppress {
+                terminal.cursor.hide()
+                System.out.flush()
+            }
         }
     }
 
@@ -300,10 +314,12 @@ class TerminalRenderer(
      */
     fun moveCursor(x: Int, y: Int) {
         renderLock.withLock {
-            terminal.cursor.move {
-                setPosition(x, y)
+            OutputCapture.suppress {
+                terminal.cursor.move {
+                    setPosition(x, y)
+                }
+                System.out.flush()
             }
-            System.out.flush()
         }
     }
 
@@ -312,14 +328,16 @@ class TerminalRenderer(
      */
     fun clearScreen(clearScrollback: Boolean = false) {
         renderLock.withLock {
-            if (clearScrollback) {
-                terminal.rawPrint(AnsiCodes.CLEAR_SCROLLBACK)
+            OutputCapture.suppress {
+                if (clearScrollback) {
+                    terminal.rawPrint(AnsiCodes.CLEAR_SCROLLBACK)
+                }
+                terminal.cursor.move {
+                    clearScreen()
+                    setPosition(0, 0)
+                }
+                System.out.flush()
             }
-            terminal.cursor.move {
-                clearScreen()
-                setPosition(0, 0)
-            }
-            System.out.flush()
             activeAreaLines = emptyList()
             activeAreaInitialized = false
             frameBuffer.clear()
@@ -333,8 +351,10 @@ class TerminalRenderer(
      * Ring the terminal bell.
      */
     fun bell() {
-        terminal.rawPrint("\u0007")
-        System.out.flush()
+        OutputCapture.suppress {
+            terminal.rawPrint("\u0007")
+            System.out.flush()
+        }
     }
 
     /**
