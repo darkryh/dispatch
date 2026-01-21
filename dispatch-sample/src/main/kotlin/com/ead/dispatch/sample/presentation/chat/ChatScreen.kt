@@ -14,6 +14,7 @@ import com.ead.dispatch.runtime.LocalKeyboardInterceptor
 import com.ead.dispatch.runtime.LocalTheme
 import com.ead.dispatch.runtime.dispatchScope
 import com.ead.dispatch.sample.domain.CommandManager
+import com.ead.dispatch.sample.domain.model.message.CliMessageRole
 import com.ead.dispatch.sample.domain.model.story.WriterMode
 import com.ead.dispatch.sample.presentation.chat.components.*
 import com.ead.dispatch.sample.presentation.chat.event.ChatEvent
@@ -85,6 +86,11 @@ fun ChatScreen(navController: NavController) {
         }
     }
 
+    val historyItems = remember(messages) {
+        messages.filter { it.role == CliMessageRole.USER }.map { it.data }
+    }
+    val historyIndexState = rememberInputHistoryIndexState()
+
     // Mode-specific placeholder and icon
     val (placeholder, icon) = when (writerMode) {
         WriterMode.CHAT -> "Describe your story (characters, genre, setting, plot)..." to "> "
@@ -133,6 +139,8 @@ fun ChatScreen(navController: NavController) {
                 enabled = !isProcessing,
                 showCursor = !isProcessing,
                 onSubmit = { text -> viewModel.onEvent(event = ChatEvent.OnSubmitMessage(navController,text)) },
+                historyItems = historyItems,
+                historyIndexState = historyIndexState,
             )
         }
 

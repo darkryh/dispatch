@@ -5,6 +5,7 @@ import com.ead.dispatch.modifier.Modifier
 import com.ead.dispatch.modifier.fillMaxWidth
 import com.ead.dispatch.widget.Background
 import com.ead.dispatch.widget.BackgroundStyle
+import com.ead.dispatch.widget.InputHistoryIndexState
 import com.ead.dispatch.widget.InputTextField
 import com.github.ajalt.mordant.rendering.TextColors.Companion.rgb
 import com.github.ajalt.mordant.rendering.TextStyle
@@ -24,6 +25,8 @@ fun ChatInputTextField(
     textStyle: TextStyle? = null,
     placeholderStyle: TextStyle? = null,
     iconStyle: TextStyle? = null,
+    historyItems: List<String> = emptyList(),
+    historyIndexState: InputHistoryIndexState? = null,
 ) {
     Background(
         modifier = Modifier.fillMaxWidth(),
@@ -45,6 +48,8 @@ fun ChatInputTextField(
             textStyle = textStyle,
             placeholderStyle = placeholderStyle,
             iconStyle = iconStyle,
+            historyItems = historyItems,
+            historyIndexState = historyIndexState,
         )
     }
 }

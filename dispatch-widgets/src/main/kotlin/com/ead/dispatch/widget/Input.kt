@@ -438,6 +438,16 @@ fun rememberTextFieldState(initialValue: String = ""): TextFieldState {
     return remember { TextFieldState(initialValue) }
 }
 
+class InputHistoryIndexState {
+    var index: Int by mutableStateOf(-1)
+    var draft: String? by mutableStateOf(null)
+}
+
+@Dispatchable
+fun rememberInputHistoryIndexState(): InputHistoryIndexState {
+    return remember { InputHistoryIndexState() }
+}
+
 /**
  * A text field that uses TextFieldState for full control.
  */
@@ -549,6 +559,8 @@ fun InputTextField(
     iconStyle: TextStyle? = null,
     cursorPosition: Int? = null,
     onCursorPositionChange: ((Int) -> Unit)? = null,
+    historyItems: List<String> = emptyList(),
+    historyIndexState: InputHistoryIndexState? = null,
 ) {
     val onValueChangeCallback = com.ead.dispatch.runtime.rememberCallback(onValueChange)
     val onSubmitCallback = com.ead.dispatch.runtime.rememberCallback(onSubmit)
@@ -572,6 +584,17 @@ fun InputTextField(
     var latestValue by remember { mutableStateOf(value) }
     var cursorPositionState by remember { mutableStateOf(cursorPosition ?: value.length) }
     val pasteTracker = remember { PasteTracker() }
+    val resolvedHistoryIndexState = historyIndexState ?: remember { InputHistoryIndexState() }
+    if (resolvedHistoryIndexState.index < 0 || resolvedHistoryIndexState.index > historyItems.size) {
+        resolvedHistoryIndexState.index = historyItems.size
+    }
+    if (historyItems.isNotEmpty()) {
+        val idx = resolvedHistoryIndexState.index
+        if (idx in 0 until historyItems.size && latestValue != historyItems[idx]) {
+            resolvedHistoryIndexState.index = historyItems.size
+            resolvedHistoryIndexState.draft = latestValue
+        }
+    }
 
     // Track external value changes without making them the source of truth for rendering.
     // This avoids dropping keystrokes when `value` is backed by an async flow collector.
@@ -610,13 +633,17 @@ fun InputTextField(
 
     fun insertText(text: String) {
         if (text.isEmpty()) return
+        if (historyItems.isNotEmpty() && resolvedHistoryIndexState.index < historyItems.size) {
+            resolvedHistoryIndexState.draft = latestValue
+            resolvedHistoryIndexState.index = historyItems.size
+        }
         val result = applyInsertion(latestValue, cursorPositionState, text)
         latestValue = result.value
         updateCursorPosition(result.cursorPosition)
         onValueChangeCallback(latestValue)
     }
 
-    DisposableEffect(enabled to keyboardInterceptor) {
+    DisposableEffect(Triple(enabled, keyboardInterceptor, historyItems)) {
         if (!enabled) {
             return@DisposableEffect onDispose {}
         }
@@ -681,6 +708,10 @@ fun InputTextField(
                         val before = currentValue.substring(0, safeCursor - 1)
                         val after = currentValue.substring(safeCursor)
                         latestValue = before + after
+                        if (historyItems.isNotEmpty() && resolvedHistoryIndexState.index < historyItems.size) {
+                            resolvedHistoryIndexState.draft = latestValue
+                            resolvedHistoryIndexState.index = historyItems.size
+                        }
                         updateCursorPosition(safeCursor - 1)
                         onValueChangeCallback(latestValue)
                     } else {
@@ -694,6 +725,10 @@ fun InputTextField(
                         val before = currentValue.substring(0, safeCursor)
                         val after = currentValue.substring(safeCursor + 1)
                         latestValue = before + after
+                        if (historyItems.isNotEmpty() && resolvedHistoryIndexState.index < historyItems.size) {
+                            resolvedHistoryIndexState.draft = latestValue
+                            resolvedHistoryIndexState.index = historyItems.size
+                        }
                         onValueChangeCallback(latestValue)
                     } else {
                         updateCursorPosition(safeCursor)
@@ -708,6 +743,18 @@ fun InputTextField(
                     updateCursorPosition((safeCursor + 1).coerceAtMost(latestValue.length))
                 }
                 "ArrowUp" -> {
+                    if (historyItems.isNotEmpty() && cursorPositionState == 0) {
+                        if (resolvedHistoryIndexState.index == historyItems.size) {
+                            resolvedHistoryIndexState.draft = latestValue
+                        }
+                        resolvedHistoryIndexState.index =
+                            (resolvedHistoryIndexState.index - 1).coerceAtLeast(0)
+                        val previous = historyItems[resolvedHistoryIndexState.index]
+                        latestValue = previous
+                        updateCursorPosition(previous.length)
+                        onValueChangeCallback(latestValue)
+                        return@addKeyEventHandler
+                    }
                     val info = cursorLineInfo(terminal, latestValue, cursorPositionState, contentWidth)
                     if (info.line == 0 && cursorPositionState > 0) {
                         updateCursorPosition(0)
@@ -724,6 +771,21 @@ fun InputTextField(
                     )
                 }
                 "ArrowDown" -> {
+                    if (historyItems.isNotEmpty() && cursorPositionState == latestValue.length) {
+                        if (resolvedHistoryIndexState.index < historyItems.size) {
+                            resolvedHistoryIndexState.index =
+                                (resolvedHistoryIndexState.index + 1).coerceAtMost(historyItems.size)
+                            val next = if (resolvedHistoryIndexState.index == historyItems.size) {
+                                resolvedHistoryIndexState.draft ?: ""
+                            } else {
+                                historyItems[resolvedHistoryIndexState.index]
+                            }
+                            latestValue = next
+                            updateCursorPosition(next.length)
+                            onValueChangeCallback(latestValue)
+                            return@addKeyEventHandler
+                        }
+                    }
                     val info = cursorLineInfo(terminal, latestValue, cursorPositionState, contentWidth)
                     if (info.line == info.maxLine && cursorPositionState < latestValue.length) {
                         updateCursorPosition(latestValue.length)
@@ -795,6 +857,8 @@ fun InputTextField(
     textStyle: TextStyle? = null,
     placeholderStyle: TextStyle? = null,
     iconStyle: TextStyle? = null,
+    historyItems: List<String> = emptyList(),
+    historyIndexState: InputHistoryIndexState? = null,
 ) {
     InputTextField(
         value = state.value,
@@ -812,6 +876,8 @@ fun InputTextField(
         iconStyle = iconStyle,
         cursorPosition = state.cursorPosition,
         onCursorPositionChange = { state.cursorPosition = it },
+        historyItems = historyItems,
+        historyIndexState = historyIndexState,
     )
 }
 
