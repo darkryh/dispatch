@@ -50,7 +50,7 @@ fun ChatScreen(navController: NavController) {
 
     val writerMode by viewModel.writerMode.collectAsState()
     val theme = LocalTheme.current
-    val scope = dispatchScope()
+    val applicationScope = dispatchScope()
 
     // Register Shift+Tab handler for mode switching without replacing InputTextField handlers.
     val keyboardInterceptor = LocalKeyboardInterceptor.current
@@ -65,7 +65,7 @@ fun ChatScreen(navController: NavController) {
             }
         }
 
-        val disposeCancelAgentExecution = scope.addKeyEventHandler { event ->
+        val disposeCancelAgentExecution = applicationScope.addKeyEventHandler { event ->
             if ((event.key == "Escape" || event.key == "Esc") && isProcessing) {
                 viewModel.onEvent(ChatEvent.OnCancelProcessing)
             }

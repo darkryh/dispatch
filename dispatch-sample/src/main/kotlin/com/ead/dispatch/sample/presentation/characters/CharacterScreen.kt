@@ -26,7 +26,7 @@ import com.ead.dispatch.sample.presentation.characters.util.CharacterUIMode
 @Dispatchable
 fun CharacterScreen(navController: NavController) {
     val keyboardInterceptor = LocalKeyboardInterceptor.current
-    val scope = dispatchScope()
+    val applicationScope = dispatchScope()
     val viewModel = viewModel<CharacterViewModel>()
     val uiState by viewModel.uiState.collectAsState()
     val styles = rememberCharacterScreenStyles()
@@ -38,7 +38,7 @@ fun CharacterScreen(navController: NavController) {
     }
 
     DisposableEffect(uiState.mode) {
-        val escapeDispose = scope.addKeyEventHandler { event ->
+        val escapeDispose = applicationScope.addKeyEventHandler { event ->
             if (event.key == "Escape" || event.key == "Esc") {
                 navController.popBackStack()
             }
