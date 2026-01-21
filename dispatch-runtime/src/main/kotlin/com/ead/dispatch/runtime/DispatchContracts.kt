@@ -53,6 +53,8 @@ class DispatchConfig {
     var description: String? = null
     var theme: DispatchTheme = DispatchTheme.Dark
     var activeAreaHeight: Int = 12
+    var windowTitle: String? = null
+    var enforceWindowTitle: Boolean = true
     var mouseTracking: MouseTracking = MouseTracking.Off
     var ctrlCExitRequiresDoublePress: Boolean = true
     var ctrlCExitTimeout: Duration = 1500.milliseconds

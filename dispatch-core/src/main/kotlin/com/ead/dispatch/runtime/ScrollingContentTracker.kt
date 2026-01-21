@@ -42,6 +42,15 @@ internal class ScrollingContentTracker {
         scrolledLineCount = 0
     }
 
+    fun sync(scrollingLines: List<String>) {
+        if (scrollingLines.isEmpty()) {
+            reset()
+            return
+        }
+        previousContentHash = scrollingLines.hashCode()
+        scrolledLineCount = scrollingLines.size
+    }
+
     private fun isAppend(scrollingLines: List<String>): Boolean {
         if (scrolledLineCount == 0) return true
         if (scrollingLines.size < scrolledLineCount) return false

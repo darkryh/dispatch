@@ -10,6 +10,8 @@ import kotlin.time.Duration.Companion.milliseconds
 fun main(args: Array<String>) = DispatchApplication(args) {
     config {
         name = "dispatch-sample"
+        windowTitle = "Dispatch"
+        enforceWindowTitle = true
         version = "0.0.1"
         description = "Dispatch Sample - Chat Interface"
         theme = DispatchTheme.Dark

@@ -20,6 +20,7 @@ import kotlinx.coroutines.*
 import java.util.concurrent.atomic.AtomicReference
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.locks.ReentrantLock
+import sun.misc.Signal
 import kotlin.collections.set
 import kotlin.system.exitProcess
 import kotlin.time.Duration.Companion.milliseconds
@@ -74,6 +75,10 @@ internal class DispatchApplicationBuilder(
     private val focusRegistry = FocusRegistry()
     private val exitPromptState = ExitPromptState()
     private var ctrlCResetJob: Job? = null
+    private var lastTerminalWidth: Int = 0
+    private var lastTerminalHeight: Int = 0
+    private var pendingResizeReset: Boolean = false
+    private var resizeHandlerRegistered: Boolean = false
 
     /**
      * Active area height hint (from config).
@@ -83,9 +88,12 @@ internal class DispatchApplicationBuilder(
     private val renderLock = ReentrantLock()
 
     private var activeUIBlock: (@Dispatchable () -> Unit)? = null
+    @Volatile
+    private var sizeDirty: Boolean = true
 
     private lateinit var dispatchScopeInstance: DispatchScope
     private val compositionScopeToken = Any()
+    private var lastWindowTitleApplied: String? = null
 
     suspend fun run(content: DispatchScope.() -> Unit): Int {
         appScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
@@ -106,6 +114,7 @@ internal class DispatchApplicationBuilder(
             dispatchScopeInstance = scope
             composer = Composer()
             recomposer = Recomposer(appScope)
+            registerResizeHandler()
 
             scope.content()
 
@@ -122,6 +131,10 @@ internal class DispatchApplicationBuilder(
             activeAreaHeight = config.activeAreaHeight
 
             terminal!!.enterRawMode(config.mouseTracking).use { rawMode ->
+                val initialSize = terminal!!.updateSize()
+                lastTerminalWidth = initialSize.width
+                lastTerminalHeight = initialSize.height
+                sizeDirty = false
                 // Start input handling in raw mode before the first render so early keypresses
                 // (especially Enter) aren't echoed into the UI and don't desync the renderer.
                 val inputJob = appScope.launch(Dispatchers.IO) {
@@ -206,6 +219,8 @@ internal class DispatchApplicationBuilder(
     }
 
     private fun composeAndRender() {
+        applyWindowTitleIfNeeded()
+        updateTerminalSizeIfNeeded()
         composeActiveUI()
         renderActiveArea()
     }
@@ -226,8 +241,8 @@ internal class DispatchApplicationBuilder(
                         CompositionLocalProvider(
                             LocalDispatchScope provides dispatchScopeInstance,
                             LocalTerminal provides t,
-                            LocalTerminalWidth provides t.size.width.coerceAtLeast(40),
-                            LocalTerminalHeight provides t.size.height.coerceAtLeast(10),
+                            LocalTerminalWidth provides lastTerminalWidth.coerceAtLeast(40),
+                            LocalTerminalHeight provides lastTerminalHeight.coerceAtLeast(10),
                             LocalTheme provides config.theme,
                             LocalKeyboardInterceptor provides keyboardInterceptor,
                             LocalFocusRegistry provides focusRegistry,
@@ -249,7 +264,7 @@ internal class DispatchApplicationBuilder(
         renderLock.lock()
         try {
             val measurable = rootMeasurable.get() ?: return
-            val width = renderer.terminalWidth
+            val width = lastTerminalWidth.coerceAtLeast(40)
 
             // UNCONSTRAINED height - let content be as tall as needed
             val constraints = Constraints(
@@ -267,6 +282,12 @@ internal class DispatchApplicationBuilder(
                 activeAreaHeight,
                 scrollingContentTracker.committedLineCount,
             )
+
+            if (pendingResizeReset) {
+                renderer.clearScreen(clearScrollback = true)
+                scrollingContentTracker.reset()
+                pendingResizeReset = false
+            }
 
             val update = scrollingContentTracker.consume(scrollingLines)
             if (update.reset) {
@@ -291,12 +312,56 @@ internal class DispatchApplicationBuilder(
         parsedArguments.putAll(parsed.arguments)
     }
 
+    private fun updateTerminalSizeIfNeeded() {
+        val t = terminal ?: return
+        if (!sizeDirty) return
+        val size = t.updateSize()
+        val update = computeTerminalSizeUpdate(
+            sizeDirty = sizeDirty,
+            previousWidth = lastTerminalWidth,
+            previousHeight = lastTerminalHeight,
+            currentWidth = size.width,
+            currentHeight = size.height,
+        )
+        lastTerminalWidth = update.width
+        lastTerminalHeight = update.height
+        if (update.reset) {
+            pendingResizeReset = true
+        }
+        sizeDirty = update.dirty
+    }
+
+    private fun registerResizeHandler() {
+        if (resizeHandlerRegistered) return
+        try {
+            Signal.handle(Signal("WINCH")) {
+                sizeDirty = true
+                recomposer.requestRecomposition()
+            }
+            resizeHandlerRegistered = true
+        } catch (_: Throwable) {
+            // No-op when signals aren't supported.
+        }
+    }
+
+    private fun applyWindowTitleIfNeeded() {
+        val t = terminal ?: return
+        val title = config.windowTitle ?: config.name
+        if (title.isNullOrBlank()) return
+        if (!config.enforceWindowTitle && lastWindowTitleApplied == title) return
+
+        val safeTitle = title.replace("\u001b", "").replace("\u0007", "")
+        t.rawPrint("\u001b]0;$safeTitle\u0007")
+        t.rawPrint("\u001b]2;$safeTitle\u0007")
+        lastWindowTitleApplied = title
+    }
+
     private inner class DispatchScopeImpl : DispatchScope {
         override val terminal: Terminal get() = this@DispatchApplicationBuilder.terminal!!
         override val theme: DispatchTheme get() = config.theme
         override val args: Array<String> get() = this@DispatchApplicationBuilder.args
-        override val terminalWidth: Int get() = terminal.size.width.coerceAtLeast(40)
-        override val terminalHeight: Int get() = terminal.size.height.coerceAtLeast(10)
+        override val terminalWidth: Int get() = lastTerminalWidth.coerceAtLeast(40)
+        override val terminalHeight: Int get() = lastTerminalHeight.coerceAtLeast(10)
 
         override fun config(block: DispatchConfig.() -> Unit) = config.block()
         override fun exit(code: Int) {
@@ -390,4 +455,58 @@ internal fun splitContentForRendering(
     var scrollingLineCount = activeStartLine.coerceAtLeast(committedLineCount).coerceAtMost(allLines.size)
     val activeStartForRender = maxOf(activeStartLine, scrollingLineCount)
     return allLines.take(scrollingLineCount) to allLines.drop(activeStartForRender)
+}
+
+internal fun shouldResetForResize(
+    previousWidth: Int,
+    previousHeight: Int,
+    currentWidth: Int,
+    currentHeight: Int,
+): Boolean {
+    return previousWidth != currentWidth || previousHeight != currentHeight
+}
+
+internal data class TerminalSizeUpdate(
+    val width: Int,
+    val height: Int,
+    val reset: Boolean,
+    val dirty: Boolean,
+)
+
+internal fun computeTerminalSizeUpdate(
+    sizeDirty: Boolean,
+    previousWidth: Int,
+    previousHeight: Int,
+    currentWidth: Int,
+    currentHeight: Int,
+): TerminalSizeUpdate {
+    if (!sizeDirty) {
+        return TerminalSizeUpdate(
+            width = previousWidth,
+            height = previousHeight,
+            reset = false,
+            dirty = false,
+        )
+    }
+
+    val reset = shouldResetForResize(previousWidth, previousHeight, currentWidth, currentHeight)
+    return TerminalSizeUpdate(
+        width = currentWidth,
+        height = currentHeight,
+        reset = reset,
+        dirty = false,
+    )
+}
+
+internal fun applyResizeSyncIfNeeded(
+    pendingResizeReset: Boolean,
+    scrollingLines: List<String>,
+    activeLines: List<String>,
+    tracker: ScrollingContentTracker,
+    updateActiveArea: (List<String>) -> Unit,
+): Boolean {
+    if (!pendingResizeReset) return false
+    tracker.sync(scrollingLines)
+    updateActiveArea(activeLines)
+    return true
 }
