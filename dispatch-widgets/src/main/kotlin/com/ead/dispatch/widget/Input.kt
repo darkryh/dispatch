@@ -584,6 +584,7 @@ fun InputTextField(
     var latestValue by remember { mutableStateOf(value) }
     var cursorPositionState by remember { mutableStateOf(cursorPosition ?: value.length) }
     val pasteTracker = remember { PasteTracker() }
+    val pasteHeuristic = remember { PasteHeuristic(inputNowNanos) }
     val resolvedHistoryIndexState = historyIndexState ?: remember { InputHistoryIndexState() }
     if (resolvedHistoryIndexState.index < 0 || resolvedHistoryIndexState.index > historyItems.size) {
         resolvedHistoryIndexState.index = historyItems.size
@@ -641,6 +642,7 @@ fun InputTextField(
         latestValue = result.value
         updateCursorPosition(result.cursorPosition)
         onValueChangeCallback(latestValue)
+        pasteHeuristic.recordTextInsert()
     }
 
     DisposableEffect(Triple(enabled, keyboardInterceptor, historyItems)) {
@@ -677,15 +679,17 @@ fun InputTextField(
             when (event.key) {
                 "PasteStart" -> {
                     pasteTracker.increment()
+                    pasteHeuristic.reset()
                     return@addKeyEventHandler
                 }
                 "PasteEnd" -> {
                     pasteTracker.decrement()
+                    pasteHeuristic.reset()
                     return@addKeyEventHandler
                 }
                 "Enter" -> {
                     // Shift+Enter inserts a newline (when supported by the terminal).
-                    if (event.shift || pasteTracker.isActive) {
+                    if (event.shift || pasteTracker.isActive || pasteHeuristic.shouldTreatEnterAsNewline()) {
                         insertText("\n")
                         return@addKeyEventHandler
                     }
@@ -812,6 +816,8 @@ fun InputTextField(
                     val text = textFromKeyEvent(event)
                     if (text != null) {
                         insertText(text)
+                    } else {
+                        pasteHeuristic.reset()
                     }
                 }
             }
@@ -1017,6 +1023,30 @@ private class PasteTracker {
     }
 }
 
+private class PasteHeuristic(private val nowNanos: () -> Long) {
+    private var lastTextAtNanos = 0L
+    private var hasRecentText = false
+
+    fun recordTextInsert() {
+        lastTextAtNanos = nowNanos()
+        hasRecentText = true
+    }
+
+    fun shouldTreatEnterAsNewline(): Boolean {
+        if (!hasRecentText) return false
+        val now = nowNanos()
+        val withinBurst = (now - lastTextAtNanos) <= PASTE_BURST_NANOS
+        hasRecentText = false
+        return withinBurst
+    }
+
+    fun reset() {
+        hasRecentText = false
+    }
+}
+
+internal var inputNowNanos: () -> Long = { System.nanoTime() }
+
 internal data class TextInsertResult(val value: String, val cursorPosition: Int)
 
 internal fun applyInsertion(value: String, cursorPosition: Int, text: String): TextInsertResult {
@@ -1033,8 +1063,9 @@ private fun textFromKeyEvent(event: KeyboardEvent): String? {
     if (key.isEmpty()) return null
     if (key in NON_TEXT_KEYS) return null
     if (isFunctionKey(key)) return null
-    if (key.any { it.isISOControl() }) return null
-    return key
+    val normalized = key.replace("\r\n", "\n").replace('\r', '\n')
+    if (normalized.any { it.isISOControl() && it != '\n' && it != '\t' }) return null
+    return normalized
 }
 
 private fun isFunctionKey(key: String): Boolean {
@@ -1074,6 +1105,8 @@ private val NON_TEXT_KEYS = setOf(
     "Tab",
     "Unidentified",
 )
+
+private const val PASTE_BURST_NANOS: Long = 35_000_000
 
 /**
  * Cursor marker used for measurement only.

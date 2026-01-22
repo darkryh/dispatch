@@ -29,6 +29,14 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
 class InputTextFieldInputTest {
+    private class FakeClock {
+        var nowNanos: Long = 0L
+
+        fun advanceMillis(millis: Long) {
+            nowNanos += millis * 1_000_000
+        }
+    }
+
     private class TestDispatchScope(
         override val terminal: Terminal,
         override val theme: DispatchTheme,
@@ -149,6 +157,55 @@ class InputTextFieldInputTest {
 
         assertEquals("hi\nthere", harness.submitted)
         assertEquals("", harness.inputValue)
+    }
+
+    @Test
+    fun `pasted newline text inserts without submit`() {
+        val harness = InputHarness()
+
+        harness.render()
+        harness.press("hello\r\nworld")
+
+        assertEquals("hello\nworld", harness.inputValue)
+        assertNull(harness.submitted)
+    }
+
+    @Test
+    fun `paste burst enter inserts newline without submit`() {
+        val clock = FakeClock()
+        val previousClock = inputNowNanos
+        inputNowNanos = { clock.nowNanos }
+        try {
+            val harness = InputHarness()
+
+            harness.render()
+            harness.press("h")
+            clock.advanceMillis(1)
+            harness.press("i")
+            clock.advanceMillis(1)
+            harness.press("Enter")
+            clock.advanceMillis(1)
+            harness.press("t")
+            clock.advanceMillis(1)
+            harness.press("h")
+            clock.advanceMillis(1)
+            harness.press("e")
+            clock.advanceMillis(1)
+            harness.press("r")
+            clock.advanceMillis(1)
+            harness.press("e")
+
+            assertEquals("hi\nthere", harness.inputValue)
+            assertNull(harness.submitted)
+
+            clock.advanceMillis(200)
+            harness.press("Enter")
+
+            assertEquals("hi\nthere", harness.submitted)
+            assertEquals("", harness.inputValue)
+        } finally {
+            inputNowNanos = previousClock
+        }
     }
 
     @Test
