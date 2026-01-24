@@ -2,7 +2,6 @@ package com.ead.dispatch.sample.domain.agents.chat_agent.tools.model
 
 import com.ead.dispatch.sample.data.db.type.ArcScope
 import com.ead.dispatch.sample.data.db.type.ContentStatus
-import com.ead.dispatch.sample.data.db.type.StoryFactType
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -114,13 +113,115 @@ data class UpdateArcRequest(
 )
 
 @Serializable
-data class CreateFactRequest(
-    val content: String,
-    val factType: StoryFactType? = null,
+data class CreateWorldRuleRequest(
+    val title: String,
+    val description: String? = null,
 )
 
 @Serializable
-data class UpdateFactRequest(
-    val content: String? = null,
-    val factType: StoryFactType? = null,
+data class UpdateWorldRuleRequest(
+    val title: String? = null,
+    val description: String? = null,
+)
+
+@Serializable
+data class CreateCultureRequest(
+    val name: String,
+    val description: String? = null,
+)
+
+@Serializable
+data class UpdateCultureRequest(
+    val name: String? = null,
+    val description: String? = null,
+)
+
+@Serializable
+data class CreateEventRequest(
+    val name: String,
+    val description: String? = null,
+)
+
+@Serializable
+data class UpdateEventRequest(
+    val name: String? = null,
+    val description: String? = null,
+)
+
+@Serializable
+data class CreateOrganizationRequest(
+    val name: String,
+    val description: String? = null,
+)
+
+@Serializable
+data class UpdateOrganizationRequest(
+    val name: String? = null,
+    val description: String? = null,
+)
+
+@Serializable
+data class CreateRelationshipRequest(
+    val subjectId: String,
+    val subjectType: String,
+    val objectId: String,
+    val objectType: String,
+    val relation: String,
+    val notes: String? = null,
+)
+
+@Serializable
+data class UpdateRelationshipRequest(
+    val subjectId: String? = null,
+    val subjectType: String? = null,
+    val objectId: String? = null,
+    val objectType: String? = null,
+    val relation: String? = null,
+    val notes: String? = null,
+)
+
+@Serializable
+data class CreateLocationFeatureRequest(
+    val name: String,
+    val description: String? = null,
+    val locationId: String? = null,
+)
+
+@Serializable
+data class UpdateLocationFeatureRequest(
+    val name: String? = null,
+    val description: String? = null,
+    val locationId: String? = null,
+)
+
+@Serializable
+data class CreateArtifactRequest(
+    val name: String,
+    val description: String? = null,
+    val ownerId: String? = null,
+    val ownerType: String? = null,
+    val locationId: String? = null,
+)
+
+@Serializable
+data class UpdateArtifactRequest(
+    val name: String? = null,
+    val description: String? = null,
+    val ownerId: String? = null,
+    val ownerType: String? = null,
+    val locationId: String? = null,
+)
+
+@Serializable
+data class CreateTimelineEntryRequest(
+    val title: String,
+    val description: String? = null,
+    val orderIndex: Long,
+)
+
+@Serializable
+data class UpdateTimelineEntryRequest(
+    val title: String? = null,
+    val description: String? = null,
+    val orderIndex: Long? = null,
 )

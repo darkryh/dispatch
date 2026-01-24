@@ -9,22 +9,14 @@ fun chatAgentPrompt(
     context: StoryChatContext,
     inputRequest: ChatRequest
 ): Prompt {
-    fun <T> List<T>.limit(limit: Int): Pair<List<T>, Int> =
-        take(limit) to (size - limit).coerceAtLeast(0)
-
     val missing = buildList {
         if (context.story?.title.isNullOrBlank()) add("story.title")
         if (context.story?.genre.isNullOrBlank()) add("story.genre")
         if (context.story?.setting.isNullOrBlank()) add("story.setting")
         if (context.story?.plotOutline.isNullOrBlank()) add("story.plot_outline")
-        if (context.characters.isEmpty()) add("characters")
-        if (context.locations.isEmpty()) add("locations")
+        if (context.characters.items.isEmpty()) add("characters")
+        if (context.locations.items.isEmpty()) add("locations")
     }
-
-    val (characterList, characterExtra) = context.characters.limit(8)
-    val (locationList, locationExtra) = context.locations.limit(8)
-    val (arcList, arcExtra) = context.arcs.limit(6)
-    val (factList, factExtra) = context.facts.limit(6)
 
     return prompt("chat-agent") {
         system {
@@ -78,7 +70,7 @@ fun chatAgentPrompt(
                 br()
                 +"If the user does not explicitly request a write, respond with guidance only."
                 br()
-                +"Do not auto-create facts, arcs, or story metadata from advice; ask \"Do you want me to save this?\" first."
+                +"Do not auto-create world data (rules, cultures, events), arcs, or story metadata from advice; ask \"Do you want me to save this?\" first."
                 br()
                 +"Never fabricate tool results, IDs, or records."
                 br()
@@ -100,7 +92,7 @@ fun chatAgentPrompt(
                 br()
                 +"Before any write: ask \"Do you want me to save this to the story? If yes, which items should I save?\""
                 br()
-                +"Example: Suggest 3 plot twists -> ask which twist to save as a fact."
+                +"Example: Suggest 3 plot twists -> ask which twist to save as an event or rule."
                 br()
                 +"Example: Suggest character ideas -> ask which characters to create."
                 br()
@@ -156,6 +148,8 @@ fun chatAgentPrompt(
                 br()
                 +"If a request conflicts with existing data, confirm which version to keep."
                 br()
+                +"Do not reuse fixed wording; paraphrase confirmations."
+                br()
 
                 h2("Entity Minimums")
                 +"Stories: title, genre, setting, plot outline, and style profile are optional but preferred."
@@ -166,7 +160,17 @@ fun chatAgentPrompt(
                 br()
                 +"Arcs: require a title; scope and description are optional."
                 br()
-                +"Facts: require a fact type and content."
+                +"World rules: require a title; description optional."
+                br()
+                +"Cultures, events, organizations: require a name; description optional."
+                br()
+                +"Relationships: require subject/object + relation label."
+                br()
+                +"Location features: require a name; location optional."
+                br()
+                +"Artifacts: require a name; owner/location optional."
+                br()
+                +"Timeline entries: require a title and order index."
                 br()
 
                 h2("Ambiguity Handling")
@@ -176,13 +180,15 @@ fun chatAgentPrompt(
                 br()
                 +"When a request could map to multiple entities, ask which one to use."
                 br()
+                +"Do not reuse fixed wording; paraphrase clarifying questions."
+                br()
 
                 h2("Consistency Checks")
                 +"Before writing, scan existing context for conflicts or duplicates."
                 br()
-                +"If a new fact contradicts an existing fact, ask which version to keep."
+                +"If a new world rule contradicts an existing rule, ask which version to keep."
                 br()
-                +"If a fact overlaps an existing one, update the canonical fact instead of creating a duplicate."
+                +"If a world entry overlaps an existing one, update the canonical entry instead of creating a duplicate."
                 br()
                 +"If the user explicitly confirms they want to override, proceed with the write."
                 br()
@@ -192,17 +198,21 @@ fun chatAgentPrompt(
                 br()
                 +"Do not add extra context if the user asked for a direct result."
                 br()
+                +"Avoid stock phrasing; paraphrase suggestions."
+                br()
 
-                h2("Examples")
-                +"User: \"hi\" -> Reply: \"Hi. What would you like to work on: characters, locations, or plot?\""
+                h2("Examples (Behavior, not verbatim)")
+                +"Greeting -> Acknowledge briefly and ask what they want to work on (characters/locations/plot)."
                 br()
-                +"User: \"be creative with plot twists\" -> Provide 2-4 options, then ask which to save."
+                +"Creative request -> Provide 2-4 options, then ask which to save."
                 br()
-                +"User: \"create a character named Mira\" -> Create character with name Mira, ask for optional details."
+                +"Create character -> Create character with name; ask for optional details."
                 br()
-                +"User: \"update Mira to be a mentor\" -> Update role or description to mentor."
+                +"Update character -> Update role/description; ask if ambiguous."
                 br()
-                +"User: \"delete the Void location\" -> Ask for confirmation before deleting."
+                +"Delete location -> Ask for confirmation before deleting."
+                br()
+                +"Never copy example wording verbatim; paraphrase responses."
                 br()
 
                 h2("Story Context")
@@ -241,61 +251,149 @@ fun chatAgentPrompt(
                 br()
 
                 h3("Characters")
-                if (characterList.isEmpty()) {
+                if (context.characters.items.isEmpty()) {
                     +"(none)"
                 } else {
                     bulleted {
-                        characterList.forEach { character ->
+                        context.characters.items.forEach { character ->
                             val roles = character.roles.takeIf { it.isNotEmpty() }?.joinToString(", ")
                             item("${character.name} (id=${character.id}, roles=${roles ?: "unspecified"})")
                         }
-                        if (characterExtra > 0) item("(+${characterExtra} more)")
+                        if (context.characters.overflowCount > 0) item("(+${context.characters.overflowCount} more)")
                     }
                 }
                 br()
 
                 h3("Locations")
-                if (locationList.isEmpty()) {
+                if (context.locations.items.isEmpty()) {
                     +"(none)"
                 } else {
                     bulleted {
-                        locationList.forEach { location ->
+                        context.locations.items.forEach { location ->
                             item("${location.profile.name} (id=${location.id})")
                         }
-                        if (locationExtra > 0) item("(+${locationExtra} more)")
+                        if (context.locations.overflowCount > 0) item("(+${context.locations.overflowCount} more)")
                     }
                 }
                 br()
 
                 h3("Arcs")
-                if (arcList.isEmpty()) {
+                if (context.arcs.items.isEmpty()) {
                     +"(none)"
                 } else {
                     bulleted {
-                        arcList.forEach { arc ->
+                        context.arcs.items.forEach { arc ->
                             item("${arc.title} (scope=${arc.scopeType.name}, id=${arc.id})")
                         }
-                        if (arcExtra > 0) item("(+${arcExtra} more)")
+                        if (context.arcs.overflowCount > 0) item("(+${context.arcs.overflowCount} more)")
                     }
                 }
                 br()
 
-                h3("Facts")
-                if (factList.isEmpty()) {
+                h3("World Rules")
+                if (context.worldRules.items.isEmpty()) {
                     +"(none)"
                 } else {
                     bulleted {
-                        factList.forEach { fact ->
-                            item("${fact.factType.name}: ${fact.content}")
+                        context.worldRules.items.forEach { rule ->
+                            item("${rule.title}: ${rule.description ?: "no description"}")
                         }
-                        if (factExtra > 0) item("(+${factExtra} more)")
+                        if (context.worldRules.overflowCount > 0) item("(+${context.worldRules.overflowCount} more)")
+                    }
+                }
+                br()
+
+                h3("Cultures")
+                if (context.cultures.items.isEmpty()) {
+                    +"(none)"
+                } else {
+                    bulleted {
+                        context.cultures.items.forEach { culture ->
+                            item("${culture.name}: ${culture.description ?: "no description"}")
+                        }
+                        if (context.cultures.overflowCount > 0) item("(+${context.cultures.overflowCount} more)")
+                    }
+                }
+                br()
+
+                h3("Events")
+                if (context.events.items.isEmpty()) {
+                    +"(none)"
+                } else {
+                    bulleted {
+                        context.events.items.forEach { event ->
+                            item("${event.name}: ${event.description ?: "no description"}")
+                        }
+                        if (context.events.overflowCount > 0) item("(+${context.events.overflowCount} more)")
+                    }
+                }
+                br()
+
+                h3("Organizations")
+                if (context.organizations.items.isEmpty()) {
+                    +"(none)"
+                } else {
+                    bulleted {
+                        context.organizations.items.forEach { org ->
+                            item("${org.name}: ${org.description ?: "no description"}")
+                        }
+                        if (context.organizations.overflowCount > 0) item("(+${context.organizations.overflowCount} more)")
+                    }
+                }
+                br()
+
+                h3("Relationships")
+                if (context.relationships.items.isEmpty()) {
+                    +"(none)"
+                } else {
+                    bulleted {
+                        context.relationships.items.forEach { rel ->
+                            item("${rel.relation}: ${rel.subjectType}:${rel.subjectId} -> ${rel.objectType}:${rel.objectId}")
+                        }
+                        if (context.relationships.overflowCount > 0) item("(+${context.relationships.overflowCount} more)")
+                    }
+                }
+                br()
+
+                h3("Location Features")
+                if (context.locationFeatures.items.isEmpty()) {
+                    +"(none)"
+                } else {
+                    bulleted {
+                        context.locationFeatures.items.forEach { feature ->
+                            val locationLabel = feature.locationId ?: "unspecified"
+                            item("${feature.name} (location=${locationLabel})")
+                        }
+                        if (context.locationFeatures.overflowCount > 0) item("(+${context.locationFeatures.overflowCount} more)")
+                    }
+                }
+                br()
+
+                h3("Artifacts")
+                if (context.artifacts.items.isEmpty()) {
+                    +"(none)"
+                } else {
+                    bulleted {
+                        context.artifacts.items.forEach { artifact ->
+                            item("${artifact.name} (owner=${artifact.ownerId ?: "unspecified"})")
+                        }
+                        if (context.artifacts.overflowCount > 0) item("(+${context.artifacts.overflowCount} more)")
+                    }
+                }
+                br()
+
+                h3("Timeline")
+                if (context.timelineEntries.items.isEmpty()) {
+                    +"(none)"
+                } else {
+                    bulleted {
+                        context.timelineEntries.items.forEach { entry ->
+                            item("${entry.orderIndex}: ${entry.title}")
+                        }
+                        if (context.timelineEntries.overflowCount > 0) item("(+${context.timelineEntries.overflowCount} more)")
                     }
                 }
             }
-        }
-
-        user {
-            text(inputRequest.text.trim())
         }
     }
 }

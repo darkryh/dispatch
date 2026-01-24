@@ -51,6 +51,7 @@ class ChatAgent(
                 edge(chatAgentModel forwardTo nodeFinish)
             },
             maxIterations = 50,
+            temperature = 1.0,
             installFeatures = {
               install(Persistence) {
                   this.storage = Storage.provider

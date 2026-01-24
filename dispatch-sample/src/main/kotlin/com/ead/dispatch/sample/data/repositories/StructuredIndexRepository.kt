@@ -5,6 +5,7 @@ import app.cash.sqldelight.coroutines.mapToList
 import com.ead.dispatch.sample.DispatchDatabase
 import com.ead.dispatch.sample.data.db.entities.*
 import com.ead.dispatch.sample.data.db.type.*
+import com.ead.dispatch.sample.domain.model.story.OverflowList
 import com.ead.dispatch.sample.domain.model.story.StoryChatContext
 import com.ead.dispatch.sample.domain.model.story.StoryModeContext
 import kotlinx.coroutines.CoroutineDispatcher
@@ -18,6 +19,37 @@ import java.util.concurrent.Executors
 class StructuredIndexRepository(
     private val database: DispatchDatabase,
 ) {
+    private data class LimitedSlice<T>(
+        val items: List<T>,
+        val overflow: Int,
+    )
+
+    private fun <T> limitLatest(
+        items: List<T>,
+        limit: Int,
+        selector: (T) -> Long,
+    ): LimitedSlice<T> {
+        if (items.isEmpty()) return LimitedSlice(emptyList(), 0)
+        val sorted = items.sortedByDescending(selector)
+        val limited = if (sorted.size > limit) sorted.take(limit) else sorted
+        val overflow = (sorted.size - limited.size).coerceAtLeast(0)
+        return LimitedSlice(limited, overflow)
+    }
+
+    private companion object {
+        const val CHAT_CONTEXT_CHARACTER_LIMIT = 8
+        const val CHAT_CONTEXT_LOCATION_LIMIT = 8
+        const val CHAT_CONTEXT_ARC_LIMIT = 6
+        const val CHAT_CONTEXT_WORLD_RULE_LIMIT = 4
+        const val CHAT_CONTEXT_CULTURE_LIMIT = 4
+        const val CHAT_CONTEXT_EVENT_LIMIT = 4
+        const val CHAT_CONTEXT_ORGANIZATION_LIMIT = 4
+        const val CHAT_CONTEXT_RELATIONSHIP_LIMIT = 4
+        const val CHAT_CONTEXT_LOCATION_FEATURE_LIMIT = 4
+        const val CHAT_CONTEXT_ARTIFACT_LIMIT = 4
+        const val CHAT_CONTEXT_TIMELINE_LIMIT = 4
+    }
+
     private val queries = database.dispatchDatabaseQueries
     private val coroutineDispatcher: CoroutineDispatcher = Executors.newSingleThreadExecutor { runnable ->
         Thread(runnable, "dispatch-db")
@@ -469,14 +501,58 @@ class StructuredIndexRepository(
         val characters = getStoryCharacters(storyId)
         val locations = getLocationsByStory(storyId)
         val arcs = getArcsByStory(storyId)
-        val facts = getFactsByStory(storyId)
+        val worldRules = getWorldRulesByStory(storyId)
+        val cultures = getCulturesByStory(storyId)
+        val events = getEventsByStory(storyId)
+        val organizations = getOrganizationsByStory(storyId)
+        val relationships = getRelationshipsByStory(storyId)
+        val locationFeatures = getLocationFeaturesByStory(storyId)
+        val artifacts = getArtifactsByStory(storyId)
+        val timelineEntries = getTimelineEntriesByStory(storyId)
 
         return StoryChatContext(
             story = story,
-            characters = characters,
-            locations = locations,
-            arcs = arcs,
-            facts = facts,
+            characters = OverflowList(characters, 0),
+            locations = OverflowList(locations, 0),
+            arcs = OverflowList(arcs, 0),
+            worldRules = OverflowList(worldRules, 0),
+            cultures = OverflowList(cultures, 0),
+            events = OverflowList(events, 0),
+            organizations = OverflowList(organizations, 0),
+            relationships = OverflowList(relationships, 0),
+            locationFeatures = OverflowList(locationFeatures, 0),
+            artifacts = OverflowList(artifacts, 0),
+            timelineEntries = OverflowList(timelineEntries, 0),
+        )
+    }
+
+    suspend fun getChatContextForAgent(storyId: String): StoryChatContext {
+        val story = getStoryById(storyId)
+        val characterSlice = limitLatest(getStoryCharacters(storyId), CHAT_CONTEXT_CHARACTER_LIMIT) { it.createdAt }
+        val locationSlice = limitLatest(getLocationsByStory(storyId), CHAT_CONTEXT_LOCATION_LIMIT) { it.createdAt }
+        val arcSlice = limitLatest(getArcsByStory(storyId), CHAT_CONTEXT_ARC_LIMIT) { it.updatedAt }
+        val worldRuleSlice = limitLatest(getWorldRulesByStory(storyId), CHAT_CONTEXT_WORLD_RULE_LIMIT) { it.createdAt }
+        val cultureSlice = limitLatest(getCulturesByStory(storyId), CHAT_CONTEXT_CULTURE_LIMIT) { it.createdAt }
+        val eventSlice = limitLatest(getEventsByStory(storyId), CHAT_CONTEXT_EVENT_LIMIT) { it.createdAt }
+        val organizationSlice = limitLatest(getOrganizationsByStory(storyId), CHAT_CONTEXT_ORGANIZATION_LIMIT) { it.createdAt }
+        val relationshipSlice = limitLatest(getRelationshipsByStory(storyId), CHAT_CONTEXT_RELATIONSHIP_LIMIT) { it.createdAt }
+        val locationFeatureSlice = limitLatest(getLocationFeaturesByStory(storyId), CHAT_CONTEXT_LOCATION_FEATURE_LIMIT) { it.createdAt }
+        val artifactSlice = limitLatest(getArtifactsByStory(storyId), CHAT_CONTEXT_ARTIFACT_LIMIT) { it.createdAt }
+        val timelineSlice = limitLatest(getTimelineEntriesByStory(storyId), CHAT_CONTEXT_TIMELINE_LIMIT) { it.createdAt }
+
+        return StoryChatContext(
+            story = story,
+            characters = OverflowList(characterSlice.items, characterSlice.overflow),
+            locations = OverflowList(locationSlice.items, locationSlice.overflow),
+            arcs = OverflowList(arcSlice.items, arcSlice.overflow),
+            worldRules = OverflowList(worldRuleSlice.items, worldRuleSlice.overflow),
+            cultures = OverflowList(cultureSlice.items, cultureSlice.overflow),
+            events = OverflowList(eventSlice.items, eventSlice.overflow),
+            organizations = OverflowList(organizationSlice.items, organizationSlice.overflow),
+            relationships = OverflowList(relationshipSlice.items, relationshipSlice.overflow),
+            locationFeatures = OverflowList(locationFeatureSlice.items, locationFeatureSlice.overflow),
+            artifacts = OverflowList(artifactSlice.items, artifactSlice.overflow),
+            timelineEntries = OverflowList(timelineSlice.items, timelineSlice.overflow),
         )
     }
 
@@ -1018,7 +1094,7 @@ class StructuredIndexRepository(
             StoryArcRecord(
                 id = id,
                 storyId = storyId,
-                scopeType = ArcScope.Companion.fromDb(scopeType),
+                scopeType = ArcScope.fromDb(scopeType),
                 scopeId = scopeId,
                 title = title,
                 summary = summary,
@@ -1034,7 +1110,7 @@ class StructuredIndexRepository(
             StoryArcRecord(
                 id = id,
                 storyId = storyId,
-                scopeType = ArcScope.Companion.fromDb(scopeType),
+                scopeType = ArcScope.fromDb(scopeType),
                 scopeId = scopeId,
                 title = title,
                 summary = summary,
@@ -1184,50 +1260,300 @@ class StructuredIndexRepository(
         }
     }
 
-    suspend fun replaceStoryFacts(storyId: String, facts: List<StoryFactRecord>) = dbQuery {
-        database.transaction {
-            queries.deleteStoryFactsByStoryId(storyId)
-            facts.forEach { fact ->
-                queries.insertStoryFact(
-                    id = fact.id,
-                    story_id = storyId,
-                    fact_type = fact.factType.name,
-                    content = fact.content,
-                    created_at = fact.createdAt,
-                )
-            }
-        }
-    }
-
-    suspend fun insertStoryFact(record: StoryFactRecord) = dbQuery {
-        queries.insertStoryFact(
+    suspend fun insertStoryWorldRule(record: StoryWorldRuleRecord) = dbQuery {
+        queries.insertStoryWorldRule(
             id = record.id,
             story_id = record.storyId,
-            fact_type = record.factType.name,
-            content = record.content,
+            title = record.title,
+            description = record.description,
             created_at = record.createdAt,
         )
     }
 
-    suspend fun updateStoryFact(record: StoryFactRecord) = dbQuery {
-        queries.updateStoryFact(
+    suspend fun updateStoryWorldRule(record: StoryWorldRuleRecord) = dbQuery {
+        queries.updateStoryWorldRule(
             id = record.id,
-            fact_type = record.factType.name,
-            content = record.content,
+            title = record.title,
+            description = record.description,
         )
     }
 
-    suspend fun deleteStoryFact(factId: String) = dbQuery {
-        queries.deleteStoryFactById(factId)
+    suspend fun deleteStoryWorldRule(ruleId: String) = dbQuery {
+        queries.deleteStoryWorldRuleById(ruleId)
     }
 
-    suspend fun getFactsByStory(storyId: String): List<StoryFactRecord> = dbQuery {
-        queries.selectFactsByStoryId(storyId) { id, storyId, factType, content, createdAt ->
-            StoryFactRecord(
+    suspend fun getWorldRulesByStory(storyId: String): List<StoryWorldRuleRecord> = dbQuery {
+        queries.selectWorldRulesByStoryId(storyId) { id, storyId, title, description, createdAt ->
+            StoryWorldRuleRecord(
                 id = id,
                 storyId = storyId,
-                factType = StoryFactType.fromDb(factType),
-                content = content,
+                title = title,
+                description = description,
+                createdAt = createdAt,
+            )
+        }.executeAsList()
+    }
+
+    suspend fun insertStoryCulture(record: StoryCultureRecord) = dbQuery {
+        queries.insertStoryCulture(
+            id = record.id,
+            story_id = record.storyId,
+            name = record.name,
+            description = record.description,
+            created_at = record.createdAt,
+        )
+    }
+
+    suspend fun updateStoryCulture(record: StoryCultureRecord) = dbQuery {
+        queries.updateStoryCulture(
+            id = record.id,
+            name = record.name,
+            description = record.description,
+        )
+    }
+
+    suspend fun deleteStoryCulture(cultureId: String) = dbQuery {
+        queries.deleteStoryCultureById(cultureId)
+    }
+
+    suspend fun getCulturesByStory(storyId: String): List<StoryCultureRecord> = dbQuery {
+        queries.selectCulturesByStoryId(storyId) { id, storyId, name, description, createdAt ->
+            StoryCultureRecord(
+                id = id,
+                storyId = storyId,
+                name = name,
+                description = description,
+                createdAt = createdAt,
+            )
+        }.executeAsList()
+    }
+
+    suspend fun insertStoryEvent(record: StoryEventRecord) = dbQuery {
+        queries.insertStoryEvent(
+            id = record.id,
+            story_id = record.storyId,
+            name = record.name,
+            description = record.description,
+            created_at = record.createdAt,
+        )
+    }
+
+    suspend fun updateStoryEvent(record: StoryEventRecord) = dbQuery {
+        queries.updateStoryEvent(
+            id = record.id,
+            name = record.name,
+            description = record.description,
+        )
+    }
+
+    suspend fun deleteStoryEvent(eventId: String) = dbQuery {
+        queries.deleteStoryEventById(eventId)
+    }
+
+    suspend fun getEventsByStory(storyId: String): List<StoryEventRecord> = dbQuery {
+        queries.selectEventsByStoryId(storyId) { id, storyId, name, description, createdAt ->
+            StoryEventRecord(
+                id = id,
+                storyId = storyId,
+                name = name,
+                description = description,
+                createdAt = createdAt,
+            )
+        }.executeAsList()
+    }
+
+    suspend fun insertStoryOrganization(record: StoryOrganizationRecord) = dbQuery {
+        queries.insertStoryOrganization(
+            id = record.id,
+            story_id = record.storyId,
+            name = record.name,
+            description = record.description,
+            created_at = record.createdAt,
+        )
+    }
+
+    suspend fun updateStoryOrganization(record: StoryOrganizationRecord) = dbQuery {
+        queries.updateStoryOrganization(
+            id = record.id,
+            name = record.name,
+            description = record.description,
+        )
+    }
+
+    suspend fun deleteStoryOrganization(organizationId: String) = dbQuery {
+        queries.deleteStoryOrganizationById(organizationId)
+    }
+
+    suspend fun getOrganizationsByStory(storyId: String): List<StoryOrganizationRecord> = dbQuery {
+        queries.selectOrganizationsByStoryId(storyId) { id, storyId, name, description, createdAt ->
+            StoryOrganizationRecord(
+                id = id,
+                storyId = storyId,
+                name = name,
+                description = description,
+                createdAt = createdAt,
+            )
+        }.executeAsList()
+    }
+
+    suspend fun insertStoryRelationship(record: StoryRelationshipRecord) = dbQuery {
+        queries.insertStoryRelationship(
+            id = record.id,
+            story_id = record.storyId,
+            subject_id = record.subjectId,
+            subject_type = record.subjectType,
+            object_id = record.objectId,
+            object_type = record.objectType,
+            relation = record.relation,
+            notes = record.notes,
+            created_at = record.createdAt,
+        )
+    }
+
+    suspend fun updateStoryRelationship(record: StoryRelationshipRecord) = dbQuery {
+        queries.updateStoryRelationship(
+            id = record.id,
+            subject_id = record.subjectId,
+            subject_type = record.subjectType,
+            object_id = record.objectId,
+            object_type = record.objectType,
+            relation = record.relation,
+            notes = record.notes,
+        )
+    }
+
+    suspend fun deleteStoryRelationship(relationshipId: String) = dbQuery {
+        queries.deleteStoryRelationshipById(relationshipId)
+    }
+
+    suspend fun getRelationshipsByStory(storyId: String): List<StoryRelationshipRecord> = dbQuery {
+        queries.selectRelationshipsByStoryId(storyId) { id, storyId, subjectId, subjectType, objectId, objectType, relation, notes, createdAt ->
+            StoryRelationshipRecord(
+                id = id,
+                storyId = storyId,
+                subjectId = subjectId,
+                subjectType = subjectType,
+                objectId = objectId,
+                objectType = objectType,
+                relation = relation,
+                notes = notes,
+                createdAt = createdAt,
+            )
+        }.executeAsList()
+    }
+
+    suspend fun insertStoryLocationFeature(record: StoryLocationFeatureRecord) = dbQuery {
+        queries.insertStoryLocationFeature(
+            id = record.id,
+            story_id = record.storyId,
+            location_id = record.locationId,
+            name = record.name,
+            description = record.description,
+            created_at = record.createdAt,
+        )
+    }
+
+    suspend fun updateStoryLocationFeature(record: StoryLocationFeatureRecord) = dbQuery {
+        queries.updateStoryLocationFeature(
+            id = record.id,
+            location_id = record.locationId,
+            name = record.name,
+            description = record.description,
+        )
+    }
+
+    suspend fun deleteStoryLocationFeature(featureId: String) = dbQuery {
+        queries.deleteStoryLocationFeatureById(featureId)
+    }
+
+    suspend fun getLocationFeaturesByStory(storyId: String): List<StoryLocationFeatureRecord> = dbQuery {
+        queries.selectLocationFeaturesByStoryId(storyId) { id, storyId, locationId, name, description, createdAt ->
+            StoryLocationFeatureRecord(
+                id = id,
+                storyId = storyId,
+                locationId = locationId,
+                name = name,
+                description = description,
+                createdAt = createdAt,
+            )
+        }.executeAsList()
+    }
+
+    suspend fun insertStoryArtifact(record: StoryArtifactRecord) = dbQuery {
+        queries.insertStoryArtifact(
+            id = record.id,
+            story_id = record.storyId,
+            name = record.name,
+            description = record.description,
+            owner_id = record.ownerId,
+            owner_type = record.ownerType,
+            location_id = record.locationId,
+            created_at = record.createdAt,
+        )
+    }
+
+    suspend fun updateStoryArtifact(record: StoryArtifactRecord) = dbQuery {
+        queries.updateStoryArtifact(
+            id = record.id,
+            name = record.name,
+            description = record.description,
+            owner_id = record.ownerId,
+            owner_type = record.ownerType,
+            location_id = record.locationId,
+        )
+    }
+
+    suspend fun deleteStoryArtifact(artifactId: String) = dbQuery {
+        queries.deleteStoryArtifactById(artifactId)
+    }
+
+    suspend fun getArtifactsByStory(storyId: String): List<StoryArtifactRecord> = dbQuery {
+        queries.selectArtifactsByStoryId(storyId) { id, storyId, name, description, ownerId, ownerType, locationId, createdAt ->
+            StoryArtifactRecord(
+                id = id,
+                storyId = storyId,
+                name = name,
+                description = description,
+                ownerId = ownerId,
+                ownerType = ownerType,
+                locationId = locationId,
+                createdAt = createdAt,
+            )
+        }.executeAsList()
+    }
+
+    suspend fun insertStoryTimelineEntry(record: StoryTimelineEntryRecord) = dbQuery {
+        queries.insertStoryTimelineEntry(
+            id = record.id,
+            story_id = record.storyId,
+            title = record.title,
+            description = record.description,
+            order_index = record.orderIndex,
+            created_at = record.createdAt,
+        )
+    }
+
+    suspend fun updateStoryTimelineEntry(record: StoryTimelineEntryRecord) = dbQuery {
+        queries.updateStoryTimelineEntry(
+            id = record.id,
+            title = record.title,
+            description = record.description,
+            order_index = record.orderIndex,
+        )
+    }
+
+    suspend fun deleteStoryTimelineEntry(entryId: String) = dbQuery {
+        queries.deleteStoryTimelineEntryById(entryId)
+    }
+
+    suspend fun getTimelineEntriesByStory(storyId: String): List<StoryTimelineEntryRecord> = dbQuery {
+        queries.selectTimelineEntriesByStoryId(storyId) { id, storyId, title, description, orderIndex, createdAt ->
+            StoryTimelineEntryRecord(
+                id = id,
+                storyId = storyId,
+                title = title,
+                description = description,
+                orderIndex = orderIndex,
                 createdAt = createdAt,
             )
         }.executeAsList()

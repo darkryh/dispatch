@@ -12,6 +12,7 @@ import com.ead.dispatch.navigation.NavController
 import com.ead.dispatch.runtime.LocalTheme
 import com.ead.dispatch.runtime.dispatchScope
 import com.ead.dispatch.sample.domain.CommandManager
+import com.ead.dispatch.sample.domain.model.story.WriterMode
 import com.ead.dispatch.sample.navigation.HelpRoute
 import com.ead.dispatch.state.remember
 import com.ead.dispatch.widget.LazyColumn
@@ -26,7 +27,14 @@ fun HelpScreen(
     val theme = LocalTheme.current
     val scope = dispatchScope()
     val commandsManager by inject<CommandManager>()
-    val commands = commandsManager.data
+    val writerMode = route.mode?.let { mode ->
+        runCatching { WriterMode.valueOf(mode) }.getOrNull()
+    }
+    val commands = if (writerMode != null) {
+        commandsManager.commandsFor(writerMode)
+    } else {
+        commandsManager.data
+    }
 
     val prefix = "/"
     val labelWidth = remember(commands) {

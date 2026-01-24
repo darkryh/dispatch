@@ -17,10 +17,11 @@ import com.ead.dispatch.sample.domain.model.message.CliMessageRole
 import com.ead.dispatch.sample.domain.model.session.Session
 import com.ead.dispatch.sample.domain.model.story.WriterMode
 import com.ead.dispatch.sample.domain.util.extension.toCliMessage
-import com.ead.dispatch.sample.navigation.CharacterRoute
 import com.ead.dispatch.sample.navigation.ChatRoute
+import com.ead.dispatch.sample.navigation.EntityListRoute
 import com.ead.dispatch.sample.navigation.HelpRoute
 import com.ead.dispatch.sample.navigation.StoryInfoRoute
+import com.ead.dispatch.sample.navigation.StorySummaryRoute
 import com.ead.dispatch.sample.presentation.chat.event.ChatEvent
 import com.ead.dispatch.sample.presentation.commands.CommandAction
 import com.ead.dispatch.viewmodel.ViewModel
@@ -105,7 +106,7 @@ class ChatViewModel(
                 val navController = event.navController
                 val text = event.text
 
-                val commandAction = commandManager.routing(text)
+                val commandAction = commandManager.routing(text, writerMode.value)
 
                 if (commandAction != null) {
                     onCommandAction(navController,commandAction)
@@ -142,16 +143,19 @@ class ChatViewModel(
     private fun onCommandAction(navController : NavController, commandAction: CommandAction) {
         when (commandAction) {
             CommandAction.ShowHelp -> {
-                navController.navigate(HelpRoute(from = "chat"))
+                navController.navigate(HelpRoute(from = "chat", mode = writerMode.value.name))
             }
             CommandAction.ClearContext -> {
                 _messages.value = emptyList()
             }
-            CommandAction.OpenCharacter -> {
-                navController.navigate(CharacterRoute())
+            CommandAction.OpenStorySummary -> {
+                navController.navigate(StorySummaryRoute(storyId = _session.value?.id))
             }
             CommandAction.OpenStoryInfo -> {
                 navController.navigate(StoryInfoRoute(storyId = _session.value?.id))
+            }
+            is CommandAction.OpenEntityList -> {
+                navController.navigate(EntityListRoute(type = commandAction.type, storyId = _session.value?.id))
             }
         }
     }

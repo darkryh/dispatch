@@ -8,14 +8,18 @@ import com.ead.dispatch.navigation.screen
 import com.ead.dispatch.runtime.dispatchScope
 import com.ead.dispatch.sample.navigation.ChatRoute
 import com.ead.dispatch.sample.navigation.CharacterRoute
+import com.ead.dispatch.sample.navigation.EntityListRoute
 import com.ead.dispatch.sample.navigation.HelpRoute
 import com.ead.dispatch.sample.navigation.SessionRoute
 import com.ead.dispatch.sample.navigation.StoryInfoRoute
+import com.ead.dispatch.sample.navigation.StorySummaryRoute
 import com.ead.dispatch.sample.presentation.chat.ChatScreen
 import com.ead.dispatch.sample.presentation.characters.CharacterScreen
+import com.ead.dispatch.sample.presentation.entity_list.EntityListScreen
 import com.ead.dispatch.sample.presentation.help.HelpScreen
 import com.ead.dispatch.sample.presentation.session.SessionScreen
 import com.ead.dispatch.sample.presentation.story_info.StoryInfoScreen
+import com.ead.dispatch.sample.presentation.story_summary.StorySummaryScreen
 
 @Dispatchable
 fun DispatchSampleApp() {
@@ -48,12 +52,20 @@ fun DispatchSampleApp() {
             ChatScreen(navController)
         }
 
-        screen<CharacterRoute> {
-            CharacterScreen(navController)
+        screen<CharacterRoute> { route ->
+            CharacterScreen(navController, route)
         }
 
         screen<StoryInfoRoute> {
             StoryInfoScreen(navController)
+        }
+
+        screen<StorySummaryRoute> { route ->
+            StorySummaryScreen(navController, route)
+        }
+
+        screen<EntityListRoute> { route ->
+            EntityListScreen(navController, route)
         }
 
         screen<HelpRoute> { route ->

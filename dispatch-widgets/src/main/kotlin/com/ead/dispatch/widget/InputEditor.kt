@@ -225,7 +225,7 @@ internal class InputEditor(
         setValue(result.value)
         updateCursorPosition(result.cursorPosition)
         onValueChange(getValue())
-        pasteHeuristic.recordTextInsert()
+        pasteHeuristic.recordTextInsert(text)
     }
 }
 
@@ -244,23 +244,39 @@ internal class PasteTracker {
 
 internal class PasteHeuristic(private val nowNanos: () -> Long) {
     private var lastTextAtNanos = 0L
-    private var hasRecentText = false
+    private var recentInsertCount = 0
+    private var suppressNextEnterUntilNanos = 0L
 
-    fun recordTextInsert() {
-        lastTextAtNanos = nowNanos()
-        hasRecentText = true
+    fun recordTextInsert(text: String) {
+        val now = nowNanos()
+        val withinBurst = (now - lastTextAtNanos) <= PASTE_BURST_NANOS
+        recentInsertCount = if (withinBurst) recentInsertCount + 1 else 1
+        lastTextAtNanos = now
+        if (text.length > 1 || text.contains('\n')) {
+            suppressNextEnterUntilNanos =
+                maxOf(suppressNextEnterUntilNanos, now + PASTE_SUPPRESS_LONG_NANOS)
+        } else if (recentInsertCount >= PASTE_BURST_COUNT) {
+            suppressNextEnterUntilNanos =
+                maxOf(suppressNextEnterUntilNanos, now + PASTE_SUPPRESS_SHORT_NANOS)
+        }
     }
 
     fun shouldTreatEnterAsNewline(): Boolean {
-        if (!hasRecentText) return false
         val now = nowNanos()
+        if (now <= suppressNextEnterUntilNanos) {
+            suppressNextEnterUntilNanos = 0L
+            recentInsertCount = 0
+            return true
+        }
+        if (recentInsertCount == 0) return false
         val withinBurst = (now - lastTextAtNanos) <= PASTE_BURST_NANOS
-        hasRecentText = false
+        recentInsertCount = 0
         return withinBurst
     }
 
     fun reset() {
-        hasRecentText = false
+        recentInsertCount = 0
+        suppressNextEnterUntilNanos = 0L
     }
 }
 
@@ -435,6 +451,9 @@ private val NON_TEXT_KEYS = setOf(
 )
 
 private const val PASTE_BURST_NANOS: Long = 35_000_000
+private const val PASTE_BURST_COUNT: Int = 3
+private const val PASTE_SUPPRESS_SHORT_NANOS: Long = 150_000_000
+private const val PASTE_SUPPRESS_LONG_NANOS: Long = 600_000_000
 
 /**
  * Cursor marker used for measurement only.

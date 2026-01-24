@@ -8,132 +8,132 @@ object CharacterFields {
         CharacterFieldDefinition(
             CharacterFieldKey.NAME,
             "Name",
-            placeholder = "e.g., Jane Doe"
+            placeholder = "Character name (e.g., John Doe)"
         ),
         CharacterFieldDefinition(
             CharacterFieldKey.DESCRIPTION,
             "Description (Optional)",
             maxLines = 3,
-            placeholder = "e.g., a quiet cartographer with a sharp memory and a limp",
+            placeholder = "Short summary for quick recall (e.g., quiet cartographer with a limp)",
         ),
         CharacterFieldDefinition(
             CharacterFieldKey.ROLES,
             "Roles",
-            placeholder = "e.g., protagonist, navigator, rival",
+            placeholder = "Story roles, comma-separated (e.g., protagonist, rival)",
             helper = "Comma-separated roles used by the AI.",
         ),
         CharacterFieldDefinition(
             CharacterFieldKey.GOAL,
             "Goal (Optional)",
             maxLines = 2,
-            placeholder = "e.g., find her missing brother before winter ends",
+            placeholder = "What they want most (e.g., find her missing brother)",
         ),
         CharacterFieldDefinition(
             CharacterFieldKey.MOTIVATION,
             "Motivation (Optional)",
             maxLines = 2,
-            placeholder = "e.g., guilt over leaving him behind",
+            placeholder = "Why they want it (e.g., guilt over leaving him behind)",
         ),
         CharacterFieldDefinition(
             CharacterFieldKey.FLAW,
             "Flaw (Optional)",
             maxLines = 2,
-            placeholder = "e.g., trusts strangers too quickly",
+            placeholder = "Trait that causes problems (e.g., trusts strangers too fast)",
         ),
         CharacterFieldDefinition(
             CharacterFieldKey.INTERNAL_CONFLICT,
             "Internal Conflict (Optional)",
             maxLines = 2,
-            placeholder = "e.g., wants freedom but fears being alone",
+            placeholder = "Competing desires or fears (e.g., wants freedom but fears loneliness)",
         ),
         CharacterFieldDefinition(
             CharacterFieldKey.TEMPERAMENT,
             "Temperament (Optional)",
-            placeholder = "e.g., calm, curious, stubborn",
+            placeholder = "Overall temperament, comma-separated (e.g., calm, stubborn)",
         ),
         CharacterFieldDefinition(
             CharacterFieldKey.AGE,
             "Age (Optional)",
-            placeholder = "e.g., 29"
+            placeholder = "Age or range (e.g., 29 / late 20s)"
         ),
         CharacterFieldDefinition(
             CharacterFieldKey.PRONOUNS,
             "Pronouns (Optional)",
-            placeholder = "e.g., she/her",
+            placeholder = "Pronouns (e.g., she/her)",
         ),
         CharacterFieldDefinition(
             CharacterFieldKey.OCCUPATION,
             "Occupation (Optional)",
-            placeholder = "e.g., pilot, mechanic, archivist",
+            placeholder = "Primary occupation (e.g., pilot, archivist)",
         ),
         CharacterFieldDefinition(
             CharacterFieldKey.BACKSTORY,
             "Backstory (Optional)",
             maxLines = 4,
-            placeholder = "e.g., raised on a cargo ship after a flood destroyed her town",
+            placeholder = "Key background details (e.g., raised on a cargo ship)",
         ),
         CharacterFieldDefinition(
             CharacterFieldKey.VOICE,
             "Voice (Optional)",
             maxLines = 2,
-            placeholder = "e.g., short sentences, avoids contractions, dry humor",
+            placeholder = "Speech style notes (e.g., short sentences, dry humor)",
         ),
         CharacterFieldDefinition(
             CharacterFieldKey.TRAITS,
             "Traits (Optional)",
             maxLines = 3,
-            placeholder = "e.g., brave, observant, quick learner",
+            placeholder = "Personality traits, comma-separated (e.g., brave, observant)",
             helper = "Comma-separated traits or adjectives.",
         ),
         CharacterFieldDefinition(
             CharacterFieldKey.QUIRKS,
             "Quirks (Optional)",
             maxLines = 2,
-            placeholder = "e.g., taps a ring, collects old tickets",
+            placeholder = "Habits/quirks, comma-separated (e.g., taps a ring)",
             helper = "Comma-separated quirks or habits.",
         ),
         CharacterFieldDefinition(
             CharacterFieldKey.APPEARANCE,
             "Appearance (Optional)",
             maxLines = 3,
-            placeholder = "e.g., tall, wiry, silver hair, sun-worn skin",
+            placeholder = "Overall appearance (e.g., tall, wiry, silver hair)",
         ),
         CharacterFieldDefinition(
             CharacterFieldKey.HEIGHT,
             "Height (Optional)",
-            placeholder = "e.g., 6'1\" / 185 cm",
+            placeholder = "Height (e.g., 6'1\" / 185 cm)",
         ),
         CharacterFieldDefinition(
             CharacterFieldKey.BUILD,
             "Build (Optional)",
-            placeholder = "e.g., lean, athletic, broad-shouldered",
+            placeholder = "Body build (e.g., lean, athletic)",
         ),
         CharacterFieldDefinition(
             CharacterFieldKey.HAIR,
             "Hair (Optional)",
-            placeholder = "e.g., black, shoulder-length, wavy",
+            placeholder = "Hair color/style (e.g., black, shoulder-length)",
         ),
         CharacterFieldDefinition(
             CharacterFieldKey.EYES,
             "Eyes (Optional)",
-            placeholder = "e.g., green, sharp gaze",
+            placeholder = "Eye color/traits (e.g., green, sharp gaze)",
         ),
         CharacterFieldDefinition(
             CharacterFieldKey.SKIN_TONE,
             "Skin Tone (Optional)",
-            placeholder = "e.g., olive, freckled",
+            placeholder = "Skin tone (e.g., olive, freckled)",
         ),
         CharacterFieldDefinition(
             CharacterFieldKey.DISTINGUISHING_MARKS,
             "Distinguishing Marks (Optional)",
             maxLines = 2,
-            placeholder = "e.g., scar across left eyebrow, small tattoo on wrist",
+            placeholder = "Scars/tattoos (e.g., scar across left eyebrow)",
         ),
         CharacterFieldDefinition(
             CharacterFieldKey.STYLE_NOTES,
             "Style Notes (Optional)",
             maxLines = 2,
-            placeholder = "e.g., worn leather coat, always carries a satchel",
+            placeholder = "Clothing/style signature (e.g., worn leather coat)",
         ),
     )
 
@@ -143,13 +143,13 @@ object CharacterFields {
             CharacterFieldKey.PROMPT,
             "Prompt",
             maxLines = 6,
-            placeholder = "Describe the character you want to generate.",
+            placeholder = "Describe the character (e.g., a stoic healer from the coast)",
         ),
         CharacterFieldDefinition(
             CharacterFieldKey.CONSTRAINTS,
             "Constraints",
             maxLines = 4,
-            placeholder = "Add rules or boundaries for the AI output.",
+            placeholder = "Rules for AI output (e.g., no magic, modern setting)",
         ),
     )
 }

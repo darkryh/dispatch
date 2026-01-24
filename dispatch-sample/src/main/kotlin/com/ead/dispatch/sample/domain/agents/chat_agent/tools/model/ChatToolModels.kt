@@ -9,7 +9,14 @@ enum class OperationEntity {
     CHARACTER,
     LOCATION,
     ARC,
-    FACT,
+    WORLD_RULE,
+    CULTURE,
+    EVENT,
+    ORGANIZATION,
+    RELATIONSHIP,
+    LOCATION_FEATURE,
+    ARTIFACT,
+    TIMELINE_ENTRY,
 }
 
 @Serializable

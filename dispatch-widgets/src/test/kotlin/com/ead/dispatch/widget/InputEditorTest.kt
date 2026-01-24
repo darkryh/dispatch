@@ -109,6 +109,26 @@ class InputEditorTest {
     }
 
     @Test
+    fun `single character then enter submits`() {
+        val clock = FakeClock()
+        val previousClock = inputNowNanos
+        inputNowNanos = { clock.nowNanos }
+        try {
+            val harness = EditorHarness()
+
+            harness.press("h")
+            clock.advanceMillis(200)
+            harness.press("Enter")
+
+            assertEquals("h", harness.submitted)
+            assertEquals("", harness.value)
+            assertEquals(0, harness.cursor)
+        } finally {
+            inputNowNanos = previousClock
+        }
+    }
+
+    @Test
     fun `shift enter inserts newline`() {
         val harness = EditorHarness()
 
@@ -140,5 +160,174 @@ class InputEditorTest {
 
         harness.press("ArrowDown")
         assertEquals("draft", harness.value)
+    }
+
+    @Test
+    fun `paste burst suppresses immediate enter`() {
+        val clock = FakeClock()
+        val previousClock = inputNowNanos
+        inputNowNanos = { clock.nowNanos }
+        try {
+            val harness = EditorHarness()
+
+            harness.press("a")
+            clock.advanceMillis(1)
+            harness.press("b")
+            clock.advanceMillis(1)
+            harness.press("c")
+            clock.advanceMillis(1)
+            harness.press("Enter")
+
+            assertEquals("abc\n", harness.value)
+            assertNull(harness.submitted)
+        } finally {
+            inputNowNanos = previousClock
+        }
+    }
+
+    @Test
+    fun `paste burst enter submits after window`() {
+        val clock = FakeClock()
+        val previousClock = inputNowNanos
+        inputNowNanos = { clock.nowNanos }
+        try {
+            val harness = EditorHarness()
+
+            harness.press("a")
+            clock.advanceMillis(1)
+            harness.press("b")
+            clock.advanceMillis(1)
+            harness.press("c")
+            clock.advanceMillis(200)
+            harness.press("Enter")
+
+            assertEquals("abc", harness.submitted)
+            assertEquals("", harness.value)
+        } finally {
+            inputNowNanos = previousClock
+        }
+    }
+
+    @Test
+    fun `multiline paste suppresses enter within long window`() {
+        val clock = FakeClock()
+        val previousClock = inputNowNanos
+        inputNowNanos = { clock.nowNanos }
+        try {
+            val harness = EditorHarness()
+
+            harness.press("one\ntwo")
+            clock.advanceMillis(400)
+            harness.press("Enter")
+
+            assertEquals("one\ntwo\n", harness.value)
+            assertNull(harness.submitted)
+        } finally {
+            inputNowNanos = previousClock
+        }
+    }
+
+    @Test
+    fun `multiline paste enter submits after long window`() {
+        val clock = FakeClock()
+        val previousClock = inputNowNanos
+        inputNowNanos = { clock.nowNanos }
+        try {
+            val harness = EditorHarness()
+
+            harness.press("one\ntwo")
+            clock.advanceMillis(700)
+            harness.press("Enter")
+
+            assertEquals("one\ntwo", harness.submitted)
+            assertEquals("", harness.value)
+        } finally {
+            inputNowNanos = previousClock
+        }
+    }
+
+    @Test
+    fun `chunked paste inserts in order`() {
+        val clock = FakeClock()
+        val previousClock = inputNowNanos
+        inputNowNanos = { clock.nowNanos }
+        try {
+            val harness = EditorHarness()
+
+            val chunks = listOf("hel", "lo", "\n", "wor", "ld")
+            for (chunk in chunks) {
+                harness.press(chunk)
+                clock.advanceMillis(40)
+            }
+
+            assertEquals("hello\nworld", harness.value)
+            assertNull(harness.submitted)
+        } finally {
+            inputNowNanos = previousClock
+        }
+    }
+
+    @Test
+    fun `chunked paste then enter within window inserts newline`() {
+        val clock = FakeClock()
+        val previousClock = inputNowNanos
+        inputNowNanos = { clock.nowNanos }
+        try {
+            val harness = EditorHarness()
+
+            harness.press("hel")
+            clock.advanceMillis(40)
+            harness.press("lo")
+            clock.advanceMillis(40)
+            harness.press("\n")
+            clock.advanceMillis(40)
+            harness.press("world")
+            clock.advanceMillis(300)
+            harness.press("Enter")
+
+            assertEquals("hello\nworld\n", harness.value)
+            assertNull(harness.submitted)
+        } finally {
+            inputNowNanos = previousClock
+        }
+    }
+
+    @Test
+    fun `chunked paste then enter after window submits`() {
+        val clock = FakeClock()
+        val previousClock = inputNowNanos
+        inputNowNanos = { clock.nowNanos }
+        try {
+            val harness = EditorHarness()
+
+            harness.press("hel")
+            clock.advanceMillis(40)
+            harness.press("lo")
+            clock.advanceMillis(40)
+            harness.press("\n")
+            clock.advanceMillis(40)
+            harness.press("world")
+            clock.advanceMillis(700)
+            harness.press("Enter")
+
+            assertEquals("hello\nworld", harness.submitted)
+            assertEquals("", harness.value)
+        } finally {
+            inputNowNanos = previousClock
+        }
+    }
+
+    @Test
+    fun `paste with delete and backspace keeps cursor consistent`() {
+        val harness = EditorHarness()
+        harness.value = "ab"
+        harness.cursor = 1
+
+        harness.press("X")
+        harness.press("Backspace")
+        harness.press("Delete")
+
+        assertEquals("a", harness.value)
+        assertEquals(1, harness.cursor)
     }
 }

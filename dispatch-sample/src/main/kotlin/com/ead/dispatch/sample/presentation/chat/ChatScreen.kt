@@ -77,8 +77,8 @@ fun ChatScreen(navController: NavController) {
     }
 
     // Define available commands for the command palette
-    val commands = remember {
-        commandManager.data.map { command ->
+    val commands = remember(writerMode) {
+        commandManager.commandsFor(writerMode).map { command ->
             CommandOption(
                 label = command.label,
                 description = command.description,
@@ -110,8 +110,12 @@ fun ChatScreen(navController: NavController) {
         item {
             Row(modifier = Modifier.fillMaxWidth()) {
                 Spacer(Modifier.width(2))
+                val quickJump = when (writerMode) {
+                    WriterMode.CHAT -> "/characters, /locations, /arcs, /world-rules, /cultures, /events"
+                    WriterMode.CHAT_STORY -> "/story-summary, /volumes, /chapters, /scenes"
+                }
                 Text(
-                    text = "Quick jump: /character, /story-info",
+                    text = "Quick jump: $quickJump",
                     style = theme.muted,
                 )
             }

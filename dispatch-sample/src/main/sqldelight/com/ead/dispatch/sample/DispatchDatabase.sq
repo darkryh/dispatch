@@ -103,10 +103,10 @@ CREATE TABLE story_character_quirks (
 CREATE TABLE story_volumes (
   id TEXT NOT NULL PRIMARY KEY,
   story_id TEXT NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
-  number INTEGER NOT NULL,
+  number INTEGER NOT NULL CHECK (number >= 1),
   title TEXT NOT NULL,
   summary TEXT,
-  target_word_count INTEGER,
+  target_word_count INTEGER CHECK (target_word_count IS NULL OR target_word_count >= 0),
   status TEXT CHECK (
     status IN ('DRAFT', 'IN_PROGRESS', 'FINAL', 'ARCHIVED')
   ),
@@ -126,7 +126,7 @@ CREATE TABLE story_volume_key_events (
 CREATE TABLE story_chapters (
   id TEXT NOT NULL PRIMARY KEY,
   volume_id TEXT NOT NULL REFERENCES story_volumes(id) ON DELETE CASCADE,
-  number INTEGER NOT NULL,
+  number INTEGER NOT NULL CHECK (number >= 1),
   title TEXT NOT NULL,
   summary TEXT,
   content_ref TEXT,
@@ -136,8 +136,8 @@ CREATE TABLE story_chapters (
   content_checksum TEXT,
   content_updated_at INTEGER,
   content_range TEXT,
-  word_count INTEGER,
-  target_word_count INTEGER,
+  word_count INTEGER CHECK (word_count IS NULL OR word_count >= 0),
+  target_word_count INTEGER CHECK (target_word_count IS NULL OR target_word_count >= 0),
   status TEXT CHECK (
     status IN ('DRAFT', 'IN_PROGRESS', 'FINAL', 'ARCHIVED')
   ),
@@ -188,7 +188,7 @@ CREATE TABLE story_arcs (
 CREATE TABLE story_scenes (
   id TEXT NOT NULL PRIMARY KEY,
   chapter_id TEXT NOT NULL REFERENCES story_chapters(id) ON DELETE CASCADE,
-  number INTEGER NOT NULL,
+  number INTEGER NOT NULL CHECK (number >= 1),
   title TEXT,
   summary TEXT,
   content_range TEXT,
@@ -204,6 +204,25 @@ CREATE TABLE story_scenes (
   UNIQUE(chapter_id, number)
 );
 
+CREATE TABLE story_scene_characters (
+  scene_id TEXT NOT NULL REFERENCES story_scenes(id) ON DELETE CASCADE,
+  character_id TEXT NOT NULL REFERENCES story_characters(id) ON DELETE CASCADE,
+  role TEXT,
+  notes TEXT,
+  PRIMARY KEY (scene_id, character_id)
+);
+
+CREATE TABLE story_scene_entities (
+  scene_id TEXT NOT NULL REFERENCES story_scenes(id) ON DELETE CASCADE,
+  entity_id TEXT NOT NULL,
+  entity_type TEXT NOT NULL CHECK (
+    entity_type IN ('CHARACTER', 'LOCATION', 'ORGANIZATION', 'ARTIFACT', 'EVENT', 'CULTURE', 'WORLD_RULE', 'TIMELINE')
+  ),
+  role TEXT,
+  notes TEXT,
+  PRIMARY KEY (scene_id, entity_type, entity_id)
+);
+
 CREATE TABLE story_scene_key_events (
   scene_id TEXT NOT NULL REFERENCES story_scenes(id) ON DELETE CASCADE,
   position INTEGER NOT NULL,
@@ -211,34 +230,90 @@ CREATE TABLE story_scene_key_events (
   PRIMARY KEY (scene_id, position)
 );
 
-CREATE TABLE story_facts (
+CREATE TABLE story_world_rules (
   id TEXT NOT NULL PRIMARY KEY,
   story_id TEXT NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
-  fact_type TEXT NOT NULL CHECK (
-    fact_type IN (
-      'WORLD_RULE',
-      'MAGIC_RULE',
-      'TECH_RULE',
-      'POLITICS',
-      'GEOGRAPHY',
-      'TIMELINE',
-      'HISTORY',
-      'CULTURE',
-      'RELIGION',
-      'ECONOMY',
-      'FACTION',
-      'ORGANIZATION',
-      'CHARACTER_FACT',
-      'RELATIONSHIP',
-      'ITEM',
-      'LORE',
-      'CONFLICT',
-      'LANGUAGE',
-      'CUSTOM'
-    )
+  title TEXT NOT NULL,
+  description TEXT,
+  created_at INTEGER NOT NULL,
+  UNIQUE(story_id, title)
+);
+
+CREATE TABLE story_cultures (
+  id TEXT NOT NULL PRIMARY KEY,
+  story_id TEXT NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  description TEXT,
+  created_at INTEGER NOT NULL,
+  UNIQUE(story_id, name)
+);
+
+CREATE TABLE story_events (
+  id TEXT NOT NULL PRIMARY KEY,
+  story_id TEXT NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  description TEXT,
+  created_at INTEGER NOT NULL,
+  UNIQUE(story_id, name)
+);
+
+CREATE TABLE story_organizations (
+  id TEXT NOT NULL PRIMARY KEY,
+  story_id TEXT NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  description TEXT,
+  created_at INTEGER NOT NULL,
+  UNIQUE(story_id, name)
+);
+
+CREATE TABLE story_relationships (
+  id TEXT NOT NULL PRIMARY KEY,
+  story_id TEXT NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
+  subject_id TEXT NOT NULL,
+  subject_type TEXT NOT NULL,
+  object_id TEXT NOT NULL,
+  object_type TEXT NOT NULL,
+  relation TEXT NOT NULL,
+  notes TEXT,
+  created_at INTEGER NOT NULL,
+  CHECK (
+    subject_type IN ('CHARACTER', 'LOCATION', 'ORGANIZATION', 'ARTIFACT', 'EVENT', 'CULTURE', 'WORLD_RULE', 'TIMELINE')
   ),
-  content TEXT NOT NULL,
+  CHECK (
+    object_type IN ('CHARACTER', 'LOCATION', 'ORGANIZATION', 'ARTIFACT', 'EVENT', 'CULTURE', 'WORLD_RULE', 'TIMELINE')
+  )
+);
+
+CREATE TABLE story_location_features (
+  id TEXT NOT NULL PRIMARY KEY,
+  story_id TEXT NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
+  location_id TEXT REFERENCES story_locations(id) ON DELETE SET NULL,
+  name TEXT NOT NULL,
+  description TEXT,
   created_at INTEGER NOT NULL
+);
+
+CREATE TABLE story_artifacts (
+  id TEXT NOT NULL PRIMARY KEY,
+  story_id TEXT NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  description TEXT,
+  owner_id TEXT,
+  owner_type TEXT CHECK (
+    owner_type IS NULL OR owner_type IN ('CHARACTER', 'LOCATION', 'ORGANIZATION', 'ARTIFACT', 'EVENT', 'CULTURE', 'WORLD_RULE', 'TIMELINE')
+  ),
+  location_id TEXT REFERENCES story_locations(id) ON DELETE SET NULL,
+  created_at INTEGER NOT NULL
+);
+
+CREATE TABLE story_timeline_entries (
+  id TEXT NOT NULL PRIMARY KEY,
+  story_id TEXT NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
+  title TEXT NOT NULL,
+  description TEXT,
+  order_index INTEGER NOT NULL CHECK (order_index >= 1),
+  created_at INTEGER NOT NULL,
+  UNIQUE(story_id, order_index)
 );
 
 CREATE TABLE rag_documents (
@@ -967,38 +1042,303 @@ deleteStoryChapter:
 DELETE FROM story_chapters
 WHERE id = :id;
 
-insertStoryFact:
-INSERT INTO story_facts(
+insertStoryWorldRule:
+INSERT INTO story_world_rules(
   id,
   story_id,
-  fact_type,
-  content,
+  title,
+  description,
   created_at
 ) VALUES (
   :id,
   :story_id,
-  :fact_type,
-  :content,
+  :title,
+  :description,
   :created_at
 );
 
-updateStoryFact:
-UPDATE story_facts
-SET fact_type = :fact_type,
-    content = :content
+updateStoryWorldRule:
+UPDATE story_world_rules
+SET title = :title,
+    description = :description
 WHERE id = :id;
 
-deleteStoryFactById:
-DELETE FROM story_facts
+deleteStoryWorldRuleById:
+DELETE FROM story_world_rules
 WHERE id = :id;
 
-selectFactsByStoryId:
-SELECT * FROM story_facts
+selectWorldRulesByStoryId:
+SELECT * FROM story_world_rules
 WHERE story_id = :story_id
 ORDER BY created_at DESC;
 
-deleteStoryFactsByStoryId:
-DELETE FROM story_facts
+deleteWorldRulesByStoryId:
+DELETE FROM story_world_rules
+WHERE story_id = :story_id;
+
+insertStoryCulture:
+INSERT INTO story_cultures(
+  id,
+  story_id,
+  name,
+  description,
+  created_at
+) VALUES (
+  :id,
+  :story_id,
+  :name,
+  :description,
+  :created_at
+);
+
+updateStoryCulture:
+UPDATE story_cultures
+SET name = :name,
+    description = :description
+WHERE id = :id;
+
+deleteStoryCultureById:
+DELETE FROM story_cultures
+WHERE id = :id;
+
+selectCulturesByStoryId:
+SELECT * FROM story_cultures
+WHERE story_id = :story_id
+ORDER BY created_at DESC;
+
+deleteCulturesByStoryId:
+DELETE FROM story_cultures
+WHERE story_id = :story_id;
+
+insertStoryEvent:
+INSERT INTO story_events(
+  id,
+  story_id,
+  name,
+  description,
+  created_at
+) VALUES (
+  :id,
+  :story_id,
+  :name,
+  :description,
+  :created_at
+);
+
+updateStoryEvent:
+UPDATE story_events
+SET name = :name,
+    description = :description
+WHERE id = :id;
+
+deleteStoryEventById:
+DELETE FROM story_events
+WHERE id = :id;
+
+selectEventsByStoryId:
+SELECT * FROM story_events
+WHERE story_id = :story_id
+ORDER BY created_at DESC;
+
+deleteEventsByStoryId:
+DELETE FROM story_events
+WHERE story_id = :story_id;
+
+insertStoryOrganization:
+INSERT INTO story_organizations(
+  id,
+  story_id,
+  name,
+  description,
+  created_at
+) VALUES (
+  :id,
+  :story_id,
+  :name,
+  :description,
+  :created_at
+);
+
+updateStoryOrganization:
+UPDATE story_organizations
+SET name = :name,
+    description = :description
+WHERE id = :id;
+
+deleteStoryOrganizationById:
+DELETE FROM story_organizations
+WHERE id = :id;
+
+selectOrganizationsByStoryId:
+SELECT * FROM story_organizations
+WHERE story_id = :story_id
+ORDER BY created_at DESC;
+
+deleteOrganizationsByStoryId:
+DELETE FROM story_organizations
+WHERE story_id = :story_id;
+
+insertStoryRelationship:
+INSERT INTO story_relationships(
+  id,
+  story_id,
+  subject_id,
+  subject_type,
+  object_id,
+  object_type,
+  relation,
+  notes,
+  created_at
+) VALUES (
+  :id,
+  :story_id,
+  :subject_id,
+  :subject_type,
+  :object_id,
+  :object_type,
+  :relation,
+  :notes,
+  :created_at
+);
+
+updateStoryRelationship:
+UPDATE story_relationships
+SET subject_id = :subject_id,
+    subject_type = :subject_type,
+    object_id = :object_id,
+    object_type = :object_type,
+    relation = :relation,
+    notes = :notes
+WHERE id = :id;
+
+deleteStoryRelationshipById:
+DELETE FROM story_relationships
+WHERE id = :id;
+
+selectRelationshipsByStoryId:
+SELECT * FROM story_relationships
+WHERE story_id = :story_id
+ORDER BY created_at DESC;
+
+deleteRelationshipsByStoryId:
+DELETE FROM story_relationships
+WHERE story_id = :story_id;
+
+insertStoryLocationFeature:
+INSERT INTO story_location_features(
+  id,
+  story_id,
+  location_id,
+  name,
+  description,
+  created_at
+) VALUES (
+  :id,
+  :story_id,
+  :location_id,
+  :name,
+  :description,
+  :created_at
+);
+
+updateStoryLocationFeature:
+UPDATE story_location_features
+SET location_id = :location_id,
+    name = :name,
+    description = :description
+WHERE id = :id;
+
+deleteStoryLocationFeatureById:
+DELETE FROM story_location_features
+WHERE id = :id;
+
+selectLocationFeaturesByStoryId:
+SELECT * FROM story_location_features
+WHERE story_id = :story_id
+ORDER BY created_at DESC;
+
+deleteLocationFeaturesByStoryId:
+DELETE FROM story_location_features
+WHERE story_id = :story_id;
+
+insertStoryArtifact:
+INSERT INTO story_artifacts(
+  id,
+  story_id,
+  name,
+  description,
+  owner_id,
+  owner_type,
+  location_id,
+  created_at
+) VALUES (
+  :id,
+  :story_id,
+  :name,
+  :description,
+  :owner_id,
+  :owner_type,
+  :location_id,
+  :created_at
+);
+
+updateStoryArtifact:
+UPDATE story_artifacts
+SET name = :name,
+    description = :description,
+    owner_id = :owner_id,
+    owner_type = :owner_type,
+    location_id = :location_id
+WHERE id = :id;
+
+deleteStoryArtifactById:
+DELETE FROM story_artifacts
+WHERE id = :id;
+
+selectArtifactsByStoryId:
+SELECT * FROM story_artifacts
+WHERE story_id = :story_id
+ORDER BY created_at DESC;
+
+deleteArtifactsByStoryId:
+DELETE FROM story_artifacts
+WHERE story_id = :story_id;
+
+insertStoryTimelineEntry:
+INSERT INTO story_timeline_entries(
+  id,
+  story_id,
+  title,
+  description,
+  order_index,
+  created_at
+) VALUES (
+  :id,
+  :story_id,
+  :title,
+  :description,
+  :order_index,
+  :created_at
+);
+
+updateStoryTimelineEntry:
+UPDATE story_timeline_entries
+SET title = :title,
+    description = :description,
+    order_index = :order_index
+WHERE id = :id;
+
+deleteStoryTimelineEntryById:
+DELETE FROM story_timeline_entries
+WHERE id = :id;
+
+selectTimelineEntriesByStoryId:
+SELECT * FROM story_timeline_entries
+WHERE story_id = :story_id
+ORDER BY order_index ASC, created_at DESC;
+
+deleteTimelineEntriesByStoryId:
+DELETE FROM story_timeline_entries
 WHERE story_id = :story_id;
 
 insertRagDocument:

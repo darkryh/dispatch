@@ -13,6 +13,7 @@ data class ChatRoute(
 @SerialName("help")
 data class HelpRoute(
     val from: String? = null,
+    val mode: String? = null,
 )
 
 @Serializable
@@ -25,10 +26,24 @@ data class SessionRoute(
 @SerialName("character")
 data class CharacterRoute(
     val storyId: String? = null,
+    val characterId: String? = null,
 )
 
 @Serializable
 @SerialName("story-info")
 data class StoryInfoRoute(
+    val storyId: String? = null,
+)
+
+@Serializable
+@SerialName("story-summary")
+data class StorySummaryRoute(
+    val storyId: String? = null,
+)
+
+@Serializable
+@SerialName("entity-list")
+data class EntityListRoute(
+    val type: String = "characters",
     val storyId: String? = null,
 )

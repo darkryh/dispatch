@@ -41,7 +41,7 @@ private fun AIAgentGraphContextBase.setupAndStreamChatMode(
         val agentContext = this@setupAndStreamChatMode
         try {
             llm.writeSession {
-            val context = repository.getChatContext(request.storyId)
+            val context = repository.getChatContextForAgent(request.storyId)
 
             rewritePrompt { existing ->
                 val messageHistory = existing.messages.filterNot { it is Message.System }

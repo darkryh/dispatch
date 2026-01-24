@@ -22,9 +22,10 @@ import com.ead.dispatch.widget.LazyColumn
 import com.ead.dispatch.layout.Spacer
 import com.ead.dispatch.sample.presentation.characters.state.CharacterFields
 import com.ead.dispatch.sample.presentation.characters.util.CharacterUIMode
+import com.ead.dispatch.sample.navigation.CharacterRoute
 
 @Dispatchable
-fun CharacterScreen(navController: NavController) {
+fun CharacterScreen(navController: NavController, route: CharacterRoute) {
     val keyboardInterceptor = LocalKeyboardInterceptor.current
     val applicationScope = dispatchScope()
     val viewModel = viewModel<CharacterViewModel>()
@@ -37,7 +38,7 @@ fun CharacterScreen(navController: NavController) {
         CharacterFields.automatic
     }
 
-    DisposableEffect(uiState.mode) {
+    DisposableEffect(Unit) {
         val escapeDispose = applicationScope.addKeyEventHandler { event ->
             if (event.key == "Escape" || event.key == "Esc") {
                 navController.popBackStack()
@@ -46,6 +47,40 @@ fun CharacterScreen(navController: NavController) {
 
         val dispose = keyboardInterceptor.register { event ->
             when (event.key) {
+                "S", "s" -> if (event.ctrl) {
+                    viewModel.onEvent(CharacterEvent.OnSave)
+                    true
+                } else {
+                    false
+                }
+                "D", "d" -> if (event.ctrl) {
+                    viewModel.onEvent(CharacterEvent.OnRequestDelete)
+                    true
+                } else {
+                    false
+                }
+                "X", "x" -> if (event.ctrl) {
+                    viewModel.onEvent(CharacterEvent.OnRequestDelete)
+                    true
+                } else {
+                    false
+                }
+                "Delete" -> {
+                    viewModel.onEvent(CharacterEvent.OnRequestDelete)
+                    true
+                }
+                "Y", "y" -> if (uiState.confirmDelete) {
+                    viewModel.onEvent(CharacterEvent.OnConfirmDelete)
+                    true
+                } else {
+                    false
+                }
+                "N", "n" -> if (uiState.confirmDelete) {
+                    viewModel.onEvent(CharacterEvent.OnCancelDelete)
+                    true
+                } else {
+                    false
+                }
                 "Tab" -> if (event.shift) {
                     viewModel.onEvent(CharacterEvent.OnToggleMode)
                     true
@@ -75,11 +110,42 @@ fun CharacterScreen(navController: NavController) {
         }
         item { Spacer(Modifier.height(1)) }
 
+        if (uiState.isLoading) {
+            item {
+                CharacterFooter(
+                    text = "Loading character...",
+                    styles = styles,
+                )
+            }
+            return@LazyColumn
+        }
+
+        val error = uiState.error
+        if (error != null) {
+            item {
+                CharacterFooter(
+                    text = "Error: $error",
+                    styles = styles,
+                )
+            }
+            return@LazyColumn
+        }
+
+        if (uiState.confirmDelete) {
+            item {
+                CharacterFooter(
+                    text = "Delete this character? Press Y to confirm or N to cancel.",
+                    styles = styles,
+                )
+            }
+            item { Spacer(Modifier.height(1)) }
+        }
+
         if (uiState.mode == CharacterUIMode.MANUAL) {
             item {
                 CharacterSectionHeader(
                     title = "Profile",
-                    hint = "Tab next field. Shift+Tab switches mode. Shift+Q previous field. Esc returns.",
+                    hint = "Tab next field. Shift+Tab switches mode. Ctrl+S save. Ctrl+D delete. Esc returns.",
                     styles = styles,
                 )
             }
@@ -97,7 +163,7 @@ fun CharacterScreen(navController: NavController) {
             item { Spacer(Modifier.height(1)) }
             item {
                 CharacterFooter(
-                    text = "Save is not wired yet. This screen is for UI testing.",
+                    text = uiState.status ?: "Ctrl+S save · Ctrl+D delete · Esc back",
                     styles = styles,
                 )
             }
@@ -115,7 +181,7 @@ fun CharacterScreen(navController: NavController) {
             item { Spacer(Modifier.height(1)) }
             item {
                 CharacterFooter(
-                    text = "Generate is not wired yet. This screen is for UI testing.",
+                    text = uiState.status ?: "Ctrl+S save · Ctrl+D delete · Esc back",
                     styles = styles
                 )
             }
