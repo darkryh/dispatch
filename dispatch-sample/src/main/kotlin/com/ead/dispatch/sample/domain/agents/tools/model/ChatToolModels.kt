@@ -1,4 +1,4 @@
-package com.ead.dispatch.sample.domain.agents.chat_agent.tools.model
+package com.ead.dispatch.sample.domain.agents.tools.model
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

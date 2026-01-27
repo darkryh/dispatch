@@ -1,4 +1,4 @@
-package com.ead.dispatch.sample.domain.agents.chat_agent.tools.model
+package com.ead.dispatch.sample.domain.agents.tools.model
 
 import com.ead.dispatch.sample.data.db.type.ArcScope
 import com.ead.dispatch.sample.data.db.type.ContentStatus

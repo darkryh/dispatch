@@ -62,6 +62,7 @@ koog-agents = { module = "ai.koog:koog-agents", version.ref = "koog" }
 koog-agents-planner = { module = "ai.koog:agents-planner", version.ref = "koog" }
 koog-tools = { module = "ai.koog:agents-tools", version.ref = "koog" }
 koog-features-event-handler = { module = "ai.koog:agents-features-event-handler", version.ref = "koog" }
+koog-features-memory = { module = "ai.koog:agents-features-memory", version.ref = "koog" }
 
 # Build logic plugins (for build-logic module)
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
@@ -75,7 +76,7 @@ publish = { module = "com.vanniktech:gradle-maven-publish-plugin", version.ref =
 [bundles]
 mordant = ["mordant", "mordant-coroutines", "mordant-markdown", "mordant-jvm-jna"]
 testing = ["kotest", "coroutines-test"]
-koog = ["koog-agents", "koog-tools", "koog-features-event-handler","koog-agents-planner"]
+koog = ["koog-agents", "koog-tools", "koog-features-event-handler","koog-agents-planner","koog-features-memory"]
 
 [plugins]
 kotlin-jvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }

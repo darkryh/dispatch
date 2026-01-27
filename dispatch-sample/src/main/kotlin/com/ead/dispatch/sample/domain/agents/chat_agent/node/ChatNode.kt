@@ -4,6 +4,7 @@ import ai.koog.agents.core.agent.context.AIAgentGraphContextBase
 import ai.koog.agents.core.dsl.builder.AIAgentBuilderDslMarker
 import ai.koog.agents.core.dsl.builder.AIAgentNodeDelegate
 import ai.koog.agents.core.dsl.builder.AIAgentSubgraphBuilderBase
+import ai.koog.agents.core.environment.ReceivedToolResult
 import ai.koog.agents.core.environment.ToolResultKind
 import ai.koog.agents.core.environment.result
 import ai.koog.prompt.dsl.prompt
@@ -19,6 +20,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
 
 @AIAgentBuilderDslMarker
 fun AIAgentSubgraphBuilderBase<*, *>.nodeSetupAndStreamChatMode(
@@ -129,18 +131,21 @@ private fun AIAgentGraphContextBase.setupAndStreamChatMode(
 private suspend fun AIAgentGraphContextBase.executeToolWithFix(
     call: Message.Tool.Call,
     retries: Int = 2,
-): ai.koog.agents.core.environment.ReceivedToolResult {
+): ReceivedToolResult {
     val validated = try {
         call.contentJson
         call
     } catch (error: Exception) {
+
         val normalized = normalizeToolArgsJson(call.content)
+
         val normalizedCall = Message.Tool.Call(
             id = call.id,
             tool = call.tool,
             content = normalized,
             metaInfo = call.metaInfo,
         )
+
         val fallback = try {
             normalizedCall.contentJson
             normalizedCall
@@ -247,7 +252,7 @@ private suspend fun AIAgentGraphContextBase.fixToolCallJson(
 
         try {
             val element = Json.parseToJsonElement(fixed)
-            if (element !is kotlinx.serialization.json.JsonObject) {
+            if (element !is JsonObject) {
                 throw SerializationException("Tool args must be a JSON object.")
             }
             return fixed
