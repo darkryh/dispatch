@@ -1,3 +1,5 @@
+@file:Suppress("unused")
+
 package com.ead.dispatch.sample.domain.agents.tools
 
 import ai.koog.agents.core.tools.annotations.LLMDescription
@@ -290,53 +292,4 @@ class LocationTools(
         repository.deleteStoryLocationFeature(entityId)
         return success("delete", OperationEntity.LOCATION_FEATURE, storyId, entityId, "Deleted location feature '$entityId'.")
     }
-
-    // --- Helpers ---
-
-    private fun <T> querySuccess(
-        entity: OperationEntity,
-        storyId: String,
-        entityId: String?,
-        summary: String,
-        payload: T,
-        warnings: List<String> = emptyList(),
-    ): ToolResult<QueryOutcome<T>> = ToolResult.Success(
-        data = QueryOutcome(
-            entity = entity,
-            storyId = storyId,
-            entityId = entityId,
-            summary = summary,
-            payload = payload,
-        ),
-        message = summary,
-        warnings = warnings,
-    )
-
-    private fun success(
-        action: String,
-        entity: OperationEntity,
-        storyId: String,
-        entityId: String?,
-        summary: String,
-        warnings: List<String> = emptyList(),
-    ): ToolResult<OperationOutcome> = ToolResult.Success(
-        data = OperationOutcome(
-            action = action,
-            entity = entity,
-            storyId = storyId,
-            entityId = entityId,
-            summary = summary,
-        ),
-        message = summary,
-        warnings = warnings,
-    )
-
-    private fun <T> failure(
-        code: String,
-        message: String,
-        details: String? = null,
-    ): ToolResult<T> = ToolResult.Failure(
-        error = ToolError(code = code, details = details),
-        message = message,
-    )
 }
