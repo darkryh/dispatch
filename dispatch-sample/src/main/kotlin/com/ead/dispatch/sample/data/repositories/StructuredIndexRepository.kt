@@ -458,43 +458,6 @@ class StructuredIndexRepository(
         )
     }
 
-    fun observeStoriesBySession(sessionId: String): Flow<List<StoryRecord>> =
-        queries.selectStoriesBySessionId(sessionId) { id, sessionId, title, genre, setting, plotOutline, logline, theme, tone, stakes, pov, tense, targetAudience, pacing, status, createdAt, updatedAt ->
-            StoryRecord(
-                id = id,
-                sessionId = sessionId,
-                title = title,
-                genre = genre,
-                setting = setting,
-                plotOutline = plotOutline,
-                status = status?.let(ContentStatus.Companion::fromDb),
-                styleProfile = toStoryStyleProfile(
-                    logline = logline,
-                    theme = theme,
-                    tone = tone,
-                    stakes = stakes,
-                    pov = pov,
-                    tense = tense,
-                    targetAudience = targetAudience,
-                    pacing = pacing,
-                ),
-                styleRefs = emptyList(),
-                emotionalBeats = emptyList(),
-                createdAt = createdAt,
-                updatedAt = updatedAt,
-            )
-        }
-            .asFlow()
-            .mapToList(coroutineDispatcher)
-            .map { stories ->
-                stories.map { story ->
-                    story.copy(
-                        styleRefs = getStoryStyleRefs(story.id),
-                        emotionalBeats = getStoryEmotionalBeats(story.id),
-                    )
-                }
-            }
-            .flowOn(coroutineDispatcher)
 
     suspend fun getChatContext(storyId: String): StoryChatContext {
         val story = getStoryById(storyId)

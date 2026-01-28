@@ -7,13 +7,7 @@ import ai.koog.agents.core.tools.annotations.Tool
 import ai.koog.agents.core.tools.reflect.ToolSet
 import com.ead.dispatch.sample.data.db.entities.StoryRecord
 import com.ead.dispatch.sample.data.repositories.StructuredIndexRepository
-import com.ead.dispatch.sample.domain.agents.tools.model.OperationEntity
-import com.ead.dispatch.sample.domain.agents.tools.model.OperationOutcome
-import com.ead.dispatch.sample.domain.agents.tools.model.QueryOutcome
-import com.ead.dispatch.sample.domain.agents.tools.model.StoryStyleProfileRequest
-import com.ead.dispatch.sample.domain.agents.tools.model.StoryUpsertRequest
-import com.ead.dispatch.sample.domain.agents.tools.model.ToolError
-import com.ead.dispatch.sample.domain.agents.tools.model.ToolResult
+import com.ead.dispatch.sample.domain.agents.tools.model.*
 import com.ead.dispatch.sample.domain.model.story.StoryChatContext
 import kotlinx.datetime.Clock
 
