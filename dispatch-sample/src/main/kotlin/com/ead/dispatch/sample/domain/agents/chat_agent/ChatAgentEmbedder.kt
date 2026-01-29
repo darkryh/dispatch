@@ -6,8 +6,8 @@ import ai.koog.prompt.executor.ollama.client.OllamaClient
 
 class ChatAgentEmbedder {
 
-    val client = OllamaClient()
-    val embedder = LLMEmbedder(client, OllamaEmbeddingModels.ALL_MINI_LM)
+    private val client = OllamaClient(baseUrl = "http://127.0.0.1:11434")
 
-
+    val chatModeLlmEmbedder = LLMEmbedder(client, OllamaEmbeddingModels.ALL_MINI_LM)
+    val storyModeLlmEmbedder = LLMEmbedder(client, OllamaEmbeddingModels.NOMIC_EMBED_TEXT)
 }
