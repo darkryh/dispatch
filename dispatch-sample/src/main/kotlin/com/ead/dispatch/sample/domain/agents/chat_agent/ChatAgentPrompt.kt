@@ -3,11 +3,13 @@ package com.ead.dispatch.sample.domain.agents.chat_agent
 import ai.koog.prompt.dsl.Prompt
 import ai.koog.prompt.dsl.prompt
 import ai.koog.prompt.markdown.markdown
+import com.ead.dispatch.sample.domain.embedding.RagContextChunk
 import com.ead.dispatch.sample.domain.model.story.StoryChatContext
 
 fun chatAgentPrompt(
     context: StoryChatContext,
-    inputRequest: ChatRequest
+    inputRequest: ChatRequest,
+    ragContext: List<RagContextChunk> = emptyList(),
 ): Prompt {
     val missing = buildList {
         if (context.story?.title.isNullOrBlank()) add("story.title")
@@ -192,6 +194,8 @@ fun chatAgentPrompt(
                 br()
                 +"If the user explicitly confirms they want to override, proceed with the write."
                 br()
+                +"When retrieved facts are present, prefer them over general context."
+                br()
 
                 h2("Optional Enrichment")
                 +"After completing the primary action, you may add a small suggestion if helpful."
@@ -223,6 +227,19 @@ fun chatAgentPrompt(
                     +"(none)"
                 } else {
                     bulleted { missing.forEach { item(it) } }
+                }
+                br()
+
+                h3("Retrieved Story Facts")
+                if (ragContext.isEmpty()) {
+                    +"(none)"
+                } else {
+                    ragContext.forEach { chunk ->
+                        val label = chunk.label?.takeIf { it.isNotBlank() } ?: "unknown"
+                        h4("[${chunk.type}: $label]")
+                        +chunk.content
+                        br()
+                    }
                 }
                 br()
 

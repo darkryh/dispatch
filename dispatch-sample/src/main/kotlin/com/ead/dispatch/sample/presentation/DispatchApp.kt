@@ -2,10 +2,13 @@ package com.ead.dispatch.sample.presentation
 
 import com.ead.dispatch.annotation.Dispatchable
 import com.ead.dispatch.koin.KoinViewModelFactory
+import com.ead.dispatch.koin.inject
 import com.ead.dispatch.navigation.NavHost
 import com.ead.dispatch.navigation.rememberNavController
 import com.ead.dispatch.navigation.screen
+import com.ead.dispatch.runtime.LaunchedEffect
 import com.ead.dispatch.runtime.dispatchScope
+import com.ead.dispatch.sample.domain.embedding.EmbeddingReindexer
 import com.ead.dispatch.sample.navigation.ChatRoute
 import com.ead.dispatch.sample.navigation.CharacterRoute
 import com.ead.dispatch.sample.navigation.EntityListRoute
@@ -24,9 +27,14 @@ import com.ead.dispatch.sample.presentation.story_summary.StorySummaryScreen
 @Dispatchable
 fun DispatchSampleApp() {
     val navController = rememberNavController(viewModelFactory = KoinViewModelFactory())
+    val embeddingReindexer by inject<EmbeddingReindexer>()
 
     val scope = dispatchScope()
     val startArg = scope.getArgument("start")?.lowercase()
+
+    LaunchedEffect(Unit) {
+        embeddingReindexer.startPeriodic()
+    }
 
     val startDestination: Any = when {
         scope.hasFlag("resume") || startArg == "resume" || startArg == "session" -> {

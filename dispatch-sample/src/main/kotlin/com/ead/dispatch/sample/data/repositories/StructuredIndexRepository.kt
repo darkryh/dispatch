@@ -5,6 +5,9 @@ import app.cash.sqldelight.coroutines.mapToList
 import com.ead.dispatch.sample.DispatchDatabase
 import com.ead.dispatch.sample.data.db.entities.*
 import com.ead.dispatch.sample.data.db.type.*
+import com.ead.dispatch.sample.domain.embedding.EmbeddingIndexService
+import com.ead.dispatch.sample.domain.embedding.EmbeddingMode
+import com.ead.dispatch.sample.domain.embedding.EmbeddingTextBuilder
 import com.ead.dispatch.sample.domain.model.story.OverflowList
 import com.ead.dispatch.sample.domain.model.story.StoryChatContext
 import com.ead.dispatch.sample.domain.model.story.StoryModeContext
@@ -18,6 +21,7 @@ import java.util.concurrent.Executors
 
 class StructuredIndexRepository(
     private val database: DispatchDatabase,
+    private val embeddingIndexService: EmbeddingIndexService,
 ) {
     private data class LimitedSlice<T>(
         val items: List<T>,
@@ -37,17 +41,17 @@ class StructuredIndexRepository(
     }
 
     private companion object {
-        const val CHAT_CONTEXT_CHARACTER_LIMIT = 8
-        const val CHAT_CONTEXT_LOCATION_LIMIT = 8
-        const val CHAT_CONTEXT_ARC_LIMIT = 6
-        const val CHAT_CONTEXT_WORLD_RULE_LIMIT = 4
-        const val CHAT_CONTEXT_CULTURE_LIMIT = 4
-        const val CHAT_CONTEXT_EVENT_LIMIT = 4
-        const val CHAT_CONTEXT_ORGANIZATION_LIMIT = 4
-        const val CHAT_CONTEXT_RELATIONSHIP_LIMIT = 4
-        const val CHAT_CONTEXT_LOCATION_FEATURE_LIMIT = 4
-        const val CHAT_CONTEXT_ARTIFACT_LIMIT = 4
-        const val CHAT_CONTEXT_TIMELINE_LIMIT = 4
+        const val CHAT_CONTEXT_CHARACTER_LIMIT = 6
+        const val CHAT_CONTEXT_LOCATION_LIMIT = 6
+        const val CHAT_CONTEXT_ARC_LIMIT = 4
+        const val CHAT_CONTEXT_WORLD_RULE_LIMIT = 3
+        const val CHAT_CONTEXT_CULTURE_LIMIT = 3
+        const val CHAT_CONTEXT_EVENT_LIMIT = 3
+        const val CHAT_CONTEXT_ORGANIZATION_LIMIT = 3
+        const val CHAT_CONTEXT_RELATIONSHIP_LIMIT = 3
+        const val CHAT_CONTEXT_LOCATION_FEATURE_LIMIT = 3
+        const val CHAT_CONTEXT_ARTIFACT_LIMIT = 3
+        const val CHAT_CONTEXT_TIMELINE_LIMIT = 3
     }
 
     private val queries = database.dispatchDatabaseQueries
@@ -55,7 +59,7 @@ class StructuredIndexRepository(
         Thread(runnable, "dispatch-db")
     }.asCoroutineDispatcher()
 
-    private suspend inline fun <T> dbQuery(crossinline block: () -> T): T =
+    private suspend inline fun <T> query(crossinline block: () -> T): T =
         withContext(coroutineDispatcher) { block() }
 
     private fun getSessionMetadata(sessionId: String): Map<String, String> =
@@ -87,6 +91,122 @@ class StructuredIndexRepository(
         queries.selectStoryCharacterQuirksByCharacterId(characterId) { _, _, value ->
             value
         }.executeAsList()
+
+    private suspend fun upsertEntityEmbedding(
+        storyId: String,
+        sourceRef: String,
+        text: String,
+        mode: EmbeddingMode = EmbeddingMode.CHAT,
+    ) {
+        val embeddingService = embeddingIndexService
+        val normalized = text.trim()
+        if (normalized.isBlank()) return
+
+        val checksum = embeddingService.checksum(normalized)
+        val existing = query {
+            queries.selectRagDocumentsByStoryAndSourceRef(storyId, sourceRef) { docId, sessionId, storyIdValue, volumeId, chapterId, chunkIndex, sourceType, sourceRefValue, checksumValue, createdAt ->
+                RagDocumentRecord(
+                    docId = docId,
+                    sessionId = sessionId,
+                    storyId = storyIdValue,
+                    volumeId = volumeId,
+                    chapterId = chapterId,
+                    chunkIndex = chunkIndex,
+                    sourceType = RagSourceType.fromDb(sourceType),
+                    sourceRef = sourceRefValue,
+                    checksum = checksumValue,
+                    createdAt = createdAt,
+                )
+            }.executeAsList()
+        }
+
+        if (existing.any { it.checksum == checksum }) return
+
+        existing.forEach { record ->
+            embeddingService.delete(mode, record.sessionId, record.docId)
+        }
+        query {
+            queries.deleteRagDocumentsByStoryAndSourceRef(storyId, sourceRef)
+        }
+
+        val sessionId = getStoryById(storyId)?.sessionId ?: storyId
+        val docId = embeddingService.store(mode, sessionId, normalized) ?: return
+        query {
+            queries.insertRagDocument(
+                doc_id = docId,
+                session_id = sessionId,
+                story_id = storyId,
+                volume_id = null,
+                chapter_id = null,
+                chunk_index = 0,
+                source_type = RagSourceType.NOTE.name,
+                source_ref = sourceRef,
+                checksum = checksum,
+                created_at = System.currentTimeMillis(),
+            )
+        }
+    }
+
+    private suspend fun deleteEntityEmbedding(
+        storyId: String,
+        sourceRef: String,
+        mode: EmbeddingMode = EmbeddingMode.CHAT,
+    ) {
+        val embeddingService = embeddingIndexService
+        val existing = query {
+            queries.selectRagDocumentsByStoryAndSourceRef(storyId, sourceRef) { docId, sessionId, storyIdValue, volumeId, chapterId, chunkIndex, sourceType, sourceRefValue, checksumValue, createdAt ->
+                RagDocumentRecord(
+                    docId = docId,
+                    sessionId = sessionId,
+                    storyId = storyIdValue,
+                    volumeId = volumeId,
+                    chapterId = chapterId,
+                    chunkIndex = chunkIndex,
+                    sourceType = RagSourceType.fromDb(sourceType),
+                    sourceRef = sourceRefValue,
+                    checksum = checksumValue,
+                    createdAt = createdAt,
+                )
+            }.executeAsList()
+        }
+
+        existing.forEach { record ->
+            embeddingService.delete(mode, record.sessionId, record.docId)
+        }
+        query {
+            queries.deleteRagDocumentsByStoryAndSourceRef(storyId, sourceRef)
+        }
+    }
+
+    private suspend fun deleteEntityEmbedding(
+        sourceRef: String,
+        mode: EmbeddingMode = EmbeddingMode.CHAT,
+    ) {
+        val embeddingService = embeddingIndexService
+        val existing = query {
+            queries.selectRagDocumentsBySourceRef(sourceRef) { docId, sessionId, storyIdValue, volumeId, chapterId, chunkIndex, sourceType, sourceRefValue, checksumValue, createdAt ->
+                RagDocumentRecord(
+                    docId = docId,
+                    sessionId = sessionId,
+                    storyId = storyIdValue,
+                    volumeId = volumeId,
+                    chapterId = chapterId,
+                    chunkIndex = chunkIndex,
+                    sourceType = RagSourceType.fromDb(sourceType),
+                    sourceRef = sourceRefValue,
+                    checksum = checksumValue,
+                    createdAt = createdAt,
+                )
+            }.executeAsList()
+        }
+
+        existing.forEach { record ->
+            embeddingService.delete(mode, record.sessionId, record.docId)
+        }
+        query {
+            queries.deleteRagDocumentsBySourceRef(sourceRef)
+        }
+    }
 
     private fun toPhysicalProfile(
         appearance: String?,
@@ -271,7 +391,7 @@ class StructuredIndexRepository(
             }
             .flowOn(coroutineDispatcher)
 
-    suspend fun upsertSession(record: SessionRecord) = dbQuery {
+    suspend fun upsertSession(record: SessionRecord) = query {
         database.transaction {
             val existing = queries.selectSessionById(record.id).executeAsOneOrNull()
             if (existing == null) {
@@ -303,7 +423,7 @@ class StructuredIndexRepository(
         }
     }
 
-    suspend fun getSessions(): List<SessionRecord> = dbQuery {
+    suspend fun getSessions(): List<SessionRecord> = query {
         val sessions = queries.selectSessions { id, title, mode, createdAt, updatedAt, messageCount ->
             SessionRecord(
                 id = id,
@@ -325,72 +445,79 @@ class StructuredIndexRepository(
         }
     }
 
-    suspend fun deleteSession(sessionId: String) = dbQuery {
+    suspend fun deleteSession(sessionId: String) = query {
         queries.deleteSession(sessionId)
     }
 
-    suspend fun upsertStory(record: StoryRecord) = dbQuery {
-        database.transaction {
-            val existing = queries.selectStoryById(record.id).executeAsOneOrNull()
-            if (existing == null) {
-                queries.insertStory(
-                    id = record.id,
-                    session_id = record.sessionId,
-                    title = record.title,
-                    genre = record.genre,
-                    setting = record.setting,
-                    plot_outline = record.plotOutline,
-                    logline = record.styleProfile?.logline,
-                    theme = record.styleProfile?.theme,
-                    tone = record.styleProfile?.tone,
-                    stakes = record.styleProfile?.stakes,
-                    pov = record.styleProfile?.pov,
-                    tense = record.styleProfile?.tense,
-                    target_audience = record.styleProfile?.targetAudience,
-                    pacing = record.styleProfile?.pacing,
-                    status = record.status?.name,
-                    created_at = record.createdAt,
-                    updated_at = record.updatedAt,
-                )
-            } else {
-                queries.updateStory(
-                    id = record.id,
-                    title = record.title,
-                    genre = record.genre,
-                    setting = record.setting,
-                    plot_outline = record.plotOutline,
-                    logline = record.styleProfile?.logline,
-                    theme = record.styleProfile?.theme,
-                    tone = record.styleProfile?.tone,
-                    stakes = record.styleProfile?.stakes,
-                    pov = record.styleProfile?.pov,
-                    tense = record.styleProfile?.tense,
-                    target_audience = record.styleProfile?.targetAudience,
-                    pacing = record.styleProfile?.pacing,
-                    status = record.status?.name,
-                    updated_at = record.updatedAt,
-                )
-            }
-            queries.deleteStoryStyleRefsByStoryId(record.id)
-            record.styleRefs.forEachIndexed { index, value ->
-                queries.insertStoryStyleRef(
-                    story_id = record.id,
-                    position = index.toLong(),
-                    value = value,
-                )
-            }
-            queries.deleteStoryEmotionalBeatsByStoryId(record.id)
-            record.emotionalBeats.forEachIndexed { index, value ->
-                queries.insertStoryEmotionalBeat(
-                    story_id = record.id,
-                    position = index.toLong(),
-                    value = value,
-                )
+    suspend fun upsertStory(record: StoryRecord) {
+        query {
+            database.transaction {
+                val existing = queries.selectStoryById(record.id).executeAsOneOrNull()
+                if (existing == null) {
+                    queries.insertStory(
+                        id = record.id,
+                        session_id = record.sessionId,
+                        title = record.title,
+                        genre = record.genre,
+                        setting = record.setting,
+                        plot_outline = record.plotOutline,
+                        logline = record.styleProfile?.logline,
+                        theme = record.styleProfile?.theme,
+                        tone = record.styleProfile?.tone,
+                        stakes = record.styleProfile?.stakes,
+                        pov = record.styleProfile?.pov,
+                        tense = record.styleProfile?.tense,
+                        target_audience = record.styleProfile?.targetAudience,
+                        pacing = record.styleProfile?.pacing,
+                        status = record.status?.name,
+                        created_at = record.createdAt,
+                        updated_at = record.updatedAt,
+                    )
+                } else {
+                    queries.updateStory(
+                        id = record.id,
+                        title = record.title,
+                        genre = record.genre,
+                        setting = record.setting,
+                        plot_outline = record.plotOutline,
+                        logline = record.styleProfile?.logline,
+                        theme = record.styleProfile?.theme,
+                        tone = record.styleProfile?.tone,
+                        stakes = record.styleProfile?.stakes,
+                        pov = record.styleProfile?.pov,
+                        tense = record.styleProfile?.tense,
+                        target_audience = record.styleProfile?.targetAudience,
+                        pacing = record.styleProfile?.pacing,
+                        status = record.status?.name,
+                        updated_at = record.updatedAt,
+                    )
+                }
+                queries.deleteStoryStyleRefsByStoryId(record.id)
+                record.styleRefs.forEachIndexed { index, value ->
+                    queries.insertStoryStyleRef(
+                        story_id = record.id,
+                        position = index.toLong(),
+                        value = value,
+                    )
+                }
+                queries.deleteStoryEmotionalBeatsByStoryId(record.id)
+                record.emotionalBeats.forEachIndexed { index, value ->
+                    queries.insertStoryEmotionalBeat(
+                        story_id = record.id,
+                        position = index.toLong(),
+                        value = value,
+                    )
+                }
             }
         }
+        upsertEntityEmbedding(
+            storyId = record.id,
+            sourceRef = "story:${record.id}",
+            text = EmbeddingTextBuilder.story(record),
+        )
     }
 
-    suspend fun getStoriesBySession(sessionId: String): List<StoryRecord> = dbQuery {
+    suspend fun getStoriesBySession(sessionId: String): List<StoryRecord> = query {
         val stories = queries.selectStoriesBySessionId(sessionId) { id, sessionId, title, genre, setting, plotOutline, logline, theme, tone, stakes, pov, tense, targetAudience, pacing, status, createdAt, updatedAt ->
             StoryRecord(
                 id = id,
@@ -425,7 +552,7 @@ class StructuredIndexRepository(
         }
     }
 
-    suspend fun getStoryById(storyId: String): StoryRecord? = dbQuery {
+    suspend fun getStoryById(storyId: String): StoryRecord? = query {
         val story = queries.selectStoryById(storyId) { id, sessionId, title, genre, setting, plotOutline, logline, theme, tone, stakes, pov, tense, targetAudience, pacing, status, createdAt, updatedAt ->
             StoryRecord(
                 id = id,
@@ -535,66 +662,92 @@ class StructuredIndexRepository(
         )
     }
 
-    suspend fun replaceStoryCharacters(storyId: String, characters: List<StoryCharacterRecord>) = dbQuery {
-        database.transaction {
-            queries.deleteStoryCharacterTraitsByStoryId(storyId)
-            queries.deleteStoryCharacterRolesByStoryId(storyId)
-            queries.deleteStoryCharacterQuirksByStoryId(storyId)
-            queries.deleteStoryCharactersByStoryId(storyId)
-            characters.forEach { character ->
-                insertStoryCharacterInternal(storyId, character)
-                replaceStoryCharacterDetails(character)
+    suspend fun replaceStoryCharacters(storyId: String, characters: List<StoryCharacterRecord>) {
+        query {
+            database.transaction {
+                queries.deleteStoryCharacterTraitsByStoryId(storyId)
+                queries.deleteStoryCharacterRolesByStoryId(storyId)
+                queries.deleteStoryCharacterQuirksByStoryId(storyId)
+                queries.deleteStoryCharactersByStoryId(storyId)
+                characters.forEach { character ->
+                    insertStoryCharacterInternal(storyId, character)
+                    replaceStoryCharacterDetails(character)
+                }
             }
         }
-    }
-
-    suspend fun insertStoryCharacter(record: StoryCharacterRecord) = dbQuery {
-        database.transaction {
-            insertStoryCharacterInternal(record.storyId, record)
-            replaceStoryCharacterDetails(record)
-        }
-    }
-
-    suspend fun updateStoryCharacter(record: StoryCharacterRecord) = dbQuery {
-        database.transaction {
-            val physical = record.physical
-            queries.updateStoryCharacter(
-                id = record.id,
-                name = record.name,
-                description = record.description,
-                goal = record.goal,
-                motivation = record.motivation,
-                flaw = record.flaw,
-                temperament = record.temperament,
-                age = record.age,
-                pronouns = record.pronouns,
-                occupation = record.occupation,
-                backstory = record.backstory,
-                voice = record.voice,
-                internal_conflict = record.internalConflict,
-                appearance = physical?.appearance,
-                height = physical?.height,
-                build = physical?.build,
-                hair = physical?.hair,
-                eyes = physical?.eyes,
-                skin_tone = physical?.skinTone,
-                distinguishing_marks = physical?.distinguishingMarks,
-                style_notes = physical?.styleNotes,
+        characters.forEach { character ->
+            upsertEntityEmbedding(
+                storyId = storyId,
+                sourceRef = "character:${character.id}",
+                text = EmbeddingTextBuilder.character(character),
             )
-            replaceStoryCharacterDetails(record)
         }
     }
 
-    suspend fun deleteStoryCharacter(characterId: String) = dbQuery {
-        database.transaction {
-            queries.deleteStoryCharacterTraitsByCharacterId(characterId)
-            queries.deleteStoryCharacterRolesByCharacterId(characterId)
-            queries.deleteStoryCharacterQuirksByCharacterId(characterId)
-            queries.deleteStoryCharacterById(characterId)
+    suspend fun insertStoryCharacter(record: StoryCharacterRecord) {
+        query {
+            database.transaction {
+                insertStoryCharacterInternal(record.storyId, record)
+                replaceStoryCharacterDetails(record)
+            }
         }
+        upsertEntityEmbedding(
+            storyId = record.storyId,
+            sourceRef = "character:${record.id}",
+            text = EmbeddingTextBuilder.character(record),
+        )
     }
 
-    suspend fun getStoryCharacters(storyId: String): List<StoryCharacterRecord> = dbQuery {
+    suspend fun updateStoryCharacter(record: StoryCharacterRecord) {
+        query {
+            database.transaction {
+                val physical = record.physical
+                queries.updateStoryCharacter(
+                    id = record.id,
+                    name = record.name,
+                    description = record.description,
+                    goal = record.goal,
+                    motivation = record.motivation,
+                    flaw = record.flaw,
+                    temperament = record.temperament,
+                    age = record.age,
+                    pronouns = record.pronouns,
+                    occupation = record.occupation,
+                    backstory = record.backstory,
+                    voice = record.voice,
+                    internal_conflict = record.internalConflict,
+                    appearance = physical?.appearance,
+                    height = physical?.height,
+                    build = physical?.build,
+                    hair = physical?.hair,
+                    eyes = physical?.eyes,
+                    skin_tone = physical?.skinTone,
+                    distinguishing_marks = physical?.distinguishingMarks,
+                    style_notes = physical?.styleNotes,
+                )
+                replaceStoryCharacterDetails(record)
+            }
+        }
+        upsertEntityEmbedding(
+            storyId = record.storyId,
+            sourceRef = "character:${record.id}",
+            text = EmbeddingTextBuilder.character(record),
+        )
+    }
+
+    suspend fun deleteStoryCharacter(characterId: String) {
+        query {
+            database.transaction {
+                queries.deleteStoryCharacterTraitsByCharacterId(characterId)
+                queries.deleteStoryCharacterRolesByCharacterId(characterId)
+                queries.deleteStoryCharacterQuirksByCharacterId(characterId)
+                queries.deleteStoryCharacterById(characterId)
+            }
+        }
+        deleteEntityEmbedding(sourceRef = "character:$characterId")
+    }
+
+    suspend fun getStoryCharacters(storyId: String): List<StoryCharacterRecord> = query {
         val characters = queries.selectCharactersByStoryId(storyId) { id, storyId, name, description, goal, motivation, flaw, temperament, age, pronouns, occupation, backstory, voice, internalConflict, appearance, height, build, hair, eyes, skinTone, distinguishingMarks, styleNotes, createdAt ->
             StoryCharacterRecord(
                 id = id,
@@ -739,7 +892,7 @@ class StructuredIndexRepository(
             }
             .flowOn(coroutineDispatcher)
 
-    suspend fun upsertVolume(record: StoryVolumeRecord) = dbQuery {
+    suspend fun upsertVolume(record: StoryVolumeRecord) = query {
         database.transaction {
             val existing = queries.selectVolumeById(record.id).executeAsOneOrNull()
             if (existing == null) {
@@ -779,7 +932,7 @@ class StructuredIndexRepository(
         }
     }
 
-    suspend fun getVolumesByStory(storyId: String): List<StoryVolumeRecord> = dbQuery {
+    suspend fun getVolumesByStory(storyId: String): List<StoryVolumeRecord> = query {
         val volumes = queries.selectVolumesByStoryId(storyId) { id, storyId, number, title, summary, targetWordCount, status, notes, createdAt, updatedAt ->
             StoryVolumeRecord(
                 id = id,
@@ -830,7 +983,7 @@ class StructuredIndexRepository(
             }
             .flowOn(coroutineDispatcher)
 
-    suspend fun upsertChapter(record: StoryChapterRecord) = dbQuery {
+    suspend fun upsertChapter(record: StoryChapterRecord) = query {
         database.transaction {
             val existing = queries.selectChapterById(record.id).executeAsOneOrNull()
             if (existing == null) {
@@ -880,7 +1033,7 @@ class StructuredIndexRepository(
         }
     }
 
-    suspend fun getChaptersByVolume(volumeId: String): List<StoryChapterRecord> = dbQuery {
+    suspend fun getChaptersByVolume(volumeId: String): List<StoryChapterRecord> = query {
         val chapters = queries.selectChaptersByVolumeId(volumeId) { id, volumeId, number, title, summary, contentRef, contentType, contentChecksum, contentUpdatedAt, contentRange, wordCount, targetWordCount, status, createdAt, updatedAt ->
             StoryChapterRecord(
                 id = id,
@@ -941,43 +1094,53 @@ class StructuredIndexRepository(
             }
             .flowOn(coroutineDispatcher)
 
-    suspend fun upsertLocation(record: StoryLocationRecord) = dbQuery {
-        database.transaction {
-            val existing = queries.selectLocationById(record.id).executeAsOneOrNull()
-            if (existing == null) {
-                queries.insertStoryLocation(
-                    id = record.id,
-                    story_id = record.storyId,
-                    name = record.profile.name,
-                    description = record.profile.description,
-                    created_at = record.createdAt,
-                )
-            } else {
-                queries.updateStoryLocation(
-                    id = record.id,
-                    name = record.profile.name,
-                    description = record.profile.description,
-                )
-            }
-            queries.deleteStoryLocationTagsByLocationId(record.id)
-            record.tags.forEachIndexed { index, value ->
-                queries.insertStoryLocationTag(
-                    location_id = record.id,
-                    position = index.toLong(),
-                    value = value,
-                )
+    suspend fun upsertLocation(record: StoryLocationRecord) {
+        query {
+            database.transaction {
+                val existing = queries.selectLocationById(record.id).executeAsOneOrNull()
+                if (existing == null) {
+                    queries.insertStoryLocation(
+                        id = record.id,
+                        story_id = record.storyId,
+                        name = record.profile.name,
+                        description = record.profile.description,
+                        created_at = record.createdAt,
+                    )
+                } else {
+                    queries.updateStoryLocation(
+                        id = record.id,
+                        name = record.profile.name,
+                        description = record.profile.description,
+                    )
+                }
+                queries.deleteStoryLocationTagsByLocationId(record.id)
+                record.tags.forEachIndexed { index, value ->
+                    queries.insertStoryLocationTag(
+                        location_id = record.id,
+                        position = index.toLong(),
+                        value = value,
+                    )
+                }
             }
         }
+        upsertEntityEmbedding(
+            storyId = record.storyId,
+            sourceRef = "location:${record.id}",
+            text = EmbeddingTextBuilder.location(record),
+        )
     }
 
-    suspend fun deleteStoryLocation(locationId: String) = dbQuery {
-        database.transaction {
-            queries.deleteStoryLocationTagsByLocationId(locationId)
-            queries.deleteStoryLocationById(locationId)
+    suspend fun deleteStoryLocation(locationId: String) {
+        query {
+            database.transaction {
+                queries.deleteStoryLocationTagsByLocationId(locationId)
+                queries.deleteStoryLocationById(locationId)
+            }
         }
+        deleteEntityEmbedding(sourceRef = "location:$locationId")
     }
 
-    suspend fun getLocationsByStory(storyId: String): List<StoryLocationRecord> = dbQuery {
+    suspend fun getLocationsByStory(storyId: String): List<StoryLocationRecord> = query {
         val locations = queries.selectLocationsByStoryId(storyId) { id, storyId, name, description, createdAt ->
             StoryLocationRecord(
                 id = id,
@@ -996,63 +1159,82 @@ class StructuredIndexRepository(
         }
     }
 
-    suspend fun replaceLocationsByStory(storyId: String, locations: List<StoryLocationRecord>) = dbQuery {
-        database.transaction {
-            queries.deleteStoryLocationTagsByStoryId(storyId)
-            queries.deleteLocationsByStoryId(storyId)
-            locations.forEach { location ->
-                queries.insertStoryLocation(
-                    id = location.id,
-                    story_id = storyId,
-                    name = location.profile.name,
-                    description = location.profile.description,
-                    created_at = location.createdAt,
-                )
-                location.tags.forEachIndexed { index, value ->
-                    queries.insertStoryLocationTag(
-                        location_id = location.id,
-                        position = index.toLong(),
-                        value = value,
+    suspend fun replaceLocationsByStory(storyId: String, locations: List<StoryLocationRecord>) {
+        query {
+            database.transaction {
+                queries.deleteStoryLocationTagsByStoryId(storyId)
+                queries.deleteLocationsByStoryId(storyId)
+                locations.forEach { location ->
+                    queries.insertStoryLocation(
+                        id = location.id,
+                        story_id = storyId,
+                        name = location.profile.name,
+                        description = location.profile.description,
+                        created_at = location.createdAt,
+                    )
+                    location.tags.forEachIndexed { index, value ->
+                        queries.insertStoryLocationTag(
+                            location_id = location.id,
+                            position = index.toLong(),
+                            value = value,
+                        )
+                    }
+                }
+            }
+        }
+        locations.forEach { location ->
+            upsertEntityEmbedding(
+                storyId = storyId,
+                sourceRef = "location:${location.id}",
+                text = EmbeddingTextBuilder.location(location),
+            )
+        }
+    }
+
+    suspend fun upsertArc(record: StoryArcRecord) {
+        query {
+            database.transaction {
+                val existing = queries.selectArcById(record.id).executeAsOneOrNull()
+                if (existing == null) {
+                    queries.insertStoryArc(
+                        id = record.id,
+                        story_id = record.storyId,
+                        scope_type = record.scopeType.name,
+                        scope_id = record.scopeId,
+                        title = record.title,
+                        summary = record.summary,
+                        status = record.status?.name,
+                        created_at = record.createdAt,
+                        updated_at = record.updatedAt,
+                    )
+                } else {
+                    queries.updateStoryArc(
+                        id = record.id,
+                        scope_type = record.scopeType.name,
+                        scope_id = record.scopeId,
+                        title = record.title,
+                        summary = record.summary,
+                        status = record.status?.name,
+                        updated_at = record.updatedAt,
                     )
                 }
             }
         }
+        upsertEntityEmbedding(
+            storyId = record.storyId,
+            sourceRef = "arc:${record.id}",
+            text = EmbeddingTextBuilder.arc(record),
+        )
     }
 
-    suspend fun upsertArc(record: StoryArcRecord) = dbQuery {
-        database.transaction {
-            val existing = queries.selectArcById(record.id).executeAsOneOrNull()
-            if (existing == null) {
-                queries.insertStoryArc(
-                    id = record.id,
-                    story_id = record.storyId,
-                    scope_type = record.scopeType.name,
-                    scope_id = record.scopeId,
-                    title = record.title,
-                    summary = record.summary,
-                    status = record.status?.name,
-                    created_at = record.createdAt,
-                    updated_at = record.updatedAt,
-                )
-            } else {
-                queries.updateStoryArc(
-                    id = record.id,
-                    scope_type = record.scopeType.name,
-                    scope_id = record.scopeId,
-                    title = record.title,
-                    summary = record.summary,
-                    status = record.status?.name,
-                    updated_at = record.updatedAt,
-                )
-            }
+    suspend fun deleteStoryArc(arcId: String) {
+        query {
+            queries.deleteStoryArcById(arcId)
         }
+        deleteEntityEmbedding(sourceRef = "arc:$arcId")
     }
 
-    suspend fun deleteStoryArc(arcId: String) = dbQuery {
-        queries.deleteStoryArcById(arcId)
-    }
-
-    suspend fun getArcsByStory(storyId: String): List<StoryArcRecord> = dbQuery {
+    suspend fun getArcsByStory(storyId: String): List<StoryArcRecord> = query {
         queries.selectArcsByStoryId(storyId) { id, storyId, scopeType, scopeId, title, summary, status, createdAt, updatedAt ->
             StoryArcRecord(
                 id = id,
@@ -1068,7 +1250,7 @@ class StructuredIndexRepository(
         }.executeAsList()
     }
 
-    suspend fun getArcsByScope(scopeType: ArcScope, scopeId: String): List<StoryArcRecord> = dbQuery {
+    suspend fun getArcsByScope(scopeType: ArcScope, scopeId: String): List<StoryArcRecord> = query {
         queries.selectArcsByScope(scopeType.name, scopeId) { id, storyId, scopeType, scopeId, title, summary, status, createdAt, updatedAt ->
             StoryArcRecord(
                 id = id,
@@ -1084,45 +1266,63 @@ class StructuredIndexRepository(
         }.executeAsList()
     }
 
-    suspend fun replaceArcsByStory(storyId: String, arcs: List<StoryArcRecord>) = dbQuery {
-        database.transaction {
-            queries.deleteArcsByStoryId(storyId)
-            arcs.forEach { arc ->
-                queries.insertStoryArc(
-                    id = arc.id,
-                    story_id = storyId,
-                    scope_type = arc.scopeType.name,
-                    scope_id = arc.scopeId,
-                    title = arc.title,
-                    summary = arc.summary,
-                    status = arc.status?.name,
-                    created_at = arc.createdAt,
-                    updated_at = arc.updatedAt,
-                )
+    suspend fun replaceArcsByStory(storyId: String, arcs: List<StoryArcRecord>) {
+        query {
+            database.transaction {
+                queries.deleteArcsByStoryId(storyId)
+                arcs.forEach { arc ->
+                    queries.insertStoryArc(
+                        id = arc.id,
+                        story_id = storyId,
+                        scope_type = arc.scopeType.name,
+                        scope_id = arc.scopeId,
+                        title = arc.title,
+                        summary = arc.summary,
+                        status = arc.status?.name,
+                        created_at = arc.createdAt,
+                        updated_at = arc.updatedAt,
+                    )
+                }
             }
+        }
+        arcs.forEach { arc ->
+            upsertEntityEmbedding(
+                storyId = storyId,
+                sourceRef = "arc:${arc.id}",
+                text = EmbeddingTextBuilder.arc(arc),
+            )
         }
     }
 
-    suspend fun replaceArcsByScope(scopeType: ArcScope, scopeId: String, arcs: List<StoryArcRecord>) = dbQuery {
-        database.transaction {
-            queries.deleteArcsByScope(scopeType.name, scopeId)
-            arcs.forEach { arc ->
-                queries.insertStoryArc(
-                    id = arc.id,
-                    story_id = arc.storyId,
-                    scope_type = arc.scopeType.name,
-                    scope_id = arc.scopeId,
-                    title = arc.title,
-                    summary = arc.summary,
-                    status = arc.status?.name,
-                    created_at = arc.createdAt,
-                    updated_at = arc.updatedAt,
-                )
+    suspend fun replaceArcsByScope(scopeType: ArcScope, scopeId: String, arcs: List<StoryArcRecord>) {
+        query {
+            database.transaction {
+                queries.deleteArcsByScope(scopeType.name, scopeId)
+                arcs.forEach { arc ->
+                    queries.insertStoryArc(
+                        id = arc.id,
+                        story_id = arc.storyId,
+                        scope_type = arc.scopeType.name,
+                        scope_id = arc.scopeId,
+                        title = arc.title,
+                        summary = arc.summary,
+                        status = arc.status?.name,
+                        created_at = arc.createdAt,
+                        updated_at = arc.updatedAt,
+                    )
+                }
             }
+        }
+        arcs.forEach { arc ->
+            upsertEntityEmbedding(
+                storyId = arc.storyId,
+                sourceRef = "arc:${arc.id}",
+                text = EmbeddingTextBuilder.arc(arc),
+            )
         }
     }
 
-    suspend fun upsertScene(record: StorySceneRecord) = dbQuery {
+    suspend fun upsertScene(record: StorySceneRecord) = query {
         database.transaction {
             val existing = queries.selectSceneById(record.id).executeAsOneOrNull()
             if (existing == null) {
@@ -1168,7 +1368,7 @@ class StructuredIndexRepository(
         }
     }
 
-    suspend fun getScenesByChapter(chapterId: String): List<StorySceneRecord> = dbQuery {
+    suspend fun getScenesByChapter(chapterId: String): List<StorySceneRecord> = query {
         queries.selectScenesByChapterId(chapterId) { id, chapterId, number, title, summary, contentRange, pov, emotionalBeat, locationId, timeSpan, status, createdAt, updatedAt ->
             StorySceneRecord(
                 id = id,
@@ -1191,7 +1391,7 @@ class StructuredIndexRepository(
         }.executeAsList()
     }
 
-    suspend fun replaceScenesByChapter(chapterId: String, scenes: List<StorySceneRecord>) = dbQuery {
+    suspend fun replaceScenesByChapter(chapterId: String, scenes: List<StorySceneRecord>) = query {
         database.transaction {
             queries.deleteStorySceneKeyEventsByChapterId(chapterId)
             queries.deleteScenesByChapterId(chapterId)
@@ -1223,29 +1423,46 @@ class StructuredIndexRepository(
         }
     }
 
-    suspend fun insertStoryWorldRule(record: StoryWorldRuleRecord) = dbQuery {
-        queries.insertStoryWorldRule(
-            id = record.id,
-            story_id = record.storyId,
-            title = record.title,
-            description = record.description,
-            created_at = record.createdAt,
+    suspend fun insertStoryWorldRule(record: StoryWorldRuleRecord) {
+        query {
+            queries.insertStoryWorldRule(
+                id = record.id,
+                story_id = record.storyId,
+                title = record.title,
+                description = record.description,
+                created_at = record.createdAt,
+            )
+        }
+        upsertEntityEmbedding(
+            storyId = record.storyId,
+            sourceRef = "world_rule:${record.id}",
+            text = EmbeddingTextBuilder.worldRule(record),
         )
     }
 
-    suspend fun updateStoryWorldRule(record: StoryWorldRuleRecord) = dbQuery {
-        queries.updateStoryWorldRule(
-            id = record.id,
-            title = record.title,
-            description = record.description,
+    suspend fun updateStoryWorldRule(record: StoryWorldRuleRecord) {
+        query {
+            queries.updateStoryWorldRule(
+                id = record.id,
+                title = record.title,
+                description = record.description,
+            )
+        }
+        upsertEntityEmbedding(
+            storyId = record.storyId,
+            sourceRef = "world_rule:${record.id}",
+            text = EmbeddingTextBuilder.worldRule(record),
         )
     }
 
-    suspend fun deleteStoryWorldRule(ruleId: String) = dbQuery {
-        queries.deleteStoryWorldRuleById(ruleId)
+    suspend fun deleteStoryWorldRule(ruleId: String) {
+        query {
+            queries.deleteStoryWorldRuleById(ruleId)
+        }
+        deleteEntityEmbedding(sourceRef = "world_rule:$ruleId")
     }
 
-    suspend fun getWorldRulesByStory(storyId: String): List<StoryWorldRuleRecord> = dbQuery {
+    suspend fun getWorldRulesByStory(storyId: String): List<StoryWorldRuleRecord> = query {
         queries.selectWorldRulesByStoryId(storyId) { id, storyId, title, description, createdAt ->
             StoryWorldRuleRecord(
                 id = id,
@@ -1257,29 +1474,46 @@ class StructuredIndexRepository(
         }.executeAsList()
     }
 
-    suspend fun insertStoryCulture(record: StoryCultureRecord) = dbQuery {
-        queries.insertStoryCulture(
-            id = record.id,
-            story_id = record.storyId,
-            name = record.name,
-            description = record.description,
-            created_at = record.createdAt,
+    suspend fun insertStoryCulture(record: StoryCultureRecord) {
+        query {
+            queries.insertStoryCulture(
+                id = record.id,
+                story_id = record.storyId,
+                name = record.name,
+                description = record.description,
+                created_at = record.createdAt,
+            )
+        }
+        upsertEntityEmbedding(
+            storyId = record.storyId,
+            sourceRef = "culture:${record.id}",
+            text = EmbeddingTextBuilder.culture(record),
         )
     }
 
-    suspend fun updateStoryCulture(record: StoryCultureRecord) = dbQuery {
-        queries.updateStoryCulture(
-            id = record.id,
-            name = record.name,
-            description = record.description,
+    suspend fun updateStoryCulture(record: StoryCultureRecord) {
+        query {
+            queries.updateStoryCulture(
+                id = record.id,
+                name = record.name,
+                description = record.description,
+            )
+        }
+        upsertEntityEmbedding(
+            storyId = record.storyId,
+            sourceRef = "culture:${record.id}",
+            text = EmbeddingTextBuilder.culture(record),
         )
     }
 
-    suspend fun deleteStoryCulture(cultureId: String) = dbQuery {
-        queries.deleteStoryCultureById(cultureId)
+    suspend fun deleteStoryCulture(cultureId: String) {
+        query {
+            queries.deleteStoryCultureById(cultureId)
+        }
+        deleteEntityEmbedding(sourceRef = "culture:$cultureId")
     }
 
-    suspend fun getCulturesByStory(storyId: String): List<StoryCultureRecord> = dbQuery {
+    suspend fun getCulturesByStory(storyId: String): List<StoryCultureRecord> = query {
         queries.selectCulturesByStoryId(storyId) { id, storyId, name, description, createdAt ->
             StoryCultureRecord(
                 id = id,
@@ -1291,29 +1525,46 @@ class StructuredIndexRepository(
         }.executeAsList()
     }
 
-    suspend fun insertStoryEvent(record: StoryEventRecord) = dbQuery {
-        queries.insertStoryEvent(
-            id = record.id,
-            story_id = record.storyId,
-            name = record.name,
-            description = record.description,
-            created_at = record.createdAt,
+    suspend fun insertStoryEvent(record: StoryEventRecord) {
+        query {
+            queries.insertStoryEvent(
+                id = record.id,
+                story_id = record.storyId,
+                name = record.name,
+                description = record.description,
+                created_at = record.createdAt,
+            )
+        }
+        upsertEntityEmbedding(
+            storyId = record.storyId,
+            sourceRef = "event:${record.id}",
+            text = EmbeddingTextBuilder.event(record),
         )
     }
 
-    suspend fun updateStoryEvent(record: StoryEventRecord) = dbQuery {
-        queries.updateStoryEvent(
-            id = record.id,
-            name = record.name,
-            description = record.description,
+    suspend fun updateStoryEvent(record: StoryEventRecord) {
+        query {
+            queries.updateStoryEvent(
+                id = record.id,
+                name = record.name,
+                description = record.description,
+            )
+        }
+        upsertEntityEmbedding(
+            storyId = record.storyId,
+            sourceRef = "event:${record.id}",
+            text = EmbeddingTextBuilder.event(record),
         )
     }
 
-    suspend fun deleteStoryEvent(eventId: String) = dbQuery {
-        queries.deleteStoryEventById(eventId)
+    suspend fun deleteStoryEvent(eventId: String) {
+        query {
+            queries.deleteStoryEventById(eventId)
+        }
+        deleteEntityEmbedding(sourceRef = "event:$eventId")
     }
 
-    suspend fun getEventsByStory(storyId: String): List<StoryEventRecord> = dbQuery {
+    suspend fun getEventsByStory(storyId: String): List<StoryEventRecord> = query {
         queries.selectEventsByStoryId(storyId) { id, storyId, name, description, createdAt ->
             StoryEventRecord(
                 id = id,
@@ -1325,29 +1576,46 @@ class StructuredIndexRepository(
         }.executeAsList()
     }
 
-    suspend fun insertStoryOrganization(record: StoryOrganizationRecord) = dbQuery {
-        queries.insertStoryOrganization(
-            id = record.id,
-            story_id = record.storyId,
-            name = record.name,
-            description = record.description,
-            created_at = record.createdAt,
+    suspend fun insertStoryOrganization(record: StoryOrganizationRecord) {
+        query {
+            queries.insertStoryOrganization(
+                id = record.id,
+                story_id = record.storyId,
+                name = record.name,
+                description = record.description,
+                created_at = record.createdAt,
+            )
+        }
+        upsertEntityEmbedding(
+            storyId = record.storyId,
+            sourceRef = "organization:${record.id}",
+            text = EmbeddingTextBuilder.organization(record),
         )
     }
 
-    suspend fun updateStoryOrganization(record: StoryOrganizationRecord) = dbQuery {
-        queries.updateStoryOrganization(
-            id = record.id,
-            name = record.name,
-            description = record.description,
+    suspend fun updateStoryOrganization(record: StoryOrganizationRecord) {
+        query {
+            queries.updateStoryOrganization(
+                id = record.id,
+                name = record.name,
+                description = record.description,
+            )
+        }
+        upsertEntityEmbedding(
+            storyId = record.storyId,
+            sourceRef = "organization:${record.id}",
+            text = EmbeddingTextBuilder.organization(record),
         )
     }
 
-    suspend fun deleteStoryOrganization(organizationId: String) = dbQuery {
-        queries.deleteStoryOrganizationById(organizationId)
+    suspend fun deleteStoryOrganization(organizationId: String) {
+        query {
+            queries.deleteStoryOrganizationById(organizationId)
+        }
+        deleteEntityEmbedding(sourceRef = "organization:$organizationId")
     }
 
-    suspend fun getOrganizationsByStory(storyId: String): List<StoryOrganizationRecord> = dbQuery {
+    suspend fun getOrganizationsByStory(storyId: String): List<StoryOrganizationRecord> = query {
         queries.selectOrganizationsByStoryId(storyId) { id, storyId, name, description, createdAt ->
             StoryOrganizationRecord(
                 id = id,
@@ -1359,37 +1627,54 @@ class StructuredIndexRepository(
         }.executeAsList()
     }
 
-    suspend fun insertStoryRelationship(record: StoryRelationshipRecord) = dbQuery {
-        queries.insertStoryRelationship(
-            id = record.id,
-            story_id = record.storyId,
-            subject_id = record.subjectId,
-            subject_type = record.subjectType,
-            object_id = record.objectId,
-            object_type = record.objectType,
-            relation = record.relation,
-            notes = record.notes,
-            created_at = record.createdAt,
+    suspend fun insertStoryRelationship(record: StoryRelationshipRecord) {
+        query {
+            queries.insertStoryRelationship(
+                id = record.id,
+                story_id = record.storyId,
+                subject_id = record.subjectId,
+                subject_type = record.subjectType,
+                object_id = record.objectId,
+                object_type = record.objectType,
+                relation = record.relation,
+                notes = record.notes,
+                created_at = record.createdAt,
+            )
+        }
+        upsertEntityEmbedding(
+            storyId = record.storyId,
+            sourceRef = "relationship:${record.id}",
+            text = EmbeddingTextBuilder.relationship(record),
         )
     }
 
-    suspend fun updateStoryRelationship(record: StoryRelationshipRecord) = dbQuery {
-        queries.updateStoryRelationship(
-            id = record.id,
-            subject_id = record.subjectId,
-            subject_type = record.subjectType,
-            object_id = record.objectId,
-            object_type = record.objectType,
-            relation = record.relation,
-            notes = record.notes,
+    suspend fun updateStoryRelationship(record: StoryRelationshipRecord) {
+        query {
+            queries.updateStoryRelationship(
+                id = record.id,
+                subject_id = record.subjectId,
+                subject_type = record.subjectType,
+                object_id = record.objectId,
+                object_type = record.objectType,
+                relation = record.relation,
+                notes = record.notes,
+            )
+        }
+        upsertEntityEmbedding(
+            storyId = record.storyId,
+            sourceRef = "relationship:${record.id}",
+            text = EmbeddingTextBuilder.relationship(record),
         )
     }
 
-    suspend fun deleteStoryRelationship(relationshipId: String) = dbQuery {
-        queries.deleteStoryRelationshipById(relationshipId)
+    suspend fun deleteStoryRelationship(relationshipId: String) {
+        query {
+            queries.deleteStoryRelationshipById(relationshipId)
+        }
+        deleteEntityEmbedding(sourceRef = "relationship:$relationshipId")
     }
 
-    suspend fun getRelationshipsByStory(storyId: String): List<StoryRelationshipRecord> = dbQuery {
+    suspend fun getRelationshipsByStory(storyId: String): List<StoryRelationshipRecord> = query {
         queries.selectRelationshipsByStoryId(storyId) { id, storyId, subjectId, subjectType, objectId, objectType, relation, notes, createdAt ->
             StoryRelationshipRecord(
                 id = id,
@@ -1405,31 +1690,48 @@ class StructuredIndexRepository(
         }.executeAsList()
     }
 
-    suspend fun insertStoryLocationFeature(record: StoryLocationFeatureRecord) = dbQuery {
-        queries.insertStoryLocationFeature(
-            id = record.id,
-            story_id = record.storyId,
-            location_id = record.locationId,
-            name = record.name,
-            description = record.description,
-            created_at = record.createdAt,
+    suspend fun insertStoryLocationFeature(record: StoryLocationFeatureRecord) {
+        query {
+            queries.insertStoryLocationFeature(
+                id = record.id,
+                story_id = record.storyId,
+                location_id = record.locationId,
+                name = record.name,
+                description = record.description,
+                created_at = record.createdAt,
+            )
+        }
+        upsertEntityEmbedding(
+            storyId = record.storyId,
+            sourceRef = "location_feature:${record.id}",
+            text = EmbeddingTextBuilder.locationFeature(record),
         )
     }
 
-    suspend fun updateStoryLocationFeature(record: StoryLocationFeatureRecord) = dbQuery {
-        queries.updateStoryLocationFeature(
-            id = record.id,
-            location_id = record.locationId,
-            name = record.name,
-            description = record.description,
+    suspend fun updateStoryLocationFeature(record: StoryLocationFeatureRecord) {
+        query {
+            queries.updateStoryLocationFeature(
+                id = record.id,
+                location_id = record.locationId,
+                name = record.name,
+                description = record.description,
+            )
+        }
+        upsertEntityEmbedding(
+            storyId = record.storyId,
+            sourceRef = "location_feature:${record.id}",
+            text = EmbeddingTextBuilder.locationFeature(record),
         )
     }
 
-    suspend fun deleteStoryLocationFeature(featureId: String) = dbQuery {
-        queries.deleteStoryLocationFeatureById(featureId)
+    suspend fun deleteStoryLocationFeature(featureId: String) {
+        query {
+            queries.deleteStoryLocationFeatureById(featureId)
+        }
+        deleteEntityEmbedding(sourceRef = "location_feature:$featureId")
     }
 
-    suspend fun getLocationFeaturesByStory(storyId: String): List<StoryLocationFeatureRecord> = dbQuery {
+    suspend fun getLocationFeaturesByStory(storyId: String): List<StoryLocationFeatureRecord> = query {
         queries.selectLocationFeaturesByStoryId(storyId) { id, storyId, locationId, name, description, createdAt ->
             StoryLocationFeatureRecord(
                 id = id,
@@ -1442,35 +1744,53 @@ class StructuredIndexRepository(
         }.executeAsList()
     }
 
-    suspend fun insertStoryArtifact(record: StoryArtifactRecord) = dbQuery {
-        queries.insertStoryArtifact(
-            id = record.id,
-            story_id = record.storyId,
-            name = record.name,
-            description = record.description,
-            owner_id = record.ownerId,
-            owner_type = record.ownerType,
-            location_id = record.locationId,
-            created_at = record.createdAt,
+    suspend fun insertStoryArtifact(record: StoryArtifactRecord) {
+        query {
+            queries.insertStoryArtifact(
+                id = record.id,
+                story_id = record.storyId,
+                name = record.name,
+                description = record.description,
+                owner_id = record.ownerId,
+                owner_type = record.ownerType,
+                location_id = record.locationId,
+                created_at = record.createdAt,
+            )
+        }
+
+        upsertEntityEmbedding(
+            storyId = record.storyId,
+            sourceRef = "artifact:${record.id}",
+            text = EmbeddingTextBuilder.artifact(record),
         )
     }
 
-    suspend fun updateStoryArtifact(record: StoryArtifactRecord) = dbQuery {
-        queries.updateStoryArtifact(
-            id = record.id,
-            name = record.name,
-            description = record.description,
-            owner_id = record.ownerId,
-            owner_type = record.ownerType,
-            location_id = record.locationId,
+    suspend fun updateStoryArtifact(record: StoryArtifactRecord) {
+        query {
+            queries.updateStoryArtifact(
+                id = record.id,
+                name = record.name,
+                description = record.description,
+                owner_id = record.ownerId,
+                owner_type = record.ownerType,
+                location_id = record.locationId,
+            )
+        }
+        upsertEntityEmbedding(
+            storyId = record.storyId,
+            sourceRef = "artifact:${record.id}",
+            text = EmbeddingTextBuilder.artifact(record),
         )
     }
 
-    suspend fun deleteStoryArtifact(artifactId: String) = dbQuery {
-        queries.deleteStoryArtifactById(artifactId)
+    suspend fun deleteStoryArtifact(artifactId: String) {
+        query {
+            queries.deleteStoryArtifactById(artifactId)
+        }
+        deleteEntityEmbedding(sourceRef = "artifact:$artifactId")
     }
 
-    suspend fun getArtifactsByStory(storyId: String): List<StoryArtifactRecord> = dbQuery {
+    suspend fun getArtifactsByStory(storyId: String): List<StoryArtifactRecord> = query {
         queries.selectArtifactsByStoryId(storyId) { id, storyId, name, description, ownerId, ownerType, locationId, createdAt ->
             StoryArtifactRecord(
                 id = id,
@@ -1485,31 +1805,48 @@ class StructuredIndexRepository(
         }.executeAsList()
     }
 
-    suspend fun insertStoryTimelineEntry(record: StoryTimelineEntryRecord) = dbQuery {
-        queries.insertStoryTimelineEntry(
-            id = record.id,
-            story_id = record.storyId,
-            title = record.title,
-            description = record.description,
-            order_index = record.orderIndex,
-            created_at = record.createdAt,
+    suspend fun insertStoryTimelineEntry(record: StoryTimelineEntryRecord) {
+        query {
+            queries.insertStoryTimelineEntry(
+                id = record.id,
+                story_id = record.storyId,
+                title = record.title,
+                description = record.description,
+                order_index = record.orderIndex,
+                created_at = record.createdAt,
+            )
+        }
+        upsertEntityEmbedding(
+            storyId = record.storyId,
+            sourceRef = "timeline:${record.id}",
+            text = EmbeddingTextBuilder.timelineEntry(record),
         )
     }
 
-    suspend fun updateStoryTimelineEntry(record: StoryTimelineEntryRecord) = dbQuery {
-        queries.updateStoryTimelineEntry(
-            id = record.id,
-            title = record.title,
-            description = record.description,
-            order_index = record.orderIndex,
+    suspend fun updateStoryTimelineEntry(record: StoryTimelineEntryRecord) {
+        query {
+            queries.updateStoryTimelineEntry(
+                id = record.id,
+                title = record.title,
+                description = record.description,
+                order_index = record.orderIndex,
+            )
+        }
+        upsertEntityEmbedding(
+            storyId = record.storyId,
+            sourceRef = "timeline:${record.id}",
+            text = EmbeddingTextBuilder.timelineEntry(record),
         )
     }
 
-    suspend fun deleteStoryTimelineEntry(entryId: String) = dbQuery {
-        queries.deleteStoryTimelineEntryById(entryId)
+    suspend fun deleteStoryTimelineEntry(entryId: String) {
+        query {
+            queries.deleteStoryTimelineEntryById(entryId)
+        }
+        deleteEntityEmbedding(sourceRef = "timeline:$entryId")
     }
 
-    suspend fun getTimelineEntriesByStory(storyId: String): List<StoryTimelineEntryRecord> = dbQuery {
+    suspend fun getTimelineEntriesByStory(storyId: String): List<StoryTimelineEntryRecord> = query {
         queries.selectTimelineEntriesByStoryId(storyId) { id, storyId, title, description, orderIndex, createdAt ->
             StoryTimelineEntryRecord(
                 id = id,
@@ -1522,7 +1859,7 @@ class StructuredIndexRepository(
         }.executeAsList()
     }
 
-    suspend fun insertRagDocument(record: RagDocumentRecord) = dbQuery {
+    suspend fun insertRagDocument(record: RagDocumentRecord) = query {
         queries.insertRagDocument(
             doc_id = record.docId,
             session_id = record.sessionId,
@@ -1537,7 +1874,7 @@ class StructuredIndexRepository(
         )
     }
 
-    suspend fun getRagDocumentsByChapter(chapterId: String): List<RagDocumentRecord> = dbQuery {
+    suspend fun getRagDocumentsByChapter(chapterId: String): List<RagDocumentRecord> = query {
         queries.selectRagDocumentsByChapterId(chapterId) { docId, sessionId, storyId, volumeId, chapterId, chunkIndex, sourceType, sourceRef, checksum, createdAt ->
             RagDocumentRecord(
                 docId = docId,
@@ -1554,7 +1891,123 @@ class StructuredIndexRepository(
         }.executeAsList()
     }
 
-    suspend fun deleteRagDocument(docId: String) = dbQuery {
+    suspend fun deleteRagDocument(docId: String) = query {
         queries.deleteRagDocumentById(docId)
+    }
+
+    suspend fun reindexChatEmbeddings(storyId: String? = null) {
+        val stories = if (storyId != null) {
+            listOfNotNull(getStoryById(storyId))
+        } else {
+            getSessions().flatMap { session -> getStoriesBySession(session.id) }
+        }
+
+        stories.forEach { story ->
+            upsertEntityEmbedding(
+                storyId = story.id,
+                sourceRef = "story:${story.id}",
+                text = EmbeddingTextBuilder.story(story),
+                mode = EmbeddingMode.CHAT,
+            )
+
+            getStoryCharacters(story.id).forEach { record ->
+                upsertEntityEmbedding(
+                    storyId = story.id,
+                    sourceRef = "character:${record.id}",
+                    text = EmbeddingTextBuilder.character(record),
+                    mode = EmbeddingMode.CHAT,
+                )
+            }
+
+            getLocationsByStory(story.id).forEach { record ->
+                upsertEntityEmbedding(
+                    storyId = story.id,
+                    sourceRef = "location:${record.id}",
+                    text = EmbeddingTextBuilder.location(record),
+                    mode = EmbeddingMode.CHAT,
+                )
+            }
+
+            getArcsByStory(story.id).forEach { record ->
+                upsertEntityEmbedding(
+                    storyId = story.id,
+                    sourceRef = "arc:${record.id}",
+                    text = EmbeddingTextBuilder.arc(record),
+                    mode = EmbeddingMode.CHAT,
+                )
+            }
+
+            getWorldRulesByStory(story.id).forEach { record ->
+                upsertEntityEmbedding(
+                    storyId = story.id,
+                    sourceRef = "world_rule:${record.id}",
+                    text = EmbeddingTextBuilder.worldRule(record),
+                    mode = EmbeddingMode.CHAT,
+                )
+            }
+
+            getCulturesByStory(story.id).forEach { record ->
+                upsertEntityEmbedding(
+                    storyId = story.id,
+                    sourceRef = "culture:${record.id}",
+                    text = EmbeddingTextBuilder.culture(record),
+                    mode = EmbeddingMode.CHAT,
+                )
+            }
+
+            getEventsByStory(story.id).forEach { record ->
+                upsertEntityEmbedding(
+                    storyId = story.id,
+                    sourceRef = "event:${record.id}",
+                    text = EmbeddingTextBuilder.event(record),
+                    mode = EmbeddingMode.CHAT,
+                )
+            }
+
+            getOrganizationsByStory(story.id).forEach { record ->
+                upsertEntityEmbedding(
+                    storyId = story.id,
+                    sourceRef = "organization:${record.id}",
+                    text = EmbeddingTextBuilder.organization(record),
+                    mode = EmbeddingMode.CHAT,
+                )
+            }
+
+            getRelationshipsByStory(story.id).forEach { record ->
+                upsertEntityEmbedding(
+                    storyId = story.id,
+                    sourceRef = "relationship:${record.id}",
+                    text = EmbeddingTextBuilder.relationship(record),
+                    mode = EmbeddingMode.CHAT,
+                )
+            }
+
+            getLocationFeaturesByStory(story.id).forEach { record ->
+                upsertEntityEmbedding(
+                    storyId = story.id,
+                    sourceRef = "location_feature:${record.id}",
+                    text = EmbeddingTextBuilder.locationFeature(record),
+                    mode = EmbeddingMode.CHAT,
+                )
+            }
+
+            getArtifactsByStory(story.id).forEach { record ->
+                upsertEntityEmbedding(
+                    storyId = story.id,
+                    sourceRef = "artifact:${record.id}",
+                    text = EmbeddingTextBuilder.artifact(record),
+                    mode = EmbeddingMode.CHAT,
+                )
+            }
+
+            getTimelineEntriesByStory(story.id).forEach { record ->
+                upsertEntityEmbedding(
+                    storyId = story.id,
+                    sourceRef = "timeline:${record.id}",
+                    text = EmbeddingTextBuilder.timelineEntry(record),
+                    mode = EmbeddingMode.CHAT,
+                )
+            }
+        }
     }
 }

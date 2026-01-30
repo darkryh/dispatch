@@ -23,11 +23,13 @@ import com.ead.dispatch.sample.domain.agents.tools.LocationTools
 import com.ead.dispatch.sample.domain.agents.tools.PlotTools
 import com.ead.dispatch.sample.domain.agents.tools.StoryInfoTools
 import com.ead.dispatch.sample.domain.agents.tools.WorldTools
+import com.ead.dispatch.sample.domain.embedding.RagContextService
 import com.ead.dispatch.sample.domain.model.session.Session
 import kotlinx.coroutines.flow.Flow
 
 class ChatAgent(
     private val repository: StructuredIndexRepository,
+    private val ragContextService: RagContextService,
 ) {
 
     /**
@@ -56,7 +58,10 @@ class ChatAgent(
             strategy = strategy<ChatRequest, Flow<StreamFrame>>("chat-mode.planner") {
 
                 val loadUserPreferences by nodeLoadUserPreferences()
-                val chatAgentModel by nodeSetupAndStreamChatMode(repository = repository)
+                val chatAgentModel by nodeSetupAndStreamChatMode(
+                    repository = repository,
+                    ragContextService = ragContextService
+                )
                 val saveUserPreferences by nodeSaveUserPreferences()
 
                 edge(nodeStart forwardTo loadUserPreferences transformed { it })

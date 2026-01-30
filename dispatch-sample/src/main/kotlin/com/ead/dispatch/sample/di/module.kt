@@ -7,6 +7,10 @@ import com.ead.dispatch.sample.data.repositories.StructuredIndexRepository
 import com.ead.dispatch.sample.domain.CommandManager
 import com.ead.dispatch.sample.domain.SessionManager
 import com.ead.dispatch.sample.domain.agents.ChatAgent
+import com.ead.dispatch.sample.domain.agents.chat_agent.ChatAgentEmbedder
+import com.ead.dispatch.sample.domain.embedding.EmbeddingIndexService
+import com.ead.dispatch.sample.domain.embedding.EmbeddingReindexer
+import com.ead.dispatch.sample.domain.embedding.RagContextService
 import com.ead.dispatch.sample.presentation.characters.CharacterViewModel
 import com.ead.dispatch.sample.presentation.chat.ChatViewModel
 import com.ead.dispatch.sample.presentation.entity_list.EntityListViewModel
@@ -17,12 +21,17 @@ import com.ead.dispatch.sample.presentation.story_summary.StorySummaryViewModel
 val module = dispatchModule {
 
     single { DispatchDatabaseFactory().create() }
-    single { StructuredIndexRepository(database = get()) }
+    single { ChatAgentEmbedder() }
+    single { EmbeddingIndexService(embedderProvider = get()) }
+    single { EmbeddingReindexer(repository = get()) }
+    single { StructuredIndexRepository(database = get(), embeddingIndexService = get()) }
+    single { RagContextService(repository = get(), embeddingIndexService = get()) }
     single { CommandManager() }
     single { SessionManager(repository = get()) }
     single {
         ChatAgent(
-            repository = get()
+            repository = get(),
+            ragContextService = get(),
         )
     }
 

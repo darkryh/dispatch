@@ -1376,6 +1376,17 @@ SELECT * FROM rag_documents
 WHERE story_id = :story_id
 ORDER BY created_at DESC;
 
+selectRagDocumentsBySourceRef:
+SELECT * FROM rag_documents
+WHERE source_ref = :source_ref
+ORDER BY created_at DESC;
+
+selectRagDocumentsByStoryAndSourceRef:
+SELECT * FROM rag_documents
+WHERE story_id = :story_id
+  AND source_ref = :source_ref
+ORDER BY created_at DESC;
+
 selectRagDocumentsByChapterId:
 SELECT * FROM rag_documents
 WHERE chapter_id = :chapter_id
@@ -1384,6 +1395,15 @@ ORDER BY chunk_index ASC;
 deleteRagDocumentById:
 DELETE FROM rag_documents
 WHERE doc_id = :doc_id;
+
+deleteRagDocumentsBySourceRef:
+DELETE FROM rag_documents
+WHERE source_ref = :source_ref;
+
+deleteRagDocumentsByStoryAndSourceRef:
+DELETE FROM rag_documents
+WHERE story_id = :story_id
+  AND source_ref = :source_ref;
 
 deleteRagDocumentsByChapterId:
 DELETE FROM rag_documents

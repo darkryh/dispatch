@@ -15,6 +15,7 @@ import ai.koog.prompt.streaming.StreamFrame
 import com.ead.dispatch.sample.data.repositories.StructuredIndexRepository
 import com.ead.dispatch.sample.domain.agents.chat_agent.ChatRequest
 import com.ead.dispatch.sample.domain.agents.chat_agent.chatAgentPrompt
+import com.ead.dispatch.sample.domain.embedding.RagContextService
 import com.ead.dispatch.sample.domain.agents.chat_agent.util.saveCheckpointForHistory
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
@@ -25,9 +26,10 @@ import kotlinx.serialization.json.JsonObject
 @AIAgentBuilderDslMarker
 fun AIAgentSubgraphBuilderBase<*, *>.nodeSetupAndStreamChatMode(
     name: String? = null,
-    repository: StructuredIndexRepository
+    repository: StructuredIndexRepository,
+    ragContextService: RagContextService,
 ): AIAgentNodeDelegate<ChatRequest, Flow<StreamFrame>> =
-    node(name) { request -> setupAndStreamChatMode(repository,request) }
+    node(name) { request -> setupAndStreamChatMode(repository, ragContextService, request) }
 
 /**
  * Streams assistant output while keeping prompt history and tool calls in sync.
@@ -36,6 +38,7 @@ fun AIAgentSubgraphBuilderBase<*, *>.nodeSetupAndStreamChatMode(
  */
 private fun AIAgentGraphContextBase.setupAndStreamChatMode(
     repository: StructuredIndexRepository,
+    ragContextService: RagContextService,
     request: ChatRequest
 ): Flow<StreamFrame> {
     val nodePath = executionInfo.path()
@@ -44,6 +47,12 @@ private fun AIAgentGraphContextBase.setupAndStreamChatMode(
         try {
             llm.writeSession {
             val context = repository.getChatContextForAgent(request.storyId)
+
+            val ragQuery = request.text.trim()
+            val ragContext = ragContextService.getRagContextChunks(
+                storyId = request.storyId,
+                query = ragQuery,
+            )
 
             rewritePrompt { existing ->
                 val messageHistory = existing.messages.filterNot { it is Message.System }
@@ -55,6 +64,7 @@ private fun AIAgentGraphContextBase.setupAndStreamChatMode(
                 val basePrompt = chatAgentPrompt(
                     context = context,
                     inputRequest = request,
+                    ragContext = ragContext,
                 )
 
                 basePrompt.withMessages { baseMessages ->

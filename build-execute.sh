@@ -4,7 +4,7 @@ SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 BIN_FILE="$SCRIPT_DIR/dispatch-sample/build/install/dispatch-sample/bin/dispatch-sample"
 
 echo "Building latest version..."
-cd "$SCRIPT_DIR"
+cd "$SCRIPT_DIR" || return
 ./gradlew :dispatch-sample:installDist --warning-mode all || {
     echo "Build failed"
     exit 1
