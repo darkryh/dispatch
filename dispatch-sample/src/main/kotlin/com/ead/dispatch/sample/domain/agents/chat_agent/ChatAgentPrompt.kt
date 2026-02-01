@@ -9,7 +9,7 @@ import com.ead.dispatch.sample.domain.model.story.StoryChatContext
 fun chatAgentPrompt(
     context: StoryChatContext,
     inputRequest: ChatRequest,
-    ragContext: List<RagContextChunk> = emptyList(),
+    ragContext: List<RagContextChunk>,
 ): Prompt {
     val missing = buildList {
         if (context.story?.title.isNullOrBlank()) add("story.title")

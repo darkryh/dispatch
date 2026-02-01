@@ -41,8 +41,8 @@ class StructuredIndexRepository(
     }
 
     private companion object {
-        const val CHAT_CONTEXT_CHARACTER_LIMIT = 6
-        const val CHAT_CONTEXT_LOCATION_LIMIT = 6
+        const val CHAT_CONTEXT_CHARACTER_LIMIT = 5
+        const val CHAT_CONTEXT_LOCATION_LIMIT = 5
         const val CHAT_CONTEXT_ARC_LIMIT = 4
         const val CHAT_CONTEXT_WORLD_RULE_LIMIT = 3
         const val CHAT_CONTEXT_CULTURE_LIMIT = 3
@@ -365,31 +365,6 @@ class StructuredIndexRepository(
             timeSpan = timeSpan,
         )
     }
-
-    fun observeSessions(): Flow<List<SessionRecord>> =
-        queries.selectSessions { id, title, mode, createdAt, updatedAt, messageCount ->
-            SessionRecord(
-                id = id,
-                profile = SessionRecord.SessionProfile(
-                    title = title,
-                    mode = SessionMode.fromDb(mode),
-                ),
-                createdAt = createdAt,
-                updatedAt = updatedAt,
-                stats = SessionRecord.SessionStats(
-                    messageCount = messageCount,
-                ),
-                metadata = emptyMap(),
-            )
-        }
-            .asFlow()
-            .mapToList(coroutineDispatcher)
-            .map { sessions ->
-                sessions.map { session ->
-                    session.copy(metadata = getSessionMetadata(session.id))
-                }
-            }
-            .flowOn(coroutineDispatcher)
 
     suspend fun upsertSession(record: SessionRecord) = query {
         database.transaction {

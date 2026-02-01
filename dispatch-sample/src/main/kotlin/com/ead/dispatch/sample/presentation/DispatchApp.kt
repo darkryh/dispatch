@@ -12,14 +12,12 @@ import com.ead.dispatch.sample.domain.embedding.EmbeddingReindexer
 import com.ead.dispatch.sample.navigation.ChatRoute
 import com.ead.dispatch.sample.navigation.CharacterRoute
 import com.ead.dispatch.sample.navigation.EntityListRoute
-import com.ead.dispatch.sample.navigation.HelpRoute
 import com.ead.dispatch.sample.navigation.SessionRoute
 import com.ead.dispatch.sample.navigation.StoryInfoRoute
 import com.ead.dispatch.sample.navigation.StorySummaryRoute
 import com.ead.dispatch.sample.presentation.chat.ChatScreen
 import com.ead.dispatch.sample.presentation.characters.CharacterScreen
 import com.ead.dispatch.sample.presentation.entity_list.EntityListScreen
-import com.ead.dispatch.sample.presentation.help.HelpScreen
 import com.ead.dispatch.sample.presentation.session.SessionScreen
 import com.ead.dispatch.sample.presentation.story_info.StoryInfoScreen
 import com.ead.dispatch.sample.presentation.story_summary.StorySummaryScreen
@@ -36,12 +34,10 @@ fun DispatchSampleApp() {
         embeddingReindexer.startPeriodic()
     }
 
+
     val startDestination: Any = when {
         scope.hasFlag("resume") || startArg == "resume" || startArg == "session" -> {
             SessionRoute()
-        }
-        scope.hasFlag("help") || startArg == "help" -> {
-            HelpRoute(from = "cli")
         }
         else -> {
             ChatRoute()
@@ -76,8 +72,5 @@ fun DispatchSampleApp() {
             EntityListScreen(navController, route)
         }
 
-        screen<HelpRoute> { route ->
-            HelpScreen(navController, route)
-        }
     }
 }

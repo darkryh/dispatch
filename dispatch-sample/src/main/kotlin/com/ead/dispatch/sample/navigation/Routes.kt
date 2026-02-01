@@ -10,13 +10,6 @@ data class ChatRoute(
 )
 
 @Serializable
-@SerialName("help")
-data class HelpRoute(
-    val from: String? = null,
-    val mode: String? = null,
-)
-
-@Serializable
 @SerialName("session")
 data class SessionRoute(
     val autoSelect: Boolean = false,

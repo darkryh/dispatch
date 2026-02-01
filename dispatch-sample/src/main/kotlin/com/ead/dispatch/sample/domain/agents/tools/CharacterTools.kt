@@ -8,18 +8,9 @@ import ai.koog.agents.core.tools.reflect.ToolSet
 import com.ead.dispatch.sample.data.db.entities.StoryCharacterRecord
 import com.ead.dispatch.sample.data.db.entities.StoryRelationshipRecord
 import com.ead.dispatch.sample.data.repositories.StructuredIndexRepository
-import com.ead.dispatch.sample.domain.agents.tools.model.CharacterPhysicalProfileRequest
-import com.ead.dispatch.sample.domain.agents.tools.model.CreateCharacterRequest
-import com.ead.dispatch.sample.domain.agents.tools.model.CreateRelationshipRequest
-import com.ead.dispatch.sample.domain.agents.tools.model.OperationEntity
-import com.ead.dispatch.sample.domain.agents.tools.model.OperationOutcome
-import com.ead.dispatch.sample.domain.agents.tools.model.QueryOutcome
-import com.ead.dispatch.sample.domain.agents.tools.model.ToolError
-import com.ead.dispatch.sample.domain.agents.tools.model.ToolResult
-import com.ead.dispatch.sample.domain.agents.tools.model.UpdateCharacterRequest
-import com.ead.dispatch.sample.domain.agents.tools.model.UpdateRelationshipRequest
+import com.ead.dispatch.sample.domain.agents.tools.model.*
 import kotlinx.datetime.Clock
-import java.util.UUID
+import java.util.*
 
 class CharacterTools(
     private val repository: StructuredIndexRepository,

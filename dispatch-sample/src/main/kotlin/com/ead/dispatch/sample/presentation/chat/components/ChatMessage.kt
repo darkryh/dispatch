@@ -24,7 +24,7 @@ fun ChatMessage(
 ) {
     when (message.role) {
         CliMessageRole.USER -> {
-            Row(modifier = Modifier.fillMaxWidth()) {
+            Row(modifier = modifier.fillMaxWidth()) {
                 Spacer(modifier = Modifier.width(1))
                 Background(
                     modifier = Modifier.weight(1f),
@@ -48,7 +48,7 @@ fun ChatMessage(
         }
         CliMessageRole.ASSISTANT -> {
             Row(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = modifier.fillMaxWidth(),
             ) {
                 Spacer(modifier = Modifier.width(2))
                 Text(

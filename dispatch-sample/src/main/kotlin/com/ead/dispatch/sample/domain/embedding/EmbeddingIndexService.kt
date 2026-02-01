@@ -1,12 +1,10 @@
 package com.ead.dispatch.sample.domain.embedding
 
 import ai.koog.embeddings.base.Embedder
-import ai.koog.rag.base.files.DocumentProvider
 import ai.koog.rag.base.mostRelevantDocuments
-import ai.koog.rag.base.files.JVMFileSystemProvider
 import ai.koog.rag.vector.EmbeddingBasedDocumentStorage
-import ai.koog.rag.vector.FileVectorStorage
-import ai.koog.rag.vector.TextDocumentEmbedder
+import ai.koog.rag.vector.JVMFileDocumentEmbeddingStorage
+import ai.koog.rag.vector.JVMTextDocumentEmbedder
 import com.ead.dispatch.sample.domain.Pathing
 import com.ead.dispatch.sample.domain.agents.chat_agent.ChatAgentEmbedder
 import kotlinx.coroutines.Dispatchers
@@ -28,13 +26,25 @@ class EmbeddingIndexService(
     private val chatRoot = root.resolve("embeddings/chat")
     private val storyRoot = root.resolve("embeddings/story")
 
-    private val storageCache = mutableMapOf<String, EmbeddingBasedDocumentStorage<String>>()
+    private val storageCache = mutableMapOf<String, EmbeddingBasedDocumentStorage<Path>>()
 
     suspend fun store(mode: EmbeddingMode, sessionId: String, text: String): String? {
         if (!enabled) return null
         val normalized = normalize(text)
         if (normalized.isBlank()) return null
-        return storageFor(mode, sessionId).store(normalized, Unit)
+        val storage = storageFor(mode, sessionId)
+        val tempFile = writeTempDocument(storageRoot(mode, sessionId), normalized)
+        return try {
+            storage.store(tempFile, Unit)
+        } finally {
+            try {
+                withContext(Dispatchers.IO) {
+                    Files.deleteIfExists(tempFile)
+                }
+            } catch (_: Exception) {
+                // Best-effort cleanup; stored copy lives in storage root.
+            }
+        }
     }
 
     suspend fun delete(mode: EmbeddingMode, sessionId: String, docId: String): Boolean {
@@ -54,7 +64,15 @@ class EmbeddingIndexService(
         if (normalized.isBlank()) return emptyList()
         val storage = storageFor(mode, sessionId)
         val results = storage.mostRelevantDocuments(normalized, limit, minScore)
-        return results.toList()
+        return withContext(Dispatchers.IO) {
+            results.mapNotNull { path ->
+                try {
+                    Files.readString(path, StandardCharsets.UTF_8)
+                } catch (_: Exception) {
+                    null
+                }
+            }
+        }
     }
 
     fun checksum(text: String): String {
@@ -65,39 +83,38 @@ class EmbeddingIndexService(
 
     private fun normalize(text: String): String = text.trim()
 
-    private fun storageFor(mode: EmbeddingMode, sessionId: String): EmbeddingBasedDocumentStorage<String> {
+    private fun storageFor(mode: EmbeddingMode, sessionId: String): EmbeddingBasedDocumentStorage<Path> {
         val key = "${mode.name}:$sessionId"
         return storageCache.getOrPut(key) {
-            val baseRoot = when (mode) {
-                EmbeddingMode.CHAT -> chatRoot
-                EmbeddingMode.STORY -> storyRoot
-            }
+            val baseRoot = storageRoot(mode, sessionId)
             val embedder = when (mode) {
                 EmbeddingMode.CHAT -> chatEmbedder
                 EmbeddingMode.STORY -> storyEmbedder
             }
-            buildStorage(embedder, baseRoot.resolve(sessionId))
+            buildStorage(embedder, baseRoot)
         }
     }
 
-    private fun buildStorage(embedder: Embedder, root: Path): EmbeddingBasedDocumentStorage<String> {
+    private fun buildStorage(embedder: Embedder, root: Path): EmbeddingBasedDocumentStorage<Path> {
         Files.createDirectories(root)
-        val documentProvider = StringDocumentProvider
-        val documentEmbedder = TextDocumentEmbedder(documentProvider, embedder)
-        val vectorStorage = FileVectorStorage(
-            documentProvider,
-            JVMFileSystemProvider.ReadWrite,
-            root,
-        )
-        return EmbeddingBasedDocumentStorage(documentEmbedder, vectorStorage)
+        val documentEmbedder = JVMTextDocumentEmbedder(embedder)
+        return JVMFileDocumentEmbeddingStorage(documentEmbedder, root)
     }
 
-    private object StringDocumentProvider : DocumentProvider<Path, String> {
-        override suspend fun document(path: Path): String =
-            withContext(Dispatchers.IO) {
-                Files.readString(path, StandardCharsets.UTF_8)
-            }
-
-        override suspend fun text(document: String): CharSequence = document
+    private fun storageRoot(mode: EmbeddingMode, sessionId: String): Path {
+        val baseRoot = when (mode) {
+            EmbeddingMode.CHAT -> chatRoot
+            EmbeddingMode.STORY -> storyRoot
+        }
+        return baseRoot.resolve(sessionId)
     }
+
+    private suspend fun writeTempDocument(root: Path, text: String): Path =
+        withContext(Dispatchers.IO) {
+            val tempDir = root.resolve("incoming")
+            Files.createDirectories(tempDir)
+            val tempFile = Files.createTempFile(tempDir, "doc-", ".txt")
+            Files.writeString(tempFile, text, StandardCharsets.UTF_8)
+            tempFile
+        }
 }

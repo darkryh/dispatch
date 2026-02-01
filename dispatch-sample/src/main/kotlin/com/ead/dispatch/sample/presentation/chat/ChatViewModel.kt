@@ -19,7 +19,6 @@ import com.ead.dispatch.sample.domain.model.story.WriterMode
 import com.ead.dispatch.sample.domain.util.extension.toCliMessage
 import com.ead.dispatch.sample.navigation.ChatRoute
 import com.ead.dispatch.sample.navigation.EntityListRoute
-import com.ead.dispatch.sample.navigation.HelpRoute
 import com.ead.dispatch.sample.navigation.StoryInfoRoute
 import com.ead.dispatch.sample.navigation.StorySummaryRoute
 import com.ead.dispatch.sample.presentation.chat.event.ChatEvent
@@ -142,9 +141,6 @@ class ChatViewModel(
 
     private fun onCommandAction(navController : NavController, commandAction: CommandAction) {
         when (commandAction) {
-            CommandAction.ShowHelp -> {
-                navController.navigate(HelpRoute(from = "chat", mode = writerMode.value.name))
-            }
             CommandAction.ClearContext -> {
                 _messages.value = emptyList()
             }

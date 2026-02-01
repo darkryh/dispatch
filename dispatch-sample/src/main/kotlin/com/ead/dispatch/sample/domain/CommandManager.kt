@@ -6,10 +6,6 @@ import com.ead.dispatch.sample.presentation.commands.CommandAction
 class CommandManager {
     private val _data = listOf(
         Command(
-            label = "help",
-            description = "Show commands available for the current mode",
-        ),
-        Command(
             label = "clear",
             description = "Clear chat messages and reset the on-screen history",
         ),
@@ -106,7 +102,6 @@ class CommandManager {
         val allowed = commandsFor(writerMode).any { it.label == command }
         if (!allowed) return null
         return when (command) {
-            "help" -> CommandAction.ShowHelp
             "clear" -> CommandAction.ClearContext
             "story-summary" -> CommandAction.OpenStorySummary
             "story-info" -> CommandAction.OpenStoryInfo

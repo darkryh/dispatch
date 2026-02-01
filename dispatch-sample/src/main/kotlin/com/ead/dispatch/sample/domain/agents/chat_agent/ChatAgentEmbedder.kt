@@ -8,6 +8,6 @@ class ChatAgentEmbedder {
 
     private val client = OllamaClient(baseUrl = "http://127.0.0.1:11434")
 
-    val chatModeLlmEmbedder = LLMEmbedder(client, OllamaEmbeddingModels.ALL_MINI_LM)
+    val chatModeLlmEmbedder = LLMEmbedder(client, OllamaEmbeddingModels.NOMIC_EMBED_TEXT)
     val storyModeLlmEmbedder = LLMEmbedder(client, OllamaEmbeddingModels.NOMIC_EMBED_TEXT)
 }

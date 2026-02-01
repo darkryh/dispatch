@@ -117,12 +117,12 @@ private fun AIAgentGraphContextBase.setupAndStreamChatMode(
                 if (toolCalls.isEmpty()) break
 
                 val toolResults = toolCalls.map { executeToolWithFix(it) }
-                toolResults.forEach { result ->
-                    if (result.resultKind !is ToolResultKind.Success) {
-                        // Avoid stdout prints that corrupt the terminal UI.
-                        // Hook up a structured logger if needed.
+                toolResults
+                    .filter { it.resultKind !is ToolResultKind.Success }
+                    .forEach { result ->
+                        val payload = result.content.takeIf { it.isNotBlank() } ?: "{\"error\":\"Tool failed\"}"
+                        send(StreamFrame.ToolCall(result.id ?: "", result.tool, payload))
                     }
-                }
 
                 appendPrompt {
                     tool {
@@ -131,6 +131,7 @@ private fun AIAgentGraphContextBase.setupAndStreamChatMode(
                     }
                 }
             }
+
         }
         } finally {
             saveCheckpointForHistory(agentContext, request, nodePath)

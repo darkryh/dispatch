@@ -1,5 +1,3 @@
-@file:Suppress("unused")
-
 package com.ead.dispatch.sample.domain.agents.tools
 
 import com.ead.dispatch.sample.domain.agents.tools.model.OperationEntity
