@@ -2,7 +2,8 @@ package com.ead.dispatch.sample.presentation.chat
 
 import ai.koog.prompt.message.Message
 import ai.koog.prompt.streaming.StreamFrame
-import com.ead.dispatch.navigation.NavController
+import com.ead.dispatch.navigation.NavBackStack
+import com.ead.dispatch.navigation.NavKey
 import com.ead.dispatch.navigation.navigate
 import com.ead.dispatch.navigation.toRoute
 import com.ead.dispatch.runtime.SavedStateHandle
@@ -19,8 +20,7 @@ import com.ead.dispatch.sample.domain.model.story.WriterMode
 import com.ead.dispatch.sample.domain.util.extension.toCliMessage
 import com.ead.dispatch.sample.navigation.ChatRoute
 import com.ead.dispatch.sample.navigation.EntityListRoute
-import com.ead.dispatch.sample.navigation.StoryInfoRoute
-import com.ead.dispatch.sample.navigation.StorySummaryRoute
+import com.ead.dispatch.sample.navigation.StoryChatRoute
 import com.ead.dispatch.sample.presentation.chat.event.ChatEvent
 import com.ead.dispatch.sample.presentation.commands.CommandAction
 import com.ead.dispatch.viewmodel.ViewModel
@@ -102,13 +102,13 @@ class ChatViewModel(
                 _inputText.value = event.text
             }
             is ChatEvent.OnSubmitMessage -> {
-                val navController = event.navController
+                val backStack = event.backStack
                 val text = event.text
 
                 val commandAction = commandManager.routing(text, writerMode.value)
 
                 if (commandAction != null) {
-                    onCommandAction(navController,commandAction)
+                    onCommandAction(backStack, commandAction)
                     onEvent(ChatEvent.OnClearTextField)
                     return
                 }
@@ -139,19 +139,16 @@ class ChatViewModel(
         }
     }
 
-    private fun onCommandAction(navController : NavController, commandAction: CommandAction) {
+    private fun onCommandAction(backStack: NavBackStack<NavKey>, commandAction: CommandAction) {
         when (commandAction) {
             CommandAction.ClearContext -> {
                 _messages.value = emptyList()
             }
-            CommandAction.OpenStorySummary -> {
-                navController.navigate(StorySummaryRoute(storyId = _session.value?.id))
-            }
-            CommandAction.OpenStoryInfo -> {
-                navController.navigate(StoryInfoRoute(storyId = _session.value?.id))
-            }
             is CommandAction.OpenEntityList -> {
-                navController.navigate(EntityListRoute(type = commandAction.type, storyId = _session.value?.id))
+                backStack.navigate(EntityListRoute(type = commandAction.type, storyId = _session.value?.id))
+            }
+            CommandAction.OpenStoryChat -> {
+                backStack.navigate(StoryChatRoute(storyId = _session.value?.id))
             }
         }
     }

@@ -3,9 +3,10 @@ package com.ead.dispatch.sample.presentation
 import com.ead.dispatch.annotation.Dispatchable
 import com.ead.dispatch.koin.KoinViewModelFactory
 import com.ead.dispatch.koin.inject
-import com.ead.dispatch.navigation.NavHost
-import com.ead.dispatch.navigation.rememberNavController
-import com.ead.dispatch.navigation.screen
+import com.ead.dispatch.navigation.NavDisplay
+import com.ead.dispatch.navigation.NavKey
+import com.ead.dispatch.navigation.entryProvider
+import com.ead.dispatch.navigation.rememberNavBackStack
 import com.ead.dispatch.runtime.LaunchedEffect
 import com.ead.dispatch.runtime.dispatchScope
 import com.ead.dispatch.sample.domain.embedding.EmbeddingReindexer
@@ -13,18 +14,15 @@ import com.ead.dispatch.sample.navigation.ChatRoute
 import com.ead.dispatch.sample.navigation.CharacterRoute
 import com.ead.dispatch.sample.navigation.EntityListRoute
 import com.ead.dispatch.sample.navigation.SessionRoute
-import com.ead.dispatch.sample.navigation.StoryInfoRoute
-import com.ead.dispatch.sample.navigation.StorySummaryRoute
+import com.ead.dispatch.sample.navigation.StoryChatRoute
 import com.ead.dispatch.sample.presentation.chat.ChatScreen
 import com.ead.dispatch.sample.presentation.characters.CharacterScreen
 import com.ead.dispatch.sample.presentation.entity_list.EntityListScreen
 import com.ead.dispatch.sample.presentation.session.SessionScreen
-import com.ead.dispatch.sample.presentation.story_info.StoryInfoScreen
-import com.ead.dispatch.sample.presentation.story_summary.StorySummaryScreen
+import com.ead.dispatch.sample.presentation.story_chat.StoryChatScreen
 
 @Dispatchable
 fun DispatchSampleApp() {
-    val navController = rememberNavController(viewModelFactory = KoinViewModelFactory())
     val embeddingReindexer by inject<EmbeddingReindexer>()
 
     val scope = dispatchScope()
@@ -35,7 +33,7 @@ fun DispatchSampleApp() {
     }
 
 
-    val startDestination: Any = when {
+    val startDestination = when {
         scope.hasFlag("resume") || startArg == "resume" || startArg == "session" -> {
             SessionRoute()
         }
@@ -44,33 +42,31 @@ fun DispatchSampleApp() {
         }
     }
 
-    NavHost(
-        navController = navController,
-        startDestination = startDestination,
-    ) {
-        screen<SessionRoute> { _ ->
-            SessionScreen(navController)
-        }
+    val backStack = rememberNavBackStack(startDestination)
 
-        screen<ChatRoute> {
-            ChatScreen(navController)
-        }
+    NavDisplay(
+        backStack = backStack,
+        viewModelFactory = KoinViewModelFactory(),
+        entryProvider = entryProvider {
+            entry<SessionRoute> {
+                SessionScreen(backStack)
+            }
 
-        screen<CharacterRoute> { route ->
-            CharacterScreen(navController, route)
-        }
+            entry<ChatRoute> {
+                ChatScreen(backStack)
+            }
 
-        screen<StoryInfoRoute> {
-            StoryInfoScreen(navController)
-        }
+            entry<CharacterRoute> { route ->
+                CharacterScreen(backStack, route)
+            }
 
-        screen<StorySummaryRoute> { route ->
-            StorySummaryScreen(navController, route)
-        }
+            entry<EntityListRoute> { route ->
+                EntityListScreen(backStack, route)
+            }
 
-        screen<EntityListRoute> { route ->
-            EntityListScreen(navController, route)
+            entry<StoryChatRoute> { route ->
+                StoryChatScreen(backStack, route)
+            }
         }
-
-    }
+    )
 }

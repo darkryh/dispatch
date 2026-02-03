@@ -15,8 +15,7 @@ import com.ead.dispatch.sample.presentation.characters.CharacterViewModel
 import com.ead.dispatch.sample.presentation.chat.ChatViewModel
 import com.ead.dispatch.sample.presentation.entity_list.EntityListViewModel
 import com.ead.dispatch.sample.presentation.session.SessionViewModel
-import com.ead.dispatch.sample.presentation.story_info.StoryInfoViewModel
-import com.ead.dispatch.sample.presentation.story_summary.StorySummaryViewModel
+import com.ead.dispatch.sample.presentation.story_chat.StoryChatViewModel
 
 val module = dispatchModule {
 
@@ -51,19 +50,13 @@ val module = dispatchModule {
     }
     viewModel { SessionViewModel(sessionManager = get()) }
     viewModel { (savedStateHandle: SavedStateHandle) ->
-        StoryInfoViewModel(
-            repository = get(),
-            savedStateHandle = savedStateHandle,
-        )
-    }
-    viewModel { (savedStateHandle: SavedStateHandle) ->
-        StorySummaryViewModel(
-            repository = get(),
-            savedStateHandle = savedStateHandle,
-        )
-    }
-    viewModel { (savedStateHandle: SavedStateHandle) ->
         EntityListViewModel(
+            repository = get(),
+            savedStateHandle = savedStateHandle,
+        )
+    }
+    viewModel { (savedStateHandle: SavedStateHandle) ->
+        StoryChatViewModel(
             repository = get(),
             savedStateHandle = savedStateHandle,
         )

@@ -10,12 +10,9 @@ class CommandManager {
             description = "Clear chat messages and reset the on-screen history",
         ),
         Command(
-            label = "story-summary",
-            description = "Read story metadata, style profile, and counts",
-        ),
-        Command(
-            label = "story-info",
-            description = "Show raw story info (debug view)",
+            label = "story-chat",
+            description = "Open the story chat dashboard",
+            modes = setOf(WriterMode.CHAT, WriterMode.CHAT_STORY),
         ),
         Command(
             label = "characters",
@@ -103,8 +100,7 @@ class CommandManager {
         if (!allowed) return null
         return when (command) {
             "clear" -> CommandAction.ClearContext
-            "story-summary" -> CommandAction.OpenStorySummary
-            "story-info" -> CommandAction.OpenStoryInfo
+            "story-chat" -> CommandAction.OpenStoryChat
             "characters" -> CommandAction.OpenEntityList("characters")
             "locations" -> CommandAction.OpenEntityList("locations")
             "arcs" -> CommandAction.OpenEntityList("arcs")

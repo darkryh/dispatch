@@ -8,7 +8,8 @@ import com.ead.dispatch.modifier.Modifier
 import com.ead.dispatch.modifier.fillMaxWidth
 import com.ead.dispatch.modifier.height
 import com.ead.dispatch.modifier.width
-import com.ead.dispatch.navigation.NavController
+import com.ead.dispatch.navigation.NavBackStack
+import com.ead.dispatch.navigation.NavKey
 import com.ead.dispatch.runtime.DisposableEffect
 import com.ead.dispatch.runtime.LocalKeyboardInterceptor
 import com.ead.dispatch.runtime.LocalTheme
@@ -37,7 +38,7 @@ import com.github.ajalt.mordant.rendering.TextStyle
  * - Uses extracted components for better organization
  */
 @Dispatchable
-fun ChatScreen(navController: NavController) {
+fun ChatScreen(backStack: NavBackStack<NavKey>) {
     // ViewModel provides state management
     val viewModel = viewModel<ChatViewModel>()
     val commandManager by inject<CommandManager>()
@@ -111,8 +112,8 @@ fun ChatScreen(navController: NavController) {
             Row(modifier = Modifier.fillMaxWidth()) {
                 Spacer(Modifier.width(2))
                 val quickJump = when (writerMode) {
-                    WriterMode.CHAT -> "/characters, /locations, /arcs, /world-rules, /cultures, /events"
-                    WriterMode.CHAT_STORY -> "/story-summary, /volumes, /chapters, /scenes"
+                    WriterMode.CHAT -> "/story-chat, /characters, /locations, /arcs, /world-rules, /cultures, /events"
+                    WriterMode.CHAT_STORY -> "/volumes, /chapters, /scenes"
                 }
                 Text(
                     text = "Quick jump: $quickJump",
@@ -143,7 +144,7 @@ fun ChatScreen(navController: NavController) {
                 placeholderStyle = rgb("#82858A"),
                 enabled = !isProcessing,
                 showCursor = !isProcessing,
-                onSubmit = { text -> viewModel.onEvent(event = ChatEvent.OnSubmitMessage(navController,text)) },
+                onSubmit = { text -> viewModel.onEvent(event = ChatEvent.OnSubmitMessage(backStack, text)) },
                 historyItems = historyItems,
                 historyIndexState = historyIndexState,
             )
@@ -156,7 +157,7 @@ fun ChatScreen(navController: NavController) {
                 state = commandPaletteState,
                 options = commands,
                 inputValue = inputText,
-                onOptionSelected = { option ->  viewModel.onEvent(ChatEvent.OnSubmitMessage(navController,"/${option.data}")) },
+                onOptionSelected = { option ->  viewModel.onEvent(ChatEvent.OnSubmitMessage(backStack, "/${option.data}")) },
                 onInputTransform = { newInput -> viewModel.onEvent(ChatEvent.OnTextChanged(newInput)) },
                 textStyles = CommandPaletteTextStyles(
                     prefix = theme.muted,

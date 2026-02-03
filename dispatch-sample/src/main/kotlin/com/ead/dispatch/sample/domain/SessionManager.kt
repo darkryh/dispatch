@@ -24,7 +24,7 @@ class SessionManager(
 
     companion object {
         private const val DEFAULT_TITLE = "New Conversation"
-        private const val DEFAULT_STORY_TITLE = "New Story"
+        private const val DEFAULT_STORY_TITLE = StoryRecord.PLACEHOLDER_TITLE
         private val DEFAULT_MODE = SessionMode.CHAT
     }
 
@@ -183,7 +183,7 @@ class SessionManager(
             return
         }
 
-        val title = session.title.ifBlank { DEFAULT_STORY_TITLE }
+        val title = DEFAULT_STORY_TITLE
         val epochMillis = timestamp.toEpochMilliseconds()
 
         repository.upsertStory(

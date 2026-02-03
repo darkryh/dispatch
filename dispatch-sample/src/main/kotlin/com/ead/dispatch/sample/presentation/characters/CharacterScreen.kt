@@ -4,7 +4,9 @@ import com.ead.dispatch.annotation.Dispatchable
 import com.ead.dispatch.modifier.Modifier
 import com.ead.dispatch.modifier.fillMaxWidth
 import com.ead.dispatch.modifier.height
-import com.ead.dispatch.navigation.NavController
+import com.ead.dispatch.navigation.NavBackStack
+import com.ead.dispatch.navigation.NavKey
+import com.ead.dispatch.navigation.popBackStack
 import com.ead.dispatch.runtime.DisposableEffect
 import com.ead.dispatch.runtime.LocalKeyboardInterceptor
 import com.ead.dispatch.runtime.dispatchScope
@@ -25,7 +27,7 @@ import com.ead.dispatch.sample.presentation.characters.util.CharacterUIMode
 import com.ead.dispatch.sample.navigation.CharacterRoute
 
 @Dispatchable
-fun CharacterScreen(navController: NavController, route: CharacterRoute) {
+fun CharacterScreen(backStack: NavBackStack<NavKey>, route: CharacterRoute) {
     val keyboardInterceptor = LocalKeyboardInterceptor.current
     val applicationScope = dispatchScope()
     val viewModel = viewModel<CharacterViewModel>()
@@ -41,7 +43,7 @@ fun CharacterScreen(navController: NavController, route: CharacterRoute) {
     DisposableEffect(Unit) {
         val escapeDispose = applicationScope.addKeyEventHandler { event ->
             if (event.key == "Escape" || event.key == "Esc") {
-                navController.popBackStack()
+                backStack.popBackStack()
             }
         }
 

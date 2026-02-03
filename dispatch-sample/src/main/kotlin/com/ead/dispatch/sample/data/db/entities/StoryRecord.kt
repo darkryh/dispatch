@@ -30,6 +30,10 @@ data class StoryRecord(
     /** Last update time for metadata changes. */
     val updatedAt: Long,
 ) {
+    companion object {
+        const val PLACEHOLDER_TITLE = "Placeholder Title"
+    }
+
     @Serializable
     data class StoryStyleProfile(
         /** One-line logline for quick summaries. */

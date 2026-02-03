@@ -4,32 +4,17 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
 
 @Serializable
 @SerialName("demo")
-private data class DemoRoute(val value: String)
+private data class DemoRoute(val value: String) : NavKey
 
 class TypedRouteTest {
     @Test
-    fun typedRouteEncodesAndDecodesPayload() {
-        val navController = NavController()
-
-        navController.navigate(DemoRoute("from-chat"))
-
-        val entry = navController.currentDestination
-        assertNotNull(entry)
-        assertEquals("from-chat", entry.toRoute<DemoRoute>()?.value)
-    }
-
-    @Test
-    fun queryArgumentsAreParsed() {
-        val navController = NavController()
-        navController.navigate("help?foo=bar&empty=")
-
-        val entry = navController.currentDestination
-        assertNotNull(entry)
-        assertEquals("bar", entry.arguments["foo"])
-        assertEquals("", entry.arguments["empty"])
+    fun navKeyEncodingRoundTrips() {
+        val original = DemoRoute("from-chat")
+        val encoded = encodeNavKeyForSave(original)
+        val decoded = decodeNavKeyFromSave(encoded) as DemoRoute
+        assertEquals("from-chat", decoded.value)
     }
 }

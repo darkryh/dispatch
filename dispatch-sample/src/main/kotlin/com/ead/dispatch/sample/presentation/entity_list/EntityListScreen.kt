@@ -7,14 +7,16 @@ import com.ead.dispatch.modifier.Modifier
 import com.ead.dispatch.modifier.fillMaxWidth
 import com.ead.dispatch.modifier.height
 import com.ead.dispatch.modifier.width
-import com.ead.dispatch.navigation.NavController
+import com.ead.dispatch.navigation.NavBackStack
+import com.ead.dispatch.navigation.NavKey
+import com.ead.dispatch.navigation.navigate
+import com.ead.dispatch.navigation.popBackStack
 import com.ead.dispatch.runtime.DisposableEffect
 import com.ead.dispatch.runtime.LocalKeyboardInterceptor
 import com.ead.dispatch.runtime.LocalTheme
 import com.ead.dispatch.runtime.dispatchScope
 import com.ead.dispatch.sample.navigation.CharacterRoute
 import com.ead.dispatch.sample.navigation.EntityListRoute
-import com.ead.dispatch.navigation.navigate
 import com.ead.dispatch.sample.presentation.components.ListOption
 import com.ead.dispatch.sample.presentation.components.ListSelector
 import com.ead.dispatch.sample.presentation.components.ListSelectorTextStyles
@@ -30,7 +32,7 @@ import com.github.ajalt.mordant.input.KeyboardEvent
 import com.github.ajalt.mordant.rendering.TextStyle
 
 @Dispatchable
-fun EntityListScreen(navController: NavController, route: EntityListRoute) {
+fun EntityListScreen(backStack: NavBackStack<NavKey>, route: EntityListRoute) {
     val theme = LocalTheme.current
     val scope = dispatchScope()
     val keyboardInterceptor = LocalKeyboardInterceptor.current
@@ -65,14 +67,14 @@ fun EntityListScreen(navController: NavController, route: EntityListRoute) {
         }
         val consumed = when (event.key) {
             "Escape", "Esc" -> {
-                navController.popBackStack()
+                backStack.popBackStack()
                 true
             }
             "Enter" -> {
                 val selected = state.items.getOrNull(selectedIndex)
                 if (type == "characters" && selected != null) {
                     val characterId = if (selected.isCreate) null else selected.id
-                    navController.navigate(CharacterRoute(storyId = route.storyId, characterId = characterId))
+                    backStack.navigate(CharacterRoute(storyId = route.storyId, characterId = characterId))
                     true
                 } else {
                     false
@@ -89,7 +91,7 @@ fun EntityListScreen(navController: NavController, route: EntityListRoute) {
             }
             "n", "N" -> {
                 if (type == "characters") {
-                    navController.navigate(CharacterRoute(storyId = route.storyId, characterId = null))
+                    backStack.navigate(CharacterRoute(storyId = route.storyId, characterId = null))
                     true
                 } else {
                     false

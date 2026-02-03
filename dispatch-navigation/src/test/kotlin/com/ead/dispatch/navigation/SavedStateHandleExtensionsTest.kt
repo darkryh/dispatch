@@ -7,7 +7,6 @@ import kotlinx.serialization.serializer
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
-import kotlin.test.assertNotNull
 
 @Serializable
 @SerialName("demo-handle")
@@ -33,15 +32,4 @@ class SavedStateHandleExtensionsTest {
         }
     }
 
-    @Test
-    fun `nav controller seeds saved state handle with route payload`() {
-        val navController = NavController()
-
-        navController.navigate(HandleRoute("seeded"))
-
-        val entry = navController.currentDestination
-        assertNotNull(entry)
-        val decoded = entry.savedStateHandle.toRoute<HandleRoute>()
-        assertEquals("seeded", decoded.value)
-    }
 }
