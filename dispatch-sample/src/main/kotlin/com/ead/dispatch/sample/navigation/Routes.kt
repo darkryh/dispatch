@@ -1,6 +1,7 @@
 package com.ead.dispatch.sample.navigation
 
 import com.ead.dispatch.navigation.NavKey
+import com.ead.dispatch.sample.domain.entity.EntityOptionType
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -31,7 +32,7 @@ data class StoryChatRoute(
 
 @Serializable
 @SerialName("entity-list")
-data class EntityListRoute(
-    val type: String = "characters",
+data class EntityOptionRoute(
+    val type: String = EntityOptionType.CHARACTERS.id,
     val storyId: String? = null,
 ) : NavKey

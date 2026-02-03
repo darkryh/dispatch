@@ -13,6 +13,7 @@ import com.ead.dispatch.navigation.NavKey
 import com.ead.dispatch.runtime.DisposableEffect
 import com.ead.dispatch.runtime.LocalKeyboardInterceptor
 import com.ead.dispatch.runtime.LocalTheme
+import com.ead.dispatch.sample.domain.entity.EntityOptionType
 import com.ead.dispatch.sample.domain.CommandManager
 import com.ead.dispatch.sample.domain.model.message.CliMessageRole
 import com.ead.dispatch.sample.domain.model.story.WriterMode
@@ -106,8 +107,18 @@ fun ChatScreen(backStack: NavBackStack<NavKey>) {
             Row(modifier = Modifier.fillMaxWidth()) {
                 Spacer(Modifier.width(2))
                 val quickJump = when (writerMode) {
-                    WriterMode.CHAT -> "/story-chat, /characters, /locations, /arcs, /world-rules, /cultures, /events"
-                    WriterMode.CHAT_STORY -> "/volumes, /chapters, /scenes"
+                    WriterMode.CHAT -> buildQuickJump(
+                        includeStoryChat = true,
+                        types = EntityOptionType.chatQuickJumpTypes,
+                    )
+                    WriterMode.CHAT_STORY -> buildQuickJump(
+                        includeStoryChat = false,
+                        types = listOf(
+                            EntityOptionType.VOLUMES,
+                            EntityOptionType.CHAPTERS,
+                            EntityOptionType.SCENES,
+                        ),
+                    )
                 }
                 Text(
                     text = "Quick jump: $quickJump",
@@ -171,4 +182,15 @@ fun ChatScreen(backStack: NavBackStack<NavKey>) {
             )
         }
     }
+}
+
+private fun buildQuickJump(
+    includeStoryChat: Boolean,
+    types: List<EntityOptionType>,
+): String {
+    val labels = buildList {
+        if (includeStoryChat) add("story-chat")
+        addAll(types.map { it.id })
+    }
+    return labels.joinToString(separator = ", ") { "/$it" }
 }

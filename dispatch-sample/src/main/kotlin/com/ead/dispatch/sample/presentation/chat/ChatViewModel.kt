@@ -19,7 +19,7 @@ import com.ead.dispatch.sample.domain.model.session.Session
 import com.ead.dispatch.sample.domain.model.story.WriterMode
 import com.ead.dispatch.sample.domain.util.extension.toCliMessage
 import com.ead.dispatch.sample.navigation.ChatRoute
-import com.ead.dispatch.sample.navigation.EntityListRoute
+import com.ead.dispatch.sample.navigation.EntityOptionRoute
 import com.ead.dispatch.sample.navigation.StoryChatRoute
 import com.ead.dispatch.sample.presentation.chat.event.ChatEvent
 import com.ead.dispatch.sample.presentation.commands.CommandAction
@@ -31,7 +31,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlin.coroutines.coroutineContext
 
 /**
  * ViewModel for the chat screen with stub responses.
@@ -145,7 +144,12 @@ class ChatViewModel(
                 _messages.value = emptyList()
             }
             is CommandAction.OpenEntityList -> {
-                backStack.navigate(EntityListRoute(type = commandAction.type, storyId = _session.value?.id))
+                backStack.navigate(
+                    EntityOptionRoute(
+                        type = commandAction.type.id,
+                        storyId = _session.value?.id,
+                    )
+                )
             }
             CommandAction.OpenStoryChat -> {
                 backStack.navigate(StoryChatRoute(storyId = _session.value?.id))

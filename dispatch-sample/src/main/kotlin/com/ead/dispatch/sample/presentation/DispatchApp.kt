@@ -4,20 +4,15 @@ import com.ead.dispatch.annotation.Dispatchable
 import com.ead.dispatch.koin.KoinViewModelFactory
 import com.ead.dispatch.koin.inject
 import com.ead.dispatch.navigation.NavDisplay
-import com.ead.dispatch.navigation.NavKey
 import com.ead.dispatch.navigation.entryProvider
 import com.ead.dispatch.navigation.rememberNavBackStack
 import com.ead.dispatch.runtime.LaunchedEffect
 import com.ead.dispatch.runtime.dispatchScope
 import com.ead.dispatch.sample.domain.embedding.EmbeddingReindexer
-import com.ead.dispatch.sample.navigation.ChatRoute
-import com.ead.dispatch.sample.navigation.CharacterRoute
-import com.ead.dispatch.sample.navigation.EntityListRoute
-import com.ead.dispatch.sample.navigation.SessionRoute
-import com.ead.dispatch.sample.navigation.StoryChatRoute
-import com.ead.dispatch.sample.presentation.chat.ChatScreen
+import com.ead.dispatch.sample.navigation.*
 import com.ead.dispatch.sample.presentation.characters.CharacterScreen
-import com.ead.dispatch.sample.presentation.entity_list.EntityListScreen
+import com.ead.dispatch.sample.presentation.chat.ChatScreen
+import com.ead.dispatch.sample.presentation.option.screen.EntityOptionScreen
 import com.ead.dispatch.sample.presentation.session.SessionScreen
 import com.ead.dispatch.sample.presentation.story_chat.StoryChatScreen
 
@@ -51,19 +46,15 @@ fun DispatchSampleApp() {
             entry<SessionRoute> {
                 SessionScreen(backStack)
             }
-
             entry<ChatRoute> {
                 ChatScreen(backStack)
             }
-
             entry<CharacterRoute> { route ->
                 CharacterScreen(backStack, route)
             }
-
-            entry<EntityListRoute> { route ->
-                EntityListScreen(backStack, route)
+            entry<EntityOptionRoute> { route ->
+                EntityOptionScreen(backStack, route)
             }
-
             entry<StoryChatRoute> { route ->
                 StoryChatScreen(backStack, route)
             }

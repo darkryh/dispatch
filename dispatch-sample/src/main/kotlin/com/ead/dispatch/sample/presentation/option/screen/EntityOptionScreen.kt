@@ -1,4 +1,4 @@
-package com.ead.dispatch.sample.presentation.entity_list
+package com.ead.dispatch.sample.presentation.option.screen
 
 import com.ead.dispatch.annotation.Dispatchable
 import com.ead.dispatch.layout.Row
@@ -14,11 +14,13 @@ import com.ead.dispatch.navigation.popBackStack
 import com.ead.dispatch.runtime.DisposableEffect
 import com.ead.dispatch.runtime.LocalKeyboardInterceptor
 import com.ead.dispatch.runtime.LocalTheme
+import com.ead.dispatch.sample.domain.entity.EntityOptionType
 import com.ead.dispatch.sample.navigation.CharacterRoute
-import com.ead.dispatch.sample.navigation.EntityListRoute
+import com.ead.dispatch.sample.navigation.EntityOptionRoute
 import com.ead.dispatch.sample.presentation.components.ListOption
 import com.ead.dispatch.sample.presentation.components.ListSelector
 import com.ead.dispatch.sample.presentation.components.ListSelectorTextStyles
+import com.ead.dispatch.sample.presentation.option.viewmodel.EntityOptionViewModel
 import com.ead.dispatch.state.getValue
 import com.ead.dispatch.state.mutableStateOf
 import com.ead.dispatch.state.remember
@@ -30,30 +32,22 @@ import com.ead.dispatch.widget.Text
 import com.github.ajalt.mordant.input.KeyboardEvent
 import com.github.ajalt.mordant.rendering.TextStyle
 
+/**
+ * Reusable screen for listing entity options based on [EntityOptionRoute.type].
+ *
+ * This screen is invoked from multiple command routes (e.g. `/characters`, `/locations`)
+ * and adapts its title, data source, and actions based on the provided route.
+ */
 @Dispatchable
-fun EntityListScreen(backStack: NavBackStack<NavKey>, route: EntityListRoute) {
+fun EntityOptionScreen(backStack: NavBackStack<NavKey>, route: EntityOptionRoute) {
+
     val theme = LocalTheme.current
     val keyboardInterceptor = LocalKeyboardInterceptor.current
-    val viewModel = viewModel<EntityListViewModel>()
+    val viewModel = viewModel<EntityOptionViewModel>()
+
     val state by viewModel.state.collectAsState()
-    val type = route.type.lowercase()
-    val title = when (type) {
-        "characters" -> "Characters"
-        "locations" -> "Locations"
-        "arcs" -> "Arcs"
-        "world-rules" -> "World Rules"
-        "cultures" -> "Cultures"
-        "events" -> "Events"
-        "organizations" -> "Organizations"
-        "relationships" -> "Relationships"
-        "location-features" -> "Location Features"
-        "artifacts" -> "Artifacts"
-        "timeline" -> "Timeline Entries"
-        "volumes" -> "Volumes"
-        "chapters" -> "Chapters"
-        "scenes" -> "Scenes"
-        else -> "Entities"
-    }
+    val entityType = state.type ?: EntityOptionType.fromId(route.type)
+    val title = entityType?.title ?: "Entities"
 
     var selectedIndex by remember { mutableStateOf(0) }
 
@@ -65,7 +59,7 @@ fun EntityListScreen(backStack: NavBackStack<NavKey>, route: EntityListRoute) {
             }
             "Enter" -> {
                 val selected = state.items.getOrNull(selectedIndex)
-                if (type == "characters" && selected != null) {
+                if (entityType == EntityOptionType.CHARACTERS && selected != null) {
                     val characterId = if (selected.isCreate) null else selected.id
                     backStack.navigate(CharacterRoute(storyId = route.storyId, characterId = characterId))
                     true
@@ -83,7 +77,7 @@ fun EntityListScreen(backStack: NavBackStack<NavKey>, route: EntityListRoute) {
                 true
             }
             "n", "N" -> {
-                if (type == "characters") {
+                if (entityType == EntityOptionType.CHARACTERS) {
                     backStack.navigate(CharacterRoute(storyId = route.storyId, characterId = null))
                     true
                 } else {
@@ -107,7 +101,7 @@ fun EntityListScreen(backStack: NavBackStack<NavKey>, route: EntityListRoute) {
 
     val selectorOptions = state.items.mapIndexed { index, item ->
         ListOption(
-            id = "$type-$index",
+            id = "${entityType?.id ?: "entity"}-$index",
             title = item.title,
             description = "· ${item.subtitle}",
             data = item,
@@ -180,7 +174,7 @@ fun EntityListScreen(backStack: NavBackStack<NavKey>, route: EntityListRoute) {
             Row(modifier = Modifier.fillMaxWidth()) {
                 Spacer(Modifier.width(2))
                 Text(
-                    text = if (type == "characters") {
+                    text = if (entityType == EntityOptionType.CHARACTERS) {
                         "Arrow keys to navigate · Enter open · N new · Esc back"
                     } else {
                         "Arrow keys to navigate · Esc to go back"

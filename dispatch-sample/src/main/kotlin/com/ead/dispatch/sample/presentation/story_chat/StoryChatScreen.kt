@@ -15,7 +15,8 @@ import com.ead.dispatch.runtime.DisposableEffect
 import com.ead.dispatch.runtime.LocalKeyboardInterceptor
 import com.ead.dispatch.runtime.LocalTerminalWidth
 import com.ead.dispatch.runtime.LocalTheme
-import com.ead.dispatch.sample.navigation.EntityListRoute
+import com.ead.dispatch.sample.domain.entity.EntityOptionType
+import com.ead.dispatch.sample.navigation.EntityOptionRoute
 import com.ead.dispatch.sample.navigation.StoryChatRoute
 import com.ead.dispatch.sample.data.db.entities.StoryRecord
 import com.ead.dispatch.state.getValue
@@ -43,19 +44,19 @@ fun StoryChatScreen(backStack: NavBackStack<NavKey>, route: StoryChatRoute) {
                 true
             }
             "c" -> {
-                backStack.navigate(EntityListRoute(type = "characters", storyId = route.storyId))
+                backStack.navigate(EntityOptionRoute(type = EntityOptionType.CHARACTERS.id, storyId = route.storyId))
                 true
             }
             "l" -> {
-                backStack.navigate(EntityListRoute(type = "locations", storyId = route.storyId))
+                backStack.navigate(EntityOptionRoute(type = EntityOptionType.LOCATIONS.id, storyId = route.storyId))
                 true
             }
             "a" -> {
-                backStack.navigate(EntityListRoute(type = "arcs", storyId = route.storyId))
+                backStack.navigate(EntityOptionRoute(type = EntityOptionType.ARCS.id, storyId = route.storyId))
                 true
             }
             "w" -> {
-                backStack.navigate(EntityListRoute(type = "world-rules", storyId = route.storyId))
+                backStack.navigate(EntityOptionRoute(type = EntityOptionType.WORLD_RULES.id, storyId = route.storyId))
                 true
             }
             else -> false
@@ -145,7 +146,10 @@ fun StoryChatScreen(backStack: NavBackStack<NavKey>, route: StoryChatRoute) {
             Row(modifier = Modifier.fillMaxWidth()) {
                 Spacer(Modifier.width(2))
                 Text(
-                    text = "Shortcuts: C characters | L locations | A arcs | W world rules | Esc back",
+                    text = "Shortcuts: C ${EntityOptionType.CHARACTERS.title.lowercase()} | " +
+                        "L ${EntityOptionType.LOCATIONS.title.lowercase()} | " +
+                        "A ${EntityOptionType.ARCS.title.lowercase()} | " +
+                        "W ${EntityOptionType.WORLD_RULES.title.lowercase()} | Esc back",
                     style = theme.muted,
                 )
             }

@@ -13,7 +13,7 @@ import com.ead.dispatch.sample.domain.embedding.EmbeddingReindexer
 import com.ead.dispatch.sample.domain.embedding.RagContextService
 import com.ead.dispatch.sample.presentation.characters.CharacterViewModel
 import com.ead.dispatch.sample.presentation.chat.ChatViewModel
-import com.ead.dispatch.sample.presentation.entity_list.EntityListViewModel
+import com.ead.dispatch.sample.presentation.option.viewmodel.EntityOptionViewModel
 import com.ead.dispatch.sample.presentation.session.SessionViewModel
 import com.ead.dispatch.sample.presentation.story_chat.StoryChatViewModel
 
@@ -50,7 +50,7 @@ val module = dispatchModule {
     }
     viewModel { SessionViewModel(sessionManager = get()) }
     viewModel { (savedStateHandle: SavedStateHandle) ->
-        EntityListViewModel(
+        EntityOptionViewModel(
             repository = get(),
             savedStateHandle = savedStateHandle,
         )
