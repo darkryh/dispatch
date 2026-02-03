@@ -29,10 +29,6 @@ interface DispatchScope {
     fun launch(block: suspend CoroutineScope.() -> Unit): Job
     fun clearScreen(clearScrollback: Boolean = false)
     fun onKeyEvent(handler: (KeyboardEvent) -> Unit)
-    fun addKeyEventHandler(handler: (KeyboardEvent) -> Unit): () -> Unit {
-        onKeyEvent(handler)
-        return {}
-    }
     fun onMouseEvent(handler: (MouseEvent) -> Unit)
 
     /**

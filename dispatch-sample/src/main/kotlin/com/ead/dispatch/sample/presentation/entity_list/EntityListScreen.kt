@@ -14,7 +14,6 @@ import com.ead.dispatch.navigation.popBackStack
 import com.ead.dispatch.runtime.DisposableEffect
 import com.ead.dispatch.runtime.LocalKeyboardInterceptor
 import com.ead.dispatch.runtime.LocalTheme
-import com.ead.dispatch.runtime.dispatchScope
 import com.ead.dispatch.sample.navigation.CharacterRoute
 import com.ead.dispatch.sample.navigation.EntityListRoute
 import com.ead.dispatch.sample.presentation.components.ListOption
@@ -34,7 +33,6 @@ import com.github.ajalt.mordant.rendering.TextStyle
 @Dispatchable
 fun EntityListScreen(backStack: NavBackStack<NavKey>, route: EntityListRoute) {
     val theme = LocalTheme.current
-    val scope = dispatchScope()
     val keyboardInterceptor = LocalKeyboardInterceptor.current
     val viewModel = viewModel<EntityListViewModel>()
     val state by viewModel.state.collectAsState()
@@ -59,12 +57,7 @@ fun EntityListScreen(backStack: NavBackStack<NavKey>, route: EntityListRoute) {
 
     var selectedIndex by remember { mutableStateOf(0) }
 
-    val lastHandledEvent = remember { mutableStateOf<KeyboardEvent?>(null) }
-
     fun handleKeyEvent(event: KeyboardEvent): Boolean {
-        if (lastHandledEvent.value === event) {
-            return true
-        }
         val consumed = when (event.key) {
             "Escape", "Esc" -> {
                 backStack.popBackStack()
@@ -99,9 +92,6 @@ fun EntityListScreen(backStack: NavBackStack<NavKey>, route: EntityListRoute) {
             }
             else -> false
         }
-        if (consumed) {
-            lastHandledEvent.value = event
-        }
         return consumed
     }
 
@@ -110,12 +100,7 @@ fun EntityListScreen(backStack: NavBackStack<NavKey>, route: EntityListRoute) {
             handleKeyEvent(event)
         }
 
-        val dispose = scope.addKeyEventHandler { event ->
-            handleKeyEvent(event)
-        }
-
         onDispose {
-            dispose()
             interceptorDispose()
         }
     }

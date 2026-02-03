@@ -29,9 +29,10 @@ class SessionSelectorTest {
     private class TestDispatchScope(
         override val terminal: Terminal,
         override val theme: DispatchTheme,
+        private val keyboardInterceptor: com.ead.dispatch.runtime.KeyboardInterceptor,
         override val args: Array<String> = emptyArray(),
     ) : DispatchScope {
-        private val keyHandlers = mutableListOf<(KeyboardEvent) -> Unit>()
+        private var keyHandler: ((KeyboardEvent) -> Unit)? = null
 
         override val terminalWidth: Int get() = terminal.size.width
         override val terminalHeight: Int get() = terminal.size.height
@@ -47,20 +48,15 @@ class SessionSelectorTest {
         override fun clearScreen(clearScrollback: Boolean) = Unit
 
         override fun onKeyEvent(handler: (KeyboardEvent) -> Unit) {
-            keyHandlers.clear()
-            keyHandlers.add(handler)
-        }
-
-        override fun addKeyEventHandler(handler: (KeyboardEvent) -> Unit): () -> Unit {
-            keyHandlers.add(handler)
-            return { keyHandlers.remove(handler) }
+            keyHandler = handler
         }
 
         override fun onMouseEvent(handler: (MouseEvent) -> Unit) = Unit
         override fun renderer(block: @Dispatchable () -> Unit) = Unit
 
         fun sendKey(event: KeyboardEvent) {
-            keyHandlers.toList().forEach { it(event) }
+            if (keyboardInterceptor.tryIntercept(event)) return
+            keyHandler?.invoke(event)
         }
     }
 
@@ -73,7 +69,8 @@ class SessionSelectorTest {
             height = 20,
             interactive = false,
         )
-        private val dispatchScope = TestDispatchScope(terminal, DispatchTheme.Dark)
+        private val keyboardInterceptor = com.ead.dispatch.runtime.KeyboardInterceptor()
+        private val dispatchScope = TestDispatchScope(terminal, DispatchTheme.Dark, keyboardInterceptor)
         private val composer = Composer()
         private val root = AtomicReference<Measurable?>(null)
 
@@ -109,6 +106,7 @@ class SessionSelectorTest {
                     LocalTerminal provides terminal,
                     LocalTerminalWidth provides terminal.size.width,
                     LocalTerminalHeight provides terminal.size.height,
+                    com.ead.dispatch.runtime.LocalKeyboardInterceptor provides keyboardInterceptor,
                     LocalDispatchScope provides dispatchScope,
                     LocalTheme provides DispatchTheme.Dark,
                 ) {

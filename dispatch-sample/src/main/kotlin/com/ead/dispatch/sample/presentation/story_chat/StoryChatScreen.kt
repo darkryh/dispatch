@@ -15,13 +15,9 @@ import com.ead.dispatch.runtime.DisposableEffect
 import com.ead.dispatch.runtime.LocalKeyboardInterceptor
 import com.ead.dispatch.runtime.LocalTerminalWidth
 import com.ead.dispatch.runtime.LocalTheme
-import com.ead.dispatch.runtime.dispatchScope
 import com.ead.dispatch.sample.navigation.EntityListRoute
 import com.ead.dispatch.sample.navigation.StoryChatRoute
 import com.ead.dispatch.sample.data.db.entities.StoryRecord
-import com.ead.dispatch.state.mutableStateOf
-import com.ead.dispatch.state.remember
-import com.ead.dispatch.state.setValue
 import com.ead.dispatch.state.getValue
 import com.ead.dispatch.viewmodel.collectAsState
 import com.ead.dispatch.viewmodel.viewModel
@@ -37,16 +33,10 @@ import com.github.ajalt.mordant.rendering.TextStyle
 @Dispatchable
 fun StoryChatScreen(backStack: NavBackStack<NavKey>, route: StoryChatRoute) {
     val theme = LocalTheme.current
-    val scope = dispatchScope()
     val keyboardInterceptor = LocalKeyboardInterceptor.current
     val viewModel = viewModel<StoryChatViewModel>()
     val state by viewModel.state.collectAsState()
-    var lastHandledEvent by remember { mutableStateOf<KeyboardEvent?>(null) }
-
     fun handleKeyEvent(event: KeyboardEvent): Boolean {
-        if (lastHandledEvent === event) {
-            return true
-        }
         val consumed = when (event.key.lowercase()) {
             "escape", "esc" -> {
                 backStack.popBackStack()
@@ -70,9 +60,6 @@ fun StoryChatScreen(backStack: NavBackStack<NavKey>, route: StoryChatRoute) {
             }
             else -> false
         }
-        if (consumed) {
-            lastHandledEvent = event
-        }
         return consumed
     }
 
@@ -81,12 +68,7 @@ fun StoryChatScreen(backStack: NavBackStack<NavKey>, route: StoryChatRoute) {
             handleKeyEvent(event)
         }
 
-        val dispose = scope.addKeyEventHandler { event ->
-            handleKeyEvent(event)
-        }
-
         onDispose {
-            dispose()
             interceptorDispose()
         }
     }

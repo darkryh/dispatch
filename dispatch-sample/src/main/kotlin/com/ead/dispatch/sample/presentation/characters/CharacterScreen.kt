@@ -9,7 +9,6 @@ import com.ead.dispatch.navigation.NavKey
 import com.ead.dispatch.navigation.popBackStack
 import com.ead.dispatch.runtime.DisposableEffect
 import com.ead.dispatch.runtime.LocalKeyboardInterceptor
-import com.ead.dispatch.runtime.dispatchScope
 import com.ead.dispatch.sample.presentation.characters.components.AiCharacterForm
 import com.ead.dispatch.sample.presentation.characters.components.CharacterFooter
 import com.ead.dispatch.sample.presentation.characters.components.CharacterHeader
@@ -29,7 +28,6 @@ import com.ead.dispatch.sample.navigation.CharacterRoute
 @Dispatchable
 fun CharacterScreen(backStack: NavBackStack<NavKey>, route: CharacterRoute) {
     val keyboardInterceptor = LocalKeyboardInterceptor.current
-    val applicationScope = dispatchScope()
     val viewModel = viewModel<CharacterViewModel>()
     val uiState by viewModel.uiState.collectAsState()
     val styles = rememberCharacterScreenStyles()
@@ -41,14 +39,12 @@ fun CharacterScreen(backStack: NavBackStack<NavKey>, route: CharacterRoute) {
     }
 
     DisposableEffect(Unit) {
-        val escapeDispose = applicationScope.addKeyEventHandler { event ->
-            if (event.key == "Escape" || event.key == "Esc") {
-                backStack.popBackStack()
-            }
-        }
-
         val dispose = keyboardInterceptor.register { event ->
             when (event.key) {
+                "Escape", "Esc" -> {
+                    backStack.popBackStack()
+                    true
+                }
                 "S", "s" -> if (event.ctrl) {
                     viewModel.onEvent(CharacterEvent.OnSave)
                     true
@@ -95,7 +91,6 @@ fun CharacterScreen(backStack: NavBackStack<NavKey>, route: CharacterRoute) {
 
         onDispose {
             dispose()
-            escapeDispose()
         }
     }
 

@@ -32,6 +32,7 @@ class InputTextFieldMultiInputTest {
     private class TestDispatchScope(
         override val terminal: Terminal,
         override val theme: DispatchTheme,
+        private val keyboardInterceptor: KeyboardInterceptor,
         override val args: Array<String> = emptyArray(),
     ) : DispatchScope {
         private var keyHandler: ((KeyboardEvent) -> Unit)? = null
@@ -57,6 +58,7 @@ class InputTextFieldMultiInputTest {
         override fun renderer(block: @Dispatchable () -> Unit) = Unit
 
         fun sendKey(event: KeyboardEvent) {
+            if (keyboardInterceptor.tryIntercept(event)) return
             keyHandler?.invoke(event)
         }
     }
@@ -70,7 +72,7 @@ class InputTextFieldMultiInputTest {
         )
         private val keyboardInterceptor = KeyboardInterceptor()
         private val focusRegistry = com.ead.dispatch.runtime.FocusRegistry()
-        private val dispatchScope = TestDispatchScope(terminal, DispatchTheme.Dark)
+        private val dispatchScope = TestDispatchScope(terminal, DispatchTheme.Dark, keyboardInterceptor)
         private val composer = Composer()
         private val root = AtomicReference<Measurable?>(null)
 

@@ -6,9 +6,7 @@ import com.ead.dispatch.layout.Row
 import com.ead.dispatch.modifier.Modifier
 import com.ead.dispatch.runtime.DisposableEffect
 import com.ead.dispatch.runtime.LocalKeyboardInterceptor
-import com.ead.dispatch.runtime.dispatchScope
 import com.ead.dispatch.runtime.rememberCallback
-import com.ead.dispatch.state.mutableStateOf
 import com.ead.dispatch.state.remember
 import com.github.ajalt.mordant.input.KeyboardEvent
 import com.github.ajalt.mordant.rendering.TextColors.Companion.rgb
@@ -297,9 +295,7 @@ fun <T> SessionSelector(
     val onExitCallback = rememberCallback(onExit)
 
     // Register keyboard handler via DispatchScope
-    val scope = dispatchScope()
     val keyboardInterceptor = LocalKeyboardInterceptor.current
-    val lastHandledEvent = remember { mutableStateOf<KeyboardEvent?>(null) }
 
     // Filter options based on filter text
     val filteredOptions = if (state.filterText.isEmpty()) {
@@ -319,10 +315,6 @@ fun <T> SessionSelector(
     val columnWidths = calculateColumnWidths(filteredOptions, columns, columnConfigs, headerLabels, showHeaders)
 
     fun handleKeyEvent(event: KeyboardEvent): Boolean {
-        if (lastHandledEvent.value === event) {
-            return true
-        }
-
         val consumed = handleSelectorKeyEvent(
             event,
             SelectorKeyBindings(
@@ -353,10 +345,6 @@ fun <T> SessionSelector(
             ),
         )
 
-        if (consumed) {
-            lastHandledEvent.value = event
-        }
-
         return consumed
     }
 
@@ -370,12 +358,7 @@ fun <T> SessionSelector(
             handleKeyEvent(event)
         }
 
-        val dispose = scope.addKeyEventHandler { event ->
-            handleKeyEvent(event)
-        }
-
         onDispose {
-            dispose()
             interceptorDispose()
         }
     }

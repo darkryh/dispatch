@@ -14,7 +14,6 @@ import com.ead.dispatch.runtime.LocalKeyboardInterceptor
 import com.ead.dispatch.runtime.LocalTerminal
 import com.ead.dispatch.runtime.LocalTerminalWidth
 import com.ead.dispatch.runtime.composableWidget
-import com.ead.dispatch.runtime.dispatchScope
 import com.ead.dispatch.state.getValue
 import com.ead.dispatch.state.mutableStateOf
 import com.ead.dispatch.state.remember
@@ -605,9 +604,8 @@ fun InputTextField(
         cursorPositionState = cursorPosition.coerceIn(0, latestValue.length)
     }
 
-    // Set up keyboard handling via DispatchScope.
+    // Set up keyboard handling via KeyboardInterceptor.
     // Always register a handler so we don't keep a stale handler when `enabled` flips to false.
-    val scope = dispatchScope()
     val keyboardInterceptor = LocalKeyboardInterceptor.current
     val focusRegistry = LocalFocusRegistry.current
     val focusToken = remember { Any() }
@@ -634,37 +632,32 @@ fun InputTextField(
         contentWidth = { contentWidth },
     )
 
-    DisposableEffect(Triple(enabled, keyboardInterceptor, historyItems)) {
+    DisposableEffect(listOf(enabled, focusRegistry, historyItems, keyboardInterceptor)) {
         if (!enabled) {
             return@DisposableEffect onDispose {}
         }
 
         val disposeFocus = focusRegistry.register(focusToken)
-        val dispose = scope.addKeyEventHandler { event ->
-            // Check if any interceptor wants to handle this event first
-            // (e.g., CommandPalette intercepting Arrow keys when visible)
-            if (keyboardInterceptor.tryIntercept(event)) {
-                return@addKeyEventHandler  // Event was consumed by interceptor
-            }
-
+        val dispose = keyboardInterceptor.register(priority = -1) { event ->
             if (!focusRegistry.isFocused(focusToken)) {
-                return@addKeyEventHandler
+                return@register false
             }
             if (!focusRegistry.claimEvent(event)) {
-                return@addKeyEventHandler
+                return@register false
             }
 
             if (event.key == "Tab" && !event.shift && !event.ctrl && !event.alt) {
                 focusRegistry.focusNext()
-                return@addKeyEventHandler
+                return@register true
             }
 
             if (event.shift && (event.key == "Q" || event.key == "q")) {
                 focusRegistry.focusPrevious()
-                return@addKeyEventHandler
+                return@register true
             }
 
             editor.handleKeyEvent(event)
+            true
         }
 
         onDispose {

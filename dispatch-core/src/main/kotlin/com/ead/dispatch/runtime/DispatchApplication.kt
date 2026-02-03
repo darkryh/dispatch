@@ -175,7 +175,10 @@ internal class DispatchApplicationBuilder(
                                     recomposer.requestRecomposition()
                                     continue@inputLoop
                                 }
-                                keyEventHandlers.forEach { handler -> handler(event) }
+                                val consumed = keyboardInterceptor.tryIntercept(event)
+                                if (!consumed) {
+                                    keyEventHandlers.forEach { handler -> handler(event) }
+                                }
                                 recomposer.requestRecomposition()
                             }
                             is MouseEvent -> {
@@ -248,9 +251,7 @@ internal class DispatchApplicationBuilder(
                             LocalFocusRegistry provides focusRegistry,
                             LocalExitPromptState provides exitPromptState,
                         ) {
-                            KeyboardInterceptorScope {
-                                block()
-                            }
+                            block()
                         }
                     } finally {
                         composer.setMeasurableCollector(null)
@@ -383,11 +384,6 @@ internal class DispatchApplicationBuilder(
         override fun onKeyEvent(handler: (KeyboardEvent) -> Unit) {
             keyEventHandlers.clear()
             keyEventHandlers.add(handler)
-        }
-
-        override fun addKeyEventHandler(handler: (KeyboardEvent) -> Unit): () -> Unit {
-            keyEventHandlers.add(handler)
-            return { keyEventHandlers.remove(handler) }
         }
 
         override fun onMouseEvent(handler: (MouseEvent) -> Unit) {

@@ -13,7 +13,6 @@ import com.ead.dispatch.navigation.NavKey
 import com.ead.dispatch.runtime.DisposableEffect
 import com.ead.dispatch.runtime.LocalKeyboardInterceptor
 import com.ead.dispatch.runtime.LocalTheme
-import com.ead.dispatch.runtime.dispatchScope
 import com.ead.dispatch.sample.domain.CommandManager
 import com.ead.dispatch.sample.domain.model.message.CliMessageRole
 import com.ead.dispatch.sample.domain.model.story.WriterMode
@@ -51,30 +50,25 @@ fun ChatScreen(backStack: NavBackStack<NavKey>) {
 
     val writerMode by viewModel.writerMode.collectAsState()
     val theme = LocalTheme.current
-    val applicationScope = dispatchScope()
 
     // Register Shift+Tab handler for mode switching without replacing InputTextField handlers.
     val keyboardInterceptor = LocalKeyboardInterceptor.current
 
     DisposableEffect(Unit) {
-        val disposeOption = keyboardInterceptor.register { event ->
-            if (event.key == "Tab" && event.shift) {
-                viewModel.onEvent(ChatEvent.OnChatModeChanged)
-                true
-            } else {
-                false
+        val dispose = keyboardInterceptor.register { event ->
+            when {
+                event.key == "Tab" && event.shift -> {
+                    viewModel.onEvent(ChatEvent.OnChatModeChanged)
+                    true
+                }
+                (event.key == "Escape" || event.key == "Esc") && isProcessing -> {
+                    viewModel.onEvent(ChatEvent.OnCancelProcessing)
+                    true
+                }
+                else -> false
             }
         }
-
-        val disposeCancelAgentExecution = applicationScope.addKeyEventHandler { event ->
-            if ((event.key == "Escape" || event.key == "Esc") && isProcessing) {
-                viewModel.onEvent(ChatEvent.OnCancelProcessing)
-            }
-        }
-        onDispose {
-            disposeOption()
-            disposeCancelAgentExecution()
-        }
+        onDispose { dispose() }
     }
 
     // Define available commands for the command palette
