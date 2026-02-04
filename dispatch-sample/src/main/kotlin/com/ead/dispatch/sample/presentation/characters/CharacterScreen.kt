@@ -17,6 +17,9 @@ import com.ead.dispatch.sample.presentation.characters.components.ManualCharacte
 import com.ead.dispatch.sample.presentation.characters.components.rememberCharacterScreenStyles
 import com.ead.dispatch.sample.presentation.characters.event.CharacterEvent
 import com.ead.dispatch.state.getValue
+import com.ead.dispatch.state.mutableStateOf
+import com.ead.dispatch.state.remember
+import com.ead.dispatch.state.setValue
 import com.ead.dispatch.viewmodel.collectAsState
 import com.ead.dispatch.viewmodel.viewModel
 import com.ead.dispatch.widget.LazyColumn
@@ -24,16 +27,26 @@ import com.ead.dispatch.layout.Spacer
 import com.ead.dispatch.sample.presentation.characters.state.CharacterFields
 import com.ead.dispatch.sample.presentation.characters.util.CharacterUIMode
 import com.ead.dispatch.sample.navigation.CharacterRoute
+import com.ead.dispatch.sample.presentation.characters.util.CharacterFieldKey
 
 @Dispatchable
 fun CharacterScreen(backStack: NavBackStack<NavKey>, route: CharacterRoute) {
     val keyboardInterceptor = LocalKeyboardInterceptor.current
+
     val viewModel = viewModel<CharacterViewModel>()
+
     val uiState by viewModel.uiState.collectAsState()
+
     val styles = rememberCharacterScreenStyles()
 
+    var showPhysicalFields by remember { mutableStateOf(false) }
+
     val fields = if (uiState.mode == CharacterUIMode.MANUAL) {
-        CharacterFields.manual
+        if (showPhysicalFields) {
+            CharacterFields.manual.filter { it.key in PHYSICAL_KEYS }
+        } else {
+            CharacterFields.manual.filter { it.key !in PHYSICAL_KEYS }
+        }
     } else {
         CharacterFields.automatic
     }
@@ -81,6 +94,12 @@ fun CharacterScreen(backStack: NavBackStack<NavKey>, route: CharacterRoute) {
                 }
                 "Tab" -> if (event.shift) {
                     viewModel.onEvent(CharacterEvent.OnToggleMode)
+                    true
+                } else {
+                    false
+                }
+                "P", "p" -> if (event.ctrl && uiState.mode == CharacterUIMode.MANUAL) {
+                    showPhysicalFields = !showPhysicalFields
                     true
                 } else {
                     false
@@ -141,8 +160,8 @@ fun CharacterScreen(backStack: NavBackStack<NavKey>, route: CharacterRoute) {
         if (uiState.mode == CharacterUIMode.MANUAL) {
             item {
                 CharacterSectionHeader(
-                    title = "Profile",
-                    hint = "Tab next field. Shift+Tab switches mode. Ctrl+S save. Ctrl+D delete. Esc returns.",
+                    title = if (showPhysicalFields) "Physical" else "Profile",
+                    hint = "Tab next field. Shift+Tab switches mode. Ctrl+P toggles physical fields. Ctrl+S save. Ctrl+D delete. Esc back.",
                     styles = styles,
                 )
             }
@@ -160,7 +179,7 @@ fun CharacterScreen(backStack: NavBackStack<NavKey>, route: CharacterRoute) {
             item { Spacer(Modifier.height(1)) }
             item {
                 CharacterFooter(
-                    text = uiState.status ?: "Ctrl+S save · Ctrl+D delete · Esc back",
+                    text = uiState.status ?: "Ctrl+S save · Ctrl+D delete · Ctrl+P physical · Esc back",
                     styles = styles,
                 )
             }
@@ -185,3 +204,14 @@ fun CharacterScreen(backStack: NavBackStack<NavKey>, route: CharacterRoute) {
         }
     }
 }
+
+private val PHYSICAL_KEYS = setOf(
+    CharacterFieldKey.APPEARANCE,
+    CharacterFieldKey.HEIGHT,
+    CharacterFieldKey.BUILD,
+    CharacterFieldKey.HAIR,
+    CharacterFieldKey.EYES,
+    CharacterFieldKey.SKIN_TONE,
+    CharacterFieldKey.DISTINGUISHING_MARKS,
+    CharacterFieldKey.STYLE_NOTES,
+)

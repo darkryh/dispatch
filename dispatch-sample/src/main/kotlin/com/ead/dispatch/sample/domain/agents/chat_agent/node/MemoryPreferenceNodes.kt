@@ -12,6 +12,9 @@ import ai.koog.prompt.streaming.StreamFrame
 import com.ead.dispatch.sample.domain.agents.chat_agent.ChatRequest
 import com.ead.dispatch.sample.domain.agents.chat_agent.MemorySubjects
 import com.ead.dispatch.sample.domain.agents.chat_agent.PreferencesMemory
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.Flow
 
 @AIAgentBuilderDslMarker
@@ -53,18 +56,24 @@ private suspend fun AIAgentGraphContextBase.loadUserPreferencesOnce(
 private suspend fun AIAgentGraphContextBase.saveUserPreferencesOnce(
     response: Flow<StreamFrame>,
     scope: MemoryScopeType,
-): Flow<StreamFrame> {
+): Flow<StreamFrame> = kotlinx.coroutines.coroutineScope {
     val memory = featureOrThrow(AgentMemory.Feature)
     val scopeValue = requireNotNull(memory.scopesProfile.getScope(scope)) {
         "Memory scope name missing for $scope."
     }
-    PreferencesMemory.userConcepts.forEach { concept ->
-        memory.saveFactsFromHistory(
-            llm = llm,
-            concept = concept,
-            subject = MemorySubjects.User,
-            scope = scopeValue,
-        )
-    }
-    return response
+
+    PreferencesMemory.userConcepts
+        .map { concept ->
+            async(Dispatchers.IO) {
+                memory.saveFactsFromHistory(
+                    llm = llm,
+                    concept = concept,
+                    subject = MemorySubjects.User,
+                    scope = scopeValue,
+                )
+            }
+        }
+        .awaitAll()
+
+    response
 }

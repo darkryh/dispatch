@@ -76,6 +76,8 @@ object PreferencesMemory {
             - Formatting and structure preferences that apply across sessions.
             - Output constraints like brevity, bullet style, JSON/table formats.
             Forbidden:
+            - Any quantity requirements tied to a specific request (e.g., "create 4 characters").
+            - Any task-specific instructions or workflow goals.
             - Any story/character/plot/setting details.
             - Any session- or project-specific facts.
         """.trimIndent(),

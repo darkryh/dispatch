@@ -15,5 +15,6 @@
 /dispatch-update-brew/build/
 /dispatch-update-github/build/
 /dispatch-update-scoop/build/
+/dispatch-workspace/build/
 /dispatch-viewmodel/build/
 /dispatch-widgets/build/

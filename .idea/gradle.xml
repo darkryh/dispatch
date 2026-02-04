@@ -36,6 +36,7 @@
             <option value="$PROJECT_DIR$/dispatch-update-scoop" />
             <option value="$PROJECT_DIR$/dispatch-viewmodel" />
             <option value="$PROJECT_DIR$/dispatch-widgets" />
+            <option value="$PROJECT_DIR$/dispatch-workspace" />
           </set>
         </option>
       </GradleProjectSettings>

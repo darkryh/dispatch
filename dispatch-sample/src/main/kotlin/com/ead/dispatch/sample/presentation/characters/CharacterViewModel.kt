@@ -46,8 +46,14 @@ class CharacterViewModel(
                     runCatching {
                         val character = repository.getStoryCharacters(storyId)
                             .firstOrNull { it.id == characterId }
+
                         if (character == null) {
-                            _uiState.update { it.copy(isLoading = false, error = "Character not found.") }
+                            _uiState.update {
+                                it.copy(
+                                    isLoading = false,
+                                    error = "Character not found."
+                                )
+                            }
                         } else {
                             _uiState.update {
                                 it.copy(
@@ -58,7 +64,10 @@ class CharacterViewModel(
                         }
                     }.onFailure { error ->
                         _uiState.update {
-                            it.copy(isLoading = false, error = error.message ?: "Failed to load character.")
+                            it.copy(
+                                isLoading = false,
+                                error = error.message ?: "Failed to load character."
+                            )
                         }
                     }
                 }
@@ -67,6 +76,18 @@ class CharacterViewModel(
             }
         }
     }
+
+    fun onEvent(event: CharacterEvent) {
+        when (event) {
+            is CharacterEvent.OnToggleMode -> toggleMode()
+            is CharacterEvent.OnFieldChanged -> updateField(event.key, event.text)
+            is CharacterEvent.OnSave -> saveCharacter()
+            is CharacterEvent.OnRequestDelete -> requestDelete()
+            is CharacterEvent.OnConfirmDelete -> confirmDelete()
+            is CharacterEvent.OnCancelDelete -> cancelDelete()
+        }
+    }
+
 
     private fun toggleMode() {
         _uiState.update { state ->
@@ -157,19 +178,9 @@ class CharacterViewModel(
         }
     }
 
-    fun onEvent(event: CharacterEvent) {
-        when (event) {
-            is CharacterEvent.OnToggleMode -> toggleMode()
-            is CharacterEvent.OnFieldChanged -> updateField(event.key, event.text)
-            is CharacterEvent.OnSave -> saveCharacter()
-            is CharacterEvent.OnRequestDelete -> requestDelete()
-            is CharacterEvent.OnConfirmDelete -> confirmDelete()
-            is CharacterEvent.OnCancelDelete -> cancelDelete()
-        }
-    }
-
     private fun valuesFromRecord(character: StoryCharacterRecord): Map<CharacterFieldKey, FieldValue> {
         val physical = character.physical
+
         return mapOf(
             CharacterFieldKey.NAME to FieldValue(character.name),
             CharacterFieldKey.DESCRIPTION to FieldValue(character.description.orEmpty()),
@@ -203,10 +214,13 @@ class CharacterViewModel(
         createdAt: Long,
         values: Map<CharacterFieldKey, FieldValue>,
     ): StoryCharacterRecord {
+
         val text = { key: CharacterFieldKey -> values[key]?.text?.trim().orEmpty() }
+
         val list = { key: CharacterFieldKey ->
             text(key).split(",").map { it.trim() }.filter { it.isNotEmpty() }
         }
+
         val physical = StoryCharacterRecord.PhysicalProfile(
             appearance = text(CharacterFieldKey.APPEARANCE).ifBlank { null },
             height = text(CharacterFieldKey.HEIGHT).ifBlank { null },
@@ -217,6 +231,7 @@ class CharacterViewModel(
             distinguishingMarks = text(CharacterFieldKey.DISTINGUISHING_MARKS).ifBlank { null },
             styleNotes = text(CharacterFieldKey.STYLE_NOTES).ifBlank { null },
         )
+
         return StoryCharacterRecord(
             id = id,
             storyId = storyId,
