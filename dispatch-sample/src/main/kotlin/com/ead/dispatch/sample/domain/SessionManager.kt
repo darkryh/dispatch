@@ -35,7 +35,9 @@ class SessionManager(
 
     init {
         scope.launch {
+            cleanupEmptySessions()
             refreshSessions()
+            createDraftSession()
         }
     }
 
@@ -159,6 +161,11 @@ class SessionManager(
         return sessionsFlow.value.find { it.id == sessionId }
     }
 
+    fun getCurrentSession(): Session? {
+        val currentId = _currentSessionId.value ?: return null
+        return getSession(currentId)
+    }
+
     /**
      * Set the current active session
      */
@@ -175,6 +182,21 @@ class SessionManager(
         }
         refreshSessions()
         _currentSessionId.value = null
+    }
+
+    private suspend fun cleanupEmptySessions() {
+        val sessions = repository.getSessions()
+        sessions
+            .filter { it.stats.messageCount <= 0L }
+            .forEach { session ->
+                repository.deleteSession(session.id)
+                repository.deleteStoryById(session.id)
+            }
+    }
+
+    private suspend fun createDraftSession() {
+        if (_currentSessionId.value != null) return
+        createSession(DEFAULT_TITLE)
     }
 
     private suspend fun ensureStoryForSession(session: Session, timestamp: Instant) {

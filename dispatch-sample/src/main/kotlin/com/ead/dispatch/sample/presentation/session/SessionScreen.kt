@@ -34,7 +34,9 @@ fun SessionScreen(
     val isLoading = viewModel.isLoading.collectAsState()
 
     // Convert sessions to SessionOptions
-    val sessionOptions = sessions.value.map { session ->
+    val sessionOptions = sessions.value
+        .filter { it.messageCount > 0 }
+        .map { session ->
         SessionOption(
             id = session.id,
             title = session.title,

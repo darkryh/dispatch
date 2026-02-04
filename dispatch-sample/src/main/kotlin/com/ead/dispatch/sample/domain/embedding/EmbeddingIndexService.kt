@@ -8,6 +8,8 @@ import ai.koog.rag.vector.JVMTextDocumentEmbedder
 import com.ead.dispatch.sample.domain.Pathing
 import com.ead.dispatch.sample.domain.agents.chat_agent.ChatAgentEmbedder
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
@@ -27,22 +29,29 @@ class EmbeddingIndexService(
     private val storyRoot = root.resolve("embeddings/story")
 
     private val storageCache = mutableMapOf<String, EmbeddingBasedDocumentStorage<Path>>()
+    private val storeLocks = mutableMapOf<String, Mutex>()
 
     suspend fun store(mode: EmbeddingMode, sessionId: String, text: String): String? {
         if (!enabled) return null
         val normalized = normalize(text)
         if (normalized.isBlank()) return null
-        val storage = storageFor(mode, sessionId)
-        val tempFile = writeTempDocument(storageRoot(mode, sessionId), normalized)
-        return try {
-            storage.store(tempFile, Unit)
-        } finally {
+        val key = "${mode.name}:$sessionId"
+        val lock = synchronized(storeLocks) {
+            storeLocks.getOrPut(key) { Mutex() }
+        }
+        return lock.withLock {
+            val storage = storageFor(mode, sessionId)
+            val tempFile = writeTempDocument(storageRoot(mode, sessionId), normalized)
             try {
-                withContext(Dispatchers.IO) {
-                    Files.deleteIfExists(tempFile)
+                storage.store(tempFile, Unit)
+            } finally {
+                try {
+                    withContext(Dispatchers.IO) {
+                        Files.deleteIfExists(tempFile)
+                    }
+                } catch (_: Exception) {
+                    // Best-effort cleanup; stored copy lives in storage root.
                 }
-            } catch (_: Exception) {
-                // Best-effort cleanup; stored copy lives in storage root.
             }
         }
     }

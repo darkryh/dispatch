@@ -271,6 +271,12 @@ class ChatViewModel(
             return existing
         }
 
+        val current = sessionManager.getCurrentSession()
+        if (current != null) {
+            _session.value = current
+            return current
+        }
+
         val session = sessionManager.createSession(title = firstMessagePreview)
         _session.value = session
         return session

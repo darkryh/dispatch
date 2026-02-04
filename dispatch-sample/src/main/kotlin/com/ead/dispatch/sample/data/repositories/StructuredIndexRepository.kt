@@ -424,6 +424,14 @@ class StructuredIndexRepository(
         queries.deleteSession(sessionId)
     }
 
+    suspend fun deleteStoryById(storyId: String) = query {
+        database.transaction {
+            queries.deleteStoryStyleRefsByStoryId(storyId)
+            queries.deleteStoryEmotionalBeatsByStoryId(storyId)
+            queries.deleteStory(storyId)
+        }
+    }
+
     suspend fun upsertStory(record: StoryRecord) {
         query {
             database.transaction {
