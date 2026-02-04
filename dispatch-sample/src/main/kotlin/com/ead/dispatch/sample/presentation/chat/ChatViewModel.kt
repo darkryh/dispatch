@@ -13,14 +13,25 @@ import com.ead.dispatch.sample.domain.SessionManager
 import com.ead.dispatch.sample.domain.Storage
 import com.ead.dispatch.sample.domain.agents.ChatAgent
 import com.ead.dispatch.sample.domain.agents.chat_agent.ChatRequest
+import com.ead.dispatch.sample.domain.entity.EntityOptionType
 import com.ead.dispatch.sample.domain.model.message.CliMessage
 import com.ead.dispatch.sample.domain.model.message.CliMessageRole
 import com.ead.dispatch.sample.domain.model.session.Session
 import com.ead.dispatch.sample.domain.model.story.WriterMode
 import com.ead.dispatch.sample.domain.util.extension.toCliMessage
+import com.ead.dispatch.sample.navigation.ArcListRoute
 import com.ead.dispatch.sample.navigation.ChatRoute
-import com.ead.dispatch.sample.navigation.EntityOptionRoute
+import com.ead.dispatch.sample.navigation.CharacterListRoute
+import com.ead.dispatch.sample.navigation.CultureListRoute
+import com.ead.dispatch.sample.navigation.EventListRoute
+import com.ead.dispatch.sample.navigation.LocationFeatureListRoute
+import com.ead.dispatch.sample.navigation.LocationListRoute
+import com.ead.dispatch.sample.navigation.OrganizationListRoute
+import com.ead.dispatch.sample.navigation.RelationshipListRoute
 import com.ead.dispatch.sample.navigation.StoryChatRoute
+import com.ead.dispatch.sample.navigation.TimelineListRoute
+import com.ead.dispatch.sample.navigation.WorldRuleListRoute
+import com.ead.dispatch.sample.navigation.ArtifactListRoute
 import com.ead.dispatch.sample.presentation.chat.event.ChatEvent
 import com.ead.dispatch.sample.presentation.commands.CommandAction
 import com.ead.dispatch.viewmodel.ViewModel
@@ -144,12 +155,7 @@ class ChatViewModel(
                 _messages.value = emptyList()
             }
             is CommandAction.OpenEntityList -> {
-                backStack.navigate(
-                    EntityOptionRoute(
-                        type = commandAction.type.id,
-                        storyId = _session.value?.id,
-                    )
-                )
+                openEntityList(backStack, commandAction.type, _session.value?.id)
             }
             CommandAction.OpenStoryChat -> {
                 backStack.navigate(StoryChatRoute(storyId = _session.value?.id))
@@ -262,6 +268,31 @@ class ChatViewModel(
             activeStreamJob = job
 
             onEvent(ChatEvent.OnClearTextField)
+        }
+    }
+
+    private fun openEntityList(
+        backStack: NavBackStack<NavKey>,
+        type: EntityOptionType,
+        storyId: String?,
+    ) {
+        when (type) {
+            EntityOptionType.CHARACTERS -> backStack.navigate(CharacterListRoute(storyId = storyId))
+            EntityOptionType.LOCATIONS -> backStack.navigate(LocationListRoute(storyId = storyId))
+            EntityOptionType.ARCS -> backStack.navigate(ArcListRoute(storyId = storyId))
+            EntityOptionType.WORLD_RULES -> backStack.navigate(WorldRuleListRoute(storyId = storyId))
+            EntityOptionType.CULTURES -> backStack.navigate(CultureListRoute(storyId = storyId))
+            EntityOptionType.EVENTS -> backStack.navigate(EventListRoute(storyId = storyId))
+            EntityOptionType.ORGANIZATIONS -> backStack.navigate(OrganizationListRoute(storyId = storyId))
+            EntityOptionType.RELATIONSHIPS -> backStack.navigate(RelationshipListRoute(storyId = storyId))
+            EntityOptionType.LOCATION_FEATURES -> backStack.navigate(LocationFeatureListRoute(storyId = storyId))
+            EntityOptionType.ARTIFACTS -> backStack.navigate(ArtifactListRoute(storyId = storyId))
+            EntityOptionType.TIMELINE -> backStack.navigate(TimelineListRoute(storyId = storyId))
+            EntityOptionType.VOLUMES,
+            EntityOptionType.CHAPTERS,
+            EntityOptionType.SCENES -> {
+                // Story mode lists not implemented yet.
+            }
         }
     }
 

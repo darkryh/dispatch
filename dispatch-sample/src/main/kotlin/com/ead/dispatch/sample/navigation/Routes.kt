@@ -25,15 +25,74 @@ data class CharacterRoute(
 ) : NavKey
 
 @Serializable
-@SerialName("story-chat")
-data class StoryChatRoute(
+@SerialName("characters-list")
+data class CharacterListRoute(
     val storyId: String? = null,
 ) : NavKey
 
 @Serializable
-@SerialName("entity-list")
-data class EntityOptionRoute(
-    val type: String = EntityOptionType.CHARACTERS.id,
+@SerialName("locations-list")
+data class LocationListRoute(
+    val storyId: String? = null,
+) : NavKey
+
+@Serializable
+@SerialName("arcs-list")
+data class ArcListRoute(
+    val storyId: String? = null,
+) : NavKey
+
+@Serializable
+@SerialName("world-rules-list")
+data class WorldRuleListRoute(
+    val storyId: String? = null,
+) : NavKey
+
+@Serializable
+@SerialName("cultures-list")
+data class CultureListRoute(
+    val storyId: String? = null,
+) : NavKey
+
+@Serializable
+@SerialName("events-list")
+data class EventListRoute(
+    val storyId: String? = null,
+) : NavKey
+
+@Serializable
+@SerialName("organizations-list")
+data class OrganizationListRoute(
+    val storyId: String? = null,
+) : NavKey
+
+@Serializable
+@SerialName("relationships-list")
+data class RelationshipListRoute(
+    val storyId: String? = null,
+) : NavKey
+
+@Serializable
+@SerialName("location-features-list")
+data class LocationFeatureListRoute(
+    val storyId: String? = null,
+) : NavKey
+
+@Serializable
+@SerialName("artifacts-list")
+data class ArtifactListRoute(
+    val storyId: String? = null,
+) : NavKey
+
+@Serializable
+@SerialName("timeline-list")
+data class TimelineListRoute(
+    val storyId: String? = null,
+) : NavKey
+
+@Serializable
+@SerialName("story-chat")
+data class StoryChatRoute(
     val storyId: String? = null,
 ) : NavKey
 

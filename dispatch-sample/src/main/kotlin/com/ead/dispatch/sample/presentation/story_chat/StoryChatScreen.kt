@@ -16,8 +16,11 @@ import com.ead.dispatch.runtime.LocalKeyboardInterceptor
 import com.ead.dispatch.runtime.LocalTerminalWidth
 import com.ead.dispatch.runtime.LocalTheme
 import com.ead.dispatch.sample.domain.entity.EntityOptionType
-import com.ead.dispatch.sample.navigation.EntityOptionRoute
+import com.ead.dispatch.sample.navigation.ArcListRoute
+import com.ead.dispatch.sample.navigation.CharacterListRoute
+import com.ead.dispatch.sample.navigation.LocationListRoute
 import com.ead.dispatch.sample.navigation.StoryChatRoute
+import com.ead.dispatch.sample.navigation.WorldRuleListRoute
 import com.ead.dispatch.sample.data.db.entities.StoryRecord
 import com.ead.dispatch.state.getValue
 import com.ead.dispatch.viewmodel.collectAsState
@@ -44,19 +47,19 @@ fun StoryChatScreen(backStack: NavBackStack<NavKey>, route: StoryChatRoute) {
                 true
             }
             "c" -> {
-                backStack.navigate(EntityOptionRoute(type = EntityOptionType.CHARACTERS.id, storyId = route.storyId))
+                backStack.navigate(CharacterListRoute(storyId = route.storyId))
                 true
             }
             "l" -> {
-                backStack.navigate(EntityOptionRoute(type = EntityOptionType.LOCATIONS.id, storyId = route.storyId))
+                backStack.navigate(LocationListRoute(storyId = route.storyId))
                 true
             }
             "a" -> {
-                backStack.navigate(EntityOptionRoute(type = EntityOptionType.ARCS.id, storyId = route.storyId))
+                backStack.navigate(ArcListRoute(storyId = route.storyId))
                 true
             }
             "w" -> {
-                backStack.navigate(EntityOptionRoute(type = EntityOptionType.WORLD_RULES.id, storyId = route.storyId))
+                backStack.navigate(WorldRuleListRoute(storyId = route.storyId))
                 true
             }
             else -> false
