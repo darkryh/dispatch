@@ -117,7 +117,7 @@ fun ChatScreen(backStack: NavBackStack<NavKey>) {
                             EntityOptionType.VOLUMES,
                             EntityOptionType.CHAPTERS,
                             EntityOptionType.SCENES,
-                        ),
+                        )
                     )
                 }
                 Text(

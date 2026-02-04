@@ -78,10 +78,16 @@ fun <T> rememberState(key: Any?, value: T): MutableState<T> {
  * Access the current [DispatchScope] in a composable.
  */
 @Dispatchable
-fun dispatchScope(): DispatchScope {
-    return LocalDispatchScope.current
-        ?: error("No DispatchScope provided. Make sure you're inside a DispatchApplication.")
-}
+fun dispatchScope(): DispatchScope = LocalDispatchScope.current
+
+@Dispatchable
+fun dispatchArgs(): DispatchArgs = LocalDispatchArgs.current
+
+@Dispatchable
+fun dispatchContext(): DispatchContext = LocalDispatchContext.current
+
+@Dispatchable
+fun dispatchConfig(): DispatchConfig = LocalDispatchConfig.current
 
 /** Access the current terminal width in a composable. */
 @Dispatchable

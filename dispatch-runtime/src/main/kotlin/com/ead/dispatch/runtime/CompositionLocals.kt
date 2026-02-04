@@ -23,7 +23,30 @@ val LocalSavedStateHandle = compositionLocalOf<SavedStateHandle?> { null }
 /**
  * CompositionLocal providing the current [DispatchScope].
  */
-val LocalDispatchScope = compositionLocalOf<DispatchScope?> { null }
+val LocalDispatchScope = compositionLocalOf<DispatchScope> {
+    error("No DispatchScope provided. Ensure you're inside a DispatchApplication.")
+}
+
+/**
+ * CompositionLocal providing parsed arguments and flags.
+ */
+val LocalDispatchArgs = compositionLocalOf<DispatchArgs> {
+    error("No DispatchArgs provided. Ensure you're inside a DispatchApplication.")
+}
+
+/**
+ * CompositionLocal providing the combined dispatch context.
+ */
+val LocalDispatchContext = compositionLocalOf<DispatchContext> {
+    error("No DispatchContext provided. Ensure you're inside a DispatchApplication.")
+}
+
+/**
+ * CompositionLocal providing the dispatch configuration.
+ */
+val LocalDispatchConfig = compositionLocalOf<DispatchConfig> {
+    error("No DispatchConfig provided. Ensure you're inside a DispatchApplication.")
+}
 
 /**
  * CompositionLocal providing whether the current element is focused.

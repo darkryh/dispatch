@@ -2,6 +2,7 @@ package com.ead.dispatch.navigation
 
 import com.ead.dispatch.annotation.Dispatchable
 import com.ead.dispatch.layout.Box
+import com.ead.dispatch.lifecycle.LifecycleState
 import com.ead.dispatch.modifier.Modifier
 import com.ead.dispatch.runtime.Composer
 import com.ead.dispatch.runtime.CompositionLocalProvider
@@ -55,12 +56,12 @@ fun <T : NavKey> NavDisplay(
     decoratedEntries.forEach { entry ->
         val desired =
             if (entry === currentEntry) {
-                com.ead.dispatch.lifecycle.LifecycleState.STARTED
+                LifecycleState.STARTED
             } else {
-                com.ead.dispatch.lifecycle.LifecycleState.STOPPED
+                LifecycleState.STOPPED
             }
         if (entry.lifecycleRegistry.currentState != desired &&
-            entry.lifecycleRegistry.currentState != com.ead.dispatch.lifecycle.LifecycleState.DESTROYED
+            entry.lifecycleRegistry.currentState != LifecycleState.DESTROYED
         ) {
             entry.lifecycleRegistry.moveTo(desired)
         }

@@ -52,8 +52,10 @@ class DispatchConfig {
     var windowTitle: String? = null
     var enforceWindowTitle: Boolean = true
     var mouseTracking: MouseTracking = MouseTracking.Off
-    var ctrlCExitRequiresDoublePress: Boolean = true
-    var ctrlCExitTimeout: Duration = 1500.milliseconds
+    var requireExitDoublePress: Boolean = true
+    var exitTimeoutOnDoublePress: Duration = 1500.milliseconds
+    var exitKeyBindings: List<ExitKeyBinding> = listOf(ExitKeyBinding.ctrl("C"))
+    var exitKeyPredicate: ((KeyboardEvent) -> Boolean)? = null
     var captureSystemOutput: Boolean = true
 
     val flags = mutableMapOf<String, FlagDefinition>()
@@ -71,6 +73,14 @@ class DispatchConfig {
         required: Boolean = false
     ) {
         arguments[name] = ArgumentDefinition(name, shortName, description, default, required)
+    }
+
+    fun exitKeys(vararg bindings: ExitKeyBinding) {
+        exitKeyBindings = bindings.toList()
+    }
+
+    fun exitKeyPredicate(predicate: (KeyboardEvent) -> Boolean) {
+        exitKeyPredicate = predicate
     }
 }
 

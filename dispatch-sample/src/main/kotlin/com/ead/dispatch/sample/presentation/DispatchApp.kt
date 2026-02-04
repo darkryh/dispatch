@@ -7,7 +7,7 @@ import com.ead.dispatch.navigation.NavDisplay
 import com.ead.dispatch.navigation.entryProvider
 import com.ead.dispatch.navigation.rememberNavBackStack
 import com.ead.dispatch.runtime.LaunchedEffect
-import com.ead.dispatch.runtime.dispatchScope
+import com.ead.dispatch.runtime.LocalDispatchArgs
 import com.ead.dispatch.sample.domain.embedding.EmbeddingReindexer
 import com.ead.dispatch.sample.navigation.*
 import com.ead.dispatch.sample.presentation.characters.CharacterScreen
@@ -20,16 +20,13 @@ import com.ead.dispatch.sample.presentation.story_chat.StoryChatScreen
 fun DispatchSampleApp() {
     val embeddingReindexer by inject<EmbeddingReindexer>()
 
-    val scope = dispatchScope()
-    val startArg = scope.getArgument("start")?.lowercase()
+    val args = LocalDispatchArgs.current
+    val startArg = args.getArgument("start")?.lowercase()
 
-    LaunchedEffect(Unit) {
-        embeddingReindexer.startPeriodic()
-    }
-
+    LaunchedEffect(Unit) { embeddingReindexer.startPeriodic() }
 
     val startDestination = when {
-        scope.hasFlag("resume") || startArg == "resume" || startArg == "session" -> {
+        args.hasFlag("resume") || startArg == "resume" || startArg == "session" -> {
             SessionRoute()
         }
         else -> {

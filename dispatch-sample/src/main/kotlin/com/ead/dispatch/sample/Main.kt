@@ -5,6 +5,7 @@ import com.ead.dispatch.theme.DispatchTheme
 import com.ead.dispatch.koin.koin
 import com.ead.dispatch.sample.di.module
 import com.ead.dispatch.sample.presentation.DispatchSampleApp
+import com.ead.dispatch.runtime.ExitKeyBinding
 import kotlin.time.Duration.Companion.milliseconds
 
 fun main(args: Array<String>) = DispatchApplication(args) {
@@ -19,8 +20,9 @@ fun main(args: Array<String>) = DispatchApplication(args) {
         argument(name = "start", shortName = 's', description = "Start screen route")
         flag(name = "resume", shortName = 'r', description = "Start on session selector screen")
 
-        ctrlCExitRequiresDoublePress = true
-        ctrlCExitTimeout = 1500.milliseconds
+        exitKeys(ExitKeyBinding.ctrl("C"),)
+        requireExitDoublePress = true
+        exitTimeoutOnDoublePress = 1500.milliseconds
 
         koin {
             modules(module)

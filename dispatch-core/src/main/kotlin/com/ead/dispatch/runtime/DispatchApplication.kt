@@ -65,6 +65,7 @@ internal class DispatchApplicationBuilder(
     private val rootMeasurable = AtomicReference<Measurable?>(null)
     private val parsedFlags = mutableSetOf<String>()
     private val parsedArguments = mutableMapOf<String, String>()
+    private var dispatchArgs = DispatchArgs(emptyList(), emptySet(), emptyMap())
 
     private val keyEventHandlers = CopyOnWriteArrayList<(KeyboardEvent) -> Unit>()
     @Volatile
@@ -74,7 +75,7 @@ internal class DispatchApplicationBuilder(
     private val keyboardInterceptor = KeyboardInterceptor()
     private val focusRegistry = FocusRegistry()
     private val exitPromptState = ExitPromptState()
-    private var ctrlCResetJob: Job? = null
+    private var exitResetJob: Job? = null
     private var lastTerminalWidth: Int = 0
     private var lastTerminalHeight: Int = 0
     private var pendingResizeReset: Boolean = false
@@ -154,8 +155,8 @@ internal class DispatchApplicationBuilder(
                         consecutiveErrors = 0
                         when (event) {
                             is KeyboardEvent -> {
-                                if (event.isCtrlC) {
-                                    if (!config.ctrlCExitRequiresDoublePress) {
+                                if (shouldHandleExit(event)) {
+                                    if (!config.requireExitDoublePress) {
                                         exitRequested = true
                                         return@launch
                                     }
@@ -166,9 +167,9 @@ internal class DispatchApplicationBuilder(
                                     }
 
                                     exitPromptState.isArmed = true
-                                    ctrlCResetJob?.cancel()
-                                    ctrlCResetJob = appScope.launch {
-                                        delay(config.ctrlCExitTimeout)
+                                    exitResetJob?.cancel()
+                                    exitResetJob = appScope.launch {
+                                        delay(config.exitTimeoutOnDoublePress)
                                         exitPromptState.isArmed = false
                                         recomposer.requestRecomposition()
                                     }
@@ -243,6 +244,9 @@ internal class DispatchApplicationBuilder(
                     try {
                         CompositionLocalProvider(
                             LocalDispatchScope provides dispatchScopeInstance,
+                            LocalDispatchArgs provides dispatchArgs,
+                            LocalDispatchConfig provides config,
+                            LocalDispatchContext provides DispatchContext(dispatchScopeInstance, dispatchArgs, config),
                             LocalTerminal provides t,
                             LocalTerminalWidth provides lastTerminalWidth.coerceAtLeast(40),
                             LocalTerminalHeight provides lastTerminalHeight.coerceAtLeast(10),
@@ -313,6 +317,21 @@ internal class DispatchApplicationBuilder(
         parsedFlags.addAll(parsed.flags)
         parsedArguments.clear()
         parsedArguments.putAll(parsed.arguments)
+        dispatchArgs = DispatchArgs(
+            rawArgs = args.toList(),
+            flags = parsed.flags.toSet(),
+            arguments = parsed.arguments.toMap(),
+        )
+    }
+
+    private fun shouldHandleExit(event: KeyboardEvent): Boolean {
+        val predicate = config.exitKeyPredicate
+        if (predicate != null) {
+            return predicate(event)
+        }
+        val bindings = config.exitKeyBindings
+        if (bindings.isEmpty()) return false
+        return bindings.any { it.matches(event) }
     }
 
     private fun updateTerminalSizeIfNeeded() {

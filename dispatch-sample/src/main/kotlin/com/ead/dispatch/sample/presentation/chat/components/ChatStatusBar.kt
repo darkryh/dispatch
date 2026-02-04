@@ -2,6 +2,7 @@ package com.ead.dispatch.sample.presentation.chat.components
 
 import com.ead.dispatch.annotation.Dispatchable
 import com.ead.dispatch.layout.Row
+import com.ead.dispatch.runtime.LocalDispatchConfig
 import com.ead.dispatch.runtime.LocalExitPromptState
 import com.ead.dispatch.sample.domain.model.story.WriterMode
 import com.ead.dispatch.widget.Text
@@ -18,6 +19,7 @@ fun ChatStatusBar(
     writerMode: WriterMode,
 ) {
     val exitPromptState = LocalExitPromptState.current
+    val dispatchConfig = LocalDispatchConfig.current
 
     // Mode indicator colors
     val modeColor = when (writerMode) {
@@ -32,8 +34,12 @@ fun ChatStatusBar(
 
 
     if (exitPromptState.isArmed) {
+        val exitLabel = dispatchConfig.exitKeyBindings
+            .takeIf { it.isNotEmpty() }
+            ?.joinToString(" or ") { it.label() }
+            ?: "Ctrl+C"
         Text(
-            text = "  Press Ctrl+C again to exit"
+            text = "  Press $exitLabel again to exit"
         )
     }
     else {
