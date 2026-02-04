@@ -13,9 +13,11 @@ import com.ead.dispatch.navigation.navigate
 import com.ead.dispatch.navigation.popBackStack
 import com.ead.dispatch.runtime.DisposableEffect
 import com.ead.dispatch.runtime.LocalKeyboardInterceptor
+import com.ead.dispatch.runtime.LocalTerminalHeight
 import com.ead.dispatch.runtime.LocalTheme
 import com.ead.dispatch.sample.navigation.CharacterListRoute
 import com.ead.dispatch.sample.navigation.CharacterRoute
+import com.ead.dispatch.sample.presentation.library.calculateVisibleCount
 import com.ead.dispatch.sample.presentation.library.model.ListEntry
 import com.ead.dispatch.state.getValue
 import com.ead.dispatch.state.mutableStateOf
@@ -24,7 +26,7 @@ import com.ead.dispatch.state.setValue
 import com.ead.dispatch.viewmodel.collectAsState
 import com.ead.dispatch.viewmodel.viewModel
 import com.ead.dispatch.widget.LazyColumn
-import com.ead.dispatch.widget.SelectableList
+import com.ead.dispatch.widget.SelectableWindowedList
 import com.ead.dispatch.widget.SelectableListStyles
 import com.ead.dispatch.widget.Text
 import com.ead.dispatch.widget.TextOverflow
@@ -88,6 +90,15 @@ fun CharacterListScreen(backStack: NavBackStack<NavKey>, route: CharacterListRou
 
     val titleStyle = rgb("#7ADBFD") + TextStyle(bold = true)
     val metaStyle = theme.muted
+    val terminalHeight = LocalTerminalHeight.current
+    val itemLines = 3
+    val itemSpacing = 1
+    val visibleCount = calculateVisibleCount(
+        terminalHeight = terminalHeight,
+        reservedLines = 5,
+        itemLines = itemLines,
+        itemSpacing = itemSpacing,
+    )
 
     LazyColumn(modifier = Modifier.fillMaxWidth()) {
         item { Spacer(Modifier.height(1)) }
@@ -123,14 +134,15 @@ fun CharacterListScreen(backStack: NavBackStack<NavKey>, route: CharacterListRou
         item {
             Row(modifier = Modifier.fillMaxWidth()) {
                 Spacer(Modifier.width(2))
-                SelectableList(
+                SelectableWindowedList(
                     items = state.items,
                     selectedIndex = selectedIndex,
+                    visibleCount = visibleCount,
                     styles = SelectableListStyles(
                         prefix = theme.muted,
                         selectedPrefix = theme.accent + TextStyle(bold = true),
                     ),
-                    itemSpacing = 1,
+                    itemSpacing = itemSpacing,
                 ) { entry, isSelected ->
                     when (entry) {
                         is ListEntry.Create -> {
