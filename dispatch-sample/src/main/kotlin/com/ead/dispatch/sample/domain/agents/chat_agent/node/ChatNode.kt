@@ -17,8 +17,10 @@ import com.ead.dispatch.sample.domain.agents.chat_agent.ChatRequest
 import com.ead.dispatch.sample.domain.agents.chat_agent.chatAgentPrompt
 import com.ead.dispatch.sample.domain.embedding.RagContextService
 import com.ead.dispatch.sample.domain.agents.chat_agent.util.saveCheckpointForHistory
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
@@ -46,13 +48,17 @@ private fun AIAgentGraphContextBase.setupAndStreamChatMode(
         val agentContext = this@setupAndStreamChatMode
         try {
             llm.writeSession {
-            val context = repository.getChatContextForAgent(request.storyId)
+            val context = withContext(Dispatchers.IO) {
+                repository.getChatContextForAgent(request.storyId)
+            }
 
             val ragQuery = request.text.trim()
-            val ragContext = ragContextService.getRagContextChunks(
-                storyId = request.storyId,
-                query = ragQuery,
-            )
+            val ragContext = withContext(Dispatchers.IO) {
+                ragContextService.getRagContextChunks(
+                    storyId = request.storyId,
+                    query = ragQuery,
+                )
+            }
 
             rewritePrompt { existing ->
                 val messageHistory = existing.messages.filterNot { it is Message.System }
