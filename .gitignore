@@ -10,5 +10,10 @@
 /dispatch-renderer/build/
 /dispatch-runtime/build/
 /dispatch-sample/build/
+/dispatch-update/build/
+/dispatch-update-apt/build/
+/dispatch-update-brew/build/
+/dispatch-update-github/build/
+/dispatch-update-scoop/build/
 /dispatch-viewmodel/build/
 /dispatch-widgets/build/

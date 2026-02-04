@@ -18,6 +18,7 @@ fun main(args: Array<String>) = DispatchApplication(args) {
         theme = DispatchTheme.Dark
 
         argument(name = "start", shortName = 's', description = "Start screen route")
+
         flag(name = "resume", shortName = 'r', description = "Start on session selector screen")
 
         exitKeys(ExitKeyBinding.ctrl("C"),)
