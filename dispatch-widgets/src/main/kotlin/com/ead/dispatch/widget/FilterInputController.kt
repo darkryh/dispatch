@@ -1,0 +1,215 @@
+package com.ead.dispatch.widget
+
+import com.ead.dispatch.annotation.Dispatchable
+import com.ead.dispatch.state.remember
+import com.github.ajalt.mordant.input.KeyboardEvent
+
+class FilterInputController(private val state: TextFieldState) {
+    fun handleKeyEvent(event: KeyboardEvent): Boolean {
+        when (event.key) {
+            "ArrowUp", "ArrowDown", "Enter", "Escape", "Esc", "Tab" -> return false
+        }
+
+        if (event.alt) return false
+
+        if (event.ctrl) {
+            return handleCtrlShortcut(event)
+        }
+
+        if (event.shift) {
+            when (event.key) {
+                "ArrowLeft" -> {
+                    updateSelection(delta = -1)
+                    return true
+                }
+                "ArrowRight" -> {
+                    updateSelection(delta = 1)
+                    return true
+                }
+                "Home" -> {
+                    updateSelectionTo(0)
+                    return true
+                }
+                "End" -> {
+                    updateSelectionTo(state.value.length)
+                    return true
+                }
+            }
+        }
+
+        return when (event.key) {
+            "Backspace" -> {
+                state.deleteBackward()
+                true
+            }
+            "Delete" -> {
+                state.deleteForward()
+                true
+            }
+            "ArrowLeft" -> {
+                state.cursorPosition = (state.cursorPosition - 1).coerceAtLeast(0)
+                state.clearSelection()
+                true
+            }
+            "ArrowRight" -> {
+                state.cursorPosition = (state.cursorPosition + 1).coerceAtMost(state.value.length)
+                state.clearSelection()
+                true
+            }
+            "Home" -> {
+                state.cursorPosition = 0
+                state.clearSelection()
+                true
+            }
+            "End" -> {
+                state.cursorPosition = state.value.length
+                state.clearSelection()
+                true
+            }
+            else -> {
+                val text = textFromKeyEvent(event)
+                if (!text.isNullOrEmpty()) {
+                    if (state.hasSelection()) {
+                        state.deleteSelection()
+                    }
+                    state.insert(text)
+                    true
+                } else {
+                    false
+                }
+            }
+        }
+    }
+
+    private fun handleCtrlShortcut(event: KeyboardEvent): Boolean {
+        return when (event.key.lowercase()) {
+            "a" -> {
+                state.selectionStart = 0
+                state.selectionEnd = state.value.length
+                state.cursorPosition = state.value.length
+                true
+            }
+            "backspace" -> {
+                deleteWordBeforeCursor()
+                true
+            }
+            "delete" -> {
+                deleteWordAfterCursor()
+                true
+            }
+            else -> false
+        }
+    }
+
+    private fun updateSelection(delta: Int) {
+        val anchor = state.selectionStart ?: state.cursorPosition
+        val newPos = (state.cursorPosition + delta).coerceIn(0, state.value.length)
+        state.cursorPosition = newPos
+        state.selectionStart = anchor
+        state.selectionEnd = newPos
+        if (!state.hasSelection()) {
+            state.clearSelection()
+        }
+    }
+
+    private fun updateSelectionTo(target: Int) {
+        val anchor = state.selectionStart ?: state.cursorPosition
+        val newPos = target.coerceIn(0, state.value.length)
+        state.cursorPosition = newPos
+        state.selectionStart = anchor
+        state.selectionEnd = newPos
+        if (!state.hasSelection()) {
+            state.clearSelection()
+        }
+    }
+
+    private fun deleteWordBeforeCursor() {
+        if (state.hasSelection()) {
+            state.deleteSelection()
+            return
+        }
+        val value = state.value
+        var pos = state.cursorPosition.coerceIn(0, value.length)
+        if (pos == 0) return
+        while (pos > 0 && value[pos - 1].isWhitespace()) pos--
+        while (pos > 0 && !value[pos - 1].isWhitespace()) pos--
+        val before = value.substring(0, pos)
+        val after = value.substring(state.cursorPosition)
+        state.value = before + after
+        state.cursorPosition = pos
+        state.clearSelection()
+    }
+
+    private fun deleteWordAfterCursor() {
+        if (state.hasSelection()) {
+            state.deleteSelection()
+            return
+        }
+        val value = state.value
+        var pos = state.cursorPosition.coerceIn(0, value.length)
+        if (pos >= value.length) return
+        while (pos < value.length && value[pos].isWhitespace()) pos++
+        while (pos < value.length && !value[pos].isWhitespace()) pos++
+        val before = value.substring(0, state.cursorPosition)
+        val after = value.substring(pos)
+        state.value = before + after
+        state.clearSelection()
+    }
+}
+
+@Dispatchable
+fun rememberFilterInputController(state: TextFieldState): FilterInputController {
+    return remember(state) { FilterInputController(state) }
+}
+
+private fun textFromKeyEvent(event: KeyboardEvent): String? {
+    if (event.ctrl || event.alt) return null
+    val key = event.key
+    if (key.isEmpty()) return null
+    if (key == "Space") return " "
+    if (key in NON_TEXT_KEYS) return null
+    if (isFunctionKey(key)) return null
+    val normalized = key.replace("\r\n", "\n").replace('\r', '\n')
+    if (normalized.any { it.isISOControl() && it != '\n' && it != '\t' }) return null
+    return normalized.replace('\n', ' ').replace('\t', ' ')
+}
+
+private fun isFunctionKey(key: String): Boolean {
+    if (key.length < 2 || key[0] != 'F') return false
+    return key.drop(1).all { it.isDigit() }
+}
+
+private val NON_TEXT_KEYS = setOf(
+    "ArrowDown",
+    "ArrowLeft",
+    "ArrowRight",
+    "ArrowUp",
+    "Alt",
+    "Backspace",
+    "CapsLock",
+    "Clear",
+    "Compose",
+    "Control",
+    "Dead",
+    "Delete",
+    "End",
+    "Enter",
+    "Escape",
+    "Home",
+    "Insert",
+    "Meta",
+    "NumLock",
+    "PageDown",
+    "PageUp",
+    "PasteEnd",
+    "PasteStart",
+    "Pause",
+    "PrintScreen",
+    "Process",
+    "ScrollLock",
+    "Shift",
+    "Tab",
+    "Unidentified",
+    "Up",
+    "Down",
+)

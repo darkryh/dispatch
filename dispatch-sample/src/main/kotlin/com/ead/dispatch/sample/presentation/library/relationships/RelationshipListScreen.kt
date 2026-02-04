@@ -18,7 +18,11 @@ import com.ead.dispatch.runtime.LocalTheme
 import com.ead.dispatch.sample.navigation.EntityEditorRoute
 import com.ead.dispatch.sample.navigation.RelationshipListRoute
 import com.ead.dispatch.sample.presentation.library.calculateVisibleCount
+import com.ead.dispatch.sample.presentation.library.filterEntries
+import com.ead.dispatch.sample.presentation.library.matchesQuery
+import com.ead.dispatch.sample.presentation.library.defaultSelectionIndex
 import com.ead.dispatch.sample.presentation.library.model.ListEntry
+import com.ead.dispatch.sample.presentation.library.ListFilterBar
 import com.ead.dispatch.state.getValue
 import com.ead.dispatch.state.mutableStateOf
 import com.ead.dispatch.state.remember
@@ -30,24 +34,42 @@ import com.ead.dispatch.widget.SelectableWindowedList
 import com.ead.dispatch.widget.SelectableListStyles
 import com.ead.dispatch.widget.Text
 import com.ead.dispatch.widget.TextOverflow
+import com.ead.dispatch.widget.rememberTextFieldState
+import com.ead.dispatch.widget.rememberFilterInputController
 import com.github.ajalt.mordant.rendering.TextColors.Companion.rgb
 import com.github.ajalt.mordant.rendering.TextStyle
 
 @Dispatchable
-fun RelationshipListScreen(backStack: NavBackStack<NavKey>, route: RelationshipListRoute) {
+fun RelationshipListScreen(
+    backStack: NavBackStack<NavKey>,
+    route: RelationshipListRoute
+) {
     val theme = LocalTheme.current
     val keyboardInterceptor = LocalKeyboardInterceptor.current
     val viewModel = viewModel<RelationshipListViewModel>()
     val state by viewModel.state.collectAsState()
+    val filterField = rememberTextFieldState()
+    val filterController = rememberFilterInputController(filterField)
+    val filterQuery = filterField.value
+    val filteredEntries = remember(state.items, filterQuery) {
+        filterEntries(state.items, filterQuery) { item, query ->
+            matchesQuery(query, item.link, item.relation, item.notes)
+        }
+    }
 
     var selectedIndex by remember { mutableStateOf(0) }
-    val maxIndex = (state.items.size - 1).coerceAtLeast(0)
+    val maxIndex = (filteredEntries.size - 1).coerceAtLeast(0)
     if (selectedIndex > maxIndex) {
         selectedIndex = maxIndex
     }
-
+    val resetKey = filterQuery to filteredEntries.size
+    val lastResetKey = remember { mutableStateOf<Any?>(null) }
+    if (lastResetKey.value != resetKey) {
+        lastResetKey.value = resetKey
+        selectedIndex = defaultSelectionIndex(filteredEntries, filterQuery)
+    }
     fun openSelected() {
-        val entry = state.items.getOrNull(selectedIndex)
+        val entry = filteredEntries.getOrNull(selectedIndex)
         when (entry) {
             is ListEntry.Create -> {
                 backStack.navigate(EntityEditorRoute(type = "relationships", storyId = route.storyId, entityId = null))
@@ -59,8 +81,8 @@ fun RelationshipListScreen(backStack: NavBackStack<NavKey>, route: RelationshipL
         }
     }
 
-    DisposableEffect(state.items.size) {
-        val dispose = keyboardInterceptor.register { event ->
+    DisposableEffect(listOf(filteredEntries.size)) {
+        val dispose = keyboardInterceptor.register(priority = 1) { event ->
             when (event.key) {
                 "Escape", "Esc" -> {
                     backStack.popBackStack()
@@ -70,19 +92,29 @@ fun RelationshipListScreen(backStack: NavBackStack<NavKey>, route: RelationshipL
                     openSelected()
                     true
                 }
-                "ArrowUp" -> {
+                "ArrowUp", "Up" -> {
                     selectedIndex = (selectedIndex - 1).coerceAtLeast(0)
                     true
                 }
-                "ArrowDown" -> {
+                "ArrowDown", "Down" -> {
                     selectedIndex = (selectedIndex + 1).coerceAtMost(maxIndex)
                     true
                 }
                 "n", "N" -> {
-                    backStack.navigate(EntityEditorRoute(type = "relationships", storyId = route.storyId, entityId = null))
-                    true
+                    if (event.ctrl) {
+                        backStack.navigate(EntityEditorRoute(type = "relationships", storyId = route.storyId, entityId = null))
+                        true
+                    } else {
+                        false
+                    }
                 }
-                else -> false
+                else -> {
+                    if (filterController.handleKeyEvent(event)) {
+                        true
+                    } else {
+                        false
+                    }
+                }
             }
         }
         onDispose { dispose() }
@@ -90,12 +122,13 @@ fun RelationshipListScreen(backStack: NavBackStack<NavKey>, route: RelationshipL
 
     val titleStyle = rgb("#F2A7C6") + TextStyle(bold = true)
     val metaStyle = theme.muted
+    val selectedMetaStyle = theme.primary + TextStyle(bold = true)
     val terminalHeight = LocalTerminalHeight.current
     val itemLines = 3
     val itemSpacing = 1
     val visibleCount = calculateVisibleCount(
         terminalHeight = terminalHeight,
-        reservedLines = 5,
+        reservedLines = 7,
         itemLines = itemLines,
         itemSpacing = itemSpacing,
     )
@@ -107,6 +140,10 @@ fun RelationshipListScreen(backStack: NavBackStack<NavKey>, route: RelationshipL
                 Spacer(Modifier.width(2))
                 Text(text = "Relationships", style = theme.primary + TextStyle(bold = true))
             }
+        }
+        item { Spacer(Modifier.height(1)) }
+        item {
+            ListFilterBar(state = filterField, placeholder = "Filter by characters, type, or status...")
         }
         item { Spacer(Modifier.height(1)) }
 
@@ -135,7 +172,7 @@ fun RelationshipListScreen(backStack: NavBackStack<NavKey>, route: RelationshipL
             Row(modifier = Modifier.fillMaxWidth()) {
                 Spacer(Modifier.width(2))
                 SelectableWindowedList(
-                    items = state.items,
+                    items = filteredEntries,
                     selectedIndex = selectedIndex,
                     visibleCount = visibleCount,
                     styles = SelectableListStyles(
@@ -155,7 +192,7 @@ fun RelationshipListScreen(backStack: NavBackStack<NavKey>, route: RelationshipL
                             entry.subtitle?.let { subtitle ->
                                 Text(
                                     text = subtitle,
-                                    style = metaStyle,
+                                    style = if (isSelected) selectedMetaStyle else metaStyle,
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                 )
@@ -171,13 +208,13 @@ fun RelationshipListScreen(backStack: NavBackStack<NavKey>, route: RelationshipL
                             )
                             Text(
                                 text = item.relation,
-                                style = metaStyle,
+                                style = if (isSelected) selectedMetaStyle else metaStyle,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                             )
                             Text(
                                 text = item.notes,
-                                style = metaStyle,
+                                style = if (isSelected) selectedMetaStyle else metaStyle,
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                             )
@@ -192,7 +229,7 @@ fun RelationshipListScreen(backStack: NavBackStack<NavKey>, route: RelationshipL
             Row(modifier = Modifier.fillMaxWidth()) {
                 Spacer(Modifier.width(2))
                 Text(
-                    text = "Arrow keys to navigate · Enter open · N new · Esc back",
+                    text = "Arrow keys to navigate · Enter open · Ctrl+N new · Esc back · Type to filter",
                     style = theme.muted,
                 )
             }
