@@ -12,6 +12,7 @@ import com.ead.dispatch.sample.domain.embedding.EmbeddingReindexer
 import com.ead.dispatch.sample.navigation.*
 import com.ead.dispatch.sample.presentation.characters.CharacterScreen
 import com.ead.dispatch.sample.presentation.chat.ChatScreen
+import com.ead.dispatch.sample.presentation.entity_editor.EntityEditorScreen
 import com.ead.dispatch.sample.presentation.option.screen.EntityOptionScreen
 import com.ead.dispatch.sample.presentation.session.SessionScreen
 import com.ead.dispatch.sample.presentation.story_chat.StoryChatScreen
@@ -51,6 +52,9 @@ fun DispatchSampleApp() {
             }
             entry<EntityOptionRoute> { route ->
                 EntityOptionScreen(backStack, route)
+            }
+            entry<EntityEditorRoute> { route ->
+                EntityEditorScreen(backStack, route)
             }
             entry<StoryChatRoute> { route ->
                 StoryChatScreen(backStack, route)

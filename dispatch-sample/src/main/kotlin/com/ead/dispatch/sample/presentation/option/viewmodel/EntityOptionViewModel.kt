@@ -50,18 +50,10 @@ class EntityOptionViewModel(
                 runCatching {
                     val items = when (type) {
                         EntityOptionType.CHARACTERS -> {
-                            val existing = repository.getStoryCharacters(storyId).map { character ->
+                            repository.getStoryCharacters(storyId).map { character ->
                                 val roles = character.roles.takeIf { it.isNotEmpty() }?.joinToString() ?: "no roles"
                                 EntityPreview(character.id, character.name.ifBlank { "(unnamed)" }, "roles=$roles")
                             }
-                            listOf(
-                                EntityPreview(
-                                    id = "create",
-                                    title = "+ Create character",
-                                    subtitle = "Start a new character profile",
-                                    isCreate = true,
-                                )
-                            ) + existing
                         }
                         EntityOptionType.LOCATIONS -> {
                             repository.getLocationsByStory(storyId).map { location ->
@@ -147,7 +139,17 @@ class EntityOptionViewModel(
                             }
                         }
                     }
-                    _state.update { it.copy(isLoading = false, items = items) }
+                    val withCreate = if (type.supportsCreate) {
+                        val (title, subtitle) = if (type == EntityOptionType.CHARACTERS) {
+                            "+ Create character" to "Start a new character profile"
+                        } else {
+                            "+ New ${type.title}" to "Create a new ${type.title.lowercase()}"
+                        }
+                        listOf(EntityPreview(id = "create", title = title, subtitle = subtitle, isCreate = true)) + items
+                    } else {
+                        items
+                    }
+                    _state.update { it.copy(isLoading = false, items = withCreate) }
                 }.onFailure { error ->
                     _state.update {
                         it.copy(isLoading = false, error = error.message ?: "Failed to load list.")

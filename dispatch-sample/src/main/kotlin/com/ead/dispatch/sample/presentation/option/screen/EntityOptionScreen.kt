@@ -16,6 +16,7 @@ import com.ead.dispatch.runtime.LocalKeyboardInterceptor
 import com.ead.dispatch.runtime.LocalTheme
 import com.ead.dispatch.sample.domain.entity.EntityOptionType
 import com.ead.dispatch.sample.navigation.CharacterRoute
+import com.ead.dispatch.sample.navigation.EntityEditorRoute
 import com.ead.dispatch.sample.navigation.EntityOptionRoute
 import com.ead.dispatch.sample.presentation.components.ListOption
 import com.ead.dispatch.sample.presentation.components.ListSelector
@@ -59,9 +60,21 @@ fun EntityOptionScreen(backStack: NavBackStack<NavKey>, route: EntityOptionRoute
             }
             "Enter" -> {
                 val selected = state.items.getOrNull(selectedIndex)
-                if (entityType == EntityOptionType.CHARACTERS && selected != null) {
+                if (selected == null || entityType == null) {
+                    false
+                } else if (entityType == EntityOptionType.CHARACTERS) {
                     val characterId = if (selected.isCreate) null else selected.id
                     backStack.navigate(CharacterRoute(storyId = route.storyId, characterId = characterId))
+                    true
+                } else if (entityType.supportsCreate) {
+                    val entityId = if (selected.isCreate) null else selected.id
+                    backStack.navigate(
+                        EntityEditorRoute(
+                            type = entityType.id,
+                            storyId = route.storyId,
+                            entityId = entityId,
+                        )
+                    )
                     true
                 } else {
                     false
@@ -77,8 +90,19 @@ fun EntityOptionScreen(backStack: NavBackStack<NavKey>, route: EntityOptionRoute
                 true
             }
             "n", "N" -> {
-                if (entityType == EntityOptionType.CHARACTERS) {
+                if (entityType == null) {
+                    false
+                } else if (entityType == EntityOptionType.CHARACTERS) {
                     backStack.navigate(CharacterRoute(storyId = route.storyId, characterId = null))
+                    true
+                } else if (entityType.supportsCreate) {
+                    backStack.navigate(
+                        EntityEditorRoute(
+                            type = entityType.id,
+                            storyId = route.storyId,
+                            entityId = null,
+                        )
+                    )
                     true
                 } else {
                     false
@@ -174,10 +198,13 @@ fun EntityOptionScreen(backStack: NavBackStack<NavKey>, route: EntityOptionRoute
             Row(modifier = Modifier.fillMaxWidth()) {
                 Spacer(Modifier.width(2))
                 Text(
-                    text = if (entityType == EntityOptionType.CHARACTERS) {
-                        "Arrow keys to navigate · Enter open · N new · Esc back"
-                    } else {
-                        "Arrow keys to navigate · Esc to go back"
+                    text = when {
+                        entityType == EntityOptionType.CHARACTERS ->
+                            "Arrow keys to navigate · Enter open · N new · Esc back"
+                        entityType?.supportsCreate == true ->
+                            "Arrow keys to navigate · Enter open · N new · Esc back"
+                        else ->
+                            "Arrow keys to navigate · Esc to go back"
                     },
                     style = theme.muted,
                 )

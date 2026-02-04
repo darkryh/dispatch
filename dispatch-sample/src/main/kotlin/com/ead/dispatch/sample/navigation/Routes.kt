@@ -36,3 +36,11 @@ data class EntityOptionRoute(
     val type: String = EntityOptionType.CHARACTERS.id,
     val storyId: String? = null,
 ) : NavKey
+
+@Serializable
+@SerialName("entity-editor")
+data class EntityEditorRoute(
+    val type: String = EntityOptionType.LOCATIONS.id,
+    val storyId: String? = null,
+    val entityId: String? = null,
+) : NavKey
