@@ -7,6 +7,7 @@ import com.ead.dispatch.sample.data.repositories.StructuredIndexRepository
 import com.ead.dispatch.sample.domain.CommandManager
 import com.ead.dispatch.sample.domain.SessionManager
 import com.ead.dispatch.sample.domain.agents.ChatAgent
+import com.ead.dispatch.sample.domain.agents.character_agent.CharacterAgent
 import com.ead.dispatch.sample.domain.agents.chat_agent.ChatAgentEmbedder
 import com.ead.dispatch.sample.domain.embedding.EmbeddingIndexService
 import com.ead.dispatch.sample.domain.embedding.EmbeddingReindexer
@@ -33,6 +34,7 @@ val module = dispatchModule {
             ragContextService = get(),
         )
     }
+    single { CharacterAgent() }
 
     viewModel { (savedStateHandle: SavedStateHandle) ->
         ChatViewModel(
@@ -45,6 +47,7 @@ val module = dispatchModule {
     viewModel { (savedStateHandle: SavedStateHandle) ->
         CharacterViewModel(
             repository = get(),
+            characterAgent = get(),
             savedStateHandle = savedStateHandle,
         )
     }

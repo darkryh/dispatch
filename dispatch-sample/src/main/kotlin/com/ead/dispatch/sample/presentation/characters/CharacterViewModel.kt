@@ -3,10 +3,15 @@ package com.ead.dispatch.sample.presentation.characters
 import com.ead.dispatch.runtime.SavedStateHandle
 import com.ead.dispatch.sample.data.db.entities.StoryCharacterRecord
 import com.ead.dispatch.sample.data.repositories.StructuredIndexRepository
+import com.ead.dispatch.sample.domain.agents.character_agent.CharacterAgent
+import com.ead.dispatch.sample.domain.agents.character_agent.CharacterAIRequest
+import com.ead.dispatch.sample.domain.agents.character_agent.CharacterAIMode
+import com.ead.dispatch.sample.domain.agents.character_agent.CharacterStoryContext
 import com.ead.dispatch.sample.navigation.CharacterRoute
 import com.ead.dispatch.navigation.toRoute
 import com.ead.dispatch.sample.presentation.characters.event.CharacterEvent
 import com.ead.dispatch.sample.presentation.characters.state.CharacterUIState
+import com.ead.dispatch.sample.presentation.characters.util.CharacterDraftMapper
 import com.ead.dispatch.sample.presentation.characters.util.CharacterFieldKey
 import com.ead.dispatch.sample.presentation.characters.util.CharacterUIMode
 import com.ead.dispatch.sample.presentation.util.FieldValue
@@ -21,6 +26,7 @@ import java.util.UUID
 
 class CharacterViewModel(
     private val repository: StructuredIndexRepository,
+    private val characterAgent: CharacterAgent,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
@@ -81,6 +87,11 @@ class CharacterViewModel(
         when (event) {
             is CharacterEvent.OnToggleMode -> toggleMode()
             is CharacterEvent.OnFieldChanged -> updateField(event.key, event.text)
+            is CharacterEvent.OnGenerateAiDraft -> generateAiDraft(regenerate = false)
+            is CharacterEvent.OnRegenerateAiDraft -> generateAiDraft(regenerate = true)
+            is CharacterEvent.OnApplyAiDraft -> applyAiDraft()
+            is CharacterEvent.OnDiscardAiDraft -> discardAiDraft()
+            is CharacterEvent.OnToggleAiMode -> toggleAiMode()
             is CharacterEvent.OnSave -> saveCharacter()
             is CharacterEvent.OnRequestDelete -> requestDelete()
             is CharacterEvent.OnConfirmDelete -> confirmDelete()
@@ -100,7 +111,120 @@ class CharacterViewModel(
     private fun updateField(key: CharacterFieldKey, text: String) {
         _uiState.update { state ->
             val current = state.values[key] ?: FieldValue()
-            state.copy(values = state.values + (key to current.copy(text = text)))
+            val resetDraft = state.mode == CharacterUIMode.AUTOMATIC &&
+                (key == CharacterFieldKey.PROMPT || key == CharacterFieldKey.CONSTRAINTS)
+            state.copy(
+                values = state.values + (key to current.copy(text = text)),
+                aiDraft = if (resetDraft) null else state.aiDraft,
+                aiError = if (resetDraft) null else state.aiError,
+            )
+        }
+    }
+
+    private fun generateAiDraft(regenerate: Boolean) {
+        val state = _uiState.value
+        if (state.mode != CharacterUIMode.AUTOMATIC) return
+
+        val storyId = state.storyId?.trim().takeIf { !it.isNullOrEmpty() }
+        if (storyId == null) {
+            _uiState.update { it.copy(status = "Missing session id.") }
+            return
+        }
+
+        val prompt = state.values[CharacterFieldKey.PROMPT]?.text?.trim().orEmpty()
+        if (prompt.isBlank()) {
+            _uiState.update { it.copy(status = "Prompt is required for AI generation.") }
+            return
+        }
+
+        val constraints = state.values[CharacterFieldKey.CONSTRAINTS]?.text?.trim()?.takeIf { it.isNotEmpty() }
+
+        _uiState.update {
+            it.copy(
+                isGenerating = true,
+                aiError = null,
+                status = if (regenerate) "Regenerating character draft..." else "Generating character draft...",
+                aiDraft = if (regenerate) null else it.aiDraft,
+            )
+        }
+
+        viewModelScope.launch(Dispatchers.IO) {
+            runCatching {
+                val story = repository.getStoryById(storyId)
+                val existingNames = repository.getStoryCharacters(storyId)
+                    .map { it.name }
+                    .map { it.trim() }
+                    .filter { it.isNotBlank() }
+
+                val request = CharacterAIRequest(
+                    storyId = storyId,
+                    prompt = prompt,
+                    constraints = constraints,
+                    story = CharacterStoryContext.fromStory(story),
+                    existingCharacterNames = existingNames,
+                    mode = state.aiMode,
+                )
+
+                characterAgent.generateDraft(request)
+            }.onSuccess { draft ->
+                _uiState.update {
+                    it.copy(
+                        isGenerating = false,
+                        aiDraft = draft,
+                        aiError = null,
+                        status = "Draft ready. Apply to edit.",
+                    )
+                }
+            }.onFailure { error ->
+                _uiState.update {
+                    it.copy(
+                        isGenerating = false,
+                        aiDraft = null,
+                        aiError = error.message ?: "AI generation failed.",
+                        status = "AI generation failed.",
+                    )
+                }
+            }
+        }
+    }
+
+    private fun applyAiDraft() {
+        val state = _uiState.value
+        val draft = state.aiDraft
+        if (draft == null) {
+            _uiState.update { it.copy(status = "Generate a draft before applying.") }
+            return
+        }
+
+        val updatedValues = CharacterDraftMapper.applyDraft(draft, state.values)
+        _uiState.update {
+            it.copy(
+                values = updatedValues,
+                aiDraft = null,
+                aiError = null,
+                mode = CharacterUIMode.MANUAL,
+                status = "Draft applied. Review and save.",
+            )
+        }
+    }
+
+    private fun discardAiDraft() {
+        _uiState.update { it.copy(aiDraft = null, aiError = null, status = "Draft discarded.") }
+    }
+
+    private fun toggleAiMode() {
+        val next = if (_uiState.value.aiMode == CharacterAIMode.NORMAL) {
+            CharacterAIMode.CREATIVE
+        } else {
+            CharacterAIMode.NORMAL
+        }
+        _uiState.update {
+            it.copy(
+                aiMode = next,
+                aiDraft = null,
+                aiError = null,
+                status = "AI mode: ${next.name.lowercase().replaceFirstChar { ch -> ch.uppercase() }}.",
+            )
         }
     }
 

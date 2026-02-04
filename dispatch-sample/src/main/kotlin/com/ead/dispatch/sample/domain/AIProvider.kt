@@ -38,4 +38,5 @@ object AIProvider {
 
     fun getChatAgentId(id : String) = "${id}:chat-agent"
     fun getStoryAgentId(id : String) = "${id}:story-agent"
+    fun getCharacterAgentId(id: String) = "${id}:character-agent"
 }

@@ -10,6 +10,7 @@ import com.ead.dispatch.navigation.popBackStack
 import com.ead.dispatch.runtime.DisposableEffect
 import com.ead.dispatch.runtime.LocalKeyboardInterceptor
 import com.ead.dispatch.sample.presentation.characters.components.AiCharacterForm
+import com.ead.dispatch.sample.presentation.characters.components.CharacterAIDraftPreview
 import com.ead.dispatch.sample.presentation.characters.components.CharacterFooter
 import com.ead.dispatch.sample.presentation.characters.components.CharacterHeader
 import com.ead.dispatch.sample.presentation.characters.components.CharacterSectionHeader
@@ -94,6 +95,30 @@ fun CharacterScreen(backStack: NavBackStack<NavKey>, route: CharacterRoute) {
                 }
                 "Tab" -> if (event.shift) {
                     viewModel.onEvent(CharacterEvent.OnToggleMode)
+                    true
+                } else {
+                    false
+                }
+                "G", "g" -> if (event.ctrl && uiState.mode == CharacterUIMode.AUTOMATIC) {
+                    viewModel.onEvent(CharacterEvent.OnGenerateAiDraft)
+                    true
+                } else {
+                    false
+                }
+                "A", "a" -> if (event.ctrl && uiState.mode == CharacterUIMode.AUTOMATIC) {
+                    viewModel.onEvent(CharacterEvent.OnApplyAiDraft)
+                    true
+                } else {
+                    false
+                }
+                "R", "r" -> if (event.ctrl && uiState.mode == CharacterUIMode.AUTOMATIC) {
+                    viewModel.onEvent(CharacterEvent.OnRegenerateAiDraft)
+                    true
+                } else {
+                    false
+                }
+                "Q", "q" -> if (event.ctrl && uiState.mode == CharacterUIMode.AUTOMATIC) {
+                    viewModel.onEvent(CharacterEvent.OnToggleAiMode)
                     true
                 } else {
                     false
@@ -185,6 +210,14 @@ fun CharacterScreen(backStack: NavBackStack<NavKey>, route: CharacterRoute) {
             }
         } else {
             item {
+                CharacterSectionHeader(
+                    title = "AI Prompt (${uiState.aiMode.name.lowercase().replaceFirstChar { it.uppercase() }})",
+                    hint = "Ctrl+G generate · Ctrl+A apply · Ctrl+R regenerate · Ctrl+Q mode · Shift+Tab manual · Esc back",
+                    styles = styles,
+                )
+            }
+            item { Spacer(Modifier.height(1)) }
+            item {
                 AiCharacterForm(
                     fields = fields,
                     values = uiState.values,
@@ -194,10 +227,32 @@ fun CharacterScreen(backStack: NavBackStack<NavKey>, route: CharacterRoute) {
                     }
                 )
             }
+            val draft = uiState.aiDraft
+            if (draft != null) {
+                item { Spacer(Modifier.height(1)) }
+                item {
+                    CharacterSectionHeader(
+                        title = "AI Draft",
+                        hint = "Ctrl+A apply · Ctrl+R regenerate",
+                        styles = styles,
+                    )
+                }
+                item { Spacer(Modifier.height(1)) }
+                item {
+                    CharacterAIDraftPreview(
+                        draft = draft,
+                        styles = styles,
+                    )
+                }
+            }
             item { Spacer(Modifier.height(1)) }
             item {
                 CharacterFooter(
-                    text = uiState.status ?: "Ctrl+S save · Ctrl+D delete · Esc back",
+                    text = uiState.status ?: when {
+                        uiState.isGenerating -> "Generating character draft..."
+                        uiState.aiError != null -> "AI error: ${uiState.aiError}"
+                        else -> "Ctrl+G generate · Ctrl+A apply · Ctrl+R regenerate · Ctrl+Q mode · Esc back"
+                    },
                     styles = styles
                 )
             }
