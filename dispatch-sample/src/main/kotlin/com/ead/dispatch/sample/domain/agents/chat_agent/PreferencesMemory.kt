@@ -15,6 +15,11 @@ object PreferencesMemory {
             - Regional spelling (US, UK, Canadian)
             - Formatting habits (e.g., em-dashes vs hyphens)
             Use this to ensure generated text matches the user's voice.
+            Allowed:
+            - Stable style preferences that apply across sessions.
+            Forbidden:
+            - Any story/character/plot/setting details.
+            - Any session- or project-specific facts.
         """.trimIndent(),
         factType = FactType.MULTIPLE,
     )
@@ -29,6 +34,12 @@ object PreferencesMemory {
             - "Editor": Critique logic, grammar, and pacing.
             - "Architect": Focus on structure and world-building, not prose.
             Use this to adjust the agent's persona and initiative level.
+            Allowed:
+            - A single stable mode choice (coach/co-writer/editor/architect).
+            - General guidance on level of initiative.
+            Forbidden:
+            - Any story/character/plot/setting details.
+            - Any session- or project-specific facts.
         """.trimIndent(),
         factType = FactType.SINGLE,
     )
@@ -42,6 +53,12 @@ object PreferencesMemory {
             - Disliked tropes (e.g., "Love Triangles")
             - Hard constraints (e.g., "No gore", "PG-13 only")
             Use this to guide creative suggestions and avoid unwanted content.
+            Allowed:
+            - General genre/trope preferences and constraints that apply across stories.
+            - Content boundaries (rating, gore, romance limits).
+            Forbidden:
+            - Any story/character/plot/setting details.
+            - Any session- or project-specific facts.
         """.trimIndent(),
         factType = FactType.MULTIPLE,
     )
@@ -55,6 +72,12 @@ object PreferencesMemory {
             - "Use markdown tables for timelines"
             - "Keep summaries under 50 words"
             Use this to format responses exactly as the user expects.
+            Allowed:
+            - Formatting and structure preferences that apply across sessions.
+            - Output constraints like brevity, bullet style, JSON/table formats.
+            Forbidden:
+            - Any story/character/plot/setting details.
+            - Any session- or project-specific facts.
         """.trimIndent(),
         factType = FactType.MULTIPLE,
     )

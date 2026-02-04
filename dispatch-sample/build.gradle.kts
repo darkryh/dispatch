@@ -1,7 +1,7 @@
 plugins {
     id("dispatch.kotlin-application")
     id("dispatch.kotlin-serialization")
-    id("app.cash.sqldelight") version "2.2.1"
+    alias(libs.plugins.sqldelight)
 }
 
 application {
@@ -18,16 +18,15 @@ dependencies {
     implementation(libs.bundles.mordant)
     implementation(libs.coroutines.core)
 
-    implementation("com.russhwolf:multiplatform-settings:1.3.0")
-    implementation("com.russhwolf:multiplatform-settings-serialization:1.3.0")
-    implementation("com.russhwolf:multiplatform-settings-coroutines:1.3.0")
-    implementation("com.russhwolf:multiplatform-settings-make-observable:1.3.0")
+    implementation(libs.multiplatform.settings)
+    implementation(libs.multiplatform.settings.serialization)
+    implementation(libs.multiplatform.settings.coroutines)
+    implementation(libs.multiplatform.settings.make.observable)
 
-
-    implementation("net.harawata:appdirs:1.5.0")
+    implementation(libs.appdirs)
     implementation(libs.bundles.koog)
-    implementation("app.cash.sqldelight:sqlite-driver:2.2.1")
-    implementation("app.cash.sqldelight:coroutines-extensions:2.2.1")
+    implementation(libs.sqldelight.sqlite.driver)
+    implementation(libs.sqldelight.coroutines)
 
     // Prevent SLF4J's "no providers" warnings from printing to stderr and corrupting the TUI.
     runtimeOnly(libs.slf4j.nop)
