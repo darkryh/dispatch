@@ -49,6 +49,10 @@ class DispatchConfig {
     var description: String? = null
     var theme: DispatchTheme = DispatchTheme.Dark
     var activeAreaHeight: Int = 12
+    /**
+     * Target frame rate for coalescing renders. Set to 0 for immediate rendering.
+     */
+    var targetFps: Int = 60
     var windowTitle: String? = null
     var enforceWindowTitle: Boolean = true
     var mouseTracking: MouseTracking = MouseTracking.Off

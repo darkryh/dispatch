@@ -61,6 +61,7 @@ internal class DispatchApplicationBuilder(
     private lateinit var composer: Composer
     private lateinit var recomposer: Recomposer
     private lateinit var renderer: TerminalRenderer
+    private lateinit var frameScheduler: FrameScheduler
 
     private val rootMeasurable = AtomicReference<Measurable?>(null)
     private val parsedFlags = mutableSetOf<String>()
@@ -130,6 +131,11 @@ internal class DispatchApplicationBuilder(
             }
 
             activeAreaHeight = config.activeAreaHeight
+            frameScheduler = FrameScheduler(
+                scope = appScope,
+                targetFps = config.targetFps,
+                onFrame = { composeAndRender() },
+            )
 
             terminal!!.enterRawMode(config.mouseTracking).use { rawMode ->
                 val initialSize = terminal!!.updateSize()
@@ -190,9 +196,11 @@ internal class DispatchApplicationBuilder(
                     }
                 }
 
-                recomposer.registerComposition { composeAndRender() }
+                frameScheduler.start()
+                recomposer.registerComposition { frameScheduler.requestFrame() }
                 // Render once before starting the recomposer loop to avoid concurrent initial renders.
                 composeAndRender()
+                frameScheduler.markFrame()
                 val recomposerJob = recomposer.start()
 
                 while (!exitRequested && appScope.isActive) {
@@ -201,6 +209,7 @@ internal class DispatchApplicationBuilder(
 
                 renderer.clearActiveArea()
                 inputJob.cancelAndJoin()
+                frameScheduler.stop()
                 recomposer.stop()
                 recomposerJob.cancelAndJoin()
                 renderer.showCursor()
