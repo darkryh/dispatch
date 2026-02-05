@@ -24,22 +24,12 @@ fun Layout(
     val composer = Composer.current
 
     // Start a layout node
-    composer.startNode("Layout")
+    val node = composer.startNode("Layout")
 
-    // Collect children by running content
-    val childMeasurables = mutableListOf<Measurable>()
-
-    // Store current measurable collector
-    val previousCollector = composer.getMeasurableCollector()
-    composer.setMeasurableCollector { measurable ->
-        childMeasurables.add(measurable)
-    }
-
-    // Run content to collect children
+    // Run content to build child nodes
     content()
 
-    // Restore previous collector
-    composer.setMeasurableCollector(previousCollector)
+    val childMeasurables = node.children
 
     // Get constraints from parent (or use unbounded)
     val parentConstraints = composer.getCurrentConstraints()

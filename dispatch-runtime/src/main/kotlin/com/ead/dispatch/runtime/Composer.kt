@@ -1,6 +1,7 @@
 package com.ead.dispatch.runtime
 
 import com.ead.dispatch.constraints.Constraints
+import com.ead.dispatch.layout.LayoutNode
 import com.ead.dispatch.layout.Measurable
 import com.ead.dispatch.state.Saver
 import com.ead.dispatch.state.autoSaver
@@ -46,6 +47,8 @@ class Composer(
         isComposing = true
         currentSlot.set(0)
         groupStack.clear()
+        nodeStack.clear()
+        rootNode = null
     }
 
     /**
@@ -217,28 +220,41 @@ class Composer(
     private val constraintStack = mutableListOf<Constraints>()
 
     /**
-     * Current measurable collector (set by parent layouts).
+     * Stack of layout nodes for building the composition tree.
      */
-    private var measurableCollector: ((Measurable) -> Unit)? = null
+    private val nodeStack = mutableListOf<LayoutNode>()
 
     /**
-     * Stack of node names for debugging.
+     * Root layout node for the current composition.
      */
-    private val nodeStack = mutableListOf<String>()
+    private var rootNode: LayoutNode? = null
 
     /**
      * Start a layout node.
+     *
+     * Every composable widget/layout should call this before emitting children.
+     * The resulting node becomes the parent for any nodes started during [content].
      */
-    fun startNode(name: String) {
-        nodeStack.add(name)
+    fun startNode(name: String): LayoutNode {
+        val node = LayoutNode(name)
+        nodeStack.add(node)
+        return node
     }
 
     /**
      * End a layout node.
+     *
+     * This attaches the current node to its parent or marks it as the root.
      */
     fun endNode() {
         if (nodeStack.isNotEmpty()) {
-            nodeStack.removeLast()
+            val node = nodeStack.removeLast()
+            val parent = nodeStack.lastOrNull()
+            if (parent != null) {
+                parent.addChild(node)
+            } else {
+                rootNode = node
+            }
         }
     }
 
@@ -262,23 +278,34 @@ class Composer(
         if (constraintStack.isNotEmpty()) constraintStack.removeLast() else null
 
     /**
-     * Set the measurable collector for collecting child measurables.
-     */
-    fun setMeasurableCollector(collector: ((Measurable) -> Unit)?) {
-        measurableCollector = collector
-    }
-
-    /**
-     * Get the current measurable collector.
-     */
-    fun getMeasurableCollector(): ((Measurable) -> Unit)? = measurableCollector
-
-    /**
-     * Register a measurable with the parent layout.
+     * Register a measurable with the current node.
+     *
+     * This binds the measured/rendered behavior to the layout node created
+     * by [startNode], enabling node-based traversal (layout, focus, semantics).
      */
     fun registerMeasurable(measurable: Measurable) {
-        measurableCollector?.invoke(measurable)
+        val node = nodeStack.lastOrNull()
+        if (node != null) {
+            node.setDelegate(measurable)
+        } else {
+            val root = LayoutNode(measurable::class.java.simpleName).apply {
+                setDelegate(measurable)
+            }
+            rootNode = root
+        }
     }
+
+    /**
+     * Get the root layout node for the current composition.
+     *
+     * Call after [endComposition] to access the composed layout tree.
+     */
+    fun getRootNode(): LayoutNode? = rootNode
+
+    /**
+     * Get the current layout node (top of the node stack).
+     */
+    fun currentNode(): LayoutNode? = nodeStack.lastOrNull()
 
     companion object {
         /**

@@ -3,6 +3,19 @@ package com.ead.dispatch.state
 import com.ead.dispatch.runtime.currentComposer
 
 /**
+ * Remember a state that always updates to the latest [value] without triggering recomposition.
+ *
+ * This is useful for capturing the latest value inside side-effect lambdas.
+ */
+fun <T> rememberUpdatedState(value: T): State<T> {
+    val state = remember { UpdatedState(value) }
+    state.value = value
+    return state
+}
+
+private class UpdatedState<T>(override var value: T) : State<T>
+
+/**
  * Remember a value across recompositions.
  *
  * The [calculation] will only be executed during the first composition.

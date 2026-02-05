@@ -7,6 +7,7 @@ import com.ead.dispatch.layout.Placeable
 import com.ead.dispatch.layout.SimplePlaceable
 import com.ead.dispatch.modifier.Modifier
 import com.ead.dispatch.modifier.applyToConstraints
+import com.ead.dispatch.modifier.focusable
 import com.ead.dispatch.runtime.Composer
 import com.ead.dispatch.runtime.DisposableEffect
 import com.ead.dispatch.runtime.LocalFocusRegistry
@@ -609,6 +610,7 @@ fun InputTextField(
     val keyboardInterceptor = LocalKeyboardInterceptor.current
     val focusRegistry = LocalFocusRegistry.current
     val focusToken = remember { Any() }
+    val focusableModifier = if (enabled) modifier.focusable(focusToken) else modifier
 
     val isFocused = enabled && focusRegistry.isFocused(focusToken)
 
@@ -637,7 +639,6 @@ fun InputTextField(
             return@DisposableEffect onDispose {}
         }
 
-        val disposeFocus = focusRegistry.register(focusToken)
         val dispose = keyboardInterceptor.register(priority = -1) { event ->
             if (!focusRegistry.isFocused(focusToken)) {
                 return@register false
@@ -662,7 +663,6 @@ fun InputTextField(
 
         onDispose {
             dispose()
-            disposeFocus()
         }
     }
 
@@ -670,7 +670,7 @@ fun InputTextField(
     TextField(
         value = latestValue,
         onValueChange = onValueChangeCallback,
-        modifier = modifier,
+        modifier = focusableModifier,
         icon = icon,
         placeholder = placeholder,
         enabled = enabled,

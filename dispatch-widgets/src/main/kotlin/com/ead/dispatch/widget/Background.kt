@@ -71,17 +71,11 @@ fun Background(
 ) {
     val composer = Composer.current
     val terminal = LocalTerminal.current
-    composer.startNode("Background")
-
-    val childMeasurables = mutableListOf<Measurable>()
-    val previousCollector = composer.getMeasurableCollector()
-    composer.setMeasurableCollector { measurable ->
-        childMeasurables.add(measurable)
-    }
+    val node = composer.startNode("Background")
 
     content()
 
-    composer.setMeasurableCollector(previousCollector)
+    val childMeasurables = node.children
 
     val backgroundMeasurable = BackgroundMeasurable(
         modifier = modifier,

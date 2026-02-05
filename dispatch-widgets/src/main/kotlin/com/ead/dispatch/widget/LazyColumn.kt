@@ -1,7 +1,6 @@
 package com.ead.dispatch.widget
 
 import com.ead.dispatch.annotation.Dispatchable
-import com.ead.dispatch.layout.Measurable
 import com.ead.dispatch.modifier.Modifier
 import com.ead.dispatch.runtime.Composer
 
@@ -25,24 +24,16 @@ fun LazyColumn(
     content: @Dispatchable LazyListScope.() -> Unit,
 ) {
     val composer = Composer.current
-    composer.startNode("LazyColumn")
+    val node = composer.startNode("LazyColumn")
 
     // Build the item lambdas from the scope
     val scope = LazyListScopeImpl().apply(content)
     val itemLambdas = scope.items
 
-    // Collect item measurables
-    val itemMeasurables = mutableListOf<Measurable>()
-    val previousCollector = composer.getMeasurableCollector()
-
     for (block in itemLambdas) {
-        composer.setMeasurableCollector { measurable ->
-            itemMeasurables.add(measurable)
-        }
         block()
     }
-
-    composer.setMeasurableCollector(previousCollector)
+    val itemMeasurables = node.children
 
     val listMeasurable = ScrollableListMeasurable(
         modifier = modifier,

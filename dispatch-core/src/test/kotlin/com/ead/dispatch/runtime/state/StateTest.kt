@@ -5,9 +5,13 @@ import com.ead.dispatch.state.getValue
 import com.ead.dispatch.state.mutableStateListOf
 import com.ead.dispatch.state.mutableStateMapOf
 import com.ead.dispatch.state.mutableStateOf
+import com.ead.dispatch.state.referentialEqualityPolicy
+import com.ead.dispatch.state.structuralEqualityPolicy
 import com.ead.dispatch.state.setValue
 import io.kotest.matchers.shouldBe
 import kotlin.test.Test
+import kotlin.test.assertNotSame
+import kotlin.test.assertSame
 
 class StateTest {
 
@@ -149,5 +153,66 @@ class StateTest {
 
         state.value = listOf(4, 5, 6)
         state.value shouldBe listOf(4, 5, 6)
+    }
+
+    @Test
+    fun `structural equality policy should skip equivalent updates`() {
+        data class User(val name: String)
+
+        val original = User("Alice")
+        val state = mutableStateOf(original, structuralEqualityPolicy())
+
+        val updated = User("Alice")
+        state.value = updated
+
+        assertSame(original, state.value)
+    }
+
+    @Test
+    fun `referential equality policy should treat equal instances as changes`() {
+        data class User(val name: String)
+
+        val original = User("Alice")
+        val state = mutableStateOf(original, referentialEqualityPolicy())
+
+        val updated = User("Alice")
+        state.value = updated
+
+        assertSame(updated, state.value)
+        assertNotSame(original, state.value)
+    }
+
+    @Test
+    fun `derived state respects structural equality policy`() {
+        data class User(val name: String)
+
+        val source = mutableStateOf(0)
+        val derived = derivedStateOf(structuralEqualityPolicy()) {
+            source.value
+            User("same")
+        }
+
+        val first = derived.value
+        source.value = 1
+        val second = derived.value
+
+        assertSame(first, second)
+    }
+
+    @Test
+    fun `derived state respects referential equality policy`() {
+        data class User(val name: String)
+
+        val source = mutableStateOf(0)
+        val derived = derivedStateOf(referentialEqualityPolicy()) {
+            source.value
+            User("same")
+        }
+
+        val first = derived.value
+        source.value = 1
+        val second = derived.value
+
+        assertNotSame(first, second)
     }
 }

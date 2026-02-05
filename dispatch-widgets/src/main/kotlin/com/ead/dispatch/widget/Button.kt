@@ -160,18 +160,11 @@ fun ButtonRow(
     content: @Dispatchable () -> Unit,
 ) {
     val composer = Composer.current
-    composer.startNode("ButtonRow")
-
-    // Collect button measurables
-    val buttonMeasurables = mutableListOf<Measurable>()
-    val previousCollector = composer.getMeasurableCollector()
-    composer.setMeasurableCollector { measurable ->
-        buttonMeasurables.add(measurable)
-    }
+    val node = composer.startNode("ButtonRow")
 
     content()
 
-    composer.setMeasurableCollector(previousCollector)
+    val buttonMeasurables = node.children
 
     val rowMeasurable = ButtonRowMeasurable(
         modifier = modifier,

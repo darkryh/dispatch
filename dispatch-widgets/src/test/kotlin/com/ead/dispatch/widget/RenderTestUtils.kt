@@ -2,7 +2,6 @@ package com.ead.dispatch.widget
 
 import com.ead.dispatch.annotation.Dispatchable
 import com.ead.dispatch.constraints.Constraints
-import com.ead.dispatch.layout.Measurable
 import com.ead.dispatch.runtime.Composer
 import com.ead.dispatch.runtime.CompositionLocalProvider
 import com.ead.dispatch.runtime.FocusRegistry
@@ -15,7 +14,6 @@ import com.ead.dispatch.runtime.LocalTerminalWidth
 import com.ead.dispatch.runtime.withComposer
 import com.github.ajalt.mordant.rendering.AnsiLevel
 import com.github.ajalt.mordant.terminal.Terminal
-import java.util.concurrent.atomic.AtomicReference
 
 internal fun renderLines(
     width: Int = 80,
@@ -29,26 +27,25 @@ internal fun renderLines(
         interactive = false,
     )
     val composer = Composer()
-    val root = AtomicReference<Measurable?>(null)
+    val focusRegistry = FocusRegistry()
 
     withComposer(composer) {
         composer.startComposition()
-        composer.setMeasurableCollector { measurable -> root.set(measurable) }
 
         CompositionLocalProvider(
             LocalTerminal provides terminal,
             LocalTerminalWidth provides terminal.size.width,
             LocalTerminalHeight provides terminal.size.height,
             LocalKeyboardInterceptor provides KeyboardInterceptor(),
-            LocalFocusRegistry provides FocusRegistry(),
+            LocalFocusRegistry provides focusRegistry,
         ) {
             content()
         }
 
-        composer.setMeasurableCollector(null)
         composer.endComposition()
     }
 
-    val measurable = root.get() ?: return emptyList()
-    return measurable.measure(Constraints.fixedWidth(width)).lines
+    val rootNode = composer.getRootNode() ?: return emptyList()
+    focusRegistry.sync(rootNode)
+    return rootNode.measure(Constraints.fixedWidth(width)).lines
 }

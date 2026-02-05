@@ -4,6 +4,7 @@ import com.ead.dispatch.state.MutableState
 import com.ead.dispatch.state.Saver
 import com.ead.dispatch.state.mutableStateOf
 import com.ead.dispatch.state.remember
+import com.ead.dispatch.state.rememberUpdatedState
 import com.ead.dispatch.state.rememberSaveable
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -151,5 +152,25 @@ class RuntimeCompositionTest {
 
         composer.clearSlotsInRange(2, 3)
         assertEquals(111, disposed)
+    }
+
+    @Test
+    fun `rememberUpdatedState returns latest value across recompositions`() {
+        val composer = Composer()
+        var input = "first"
+
+        fun compose(): String {
+            return withComposer(composer) {
+                composer.startComposition()
+                val state = rememberUpdatedState(input)
+                val value = state.value
+                composer.endComposition()
+                value
+            }
+        }
+
+        assertEquals("first", compose())
+        input = "second"
+        assertEquals("second", compose())
     }
 }

@@ -1,6 +1,7 @@
 package com.ead.dispatch.state
 
 import com.ead.dispatch.runtime.Recomposer
+import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.concurrent.Volatile
 
 /**
@@ -9,7 +10,10 @@ import kotlin.concurrent.Volatile
  * When the value changes, all composable functions that read this state
  * during their last composition will be scheduled for recomposition.
  */
-internal class SnapshotMutableState<T>(initialValue: T) : MutableState<T>, DerivedStateDependency {
+internal class SnapshotMutableState<T>(
+    initialValue: T,
+    private val policy: MutationPolicy<T>,
+) : MutableState<T>, DerivedStateDependency, StateObserverTarget {
 
     @Volatile
     private var _value: T = initialValue
@@ -20,6 +24,7 @@ internal class SnapshotMutableState<T>(initialValue: T) : MutableState<T>, Deriv
      */
     private val readers = mutableSetOf<Any>()
     private val dependents = mutableSetOf<DerivedState<*>>()
+    private val observers = CopyOnWriteArrayList<StateObserver>()
 
     override var value: T
         get() {
@@ -28,13 +33,14 @@ internal class SnapshotMutableState<T>(initialValue: T) : MutableState<T>, Deriv
                 readers.add(scope)
             }
             DerivedStateObserver.recordDependency(this)
+            StateReadObserver.recordRead(this)
             return _value
         }
         set(newValue) {
-            if (_value != newValue) {
-                _value = newValue
-                notifyChanged()
-            }
+            val current = _value
+            if (policy.equivalent(current, newValue)) return
+            _value = newValue
+            notifyChanged()
         }
 
     override fun component1(): T = value
@@ -50,6 +56,7 @@ internal class SnapshotMutableState<T>(initialValue: T) : MutableState<T>, Deriv
         readers.forEach { scope ->
             Recomposer.invalidateScope(scope)
         }
+        observers.forEach { it.onChanged() }
     }
 
     /**
@@ -67,6 +74,14 @@ internal class SnapshotMutableState<T>(initialValue: T) : MutableState<T>, Deriv
     override fun removeDependent(dependent: Any) {
         val derived = dependent as? DerivedState<*> ?: return
         dependents.remove(derived)
+    }
+
+    override fun addObserver(observer: StateObserver) {
+        observers.add(observer)
+    }
+
+    override fun removeObserver(observer: StateObserver) {
+        observers.remove(observer)
     }
 
     override fun toString(): String = "MutableState(value=$_value)"

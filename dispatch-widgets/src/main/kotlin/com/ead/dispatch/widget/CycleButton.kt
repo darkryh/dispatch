@@ -2,6 +2,7 @@ package com.ead.dispatch.widget
 
 import com.ead.dispatch.annotation.Dispatchable
 import com.ead.dispatch.modifier.Modifier
+import com.ead.dispatch.modifier.focusable
 import com.ead.dispatch.runtime.DisposableEffect
 import com.ead.dispatch.runtime.LocalFocusRegistry
 import com.ead.dispatch.runtime.LocalKeyboardInterceptor
@@ -38,6 +39,7 @@ fun CycleButton(
     val focusRegistry = LocalFocusRegistry.current
     val keyboardInterceptor = LocalKeyboardInterceptor.current
     val focusToken = remember { Any() }
+    val focusableModifier = if (enabled) modifier.focusable(focusToken) else modifier
 
     val isFocused = enabled && focusRegistry.isFocused(focusToken)
     val fillStyle = if (isFocused) focusedFill else unfocusedFill
@@ -57,7 +59,6 @@ fun CycleButton(
             return@DisposableEffect onDispose {}
         }
 
-        val disposeFocus = focusRegistry.register(focusToken)
         val dispose = keyboardInterceptor.register(priority = -1) { event ->
             if (!focusRegistry.isFocused(focusToken)) {
                 return@register false
@@ -89,12 +90,11 @@ fun CycleButton(
 
         onDispose {
             dispose()
-            disposeFocus()
         }
     }
 
     Background(
-        modifier = modifier,
+        modifier = focusableModifier,
         style = BackgroundStyle.Fill(
             fill = fillStyle,
             paddingHorizontal = paddingHorizontal,

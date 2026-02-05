@@ -242,16 +242,13 @@ internal class DispatchApplicationBuilder(
         val block = activeUIBlock ?: return
         val t = terminal ?: return
 
-        withComposer(composer) {
-            Recomposer.withRecomposer(recomposer) {
-                Recomposer.withScope(compositionScopeToken) {
-                    composer.startComposition()
-                    composer.setMeasurableCollector { measurable ->
-                        rootMeasurable.set(measurable)
-                    }
+                withComposer(composer) {
+                    Recomposer.withRecomposer(recomposer) {
+                        Recomposer.withScope(compositionScopeToken) {
+                            composer.startComposition()
 
-                    try {
-                        CompositionLocalProvider(
+                            try {
+                                CompositionLocalProvider(
                             LocalDispatchScope provides dispatchScopeInstance,
                             LocalDispatchArgs provides dispatchArgs,
                             LocalDispatchConfig provides config,
@@ -262,18 +259,21 @@ internal class DispatchApplicationBuilder(
                             LocalTheme provides config.theme,
                             LocalKeyboardInterceptor provides keyboardInterceptor,
                             LocalFocusRegistry provides focusRegistry,
-                            LocalExitPromptState provides exitPromptState,
-                        ) {
-                            block()
+                                    LocalExitPromptState provides exitPromptState,
+                                ) {
+                                    block()
+                                }
+                            } finally {
+                                composer.endComposition()
+                                val rootNode = composer.getRootNode()
+                                rootMeasurable.set(rootNode)
+                                // Ensure focus order reflects the latest composed layout tree.
+                                focusRegistry.sync(rootNode)
+                                EffectRunner.runPendingEffects()
+                            }
                         }
-                    } finally {
-                        composer.setMeasurableCollector(null)
-                        composer.endComposition()
-                        EffectRunner.runPendingEffects()
                     }
                 }
-            }
-        }
     }
 
     private fun renderActiveArea() {

@@ -43,20 +43,13 @@ fun <T> ScrollableList(
     itemContent: @Dispatchable (T) -> Unit,
 ) {
     val composer = Composer.current
-    composer.startNode("ScrollableList")
-
-    // Collect item measurables
-    val itemMeasurables = mutableListOf<Measurable>()
-    val previousCollector = composer.getMeasurableCollector()
+    val node = composer.startNode("ScrollableList")
 
     for (item in items) {
-        composer.setMeasurableCollector { measurable ->
-            itemMeasurables.add(measurable)
-        }
         itemContent(item)
     }
 
-    composer.setMeasurableCollector(previousCollector)
+    val itemMeasurables = node.children
 
     val listMeasurable = ScrollableListMeasurable(
         modifier = modifier,

@@ -85,7 +85,10 @@ operator fun <T> MutableState<T>.setValue(thisObj: Any?, property: KProperty<*>,
  * @param value The initial value for this state.
  * @return A [MutableState] initialized with the given value.
  */
-fun <T> mutableStateOf(value: T): MutableState<T> = SnapshotMutableState(value)
+fun <T> mutableStateOf(
+    value: T,
+    policy: MutationPolicy<T> = structuralEqualityPolicy(),
+): MutableState<T> = SnapshotMutableState(value, policy)
 
 /**
  * Creates a [State] that derives its value from other state objects.
@@ -102,4 +105,18 @@ fun <T> mutableStateOf(value: T): MutableState<T> = SnapshotMutableState(value)
  * @param calculation The function that computes the derived value.
  * @return A [State] whose value is computed from other states.
  */
-fun <T> derivedStateOf(calculation: () -> T): State<T> = DerivedState(calculation)
+fun <T> derivedStateOf(
+    calculation: () -> T
+): State<T> = DerivedState(calculation, structuralEqualityPolicy())
+
+/**
+ * Creates a [State] that derives its value from other state objects with a mutation policy.
+ *
+ * @param policy Determines when derived values are considered equivalent.
+ * @param calculation The function that computes the derived value.
+ * @return A [State] whose value is computed from other states.
+ */
+fun <T> derivedStateOf(
+    policy: MutationPolicy<T>,
+    calculation: () -> T
+): State<T> = DerivedState(calculation, policy)

@@ -49,18 +49,11 @@ fun Panel(
 ) {
     val composer = Composer.current
     val terminal = LocalTerminal.current
-    composer.startNode("Panel")
-
-    // Collect child measurables
-    val childMeasurables = mutableListOf<Measurable>()
-    val previousCollector = composer.getMeasurableCollector()
-    composer.setMeasurableCollector { measurable ->
-        childMeasurables.add(measurable)
-    }
+    val node = composer.startNode("Panel")
 
     content()
 
-    composer.setMeasurableCollector(previousCollector)
+    val childMeasurables = node.children
 
     val panelMeasurable = PanelMeasurable(
         modifier = modifier,

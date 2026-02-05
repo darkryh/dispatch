@@ -1,7 +1,6 @@
 package com.ead.dispatch.widget
 
 import com.ead.dispatch.constraints.Constraints
-import com.ead.dispatch.layout.Measurable
 import com.ead.dispatch.runtime.Composer
 import com.ead.dispatch.runtime.CompositionLocalProvider
 import com.ead.dispatch.runtime.KeyboardInterceptor
@@ -13,7 +12,6 @@ import com.ead.dispatch.runtime.withComposer
 import com.github.ajalt.mordant.rendering.AnsiLevel
 import com.github.ajalt.mordant.terminal.Terminal
 import com.github.ajalt.mordant.input.KeyboardEvent
-import java.util.concurrent.atomic.AtomicReference
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -55,11 +53,9 @@ class CommandPaletteTest {
             interactive = false,
         )
         val composer = Composer()
-        val root = AtomicReference<Measurable?>(null)
 
         withComposer(composer) {
             composer.startComposition()
-            composer.setMeasurableCollector { measurable -> root.set(measurable) }
 
             CompositionLocalProvider(
                 LocalTerminal provides terminal,
@@ -82,16 +78,11 @@ class CommandPaletteTest {
                 )
             }
 
-            composer.setMeasurableCollector(null)
             composer.endComposition()
         }
 
-        val measurable = root.get()
-        val lines = if (measurable == null) {
-            emptyList()
-        } else {
-            measurable.measure(Constraints.fixedWidth(80)).lines
-        }
+        val rootNode = composer.getRootNode()
+        val lines = rootNode?.measure(Constraints.fixedWidth(80))?.lines ?: emptyList()
 
         return PaletteRender(lines, state, keyboardInterceptor)
     }

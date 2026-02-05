@@ -1,7 +1,6 @@
 package com.ead.dispatch.widget
 
 import com.ead.dispatch.constraints.Constraints
-import com.ead.dispatch.layout.Measurable
 import com.ead.dispatch.runtime.Composer
 import com.ead.dispatch.runtime.CompositionLocalProvider
 import com.ead.dispatch.runtime.FocusRegistry
@@ -17,7 +16,6 @@ import com.ead.dispatch.theme.DispatchTheme
 import com.github.ajalt.mordant.input.KeyboardEvent
 import com.github.ajalt.mordant.rendering.AnsiLevel
 import com.github.ajalt.mordant.terminal.Terminal
-import java.util.concurrent.atomic.AtomicReference
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -32,14 +30,12 @@ class KeyboardInterceptorPipelineTest {
         private val keyboardInterceptor = KeyboardInterceptor()
         private val focusRegistry = FocusRegistry()
         private val composer = Composer()
-        private val root = AtomicReference<Measurable?>(null)
 
         val state = TextFieldState(initialValue)
 
         fun render() {
             withComposer(composer) {
                 composer.startComposition()
-                composer.setMeasurableCollector { measurable -> root.set(measurable) }
 
                 CompositionLocalProvider(
                     LocalTerminal provides terminal,
@@ -56,11 +52,12 @@ class KeyboardInterceptorPipelineTest {
                     )
                 }
 
-                composer.setMeasurableCollector(null)
                 composer.endComposition()
             }
 
-            root.get()?.measure(Constraints.fixedWidth(80))
+            val rootNode = composer.getRootNode() ?: return
+            focusRegistry.sync(rootNode)
+            rootNode.measure(Constraints.fixedWidth(80))
         }
 
         fun press(key: String, ctrl: Boolean = false, alt: Boolean = false, shift: Boolean = false) {

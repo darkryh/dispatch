@@ -2,7 +2,6 @@ package com.ead.dispatch.navigation
 
 import com.ead.dispatch.annotation.Dispatchable
 import com.ead.dispatch.constraints.Constraints
-import com.ead.dispatch.layout.Measurable
 import com.ead.dispatch.runtime.Composer
 import com.ead.dispatch.runtime.CompositionLocalProvider
 import com.ead.dispatch.runtime.LocalTerminal
@@ -11,7 +10,6 @@ import com.ead.dispatch.runtime.LocalTerminalWidth
 import com.ead.dispatch.runtime.withComposer
 import com.github.ajalt.mordant.rendering.AnsiLevel
 import com.github.ajalt.mordant.terminal.Terminal
-import java.util.concurrent.atomic.AtomicReference
 import kotlinx.serialization.Serializable
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -27,25 +25,25 @@ class NavDisplayNavigatorTest {
     @Test
     fun `NavDisplay provides LocalNavigator backed by backStack`() {
         val backStack = NavBackStack(TestRoute(1))
-        val navigatorRef = AtomicReference<Navigator?>()
+        var navigatorRef: Navigator? = null
 
         render {
             NavDisplay(
                 backStack = backStack,
                 entryProvider = entryProvider<TestRoute> {
                     entry<TestRoute> {
-                        navigatorRef.set(LocalNavigator.current)
+                        navigatorRef = LocalNavigator.current
                     }
                 }
             )
         }
 
-        val navigator = navigatorRef.get()
+        val navigator = navigatorRef
         assertNotNull(navigator)
 
         navigator.navigate(TestRoute(2))
         assertEquals(2, backStack.size)
-        assertTrue(backStack.last() is TestRoute)
+        assertEquals(TestRoute(2), backStack.last())
 
         assertTrue(navigator.popBackStack())
         assertEquals(1, backStack.size)
@@ -61,11 +59,9 @@ private fun render(content: @Dispatchable () -> Unit) {
         interactive = false,
     )
     val composer = Composer()
-    val root = AtomicReference<Measurable?>(null)
 
     withComposer(composer) {
         composer.startComposition()
-        composer.setMeasurableCollector { measurable -> root.set(measurable) }
 
         CompositionLocalProvider(
             LocalTerminal provides terminal,
@@ -75,9 +71,8 @@ private fun render(content: @Dispatchable () -> Unit) {
             content()
         }
 
-        composer.setMeasurableCollector(null)
         composer.endComposition()
     }
 
-    root.get()?.measure(Constraints.fixedWidth(80))
+    composer.getRootNode()?.measure(Constraints.fixedWidth(80))
 }

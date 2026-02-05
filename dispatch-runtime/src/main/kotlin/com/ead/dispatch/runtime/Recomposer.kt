@@ -38,22 +38,42 @@ class Recomposer(
         private set
 
     /**
-     * Callbacks to invoke during recomposition.
+     * Callbacks to invoke during recomposition, grouped by scope.
      */
-    private val compositionCallbacks = mutableListOf<() -> Unit>()
+    private val compositionCallbacks = ConcurrentHashMap<Any, MutableList<() -> Unit>>()
+    private val defaultScope = Any()
 
     /**
      * Register a composition to be managed by this recomposer.
      */
     fun registerComposition(callback: () -> Unit) {
-        compositionCallbacks.add(callback)
+        registerComposition(defaultScope, callback)
     }
 
     /**
      * Unregister a composition.
      */
     fun unregisterComposition(callback: () -> Unit) {
-        compositionCallbacks.remove(callback)
+        unregisterComposition(defaultScope, callback)
+    }
+
+    /**
+     * Register a composition with a scope token.
+     */
+    fun registerComposition(scope: Any, callback: () -> Unit) {
+        val list = compositionCallbacks.getOrPut(scope) { mutableListOf() }
+        list.add(callback)
+    }
+
+    /**
+     * Unregister a composition for a specific scope.
+     */
+    fun unregisterComposition(scope: Any, callback: () -> Unit) {
+        val list = compositionCallbacks[scope] ?: return
+        list.remove(callback)
+        if (list.isEmpty()) {
+            compositionCallbacks.remove(scope)
+        }
     }
 
     /**
@@ -99,17 +119,23 @@ class Recomposer(
     private fun performRecomposition() {
         if (invalidScopes.isEmpty() && compositionCallbacks.isEmpty()) return
 
-        // Clear invalid scopes before recomposing
-        val scopesToRecompose = invalidScopes.toSet()
+        val scopesToRecompose =
+            if (invalidScopes.isEmpty()) {
+                compositionCallbacks.keys.toSet()
+            } else {
+                invalidScopes.toSet()
+            }
         invalidScopes.clear()
 
-        // Invoke all composition callbacks
-        compositionCallbacks.forEach { callback ->
-            try {
-                callback()
-            } catch (e: Exception) {
-                // Log error but continue with other compositions
-                System.err.println("Recomposition error: ${e.message}")
+        for (scope in scopesToRecompose) {
+            val callbacks = compositionCallbacks[scope] ?: continue
+            callbacks.forEach { callback ->
+                try {
+                    callback()
+                } catch (e: Exception) {
+                    // Log error but continue with other compositions
+                    System.err.println("Recomposition error: ${e.message}")
+                }
             }
         }
     }

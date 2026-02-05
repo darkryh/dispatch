@@ -2,7 +2,6 @@ package com.ead.dispatch.widget
 
 import com.ead.dispatch.annotation.Dispatchable
 import com.ead.dispatch.constraints.Constraints
-import com.ead.dispatch.layout.Measurable
 import com.ead.dispatch.runtime.Composer
 import com.ead.dispatch.runtime.CompositionLocalProvider
 import com.ead.dispatch.runtime.DispatchConfig
@@ -18,7 +17,6 @@ import com.github.ajalt.mordant.input.KeyboardEvent
 import com.github.ajalt.mordant.input.MouseEvent
 import com.github.ajalt.mordant.rendering.AnsiLevel
 import com.github.ajalt.mordant.terminal.Terminal
-import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlin.test.Test
@@ -72,7 +70,6 @@ class SessionSelectorTest {
         private val keyboardInterceptor = com.ead.dispatch.runtime.KeyboardInterceptor()
         private val dispatchScope = TestDispatchScope(terminal, DispatchTheme.Dark, keyboardInterceptor)
         private val composer = Composer()
-        private val root = AtomicReference<Measurable?>(null)
 
         var options: List<SessionOption<String>> = options
         var state = SessionSelectorState<String>()
@@ -100,7 +97,6 @@ class SessionSelectorTest {
         fun render(): List<String> {
             withComposer(composer) {
                 composer.startComposition()
-                composer.setMeasurableCollector { measurable -> root.set(measurable) }
 
                 CompositionLocalProvider(
                     LocalTerminal provides terminal,
@@ -120,12 +116,11 @@ class SessionSelectorTest {
                     )
                 }
 
-                composer.setMeasurableCollector(null)
                 composer.endComposition()
             }
 
-            val measurable = root.get() ?: return emptyList()
-            return measurable.measure(Constraints.fixedWidth(80)).lines
+            val rootNode = composer.getRootNode() ?: return emptyList()
+            return rootNode.measure(Constraints.fixedWidth(80)).lines
         }
 
         fun press(key: String) {
