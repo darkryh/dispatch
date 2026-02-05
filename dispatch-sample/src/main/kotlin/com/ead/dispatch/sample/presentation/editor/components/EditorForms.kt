@@ -22,15 +22,16 @@ fun ManualEditorForm(
 ) {
     fun renderField(field: EditorFieldDefinition) {
         val value = values[field.key] ?: FieldValue()
-        EditorFieldRow(
-            label = field.label,
-            value = value,
-            maxLines = field.maxLines,
-            placeholder = field.placeholder,
-            helper = field.helper,
-            onValueChange = { onValueChange(field.key, it) },
-            styles = styles.copy(labelStyle = styles.labelStylePrimary),
-        )
+            EditorFieldRow(
+                label = field.label,
+                value = value,
+                maxLines = field.maxLines,
+                placeholder = field.placeholder,
+                helper = field.helper,
+                options = field.options,
+                onValueChange = { onValueChange(field.key, it) },
+                styles = styles.copy(labelStyle = styles.labelStylePrimary),
+            )
     }
 
     val rows = mutableListOf<List<EditorFieldDefinition>>()
@@ -89,6 +90,7 @@ fun AiEditorForm(
                 maxLines = field.maxLines,
                 placeholder = field.placeholder,
                 helper = field.helper,
+                options = field.options,
                 onValueChange = { onValueChange(field.key, it) },
                 styles = styles.copy(labelStyle = styles.labelStyleSecondary),
             )

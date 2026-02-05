@@ -1,56 +1,35 @@
 package com.ead.dispatch.sample.presentation.library.relationships
 
 import com.ead.dispatch.annotation.Dispatchable
-import com.ead.dispatch.layout.Column
-import com.ead.dispatch.layout.Row
-import com.ead.dispatch.layout.Spacer
-import com.ead.dispatch.modifier.Modifier
-import com.ead.dispatch.modifier.fillMaxWidth
-import com.ead.dispatch.modifier.width
 import com.ead.dispatch.sample.domain.agents.relationship_agent.RelationshipAIDraft
 import com.ead.dispatch.sample.presentation.editor.components.EditorScreenStyles
-import com.ead.dispatch.widget.Text
+import com.ead.dispatch.widget.LabeledValue
+import com.ead.dispatch.widget.LabeledValueList
 
 @Dispatchable
 fun RelationshipAIDraftPreview(
     draft: RelationshipAIDraft,
     styles: EditorScreenStyles,
 ) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        val summary = draft.summary.trim()
-        if (summary.isNotEmpty()) {
-            PreviewRow("Summary", summary, styles)
-        }
-
-        PreviewRow("Subject", draft.subjectName, styles)
-        PreviewRow("Subject Type", draft.subjectType, styles)
-        PreviewRow("Object", draft.objectName, styles)
-        PreviewRow("Object Type", draft.objectType, styles)
-        PreviewRow("Relation", draft.relation, styles)
-        PreviewRow("History", draft.history, styles)
-        PreviewRow("Tension", draft.tension, styles)
-        PreviewRow("Status", draft.currentStatus, styles)
-
+    val summary = draft.summary.trim()
+    val items = buildList {
+        if (summary.isNotEmpty()) add(LabeledValue("Summary", summary))
+        add(LabeledValue("Subject", draft.subjectName))
+        add(LabeledValue("Subject Type", draft.subjectType))
+        add(LabeledValue("Object", draft.objectName))
+        add(LabeledValue("Object Type", draft.objectType))
+        add(LabeledValue("Relation", draft.relation))
+        add(LabeledValue("History", draft.history))
+        add(LabeledValue("Tension", draft.tension))
+        add(LabeledValue("Status", draft.currentStatus))
         if (draft.missingFields.isNotEmpty()) {
-            PreviewRow("Missing", draft.missingFields.joinToString(", "), styles, secondary = true)
+            add(LabeledValue("Missing", draft.missingFields.joinToString(", "), valueStyle = styles.hintText))
         }
     }
-}
 
-@Dispatchable
-private fun PreviewRow(
-    label: String,
-    value: String?,
-    styles: EditorScreenStyles,
-    secondary: Boolean = false,
-) {
-    val text = value?.trim().orEmpty()
-    if (text.isBlank()) return
-
-    Row(modifier = Modifier.fillMaxWidth()) {
-        Spacer(Modifier.width(2))
-        Text(text = "$label:", style = styles.labelStyle)
-        Spacer(Modifier.width(1))
-        Text(text = text, style = if (secondary) styles.hintText else styles.fieldText)
-    }
+    LabeledValueList(
+        items = items,
+        labelStyle = styles.labelStyle,
+        valueStyle = styles.fieldText,
+    )
 }

@@ -13,7 +13,7 @@ import com.ead.dispatch.sample.presentation.characters.components.AiCharacterFor
 import com.ead.dispatch.sample.presentation.characters.components.CharacterAIDraftPreview
 import com.ead.dispatch.sample.presentation.characters.components.CharacterFooter
 import com.ead.dispatch.sample.presentation.characters.components.CharacterHeader
-import com.ead.dispatch.sample.presentation.characters.components.CharacterSectionHeader
+import com.ead.dispatch.widget.SectionHeader
 import com.ead.dispatch.sample.presentation.characters.components.ManualCharacterForm
 import com.ead.dispatch.sample.presentation.characters.components.rememberCharacterScreenStyles
 import com.ead.dispatch.sample.presentation.characters.event.CharacterEvent
@@ -184,10 +184,12 @@ fun CharacterScreen(backStack: NavBackStack<NavKey>, route: CharacterRoute) {
 
         if (uiState.mode == CharacterUIMode.MANUAL) {
             item {
-                CharacterSectionHeader(
+                SectionHeader(
                     title = if (showPhysicalFields) "Physical" else "Profile",
-                    hint = "Tab next field. Shift+Tab switches mode. Ctrl+P toggles physical fields. Ctrl+S save. Ctrl+D delete. Esc back.",
-                    styles = styles,
+                    subtitle = "Tab next field. Shift+Tab switches mode. Ctrl+P toggles physical fields. Ctrl+S save. Ctrl+D delete. Esc back.",
+                    titleStyle = styles.sectionTitle,
+                    subtitleStyle = styles.hintText,
+                    subtitleSpacing = 2,
                 )
             }
             item { Spacer(Modifier.height(1)) }
@@ -210,10 +212,12 @@ fun CharacterScreen(backStack: NavBackStack<NavKey>, route: CharacterRoute) {
             }
         } else {
             item {
-                CharacterSectionHeader(
+                SectionHeader(
                     title = "AI Prompt (${uiState.aiMode.name.lowercase().replaceFirstChar { it.uppercase() }})",
-                    hint = "Ctrl+G generate · Ctrl+A apply · Ctrl+R regenerate · Ctrl+Q mode · Shift+Tab manual · Esc back",
-                    styles = styles,
+                    subtitle = "Ctrl+G generate · Ctrl+A apply · Ctrl+R regenerate · Ctrl+Q mode · Shift+Tab manual · Esc back",
+                    titleStyle = styles.sectionTitle,
+                    subtitleStyle = styles.hintText,
+                    subtitleSpacing = 2,
                 )
             }
             item { Spacer(Modifier.height(1)) }
@@ -231,10 +235,12 @@ fun CharacterScreen(backStack: NavBackStack<NavKey>, route: CharacterRoute) {
             if (draft != null) {
                 item { Spacer(Modifier.height(1)) }
                 item {
-                    CharacterSectionHeader(
+                    SectionHeader(
                         title = "AI Draft",
-                        hint = "Ctrl+A apply · Ctrl+R regenerate",
-                        styles = styles,
+                        subtitle = "Ctrl+A apply · Ctrl+R regenerate",
+                        titleStyle = styles.sectionTitle,
+                        subtitleStyle = styles.hintText,
+                        subtitleSpacing = 2,
                     )
                 }
                 item { Spacer(Modifier.height(1)) }

@@ -7,7 +7,7 @@ import com.ead.dispatch.sample.presentation.commands.CommandAction
 class CommandManager {
     private object CommandLabels {
         const val CLEAR = "clear"
-        const val STORY_CHAT = "story-chat"
+        const val STORY_CHAT = "story"
     }
 
     private val _data = listOf(

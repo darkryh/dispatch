@@ -22,7 +22,7 @@ import com.ead.dispatch.sample.presentation.library.filterEntries
 import com.ead.dispatch.sample.presentation.library.matchesQuery
 import com.ead.dispatch.sample.presentation.library.defaultSelectionIndex
 import com.ead.dispatch.sample.presentation.library.model.ListEntry
-import com.ead.dispatch.sample.presentation.library.ListFilterBar
+import com.ead.dispatch.widget.FilterBarCard
 import com.ead.dispatch.state.getValue
 import com.ead.dispatch.state.mutableStateOf
 import com.ead.dispatch.state.remember
@@ -34,6 +34,8 @@ import com.ead.dispatch.widget.SelectableWindowedList
 import com.ead.dispatch.widget.SelectableListStyles
 import com.ead.dispatch.widget.Text
 import com.ead.dispatch.widget.TextOverflow
+import com.ead.dispatch.widget.KeyHintBar
+import com.ead.dispatch.widget.KeyHint
 import com.ead.dispatch.widget.rememberTextFieldState
 import com.ead.dispatch.widget.rememberFilterInputController
 import com.github.ajalt.mordant.rendering.TextColors.Companion.rgb
@@ -143,7 +145,12 @@ fun ArtifactListScreen(
         }
         item { Spacer(Modifier.height(1)) }
         item {
-            ListFilterBar(state = filterField, placeholder = "Filter by name, origin, or power...")
+            FilterBarCard(
+                state = filterField,
+                placeholder = "Filter by name, origin, or power...",
+                textStyle = theme.primary,
+                placeholderStyle = theme.primary + TextStyle(dim = true),
+            )
         }
         item { Spacer(Modifier.height(1)) }
 
@@ -228,9 +235,17 @@ fun ArtifactListScreen(
         item {
             Row(modifier = Modifier.fillMaxWidth()) {
                 Spacer(Modifier.width(2))
-                Text(
-                    text = "Arrow keys to navigate · Enter open · Ctrl+N new · Esc back · Type to filter",
-                    style = theme.muted,
+                KeyHintBar(
+                    hints = listOf(
+                        KeyHint("Arrow", "navigate"),
+                        KeyHint("Enter", "open"),
+                        KeyHint("Ctrl+N", "new"),
+                        KeyHint("Esc", "back"),
+                        KeyHint("Type", "filter"),
+                    ),
+                    keyStyle = theme.muted,
+                    descriptionStyle = theme.muted,
+                    separatorStyle = theme.muted,
                 )
             }
         }

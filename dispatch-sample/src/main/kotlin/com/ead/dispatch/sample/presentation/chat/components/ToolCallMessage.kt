@@ -161,7 +161,7 @@ private fun parseToolRequest(root: JsonObject, toolName: String?): ToolDisplay {
         append(".")
     }
 
-    val properties = buildList<Pair<String, String>> {
+    val properties = buildList {
         if (request != null) {
             flattenJson(request, null, this)
         } else if (entityId != null) {

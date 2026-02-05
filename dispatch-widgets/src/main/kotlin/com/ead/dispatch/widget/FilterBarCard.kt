@@ -1,31 +1,35 @@
-package com.ead.dispatch.sample.presentation.library
+package com.ead.dispatch.widget
 
 import com.ead.dispatch.annotation.Dispatchable
 import com.ead.dispatch.modifier.Modifier
 import com.ead.dispatch.modifier.fillMaxWidth
-import com.ead.dispatch.runtime.LocalTheme
-import com.ead.dispatch.widget.Background
-import com.ead.dispatch.widget.BackgroundStyle
-import com.ead.dispatch.widget.FilterBar
-import com.ead.dispatch.widget.TextFieldState
 import com.github.ajalt.mordant.rendering.TextColors.Companion.rgb
 import com.github.ajalt.mordant.rendering.TextStyle
 
+/**
+ * A filter bar wrapped in a filled background surface.
+ */
 @Dispatchable
-fun ListFilterBar(
+fun FilterBarCard(
     state: TextFieldState,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     showCursor: Boolean = true,
     placeholder: String = "Type to filter...",
+    icon: String = "⚙ ",
+    textStyle: TextStyle? = null,
+    placeholderStyle: TextStyle? = null,
+    backgroundFill: TextStyle = rgb("#363C46"),
+    paddingHorizontal: Int = 1,
+    paddingVertical: Int = 1,
+    indent: Int = 0,
 ) {
-    val theme = LocalTheme.current
     Background(
         modifier = modifier.fillMaxWidth(),
         style = BackgroundStyle.Fill(
-            fill = rgb("#363C46"),
-            paddingHorizontal = 1,
-            paddingVertical = 1,
+            fill = backgroundFill,
+            paddingHorizontal = paddingHorizontal,
+            paddingVertical = paddingVertical,
         ),
     ) {
         FilterBar(
@@ -33,11 +37,11 @@ fun ListFilterBar(
             modifier = Modifier.fillMaxWidth(),
             enabled = enabled,
             showCursor = showCursor,
-            icon = "⚙ ",
+            icon = icon,
             placeholder = placeholder,
-            textStyle = theme.primary,
-            placeholderStyle = theme.primary + TextStyle(dim = true),
-            indent = 0,
+            textStyle = textStyle,
+            placeholderStyle = placeholderStyle,
+            indent = indent,
         )
     }
 }

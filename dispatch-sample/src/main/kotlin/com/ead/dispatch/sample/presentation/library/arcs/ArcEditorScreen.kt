@@ -13,13 +13,13 @@ import com.ead.dispatch.runtime.LocalKeyboardInterceptor
 import com.ead.dispatch.sample.navigation.ArcEditorRoute
 import com.ead.dispatch.sample.presentation.editor.components.EditorFooter
 import com.ead.dispatch.sample.presentation.editor.components.EditorHeader
-import com.ead.dispatch.sample.presentation.editor.components.EditorSectionHeader
 import com.ead.dispatch.sample.presentation.editor.components.ManualEditorForm
 import com.ead.dispatch.sample.presentation.editor.components.rememberEditorScreenStyles
 import com.ead.dispatch.state.getValue
 import com.ead.dispatch.viewmodel.collectAsState
 import com.ead.dispatch.viewmodel.viewModel
 import com.ead.dispatch.widget.LazyColumn
+import com.ead.dispatch.widget.SectionHeader
 
 @Dispatchable
 fun ArcEditorScreen(backStack: NavBackStack<NavKey>, route: ArcEditorRoute) {
@@ -92,10 +92,12 @@ fun ArcEditorScreen(backStack: NavBackStack<NavKey>, route: ArcEditorRoute) {
         }
 
         item {
-            EditorSectionHeader(
+            SectionHeader(
                 title = "Profile",
-                hint = "Tab next field. Ctrl+S save. Ctrl+D delete. Esc back.",
-                styles = styles,
+                subtitle = "Tab next field. Ctrl+S save. Ctrl+D delete. Esc back.",
+                titleStyle = styles.sectionTitle,
+                subtitleStyle = styles.hintText,
+                subtitleOnNewLine = true,
             )
         }
         item { Spacer(Modifier.height(1)) }

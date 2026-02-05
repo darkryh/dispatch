@@ -8,5 +8,6 @@ data class EditorFieldDefinition(
     val placeholder: String = "Enter value",
     val helper: String? = null,
     val maxLines: Int? = null,
+    val options: List<String>? = null,
     val layout: EditorFieldLayout = HALF,
 )

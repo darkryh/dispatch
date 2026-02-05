@@ -9,8 +9,10 @@ import com.ead.dispatch.modifier.fillMaxWidth
 import com.ead.dispatch.modifier.height
 import com.ead.dispatch.modifier.width
 import com.ead.dispatch.sample.presentation.util.FieldValue
+import com.ead.dispatch.widget.CycleButton
 import com.ead.dispatch.widget.InputTextField
 import com.ead.dispatch.widget.Text
+import com.github.ajalt.mordant.rendering.TextColors.Companion.rgb
 
 @Dispatchable
 fun EditorFieldRow(
@@ -19,6 +21,7 @@ fun EditorFieldRow(
     maxLines: Int? = null,
     placeholder: String = "Enter value",
     helper: String? = null,
+    options: List<String>? = null,
     onValueChange: (String) -> Unit,
     styles: EditorScreenStyles,
 ) {
@@ -29,15 +32,32 @@ fun EditorFieldRow(
         }
         Row(modifier = Modifier.fillMaxWidth()) {
             Spacer(Modifier.width(2))
-            InputTextField(
-                modifier = Modifier.fillMaxWidth(),
-                value = value.text,
-                onValueChange = onValueChange,
-                placeholder = placeholder,
-                maxLines = maxLines,
-                textStyle = styles.fieldText,
-                placeholderStyle = styles.fieldPlaceholder,
-            )
+            if (options.isNullOrEmpty()) {
+                InputTextField(
+                    modifier = Modifier.fillMaxWidth(),
+                    value = value.text,
+                    onValueChange = onValueChange,
+                    placeholder = placeholder,
+                    maxLines = maxLines,
+                    textStyle = styles.fieldText,
+                    placeholderStyle = styles.fieldPlaceholder,
+                )
+            } else {
+                CycleButton(
+                    modifier = Modifier.fillMaxWidth(),
+                    value = value.text,
+                    options = options,
+                    onValueChange = onValueChange,
+                    placeholder = placeholder,
+                    unfocusedFill = rgb("#2E3138"),
+                    focusedFill = rgb("#3E6B83"),
+                    unfocusedTextStyle = styles.fieldText,
+                    focusedTextStyle = rgb("#FFFFFF"),
+                    placeholderStyle = styles.fieldPlaceholder,
+                    paddingHorizontal = 2,
+                    paddingVertical = 1,
+                )
+            }
         }
         if (helper != null) {
             Row(modifier = Modifier.fillMaxWidth()) {

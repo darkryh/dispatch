@@ -14,7 +14,6 @@ import com.ead.dispatch.sample.navigation.RelationshipEditorRoute
 import com.ead.dispatch.sample.presentation.editor.components.AiEditorForm
 import com.ead.dispatch.sample.presentation.editor.components.EditorFooter
 import com.ead.dispatch.sample.presentation.editor.components.EditorHeader
-import com.ead.dispatch.sample.presentation.editor.components.EditorSectionHeader
 import com.ead.dispatch.sample.presentation.editor.components.ManualEditorForm
 import com.ead.dispatch.sample.presentation.editor.components.rememberEditorScreenStyles
 import com.ead.dispatch.sample.presentation.editor.model.EditorAiFields
@@ -23,6 +22,7 @@ import com.ead.dispatch.state.getValue
 import com.ead.dispatch.viewmodel.collectAsState
 import com.ead.dispatch.viewmodel.viewModel
 import com.ead.dispatch.widget.LazyColumn
+import com.ead.dispatch.widget.SectionHeader
 
 @Dispatchable
 fun RelationshipEditorScreen(backStack: NavBackStack<NavKey>, route: RelationshipEditorRoute) {
@@ -120,10 +120,12 @@ fun RelationshipEditorScreen(backStack: NavBackStack<NavKey>, route: Relationshi
 
         if (uiState.mode == EditorMode.MANUAL) {
             item {
-                EditorSectionHeader(
+                SectionHeader(
                     title = "Profile",
-                    hint = "Tab next field. Shift+Tab switches mode. Ctrl+S save. Ctrl+D delete. Esc back.",
-                    styles = styles,
+                    subtitle = "Tab next field. Shift+Tab switches mode. Ctrl+S save. Ctrl+D delete. Esc back.",
+                    titleStyle = styles.sectionTitle,
+                    subtitleStyle = styles.hintText,
+                    subtitleOnNewLine = true,
                 )
             }
             item { Spacer(Modifier.height(1)) }
@@ -147,10 +149,12 @@ fun RelationshipEditorScreen(backStack: NavBackStack<NavKey>, route: Relationshi
         } else {
             val modeLabel = uiState.aiMode.name.lowercase().replaceFirstChar { it.uppercase() }
             item {
-                EditorSectionHeader(
+                SectionHeader(
                     title = "AI Prompt ($modeLabel)",
-                    hint = "Ctrl+G generate · Ctrl+A apply · Ctrl+R regenerate · Ctrl+Q mode · Shift+Tab manual · Esc back",
-                    styles = styles,
+                    subtitle = "Ctrl+G generate · Ctrl+A apply · Ctrl+R regenerate · Ctrl+Q mode · Shift+Tab manual · Esc back",
+                    titleStyle = styles.sectionTitle,
+                    subtitleStyle = styles.hintText,
+                    subtitleOnNewLine = true,
                 )
             }
             item { Spacer(Modifier.height(1)) }
@@ -168,10 +172,12 @@ fun RelationshipEditorScreen(backStack: NavBackStack<NavKey>, route: Relationshi
             if (draft != null) {
                 item { Spacer(Modifier.height(1)) }
                 item {
-                    EditorSectionHeader(
+                    SectionHeader(
                         title = "AI Draft",
-                        hint = "Ctrl+A apply · Ctrl+R regenerate",
-                        styles = styles,
+                        subtitle = "Ctrl+A apply · Ctrl+R regenerate",
+                        titleStyle = styles.sectionTitle,
+                        subtitleStyle = styles.hintText,
+                        subtitleOnNewLine = true,
                     )
                 }
                 item { Spacer(Modifier.height(1)) }
