@@ -64,20 +64,7 @@ fun ChatMessage(
             }
         }
         CliMessageRole.TOOL -> {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Spacer(modifier = Modifier.width(2))
-                Text(
-                    text = "⚙ Tool used",
-                    style = rgb("#FFA500") // Orange for system
-                )
-                Text(
-                    text = message.data,
-                    style = rgb("#FFA500"),
-                )
-                Spacer(modifier = Modifier.width(2))
-            }
+            ToolCallMessage(message = message, modifier = Modifier.fillMaxWidth())
         }
         CliMessageRole.SYSTEM -> {
             // System messages (mode switch notifications, etc.)

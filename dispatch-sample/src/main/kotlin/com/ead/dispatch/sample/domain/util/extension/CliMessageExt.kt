@@ -35,11 +35,25 @@ fun CliMessage.toMessage(): Message {
 }
 
 fun Message.toCliMessage(): CliMessage {
-    return when (this.role) {
-        Message.Role.System -> CliMessage(data = this.content, role = CliMessageRole.SYSTEM)
-        Message.Role.User -> CliMessage(data = this.content, role = CliMessageRole.USER)
-        Message.Role.Assistant -> CliMessage(data = this.content, role = CliMessageRole.ASSISTANT)
-        Message.Role.Reasoning -> CliMessage(data = this.content, role = CliMessageRole.SYSTEM)
-        Message.Role.Tool -> CliMessage(data = this.content, role = CliMessageRole.SYSTEM)
+    return when (this) {
+        is Message.Tool.Call -> CliMessage(
+            data = this.content,
+            role = CliMessageRole.TOOL,
+            toolId = this.id,
+            toolName = this.tool,
+        )
+        is Message.Tool.Result -> CliMessage(
+            data = this.content,
+            role = CliMessageRole.TOOL,
+            toolId = this.id,
+            toolName = this.tool,
+        )
+        else -> when (this.role) {
+            Message.Role.System -> CliMessage(data = this.content, role = CliMessageRole.SYSTEM)
+            Message.Role.User -> CliMessage(data = this.content, role = CliMessageRole.USER)
+            Message.Role.Assistant -> CliMessage(data = this.content, role = CliMessageRole.ASSISTANT)
+            Message.Role.Reasoning -> CliMessage(data = this.content, role = CliMessageRole.SYSTEM)
+            Message.Role.Tool -> CliMessage(data = this.content, role = CliMessageRole.TOOL)
+        }
     }
 }

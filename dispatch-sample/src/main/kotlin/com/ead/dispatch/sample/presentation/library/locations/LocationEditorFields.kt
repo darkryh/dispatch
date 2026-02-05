@@ -20,6 +20,6 @@ object LocationEditorFields {
             placeholder = "comma, separated, tags",
             helper = "Comma-separated list",
             layout = FULL,
-        ),
+        )
     )
 }

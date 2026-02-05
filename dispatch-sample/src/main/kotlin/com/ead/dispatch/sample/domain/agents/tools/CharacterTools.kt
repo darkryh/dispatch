@@ -193,7 +193,7 @@ class CharacterTools(
         @LLMDescription("Character id to delete")
         entityId: String,
     ): ToolResult<OperationOutcome> {
-        val existing = repository.getStoryCharacters(storyId).firstOrNull { it.id == entityId }
+        repository.getStoryCharacters(storyId).firstOrNull { it.id == entityId }
             ?: return failure("NOT_FOUND", "Character with id '$entityId' not found.")
 
         repository.deleteStoryCharacter(entityId)
