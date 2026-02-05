@@ -7,10 +7,6 @@ import com.ead.dispatch.modifier.Modifier
 import com.ead.dispatch.modifier.fillMaxWidth
 import com.ead.dispatch.modifier.height
 import com.ead.dispatch.modifier.width
-import com.ead.dispatch.navigation.NavBackStack
-import com.ead.dispatch.navigation.NavKey
-import com.ead.dispatch.navigation.navigate
-import com.ead.dispatch.navigation.popBackStack
 import com.ead.dispatch.runtime.DisposableEffect
 import com.ead.dispatch.runtime.LocalKeyboardInterceptor
 import com.ead.dispatch.runtime.LocalTerminalHeight
@@ -40,12 +36,13 @@ import com.ead.dispatch.widget.rememberTextFieldState
 import com.ead.dispatch.widget.rememberFilterInputController
 import com.github.ajalt.mordant.rendering.TextColors.Companion.rgb
 import com.github.ajalt.mordant.rendering.TextStyle
+import com.ead.dispatch.navigation.LocalNavigator
 
 @Dispatchable
 fun TimelineListScreen(
-    backStack: NavBackStack<NavKey>,
     route: TimelineListRoute
 ) {
+    val navigator = LocalNavigator.current
     val theme = LocalTheme.current
     val keyboardInterceptor = LocalKeyboardInterceptor.current
     val viewModel = viewModel<TimelineListViewModel>()
@@ -74,10 +71,10 @@ fun TimelineListScreen(
         val entry = filteredEntries.getOrNull(selectedIndex)
         when (entry) {
             is ListEntry.Create -> {
-                backStack.navigate(TimelineEditorRoute(storyId = route.storyId, timelineEntryId = null))
+                navigator.navigate(TimelineEditorRoute(storyId = route.storyId, timelineEntryId = null))
             }
             is ListEntry.Item -> {
-                backStack.navigate(TimelineEditorRoute(storyId = route.storyId, timelineEntryId = entry.data.id))
+                navigator.navigate(TimelineEditorRoute(storyId = route.storyId, timelineEntryId = entry.data.id))
             }
             null -> Unit
         }
@@ -87,7 +84,7 @@ fun TimelineListScreen(
         val dispose = keyboardInterceptor.register(priority = 1) { event ->
             when (event.key) {
                 "Escape", "Esc" -> {
-                    backStack.popBackStack()
+                    navigator.popBackStack()
                     true
                 }
                 "Enter" -> {
@@ -104,7 +101,7 @@ fun TimelineListScreen(
                 }
                 "n", "N" -> {
                     if (event.ctrl) {
-                        backStack.navigate(TimelineEditorRoute(storyId = route.storyId, timelineEntryId = null))
+                        navigator.navigate(TimelineEditorRoute(storyId = route.storyId, timelineEntryId = null))
                         true
                     } else {
                         false

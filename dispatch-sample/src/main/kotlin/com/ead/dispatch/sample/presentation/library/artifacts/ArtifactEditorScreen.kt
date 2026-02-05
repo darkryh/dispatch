@@ -5,9 +5,6 @@ import com.ead.dispatch.layout.Spacer
 import com.ead.dispatch.modifier.Modifier
 import com.ead.dispatch.modifier.fillMaxWidth
 import com.ead.dispatch.modifier.height
-import com.ead.dispatch.navigation.NavBackStack
-import com.ead.dispatch.navigation.NavKey
-import com.ead.dispatch.navigation.popBackStack
 import com.ead.dispatch.runtime.DisposableEffect
 import com.ead.dispatch.runtime.LocalKeyboardInterceptor
 import com.ead.dispatch.sample.navigation.ArtifactEditorRoute
@@ -23,9 +20,11 @@ import com.ead.dispatch.viewmodel.collectAsState
 import com.ead.dispatch.viewmodel.viewModel
 import com.ead.dispatch.widget.LazyColumn
 import com.ead.dispatch.widget.SectionHeader
+import com.ead.dispatch.navigation.LocalNavigator
 
 @Dispatchable
-fun ArtifactEditorScreen(backStack: NavBackStack<NavKey>, route: ArtifactEditorRoute) {
+fun ArtifactEditorScreen(route: ArtifactEditorRoute) {
+    val navigator = LocalNavigator.current
     val keyboardInterceptor = LocalKeyboardInterceptor.current
     val viewModel = viewModel<ArtifactEditorViewModel>()
     val uiState by viewModel.uiState.collectAsState()
@@ -35,7 +34,7 @@ fun ArtifactEditorScreen(backStack: NavBackStack<NavKey>, route: ArtifactEditorR
         val dispose = keyboardInterceptor.register { event ->
             when (event.key) {
                 "Escape", "Esc" -> {
-                    backStack.popBackStack()
+                    navigator.popBackStack()
                     true
                 }
                 "S", "s" -> if (event.ctrl) {

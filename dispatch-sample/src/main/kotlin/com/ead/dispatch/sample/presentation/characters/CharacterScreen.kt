@@ -4,9 +4,6 @@ import com.ead.dispatch.annotation.Dispatchable
 import com.ead.dispatch.modifier.Modifier
 import com.ead.dispatch.modifier.fillMaxWidth
 import com.ead.dispatch.modifier.height
-import com.ead.dispatch.navigation.NavBackStack
-import com.ead.dispatch.navigation.NavKey
-import com.ead.dispatch.navigation.popBackStack
 import com.ead.dispatch.runtime.DisposableEffect
 import com.ead.dispatch.runtime.LocalKeyboardInterceptor
 import com.ead.dispatch.sample.presentation.characters.components.AiCharacterForm
@@ -29,9 +26,11 @@ import com.ead.dispatch.sample.presentation.characters.state.CharacterFields
 import com.ead.dispatch.sample.presentation.characters.util.CharacterUIMode
 import com.ead.dispatch.sample.navigation.CharacterRoute
 import com.ead.dispatch.sample.presentation.characters.util.CharacterFieldKey
+import com.ead.dispatch.navigation.LocalNavigator
 
 @Dispatchable
-fun CharacterScreen(backStack: NavBackStack<NavKey>, route: CharacterRoute) {
+fun CharacterScreen(route: CharacterRoute) {
+    val navigator = LocalNavigator.current
     val keyboardInterceptor = LocalKeyboardInterceptor.current
 
     val viewModel = viewModel<CharacterViewModel>()
@@ -56,7 +55,7 @@ fun CharacterScreen(backStack: NavBackStack<NavKey>, route: CharacterRoute) {
         val dispose = keyboardInterceptor.register { event ->
             when (event.key) {
                 "Escape", "Esc" -> {
-                    backStack.popBackStack()
+                    navigator.popBackStack()
                     true
                 }
                 "S", "s" -> if (event.ctrl) {

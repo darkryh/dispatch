@@ -7,10 +7,6 @@ import com.ead.dispatch.modifier.Modifier
 import com.ead.dispatch.modifier.fillMaxWidth
 import com.ead.dispatch.modifier.height
 import com.ead.dispatch.modifier.width
-import com.ead.dispatch.navigation.NavBackStack
-import com.ead.dispatch.navigation.NavKey
-import com.ead.dispatch.navigation.navigate
-import com.ead.dispatch.navigation.popBackStack
 import com.ead.dispatch.runtime.LocalTheme
 import com.ead.dispatch.sample.navigation.ChatRoute
 import com.ead.dispatch.viewmodel.collectAsState
@@ -22,11 +18,11 @@ import com.ead.dispatch.widget.SessionSelector
 import com.ead.dispatch.widget.SessionSelectorTextStyles
 import com.ead.dispatch.widget.Text
 import com.github.ajalt.mordant.rendering.TextStyle
+import com.ead.dispatch.navigation.LocalNavigator
 
 @Dispatchable
-fun SessionScreen(
-    backStack: NavBackStack<NavKey>
-) {
+fun SessionScreen() {
+    val navigator = LocalNavigator.current
     val viewModel = viewModel<SessionViewModel>()
     val theme = LocalTheme.current
 
@@ -94,10 +90,10 @@ fun SessionScreen(
                             options = sessionOptions,
                             onOptionSelected = { option ->
                                 viewModel.selectSession(option.data)
-                                backStack.navigate(ChatRoute(conversationId = option.data.id))
+                                navigator.navigate(ChatRoute(conversationId = option.data.id))
                             },
                         onExit = {
-                            backStack.popBackStack()
+                            navigator.popBackStack()
                         },
                         columns = listOf(
                             SessionDisplayColumn.UPDATED_TIME,

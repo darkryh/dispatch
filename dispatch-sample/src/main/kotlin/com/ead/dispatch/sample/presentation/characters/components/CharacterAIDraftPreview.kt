@@ -30,6 +30,7 @@ fun CharacterAIDraftPreview(
         add(LabeledValue("Quirks", draft.quirks.joinToString(", ")))
 
         val physical = draft.physical
+
         if (physical != null) {
             add(LabeledValue("Appearance", physical.appearance))
             add(LabeledValue("Height", physical.height))

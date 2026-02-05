@@ -7,10 +7,6 @@ import com.ead.dispatch.modifier.Modifier
 import com.ead.dispatch.modifier.fillMaxWidth
 import com.ead.dispatch.modifier.height
 import com.ead.dispatch.modifier.width
-import com.ead.dispatch.navigation.NavBackStack
-import com.ead.dispatch.navigation.NavKey
-import com.ead.dispatch.navigation.navigate
-import com.ead.dispatch.navigation.popBackStack
 import com.ead.dispatch.runtime.DisposableEffect
 import com.ead.dispatch.runtime.LocalKeyboardInterceptor
 import com.ead.dispatch.runtime.LocalTheme
@@ -39,9 +35,11 @@ import com.ead.dispatch.widget.TextOverflow
 import com.github.ajalt.mordant.input.KeyboardEvent
 import com.github.ajalt.mordant.rendering.TextColors
 import com.github.ajalt.mordant.rendering.TextStyle
+import com.ead.dispatch.navigation.LocalNavigator
 
 @Dispatchable
-fun StoryChatScreen(backStack: NavBackStack<NavKey>, route: StoryChatRoute) {
+fun StoryChatScreen(route: StoryChatRoute) {
+    val navigator = LocalNavigator.current
     val theme = LocalTheme.current
     val keyboardInterceptor = LocalKeyboardInterceptor.current
     val viewModel = viewModel<StoryChatViewModel>()
@@ -50,23 +48,23 @@ fun StoryChatScreen(backStack: NavBackStack<NavKey>, route: StoryChatRoute) {
     fun handleKeyEvent(event: KeyboardEvent): Boolean {
         val consumed = when (event.key.lowercase()) {
             "escape", "esc" -> {
-                backStack.popBackStack()
+                navigator.popBackStack()
                 true
             }
             "c" -> {
-                backStack.navigate(CharacterListRoute(storyId = route.storyId))
+                navigator.navigate(CharacterListRoute(storyId = route.storyId))
                 true
             }
             "l" -> {
-                backStack.navigate(LocationListRoute(storyId = route.storyId))
+                navigator.navigate(LocationListRoute(storyId = route.storyId))
                 true
             }
             "a" -> {
-                backStack.navigate(ArcListRoute(storyId = route.storyId))
+                navigator.navigate(ArcListRoute(storyId = route.storyId))
                 true
             }
             "w" -> {
-                backStack.navigate(WorldRuleListRoute(storyId = route.storyId))
+                navigator.navigate(WorldRuleListRoute(storyId = route.storyId))
                 true
             }
             else -> false

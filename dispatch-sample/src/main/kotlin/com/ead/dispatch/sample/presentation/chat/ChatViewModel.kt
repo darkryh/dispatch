@@ -2,9 +2,7 @@ package com.ead.dispatch.sample.presentation.chat
 
 import ai.koog.prompt.message.Message
 import ai.koog.prompt.streaming.StreamFrame
-import com.ead.dispatch.navigation.NavBackStack
-import com.ead.dispatch.navigation.NavKey
-import com.ead.dispatch.navigation.navigate
+import com.ead.dispatch.navigation.Navigator
 import com.ead.dispatch.navigation.toRoute
 import com.ead.dispatch.runtime.SavedStateHandle
 import com.ead.dispatch.sample.domain.AIProvider
@@ -112,13 +110,13 @@ class ChatViewModel(
                 _inputText.value = event.text
             }
             is ChatEvent.OnSubmitMessage -> {
-                val backStack = event.backStack
+                val navigator = event.navigator
                 val text = event.text
 
                 val commandAction = commandManager.routing(text, writerMode.value)
 
                 if (commandAction != null) {
-                    onCommandAction(backStack, commandAction)
+                    onCommandAction(navigator, commandAction)
                     onEvent(ChatEvent.OnClearTextField)
                     return
                 }
@@ -149,16 +147,16 @@ class ChatViewModel(
         }
     }
 
-    private fun onCommandAction(backStack: NavBackStack<NavKey>, commandAction: CommandAction) {
+    private fun onCommandAction(navigator: Navigator, commandAction: CommandAction) {
         when (commandAction) {
             CommandAction.ClearContext -> {
                 _messages.value = emptyList()
             }
             is CommandAction.OpenEntityList -> {
-                openEntityList(backStack, commandAction.type, _session.value?.id)
+                openEntityList(navigator, commandAction.type, _session.value?.id)
             }
             CommandAction.OpenStoryChat -> {
-                backStack.navigate(StoryChatRoute(storyId = _session.value?.id))
+                navigator.navigate(StoryChatRoute(storyId = _session.value?.id))
             }
         }
     }
@@ -272,22 +270,22 @@ class ChatViewModel(
     }
 
     private fun openEntityList(
-        backStack: NavBackStack<NavKey>,
+        navigator: Navigator,
         type: EntityOptionType,
         storyId: String?,
     ) {
         when (type) {
-            EntityOptionType.CHARACTERS -> backStack.navigate(CharacterListRoute(storyId = storyId))
-            EntityOptionType.LOCATIONS -> backStack.navigate(LocationListRoute(storyId = storyId))
-            EntityOptionType.ARCS -> backStack.navigate(ArcListRoute(storyId = storyId))
-            EntityOptionType.WORLD_RULES -> backStack.navigate(WorldRuleListRoute(storyId = storyId))
-            EntityOptionType.CULTURES -> backStack.navigate(CultureListRoute(storyId = storyId))
-            EntityOptionType.EVENTS -> backStack.navigate(EventListRoute(storyId = storyId))
-            EntityOptionType.ORGANIZATIONS -> backStack.navigate(OrganizationListRoute(storyId = storyId))
-            EntityOptionType.RELATIONSHIPS -> backStack.navigate(RelationshipListRoute(storyId = storyId))
-            EntityOptionType.LOCATION_FEATURES -> backStack.navigate(LocationFeatureListRoute(storyId = storyId))
-            EntityOptionType.ARTIFACTS -> backStack.navigate(ArtifactListRoute(storyId = storyId))
-            EntityOptionType.TIMELINE -> backStack.navigate(TimelineListRoute(storyId = storyId))
+            EntityOptionType.CHARACTERS -> navigator.navigate(CharacterListRoute(storyId = storyId))
+            EntityOptionType.LOCATIONS -> navigator.navigate(LocationListRoute(storyId = storyId))
+            EntityOptionType.ARCS -> navigator.navigate(ArcListRoute(storyId = storyId))
+            EntityOptionType.WORLD_RULES -> navigator.navigate(WorldRuleListRoute(storyId = storyId))
+            EntityOptionType.CULTURES -> navigator.navigate(CultureListRoute(storyId = storyId))
+            EntityOptionType.EVENTS -> navigator.navigate(EventListRoute(storyId = storyId))
+            EntityOptionType.ORGANIZATIONS -> navigator.navigate(OrganizationListRoute(storyId = storyId))
+            EntityOptionType.RELATIONSHIPS -> navigator.navigate(RelationshipListRoute(storyId = storyId))
+            EntityOptionType.LOCATION_FEATURES -> navigator.navigate(LocationFeatureListRoute(storyId = storyId))
+            EntityOptionType.ARTIFACTS -> navigator.navigate(ArtifactListRoute(storyId = storyId))
+            EntityOptionType.TIMELINE -> navigator.navigate(TimelineListRoute(storyId = storyId))
             EntityOptionType.VOLUMES,
             EntityOptionType.CHAPTERS,
             EntityOptionType.SCENES -> {

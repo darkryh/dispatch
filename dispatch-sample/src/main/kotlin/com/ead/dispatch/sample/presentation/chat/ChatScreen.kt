@@ -8,8 +8,7 @@ import com.ead.dispatch.modifier.Modifier
 import com.ead.dispatch.modifier.fillMaxWidth
 import com.ead.dispatch.modifier.height
 import com.ead.dispatch.modifier.width
-import com.ead.dispatch.navigation.NavBackStack
-import com.ead.dispatch.navigation.NavKey
+import com.ead.dispatch.navigation.LocalNavigator
 import com.ead.dispatch.runtime.DisposableEffect
 import com.ead.dispatch.runtime.LocalKeyboardInterceptor
 import com.ead.dispatch.runtime.LocalTheme
@@ -38,7 +37,7 @@ import com.github.ajalt.mordant.rendering.TextStyle
  * - Uses extracted components for better organization
  */
 @Dispatchable
-fun ChatScreen(backStack: NavBackStack<NavKey>) {
+fun ChatScreen() {
     // ViewModel provides state management
     val viewModel = viewModel<ChatViewModel>()
     val commandManager by inject<CommandManager>()
@@ -51,6 +50,7 @@ fun ChatScreen(backStack: NavBackStack<NavKey>) {
 
     val writerMode by viewModel.writerMode.collectAsState()
     val theme = LocalTheme.current
+    val navigator = LocalNavigator.current
 
     // Register Shift+Tab handler for mode switching without replacing InputTextField handlers.
     val keyboardInterceptor = LocalKeyboardInterceptor.current
@@ -149,7 +149,7 @@ fun ChatScreen(backStack: NavBackStack<NavKey>) {
                 placeholderStyle = rgb("#82858A"),
                 enabled = !isProcessing,
                 showCursor = !isProcessing,
-                onSubmit = { text -> viewModel.onEvent(event = ChatEvent.OnSubmitMessage(backStack, text)) },
+                onSubmit = { text -> viewModel.onEvent(event = ChatEvent.OnSubmitMessage(navigator, text)) },
                 historyItems = historyItems,
                 historyIndexState = historyIndexState,
             )
@@ -162,7 +162,7 @@ fun ChatScreen(backStack: NavBackStack<NavKey>) {
                 state = commandPaletteState,
                 options = commands,
                 inputValue = inputText,
-                onOptionSelected = { option ->  viewModel.onEvent(ChatEvent.OnSubmitMessage(backStack, "/${option.data}")) },
+                onOptionSelected = { option ->  viewModel.onEvent(ChatEvent.OnSubmitMessage(navigator, "/${option.data}")) },
                 onInputTransform = { newInput -> viewModel.onEvent(ChatEvent.OnTextChanged(newInput)) },
                 textStyles = CommandPaletteTextStyles(
                     prefix = theme.muted,

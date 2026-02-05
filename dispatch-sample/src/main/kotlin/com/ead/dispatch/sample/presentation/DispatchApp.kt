@@ -61,79 +61,79 @@ fun DispatchSampleApp() {
         viewModelFactory = KoinViewModelFactory(),
         entryProvider = entryProvider {
             entry<SessionRoute> {
-                SessionScreen(backStack)
+                SessionScreen()
             }
             entry<ChatRoute> {
-                ChatScreen(backStack)
+                ChatScreen()
             }
             entry<CharacterRoute> { route ->
-                CharacterScreen(backStack, route)
+                CharacterScreen(route)
             }
             entry<CharacterListRoute> { route ->
-                CharacterListScreen(backStack, route)
+                CharacterListScreen(route)
             }
             entry<LocationListRoute> { route ->
-                LocationListScreen(backStack, route)
+                LocationListScreen(route)
             }
             entry<LocationEditorRoute> { route ->
-                LocationEditorScreen(backStack, route)
+                LocationEditorScreen(route)
             }
             entry<ArcListRoute> { route ->
-                ArcListScreen(backStack, route)
+                ArcListScreen(route)
             }
             entry<ArcEditorRoute> { route ->
-                ArcEditorScreen(backStack, route)
+                ArcEditorScreen(route)
             }
             entry<WorldRuleListRoute> { route ->
-                WorldRuleListScreen(backStack, route)
+                WorldRuleListScreen(route)
             }
             entry<WorldRuleEditorRoute> { route ->
-                WorldRuleEditorScreen(backStack, route)
+                WorldRuleEditorScreen(route)
             }
             entry<CultureListRoute> { route ->
-                CultureListScreen(backStack, route)
+                CultureListScreen(route)
             }
             entry<CultureEditorRoute> { route ->
-                CultureEditorScreen(backStack, route)
+                CultureEditorScreen(route)
             }
             entry<EventListRoute> { route ->
-                EventListScreen(backStack, route)
+                EventListScreen(route)
             }
             entry<EventEditorRoute> { route ->
-                EventEditorScreen(backStack, route)
+                EventEditorScreen(route)
             }
             entry<OrganizationListRoute> { route ->
-                OrganizationListScreen(backStack, route)
+                OrganizationListScreen(route)
             }
             entry<OrganizationEditorRoute> { route ->
-                OrganizationEditorScreen(backStack, route)
+                OrganizationEditorScreen(route)
             }
             entry<RelationshipListRoute> { route ->
-                RelationshipListScreen(backStack, route)
+                RelationshipListScreen(route)
             }
             entry<RelationshipEditorRoute> { route ->
-                RelationshipEditorScreen(backStack, route)
+                RelationshipEditorScreen(route)
             }
             entry<LocationFeatureListRoute> { route ->
-                LocationFeatureListScreen(backStack, route)
+                LocationFeatureListScreen(route)
             }
             entry<LocationFeatureEditorRoute> { route ->
-                LocationFeatureEditorScreen(backStack, route)
+                LocationFeatureEditorScreen(route)
             }
             entry<ArtifactListRoute> { route ->
-                ArtifactListScreen(backStack, route)
+                ArtifactListScreen(route)
             }
             entry<ArtifactEditorRoute> { route ->
-                ArtifactEditorScreen(backStack, route)
+                ArtifactEditorScreen(route)
             }
             entry<TimelineListRoute> { route ->
-                TimelineListScreen(backStack, route)
+                TimelineListScreen(route)
             }
             entry<TimelineEditorRoute> { route ->
-                TimelineEditorScreen(backStack, route)
+                TimelineEditorScreen(route)
             }
             entry<StoryChatRoute> { route ->
-                StoryChatScreen(backStack, route)
+                StoryChatScreen(route)
             }
         }
     )
