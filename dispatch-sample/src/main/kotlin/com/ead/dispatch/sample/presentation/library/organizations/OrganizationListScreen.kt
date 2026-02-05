@@ -15,7 +15,7 @@ import com.ead.dispatch.runtime.DisposableEffect
 import com.ead.dispatch.runtime.LocalKeyboardInterceptor
 import com.ead.dispatch.runtime.LocalTerminalHeight
 import com.ead.dispatch.runtime.LocalTheme
-import com.ead.dispatch.sample.navigation.EntityEditorRoute
+import com.ead.dispatch.sample.navigation.OrganizationEditorRoute
 import com.ead.dispatch.sample.navigation.OrganizationListRoute
 import com.ead.dispatch.sample.presentation.library.calculateVisibleCount
 import com.ead.dispatch.sample.presentation.library.filterEntries
@@ -72,10 +72,10 @@ fun OrganizationListScreen(
         val entry = filteredEntries.getOrNull(selectedIndex)
         when (entry) {
             is ListEntry.Create -> {
-                backStack.navigate(EntityEditorRoute(type = "organizations", storyId = route.storyId, entityId = null))
+                backStack.navigate(OrganizationEditorRoute(storyId = route.storyId, organizationId = null))
             }
             is ListEntry.Item -> {
-                backStack.navigate(EntityEditorRoute(type = "organizations", storyId = route.storyId, entityId = entry.data.id))
+                backStack.navigate(OrganizationEditorRoute(storyId = route.storyId, organizationId = entry.data.id))
             }
             null -> Unit
         }
@@ -102,7 +102,7 @@ fun OrganizationListScreen(
                 }
                 "n", "N" -> {
                     if (event.ctrl) {
-                        backStack.navigate(EntityEditorRoute(type = "organizations", storyId = route.storyId, entityId = null))
+                        backStack.navigate(OrganizationEditorRoute(storyId = route.storyId, organizationId = null))
                         true
                     } else {
                         false

@@ -39,4 +39,13 @@ object AIProvider {
     fun getChatAgentId(id : String) = "${id}:chat-agent"
     fun getStoryAgentId(id : String) = "${id}:story-agent"
     fun getCharacterAgentId(id: String) = "${id}:character-agent"
+    fun getLocationAgentId(id: String) = "${id}:location-agent"
+    fun getWorldRuleAgentId(id: String) = "${id}:world-rule-agent"
+    fun getCultureAgentId(id: String) = "${id}:culture-agent"
+    fun getEventAgentId(id: String) = "${id}:event-agent"
+    fun getOrganizationAgentId(id: String) = "${id}:organization-agent"
+    fun getRelationshipAgentId(id: String) = "${id}:relationship-agent"
+    fun getLocationFeatureAgentId(id: String) = "${id}:location-feature-agent"
+    fun getArtifactAgentId(id: String) = "${id}:artifact-agent"
+    fun getTimelineAgentId(id: String) = "${id}:timeline-agent"
 }

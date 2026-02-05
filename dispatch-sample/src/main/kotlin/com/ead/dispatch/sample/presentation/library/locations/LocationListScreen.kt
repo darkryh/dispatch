@@ -15,7 +15,7 @@ import com.ead.dispatch.runtime.DisposableEffect
 import com.ead.dispatch.runtime.LocalKeyboardInterceptor
 import com.ead.dispatch.runtime.LocalTerminalHeight
 import com.ead.dispatch.runtime.LocalTheme
-import com.ead.dispatch.sample.navigation.EntityEditorRoute
+import com.ead.dispatch.sample.navigation.LocationEditorRoute
 import com.ead.dispatch.sample.navigation.LocationListRoute
 import com.ead.dispatch.sample.presentation.library.calculateVisibleCount
 import com.ead.dispatch.sample.presentation.library.filterEntries
@@ -72,10 +72,10 @@ fun LocationListScreen(
         val entry = filteredEntries.getOrNull(selectedIndex)
         when (entry) {
             is ListEntry.Create -> {
-                backStack.navigate(EntityEditorRoute(type = "locations", storyId = route.storyId, entityId = null))
+                backStack.navigate(LocationEditorRoute(storyId = route.storyId, locationId = null))
             }
             is ListEntry.Item -> {
-                backStack.navigate(EntityEditorRoute(type = "locations", storyId = route.storyId, entityId = entry.data.id))
+                backStack.navigate(LocationEditorRoute(storyId = route.storyId, locationId = entry.data.id))
             }
             null -> Unit
         }
@@ -102,7 +102,7 @@ fun LocationListScreen(
                 }
                 "n", "N" -> {
                     if (event.ctrl) {
-                        backStack.navigate(EntityEditorRoute(type = "locations", storyId = route.storyId, entityId = null))
+                        backStack.navigate(LocationEditorRoute(storyId = route.storyId, locationId = null))
                         true
                     } else {
                         false

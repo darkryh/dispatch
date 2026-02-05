@@ -1,7 +1,6 @@
 package com.ead.dispatch.sample.navigation
 
 import com.ead.dispatch.navigation.NavKey
-import com.ead.dispatch.sample.domain.entity.EntityOptionType
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -40,6 +39,13 @@ data class LocationListRoute(
 @SerialName("arcs-list")
 data class ArcListRoute(
     val storyId: String? = null,
+) : NavKey
+
+@Serializable
+@SerialName("arc-editor")
+data class ArcEditorRoute(
+    val storyId: String? = null,
+    val arcId: String? = null,
 ) : NavKey
 
 @Serializable
@@ -91,15 +97,70 @@ data class TimelineListRoute(
 ) : NavKey
 
 @Serializable
-@SerialName("story-chat")
-data class StoryChatRoute(
+@SerialName("location-editor")
+data class LocationEditorRoute(
     val storyId: String? = null,
+    val locationId: String? = null,
 ) : NavKey
 
 @Serializable
-@SerialName("entity-editor")
-data class EntityEditorRoute(
-    val type: String = EntityOptionType.LOCATIONS.id,
+@SerialName("world-rule-editor")
+data class WorldRuleEditorRoute(
     val storyId: String? = null,
-    val entityId: String? = null,
+    val worldRuleId: String? = null,
+) : NavKey
+
+@Serializable
+@SerialName("culture-editor")
+data class CultureEditorRoute(
+    val storyId: String? = null,
+    val cultureId: String? = null,
+) : NavKey
+
+@Serializable
+@SerialName("event-editor")
+data class EventEditorRoute(
+    val storyId: String? = null,
+    val eventId: String? = null,
+) : NavKey
+
+@Serializable
+@SerialName("organization-editor")
+data class OrganizationEditorRoute(
+    val storyId: String? = null,
+    val organizationId: String? = null,
+) : NavKey
+
+@Serializable
+@SerialName("relationship-editor")
+data class RelationshipEditorRoute(
+    val storyId: String? = null,
+    val relationshipId: String? = null,
+) : NavKey
+
+@Serializable
+@SerialName("location-feature-editor")
+data class LocationFeatureEditorRoute(
+    val storyId: String? = null,
+    val locationFeatureId: String? = null,
+) : NavKey
+
+@Serializable
+@SerialName("artifact-editor")
+data class ArtifactEditorRoute(
+    val storyId: String? = null,
+    val artifactId: String? = null,
+) : NavKey
+
+@Serializable
+@SerialName("timeline-editor")
+data class TimelineEditorRoute(
+    val storyId: String? = null,
+    val timelineEntryId: String? = null,
+) : NavKey
+
+@Serializable
+@SerialName("story-chat")
+data class StoryChatRoute(
+    val storyId: String? = null,
 ) : NavKey

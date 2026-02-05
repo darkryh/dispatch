@@ -16,7 +16,7 @@ import com.ead.dispatch.runtime.LocalKeyboardInterceptor
 import com.ead.dispatch.runtime.LocalTerminalHeight
 import com.ead.dispatch.runtime.LocalTheme
 import com.ead.dispatch.sample.navigation.ArtifactListRoute
-import com.ead.dispatch.sample.navigation.EntityEditorRoute
+import com.ead.dispatch.sample.navigation.ArtifactEditorRoute
 import com.ead.dispatch.sample.presentation.library.calculateVisibleCount
 import com.ead.dispatch.sample.presentation.library.filterEntries
 import com.ead.dispatch.sample.presentation.library.matchesQuery
@@ -72,10 +72,10 @@ fun ArtifactListScreen(
         val entry = filteredEntries.getOrNull(selectedIndex)
         when (entry) {
             is ListEntry.Create -> {
-                backStack.navigate(EntityEditorRoute(type = "artifacts", storyId = route.storyId, entityId = null))
+                backStack.navigate(ArtifactEditorRoute(storyId = route.storyId, artifactId = null))
             }
             is ListEntry.Item -> {
-                backStack.navigate(EntityEditorRoute(type = "artifacts", storyId = route.storyId, entityId = entry.data.id))
+                backStack.navigate(ArtifactEditorRoute(storyId = route.storyId, artifactId = entry.data.id))
             }
             null -> Unit
         }
@@ -102,7 +102,7 @@ fun ArtifactListScreen(
                 }
                 "n", "N" -> {
                     if (event.ctrl) {
-                        backStack.navigate(EntityEditorRoute(type = "artifacts", storyId = route.storyId, entityId = null))
+                        backStack.navigate(ArtifactEditorRoute(storyId = route.storyId, artifactId = null))
                         true
                     } else {
                         false

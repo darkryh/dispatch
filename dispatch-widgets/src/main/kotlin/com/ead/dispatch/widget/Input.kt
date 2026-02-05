@@ -559,12 +559,10 @@ fun InputTextField(
     onCursorPositionChange: ((Int) -> Unit)? = null,
     historyItems: List<String> = emptyList(),
     historyIndexState: InputHistoryIndexState? = null,
-    passthroughEvent: ((com.github.ajalt.mordant.input.KeyboardEvent) -> Boolean)? = null,
 ) {
     val onValueChangeCallback = com.ead.dispatch.runtime.rememberCallback(onValueChange)
     val onSubmitCallback = com.ead.dispatch.runtime.rememberCallback(onSubmit)
     val onCursorPositionChangeCallback = com.ead.dispatch.runtime.rememberCallback(onCursorPositionChange)
-    val passthroughEventCallback = com.ead.dispatch.runtime.rememberCallback(passthroughEvent)
 
     val terminal = LocalTerminal.current
     val terminalWidth = LocalTerminalWidth.current
@@ -658,10 +656,6 @@ fun InputTextField(
                 return@register true
             }
 
-            if (passthroughEventCallback?.invoke(event) == true) {
-                return@register false
-            }
-
             editor.handleKeyEvent(event)
             true
         }
@@ -708,7 +702,6 @@ fun InputTextField(
     iconStyle: TextStyle? = null,
     historyItems: List<String> = emptyList(),
     historyIndexState: InputHistoryIndexState? = null,
-    passthroughEvent: ((com.github.ajalt.mordant.input.KeyboardEvent) -> Boolean)? = null,
 ) {
     InputTextField(
         value = state.value,
@@ -728,7 +721,6 @@ fun InputTextField(
         onCursorPositionChange = { state.cursorPosition = it },
         historyItems = historyItems,
         historyIndexState = historyIndexState,
-        passthroughEvent = passthroughEvent,
     )
 }
 

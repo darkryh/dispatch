@@ -15,7 +15,7 @@ import com.ead.dispatch.runtime.DisposableEffect
 import com.ead.dispatch.runtime.LocalKeyboardInterceptor
 import com.ead.dispatch.runtime.LocalTerminalHeight
 import com.ead.dispatch.runtime.LocalTheme
-import com.ead.dispatch.sample.navigation.EntityEditorRoute
+import com.ead.dispatch.sample.navigation.EventEditorRoute
 import com.ead.dispatch.sample.navigation.EventListRoute
 import com.ead.dispatch.sample.presentation.library.calculateVisibleCount
 import com.ead.dispatch.sample.presentation.library.filterEntries
@@ -72,10 +72,10 @@ fun EventListScreen(
         val entry = filteredEntries.getOrNull(selectedIndex)
         when (entry) {
             is ListEntry.Create -> {
-                backStack.navigate(EntityEditorRoute(type = "events", storyId = route.storyId, entityId = null))
+                backStack.navigate(EventEditorRoute(storyId = route.storyId, eventId = null))
             }
             is ListEntry.Item -> {
-                backStack.navigate(EntityEditorRoute(type = "events", storyId = route.storyId, entityId = entry.data.id))
+                backStack.navigate(EventEditorRoute(storyId = route.storyId, eventId = entry.data.id))
             }
             null -> Unit
         }
@@ -102,7 +102,7 @@ fun EventListScreen(
                 }
                 "n", "N" -> {
                     if (event.ctrl) {
-                        backStack.navigate(EntityEditorRoute(type = "events", storyId = route.storyId, entityId = null))
+                        backStack.navigate(EventEditorRoute(storyId = route.storyId, eventId = null))
                         true
                     } else {
                         false

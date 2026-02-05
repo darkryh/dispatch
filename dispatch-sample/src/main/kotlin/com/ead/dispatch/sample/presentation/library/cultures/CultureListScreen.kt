@@ -16,7 +16,7 @@ import com.ead.dispatch.runtime.LocalKeyboardInterceptor
 import com.ead.dispatch.runtime.LocalTerminalHeight
 import com.ead.dispatch.runtime.LocalTheme
 import com.ead.dispatch.sample.navigation.CultureListRoute
-import com.ead.dispatch.sample.navigation.EntityEditorRoute
+import com.ead.dispatch.sample.navigation.CultureEditorRoute
 import com.ead.dispatch.sample.presentation.library.calculateVisibleCount
 import com.ead.dispatch.sample.presentation.library.filterEntries
 import com.ead.dispatch.sample.presentation.library.matchesQuery
@@ -72,10 +72,10 @@ fun CultureListScreen(
         val entry = filteredEntries.getOrNull(selectedIndex)
         when (entry) {
             is ListEntry.Create -> {
-                backStack.navigate(EntityEditorRoute(type = "cultures", storyId = route.storyId, entityId = null))
+                backStack.navigate(CultureEditorRoute(storyId = route.storyId, cultureId = null))
             }
             is ListEntry.Item -> {
-                backStack.navigate(EntityEditorRoute(type = "cultures", storyId = route.storyId, entityId = entry.data.id))
+                backStack.navigate(CultureEditorRoute(storyId = route.storyId, cultureId = entry.data.id))
             }
             null -> Unit
         }
@@ -102,7 +102,7 @@ fun CultureListScreen(
                 }
                 "n", "N" -> {
                     if (event.ctrl) {
-                        backStack.navigate(EntityEditorRoute(type = "cultures", storyId = route.storyId, entityId = null))
+                        backStack.navigate(CultureEditorRoute(storyId = route.storyId, cultureId = null))
                         true
                     } else {
                         false
