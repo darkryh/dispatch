@@ -47,7 +47,6 @@ enum class TimelineAIMode {
 data class TimelineAIRequest(
     val storyId: String,
     val prompt: String,
-    val constraints: String? = null,
     val story: TimelineStoryContext? = null,
     val existingTimelineTitles: List<String> = emptyList(),
     val mode: TimelineAIMode = TimelineAIMode.NORMAL,

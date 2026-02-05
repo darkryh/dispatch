@@ -12,13 +12,12 @@ fun artifactAgentPrompt(request: ArtifactAIRequest): Prompt {
                 +"You generate a structured artifact draft for a story in the schema provided."; br()
                 +"Return only the structured data required by the schema."; br()
                 +"Do not include narrative prose outside the structured fields."; br()
-                +"Follow the user's constraints exactly and prioritize them over all other input."; br()
                 +"Avoid duplicate artifact names when possible."; br()
                 +"If a field is unknown or not implied, leave it null or empty."; br()
 
                 h2("Input Priority")
-                +"1) Constraints, 2) User prompt, 3) Story context, 4) Existing artifacts list."; br()
-                +"If inputs conflict, honor constraints and prompt, then adjust the rest to fit."; br()
+                +"1) User prompt, 2) Story context, 3) Existing artifacts list."; br()
+                +"If inputs conflict, honor the prompt, then adjust the rest to fit."; br()
                 +"Use story context to keep the artifact coherent with genre, setting, and tone."; br()
 
                 h2("Field Guidance")
@@ -48,7 +47,7 @@ fun artifactAgentPrompt(request: ArtifactAIRequest): Prompt {
                 val isCreative = request.mode == ArtifactAIMode.CREATIVE
                 h2("Mode")
                 if (isCreative) {
-                    +"Creative mode: take full creative freedom within the constraints."; br()
+                    +"Creative mode: take full creative freedom within the prompt and story context."; br()
                     +"Invent unexpected but coherent details to make the artifact vivid."; br()
                     +"Use story context as grounding and inspiration for choices."; br()
                     +"Be decisive and specific; avoid vague placeholders."; br()
@@ -65,10 +64,6 @@ fun artifactAgentPrompt(request: ArtifactAIRequest): Prompt {
             markdown {
                 h3("User Prompt")
                 +request.prompt
-                br()
-
-                h3("Constraints")
-                +if (request.constraints.isNullOrBlank()) "None" else request.constraints
                 br()
 
                 val story = request.story

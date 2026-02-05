@@ -112,7 +112,7 @@ class CharacterViewModel(
         _uiState.update { state ->
             val current = state.values[key] ?: FieldValue()
             val resetDraft = state.mode == CharacterUIMode.AUTOMATIC &&
-                (key == CharacterFieldKey.PROMPT || key == CharacterFieldKey.CONSTRAINTS)
+                (key == CharacterFieldKey.PROMPT)
             state.copy(
                 values = state.values + (key to current.copy(text = text)),
                 aiDraft = if (resetDraft) null else state.aiDraft,
@@ -137,8 +137,6 @@ class CharacterViewModel(
             return
         }
 
-        val constraints = state.values[CharacterFieldKey.CONSTRAINTS]?.text?.trim()?.takeIf { it.isNotEmpty() }
-
         _uiState.update {
             it.copy(
                 isGenerating = true,
@@ -159,7 +157,6 @@ class CharacterViewModel(
                 val request = CharacterAIRequest(
                     storyId = storyId,
                     prompt = prompt,
-                    constraints = constraints,
                     story = CharacterStoryContext.fromStory(story),
                     existingCharacterNames = existingNames,
                     mode = state.aiMode,

@@ -12,12 +12,5 @@ object EditorAiFields {
             helper = "Be specific about tone, intent, and key requirements.",
             layout = FULL,
         ),
-        EditorFieldDefinition(
-            key = EditorFieldKey.CONSTRAINTS,
-            label = "Constraints",
-            placeholder = "Any constraints, limits, or must-haves",
-            maxLines = 3,
-            layout = FULL,
-        ),
     )
 }

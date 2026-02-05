@@ -47,7 +47,6 @@ enum class WorldRuleAIMode {
 data class WorldRuleAIRequest(
     val storyId: String,
     val prompt: String,
-    val constraints: String? = null,
     val story: WorldRuleStoryContext? = null,
     val existingRuleTitles: List<String> = emptyList(),
     val mode: WorldRuleAIMode = WorldRuleAIMode.NORMAL,

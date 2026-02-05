@@ -145,11 +145,5 @@ object CharacterFields {
             maxLines = 6,
             placeholder = "Describe the character (e.g., a stoic healer from the coast)",
         ),
-        CharacterFieldDefinition(
-            CharacterFieldKey.CONSTRAINTS,
-            "Constraints",
-            maxLines = 4,
-            placeholder = "Rules for AI output (e.g., no magic, modern setting)",
-        ),
     )
 }

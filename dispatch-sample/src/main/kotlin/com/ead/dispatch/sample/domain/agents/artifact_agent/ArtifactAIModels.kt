@@ -47,7 +47,6 @@ enum class ArtifactAIMode {
 data class ArtifactAIRequest(
     val storyId: String,
     val prompt: String,
-    val constraints: String? = null,
     val story: ArtifactStoryContext? = null,
     val existingArtifactNames: List<String> = emptyList(),
     val characterNames: List<String> = emptyList(),

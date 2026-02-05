@@ -25,5 +25,4 @@ enum class CharacterFieldKey {
     DISTINGUISHING_MARKS,
     STYLE_NOTES,
     PROMPT,
-    CONSTRAINTS,
 }

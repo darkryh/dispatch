@@ -47,7 +47,6 @@ enum class OrganizationAIMode {
 data class OrganizationAIRequest(
     val storyId: String,
     val prompt: String,
-    val constraints: String? = null,
     val story: OrganizationStoryContext? = null,
     val existingOrganizationNames: List<String> = emptyList(),
     val mode: OrganizationAIMode = OrganizationAIMode.NORMAL,

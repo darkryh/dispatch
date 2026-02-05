@@ -20,5 +20,4 @@ enum class EditorFieldKey {
     OWNER_TYPE,
     ORDER_INDEX,
     PROMPT,
-    CONSTRAINTS,
 }

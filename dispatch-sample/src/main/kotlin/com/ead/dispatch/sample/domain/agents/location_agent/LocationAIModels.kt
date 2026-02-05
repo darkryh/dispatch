@@ -47,7 +47,6 @@ enum class LocationAIMode {
 data class LocationAIRequest(
     val storyId: String,
     val prompt: String,
-    val constraints: String? = null,
     val story: LocationStoryContext? = null,
     val existingLocationNames: List<String> = emptyList(),
     val mode: LocationAIMode = LocationAIMode.NORMAL,

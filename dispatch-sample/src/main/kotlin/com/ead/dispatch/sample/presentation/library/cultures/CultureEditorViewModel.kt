@@ -102,7 +102,7 @@ class CultureEditorViewModel(
         _uiState.update { state ->
             val current = state.values[key] ?: FieldValue()
             val resetDraft = state.mode == EditorMode.AUTOMATIC &&
-                (key == EditorFieldKey.PROMPT || key == EditorFieldKey.CONSTRAINTS)
+                (key == EditorFieldKey.PROMPT)
             state.copy(
                 values = state.values + (key to current.copy(text = text)),
                 aiDraft = if (resetDraft) null else state.aiDraft,
@@ -127,8 +127,6 @@ class CultureEditorViewModel(
             return
         }
 
-        val constraints = state.values[EditorFieldKey.CONSTRAINTS]?.text?.trim()?.takeIf { it.isNotEmpty() }
-
         _uiState.update {
             it.copy(
                 isGenerating = true,
@@ -148,7 +146,6 @@ class CultureEditorViewModel(
                 val request = CultureAIRequest(
                     storyId = storyId,
                     prompt = prompt,
-                    constraints = constraints,
                     story = CultureStoryContext.fromStory(story),
                     existingCultureNames = existingNames,
                     mode = state.aiMode.toCultureMode(),

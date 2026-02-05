@@ -102,7 +102,7 @@ class ArtifactEditorViewModel(
         _uiState.update { state ->
             val current = state.values[key] ?: FieldValue()
             val resetDraft = state.mode == EditorMode.AUTOMATIC &&
-                (key == EditorFieldKey.PROMPT || key == EditorFieldKey.CONSTRAINTS)
+                (key == EditorFieldKey.PROMPT)
             state.copy(
                 values = state.values + (key to current.copy(text = text)),
                 aiDraft = if (resetDraft) null else state.aiDraft,
@@ -126,8 +126,6 @@ class ArtifactEditorViewModel(
             _uiState.update { it.copy(status = "Prompt is required for AI generation.") }
             return
         }
-
-        val constraints = state.values[EditorFieldKey.CONSTRAINTS]?.text?.trim()?.takeIf { it.isNotEmpty() }
 
         _uiState.update {
             it.copy(
@@ -157,7 +155,6 @@ class ArtifactEditorViewModel(
                 val request = ArtifactAIRequest(
                     storyId = storyId,
                     prompt = prompt,
-                    constraints = constraints,
                     story = ArtifactStoryContext.fromStory(story),
                     existingArtifactNames = existingNames,
                     characterNames = characterNames,

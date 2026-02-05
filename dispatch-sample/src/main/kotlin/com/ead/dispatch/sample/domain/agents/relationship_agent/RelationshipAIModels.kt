@@ -47,7 +47,6 @@ enum class RelationshipAIMode {
 data class RelationshipAIRequest(
     val storyId: String,
     val prompt: String,
-    val constraints: String? = null,
     val story: RelationshipStoryContext? = null,
     val characterNames: List<String> = emptyList(),
     val organizationNames: List<String> = emptyList(),

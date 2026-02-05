@@ -12,13 +12,12 @@ fun cultureAgentPrompt(request: CultureAIRequest): Prompt {
                 +"You generate a structured culture draft for a story in the schema provided."; br()
                 +"Return only the structured data required by the schema."; br()
                 +"Do not include narrative prose outside the structured fields."; br()
-                +"Follow the user's constraints exactly and prioritize them over all other input."; br()
                 +"Avoid duplicate culture names when possible."; br()
                 +"If a field is unknown or not implied, leave it null or empty."; br()
 
                 h2("Input Priority")
-                +"1) Constraints, 2) User prompt, 3) Story context, 4) Existing cultures list."; br()
-                +"If inputs conflict, honor constraints and prompt, then adjust the rest to fit."; br()
+                +"1) User prompt, 2) Story context, 3) Existing cultures list."; br()
+                +"If inputs conflict, honor the prompt, then adjust the rest to fit."; br()
                 +"Use story context to keep the culture coherent with genre, setting, and tone."; br()
 
                 h2("Field Guidance")
@@ -47,7 +46,7 @@ fun cultureAgentPrompt(request: CultureAIRequest): Prompt {
                 val isCreative = request.mode == CultureAIMode.CREATIVE
                 h2("Mode")
                 if (isCreative) {
-                    +"Creative mode: take full creative freedom within the constraints."; br()
+                    +"Creative mode: take full creative freedom within the prompt and story context."; br()
                     +"Invent unexpected but coherent details to make the culture vivid."; br()
                     +"Use story context as grounding and inspiration for choices."; br()
                     +"Be decisive and specific; avoid vague placeholders."; br()
@@ -64,10 +63,6 @@ fun cultureAgentPrompt(request: CultureAIRequest): Prompt {
             markdown {
                 h3("User Prompt")
                 +request.prompt
-                br()
-
-                h3("Constraints")
-                +if (request.constraints.isNullOrBlank()) "None" else request.constraints
                 br()
 
                 val story = request.story

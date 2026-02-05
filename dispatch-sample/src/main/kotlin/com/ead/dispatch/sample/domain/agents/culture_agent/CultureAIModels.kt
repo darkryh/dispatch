@@ -47,7 +47,6 @@ enum class CultureAIMode {
 data class CultureAIRequest(
     val storyId: String,
     val prompt: String,
-    val constraints: String? = null,
     val story: CultureStoryContext? = null,
     val existingCultureNames: List<String> = emptyList(),
     val mode: CultureAIMode = CultureAIMode.NORMAL,
