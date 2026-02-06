@@ -12,13 +12,24 @@ import ai.koog.prompt.message.Message
 import ai.koog.prompt.message.RequestMetaInfo
 import ai.koog.prompt.message.ResponseMetaInfo
 import ai.koog.prompt.streaming.StreamFrame
+import com.ead.koog.context.orchestrator.api.ContextHints
+import com.ead.koog.context.orchestrator.api.ContextualMetadata
+import com.ead.koog.context.orchestrator.api.ContextualResponse
+import com.ead.koog.context.orchestrator.api.KoogContextOrchestrator
+import com.ead.koog.context.orchestrator.api.TaskPhase
+import com.ead.koog.context.orchestrator.api.resolveContextOrchestrator
+import com.ead.koog.context.orchestrator.state.ContinuityPacket
+import com.ead.koog.context.orchestrator.state.ContextSnapshot
 import com.ead.dispatch.sample.data.repositories.StructuredIndexRepository
 import com.ead.dispatch.sample.domain.agents.chat_agent.ChatRequest
+import com.ead.dispatch.sample.domain.agents.chat_agent.PreferencesMemory
 import com.ead.dispatch.sample.domain.agents.chat_agent.chatAgentPrompt
 import com.ead.dispatch.sample.domain.embedding.RagContextService
 import com.ead.dispatch.sample.domain.agents.chat_agent.util.saveCheckpointForHistory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerializationException
@@ -30,8 +41,25 @@ fun AIAgentSubgraphBuilderBase<*, *>.nodeSetupAndStreamChatMode(
     name: String? = null,
     repository: StructuredIndexRepository,
     ragContextService: RagContextService,
-): AIAgentNodeDelegate<ChatRequest, Flow<StreamFrame>> =
-    node(name) { request -> setupAndStreamChatMode(repository, ragContextService, request) }
+    contextOrchestrator: KoogContextOrchestrator? = null,
+): AIAgentNodeDelegate<ChatRequest, ContextualResponse<Flow<StreamFrame>>> =
+    node(name) {
+        request ->
+        val snapshots = MutableStateFlow<ContextSnapshot?>(null)
+        val response = setupAndStreamChatMode(
+            repository = repository,
+            ragContextService = ragContextService,
+            contextOrchestrator = contextOrchestrator,
+            request = request,
+            onContextSnapshot = { snapshot -> snapshots.value = snapshot },
+        )
+        ContextualResponse(
+            value = response,
+            metadata = ContextualMetadata(
+                contextSnapshots = snapshots.asStateFlow(),
+            ),
+        )
+    }
 
 /**
  * Streams assistant output while keeping prompt history and tool calls in sync.
@@ -41,13 +69,21 @@ fun AIAgentSubgraphBuilderBase<*, *>.nodeSetupAndStreamChatMode(
 private fun AIAgentGraphContextBase.setupAndStreamChatMode(
     repository: StructuredIndexRepository,
     ragContextService: RagContextService,
-    request: ChatRequest
+    contextOrchestrator: KoogContextOrchestrator?,
+    request: ChatRequest,
+    onContextSnapshot: (ContextSnapshot) -> Unit,
 ): Flow<StreamFrame> {
     val nodePath = executionInfo.path()
     return channelFlow {
         val agentContext = this@setupAndStreamChatMode
+        val runtimeOrchestrator = agentContext.resolveContextOrchestrator(contextOrchestrator)
+
+        fun publishSnapshot() {
+            onContextSnapshot(runtimeOrchestrator.snapshot())
+        }
+
+        publishSnapshot()
         try {
-            llm.writeSession {
             val context = withContext(Dispatchers.IO) {
                 repository.getChatContextForAgent(request.storyId)
             }
@@ -60,67 +96,86 @@ private fun AIAgentGraphContextBase.setupAndStreamChatMode(
                 )
             }
 
-            rewritePrompt { existing ->
-                val messageHistory = existing.messages.filterNot { it is Message.System }
+            llm.writeSession {
+                rewritePrompt { existing ->
+                    val messageHistory = existing.messages.filterNot { it is Message.System }
 
-                val userInputMessage = request.text.trim()
-                    .takeIf { it.isNotEmpty() }
-                    ?: (messageHistory.lastOrNull { it is Message.User } as? Message.User)?.content
+                    val userInputMessage = request.text.trim()
+                        .takeIf { it.isNotEmpty() }
+                        ?: (messageHistory.lastOrNull { it is Message.User } as? Message.User)?.content
 
-                val basePrompt = chatAgentPrompt(
-                    context = context,
-                    inputRequest = request,
-                    ragContext = ragContext,
-                )
+                    val basePrompt = chatAgentPrompt(
+                        context = context,
+                        inputRequest = request,
+                        ragContext = ragContext,
+                    )
 
-                basePrompt.withMessages { baseMessages ->
-                    val systemMessages = baseMessages.filterIsInstance<Message.System>()
+                    basePrompt.withMessages { baseMessages ->
+                        val systemMessages = baseMessages.filterIsInstance<Message.System>()
 
-                    buildList {
-                        addAll(systemMessages)
+                        buildList {
+                            addAll(systemMessages)
+                            addAll(messageHistory)
 
-                        addAll(messageHistory)
-
-                        if (userInputMessage != null) {
-                            add(Message.User(userInputMessage, RequestMetaInfo.create(clock)))
+                            if (userInputMessage != null) {
+                                add(Message.User(userInputMessage, RequestMetaInfo.create(clock)))
+                            }
                         }
                     }
                 }
             }
 
+            var previousToolCalls = 0
             while (true) {
-                val toolCalls = mutableListOf<Message.Tool.Call>()
+                runtimeOrchestrator.beforeLlmCall(
+                    context = agentContext,
+                    hints = baseHints(request, previousToolCalls)
+                )
+                publishSnapshot()
 
-                val responseBuffer = StringBuilder()
+                val toolCalls = llm.writeSession {
+                    val currentToolCalls = mutableListOf<Message.Tool.Call>()
+                    val responseBuffer = StringBuilder()
 
-                requestLLMStreaming().collect { frame ->
-                    if (frame is StreamFrame.ToolCall) {
-                        toolCalls.add(
-                            Message.Tool.Call(
-                                id = frame.id,
-                                tool = frame.name,
-                                content = frame.content,
-                                metaInfo = ResponseMetaInfo.create(clock)
+                    requestLLMStreaming().collect { frame ->
+                        if (frame is StreamFrame.ToolCall) {
+                            currentToolCalls.add(
+                                Message.Tool.Call(
+                                    id = frame.id,
+                                    tool = frame.name,
+                                    content = frame.content,
+                                    metaInfo = ResponseMetaInfo.create(clock)
+                                )
                             )
-                        )
+                        }
+
+                        if (frame is StreamFrame.Append) {
+                            responseBuffer.append(frame.text)
+                        }
+
+                        send(frame)
                     }
 
-                    if (frame is StreamFrame.Append) {
-                        responseBuffer.append(frame.text)
+                    val responseText = responseBuffer.toString().trim()
+                    if (responseText.isNotEmpty()) {
+                        appendPrompt {
+                            assistant(responseText)
+                        }
                     }
 
-                    send(frame)
+                    currentToolCalls
                 }
 
-                val responseText = responseBuffer.toString().trim()
-
-                if (responseText.isNotEmpty()) {
-                    appendPrompt {
-                        assistant(responseText)
-                    }
-                }
+                runtimeOrchestrator.afterLlmCall(agentContext)
+                publishSnapshot()
 
                 if (toolCalls.isEmpty()) break
+
+                runtimeOrchestrator.beforeToolLoop(
+                    context = agentContext,
+                    hints = baseHints(request, toolCalls.size)
+                )
+                publishSnapshot()
 
                 val toolResults = toolCalls.map { executeToolWithFix(it) }
                 toolResults
@@ -130,19 +185,51 @@ private fun AIAgentGraphContextBase.setupAndStreamChatMode(
                         send(StreamFrame.ToolCall(result.id ?: "", result.tool, payload))
                     }
 
-                appendPrompt {
-                    tool {
-                        toolCalls.forEach { call(it) }
-                        toolResults.forEach { result(it) }
+                llm.writeSession {
+                    appendPrompt {
+                        tool {
+                            toolCalls.forEach { call(it) }
+                            toolResults.forEach { result(it) }
+                        }
                     }
                 }
-            }
 
-        }
+                previousToolCalls = toolCalls.size
+                runtimeOrchestrator.afterToolLoop(agentContext)
+                publishSnapshot()
+            }
         } finally {
-            saveCheckpointForHistory(agentContext, request, nodePath)
+            publishSnapshot()
+            saveCheckpointForHistory(
+                context = agentContext,
+                request = request,
+                nodePath = nodePath,
+                contextSnapshot = runtimeOrchestrator.snapshot(),
+            )
         }
     }
+}
+
+private fun baseHints(
+    request: ChatRequest,
+    recentToolCalls: Int,
+): ContextHints {
+    val continuity = ContinuityPacket(
+        objective = "Respond to the user's request and only persist story changes on explicit write intent.",
+        constraints = listOf(
+            "Story scope must remain within storyId=${request.storyId}",
+            "Do not fabricate tool outputs or IDs.",
+        ),
+        pendingActions = listOf("Process latest user input: ${request.text.take(140)}"),
+        criticalReferences = listOf("storyId=${request.storyId}"),
+    )
+
+    return ContextHints(
+        phase = TaskPhase.EXECUTION,
+        recentToolCalls = recentToolCalls,
+        factConcepts = PreferencesMemory.userConcepts,
+        continuityPacket = continuity,
+    )
 }
 
 private suspend fun AIAgentGraphContextBase.executeToolWithFix(

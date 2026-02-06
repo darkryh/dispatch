@@ -9,6 +9,7 @@ import ai.koog.agents.core.dsl.builder.AIAgentSubgraphBuilderBase
 import ai.koog.agents.memory.config.MemoryScopeType
 import ai.koog.agents.memory.feature.AgentMemory
 import ai.koog.prompt.streaming.StreamFrame
+import com.ead.koog.context.orchestrator.api.ContextualResponse
 import com.ead.dispatch.sample.domain.agents.chat_agent.ChatRequest
 import com.ead.dispatch.sample.domain.agents.chat_agent.MemorySubjects
 import com.ead.dispatch.sample.domain.agents.chat_agent.PreferencesMemory
@@ -30,7 +31,7 @@ fun AIAgentSubgraphBuilderBase<*, *>.nodeLoadUserPreferences(
 fun AIAgentSubgraphBuilderBase<*, *>.nodeSaveUserPreferences(
     name: String? = null,
     scope: MemoryScopeType = MemoryScopeType.PRODUCT,
-): AIAgentNodeDelegate<Flow<StreamFrame>, Flow<StreamFrame>> =
+): AIAgentNodeDelegate<ContextualResponse<Flow<StreamFrame>>, ContextualResponse<Flow<StreamFrame>>> =
     node(name ?: "save-user-preferences") { response ->
         saveUserPreferencesOnce(response, scope)
     }
@@ -54,9 +55,9 @@ private suspend fun AIAgentGraphContextBase.loadUserPreferencesOnce(
 
 @OptIn(InternalAgentsApi::class)
 private suspend fun AIAgentGraphContextBase.saveUserPreferencesOnce(
-    response: Flow<StreamFrame>,
+    response: ContextualResponse<Flow<StreamFrame>>,
     scope: MemoryScopeType,
-): Flow<StreamFrame> = kotlinx.coroutines.coroutineScope {
+): ContextualResponse<Flow<StreamFrame>> = kotlinx.coroutines.coroutineScope {
     val memory = featureOrThrow(AgentMemory.Feature)
     val scopeValue = requireNotNull(memory.scopesProfile.getScope(scope)) {
         "Memory scope name missing for $scope."

@@ -9,11 +9,18 @@ import ai.koog.agents.core.tools.reflect.asTools
 import ai.koog.agents.memory.feature.AgentMemory
 import ai.koog.agents.snapshot.feature.Persistence
 import ai.koog.prompt.streaming.StreamFrame
+import com.ead.koog.context.orchestrator.api.ContextHints
+import com.ead.koog.context.orchestrator.api.ContextualResponse
+import com.ead.koog.context.orchestrator.api.TaskPhase
+import com.ead.koog.context.orchestrator.api.nodeManageContextAfterLlm
+import com.ead.koog.context.orchestrator.api.nodeManageContextBeforeLlm
+import com.ead.koog.context.orchestrator.state.ContinuityPacket
 import com.ead.dispatch.sample.data.repositories.StructuredIndexRepository
 import com.ead.dispatch.sample.domain.AIProvider
 import com.ead.dispatch.sample.domain.MemoryStore
 import com.ead.dispatch.sample.domain.Storage
 import com.ead.dispatch.sample.domain.agents.chat_agent.ChatRequest
+import com.ead.dispatch.sample.domain.agents.chat_agent.PreferencesMemory
 import com.ead.dispatch.sample.domain.agents.chat_agent.extensions.runWithStartCheckpoint
 import com.ead.dispatch.sample.domain.agents.chat_agent.node.nodeLoadUserPreferences
 import com.ead.dispatch.sample.domain.agents.chat_agent.node.nodeSaveUserPreferences
@@ -48,25 +55,41 @@ class ChatAgent(
      * The agent is configured with persistence, but checkpoints are saved manually
      * for the streaming flow.
      */
-    suspend fun run(session: Session, input: ChatRequest): Flow<StreamFrame> {
+    suspend fun run(session: Session, input: ChatRequest): ContextualResponse<Flow<StreamFrame>> {
         val agentName = AIProvider.getChatAgentId(session.id)
 
-        val agent = AIAgent<ChatRequest, Flow<StreamFrame>>(
+        val agent = AIAgent<ChatRequest, ContextualResponse<Flow<StreamFrame>>>(
             promptExecutor = AIProvider.deepseekPromptExecutor,
             llmModel = AIProvider.deepseekChatLlmModel,
             toolRegistry = toolRegistry,
-            strategy = strategy<ChatRequest, Flow<StreamFrame>>("chat-mode.planner") {
-
+            strategy = strategy<ChatRequest, ContextualResponse<Flow<StreamFrame>>>("chat-mode.planner") {
                 val loadUserPreferences by nodeLoadUserPreferences()
+
+                val contextBeforeLlm by nodeManageContextBeforeLlm<ChatRequest>(
+                    hints = { chatRequest ->
+                        ContextHints(
+                            phase = TaskPhase.EXECUTION,
+                            factConcepts = PreferencesMemory.userConcepts,
+                            continuityPacket = ContinuityPacket(
+                                objective = "Respond to user request and persist only with explicit write intent.",
+                                criticalReferences = listOf("storyId=${chatRequest.storyId}"),
+                            )
+                        )
+                    }
+                )
                 val chatAgentModel by nodeSetupAndStreamChatMode(
                     repository = repository,
                     ragContextService = ragContextService
                 )
+                val contextAfterLlm by nodeManageContextAfterLlm<ContextualResponse<Flow<StreamFrame>>>()
+
                 val saveUserPreferences by nodeSaveUserPreferences()
 
-                edge(nodeStart forwardTo loadUserPreferences transformed { it })
-                edge(loadUserPreferences forwardTo chatAgentModel transformed { it })
-                edge(chatAgentModel forwardTo saveUserPreferences transformed { it })
+                edge(nodeStart forwardTo loadUserPreferences)
+                edge(loadUserPreferences forwardTo contextBeforeLlm)
+                edge(contextBeforeLlm forwardTo chatAgentModel)
+                edge(chatAgentModel forwardTo contextAfterLlm)
+                edge(contextAfterLlm forwardTo saveUserPreferences)
                 edge(saveUserPreferences forwardTo nodeFinish)
             },
             maxIterations = 50,

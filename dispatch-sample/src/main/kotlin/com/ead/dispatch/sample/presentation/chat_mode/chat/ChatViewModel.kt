@@ -1,5 +1,7 @@
 package com.ead.dispatch.sample.presentation.chat_mode.chat
 
+import ai.koog.agents.snapshot.feature.isTombstone
+import ai.koog.agents.snapshot.feature.tombstoneCheckpoint
 import ai.koog.prompt.message.Message
 import ai.koog.prompt.streaming.StreamFrame
 import com.ead.dispatch.navigation.Navigator
@@ -17,29 +19,22 @@ import com.ead.dispatch.sample.domain.model.message.CliMessageRole
 import com.ead.dispatch.sample.domain.model.session.Session
 import com.ead.dispatch.sample.domain.model.story.WriterMode
 import com.ead.dispatch.sample.domain.util.extension.toCliMessage
-import com.ead.dispatch.sample.navigation.ArcListRoute
-import com.ead.dispatch.sample.navigation.ChatRoute
-import com.ead.dispatch.sample.navigation.CharacterListRoute
-import com.ead.dispatch.sample.navigation.CultureListRoute
-import com.ead.dispatch.sample.navigation.EventListRoute
-import com.ead.dispatch.sample.navigation.LocationFeatureListRoute
-import com.ead.dispatch.sample.navigation.LocationListRoute
-import com.ead.dispatch.sample.navigation.OrganizationListRoute
-import com.ead.dispatch.sample.navigation.RelationshipListRoute
-import com.ead.dispatch.sample.navigation.StoryChatRoute
-import com.ead.dispatch.sample.navigation.TimelineListRoute
-import com.ead.dispatch.sample.navigation.WorldRuleListRoute
-import com.ead.dispatch.sample.navigation.ArtifactListRoute
+import com.ead.dispatch.sample.navigation.*
 import com.ead.dispatch.sample.presentation.chat_mode.chat.event.ChatEvent
 import com.ead.dispatch.sample.presentation.commands.CommandAction
 import com.ead.dispatch.viewmodel.ViewModel
+import com.ead.koog.context.orchestrator.api.currentRemainingPercent
+import com.ead.koog.context.orchestrator.api.remainingPercentFlow
+import com.ead.koog.context.orchestrator.telemetry.ContextCheckpointProperties
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.datetime.Clock
 
 /**
  * ViewModel for the chat screen with stub responses.
@@ -64,6 +59,8 @@ class ChatViewModel(
 
     private val _messages = MutableStateFlow(emptyList<CliMessage>())
     val messages: StateFlow<List<CliMessage>> = _messages.asStateFlow()
+    private val _contextRemainingPercent = MutableStateFlow<Int?>(null)
+    val contextRemainingPercent: StateFlow<Int?> = _contextRemainingPercent.asStateFlow()
 
     // Writer Assistant mode state
     private val _writerMode = MutableStateFlow(WriterMode.CHAT)
@@ -86,12 +83,14 @@ class ChatViewModel(
 
     private suspend fun loadMessagesForSession(sessionId: String) {
         val checkpoints = storageProvider.getCheckpoints(AIProvider.getChatAgentId(sessionId))
+        val latest = checkpoints.maxByOrNull { it.createdAt }
 
-        val history = checkpoints
-            .maxByOrNull { it.createdAt }
-            ?.messageHistory
-            ?.takeIf { it.isNotEmpty() }
-            ?: checkpoints.flatMap { it.messageHistory }
+        val history = when {
+            latest == null -> emptyList()
+            latest.isTombstone() -> emptyList()
+            latest.messageHistory.isNotEmpty() -> latest.messageHistory
+            else -> checkpoints.flatMap { it.messageHistory }
+        }
 
         val messages = history
             .filter { message -> message.role != Message.Role.System }
@@ -99,6 +98,7 @@ class ChatViewModel(
             .distinctBy { message -> Triple(message.role, message.metaInfo.timestamp, message.content) }
 
         _messages.value = messages.map { it.toCliMessage() }
+        _contextRemainingPercent.value = ContextCheckpointProperties.readRemainingPercent(latest?.properties)
     }
 
     fun onEvent(event: ChatEvent) {
@@ -151,6 +151,13 @@ class ChatViewModel(
         when (commandAction) {
             CommandAction.ClearContext -> {
                 _messages.value = emptyList()
+                _contextRemainingPercent.value = null
+                val activeSessionId = _session.value?.id ?: route.conversationId
+                if (!activeSessionId.isNullOrBlank()) {
+                    viewModelScope.launch(Dispatchers.IO) {
+                        clearPersistedContext(activeSessionId)
+                    }
+                }
             }
             is CommandAction.OpenEntityList -> {
                 openEntityList(navigator, commandAction.type, _session.value?.id)
@@ -182,13 +189,20 @@ class ChatViewModel(
 
             _isProcessing.value = true
 
-            val assistantStreamingResponse = chatAgent.run(
+            val response = chatAgent.run(
                 session = session,
                 input = ChatRequest(
                     text = input,
                     storyId = session.id,
                 )
             )
+            val assistantStreamingResponse = response.value
+
+            val metadataJob = viewModelScope.launch(Dispatchers.IO) {
+                response.metadata.remainingPercentFlow().collect { remainingPercent ->
+                    _contextRemainingPercent.value = remainingPercent
+                }
+            }
 
             cancelRequested = false
             val job = viewModelScope.launch(Dispatchers.IO) {
@@ -257,6 +271,11 @@ class ChatViewModel(
                     }
                     }
                 } finally {
+                    metadataJob.cancelAndJoin()
+                    _contextRemainingPercent.value = response.metadata.currentRemainingPercent()
+                    if (_contextRemainingPercent.value == null) {
+                        refreshContextStatus(session.id)
+                    }
                     if (activeStreamJob === currentJob) {
                         activeStreamJob = null
                     }
@@ -309,5 +328,18 @@ class ChatViewModel(
         val session = sessionManager.createSession(title = firstMessagePreview)
         _session.value = session
         return session
+    }
+
+    private suspend fun refreshContextStatus(sessionId: String) {
+        val latestCheckpoint = storageProvider.getLatestCheckpoint(AIProvider.getChatAgentId(sessionId))
+        _contextRemainingPercent.value = ContextCheckpointProperties.readRemainingPercent(latestCheckpoint?.properties)
+    }
+
+    private suspend fun clearPersistedContext(sessionId: String) {
+        val agentId = AIProvider.getChatAgentId(sessionId)
+        val latest = storageProvider.getLatestCheckpoint(agentId)
+        val version = (latest?.version?.plus(1) ?: 0L).coerceAtLeast(0L)
+        val tombstone = tombstoneCheckpoint(Clock.System.now(), version)
+        storageProvider.saveCheckpoint(agentId, tombstone)
     }
 }

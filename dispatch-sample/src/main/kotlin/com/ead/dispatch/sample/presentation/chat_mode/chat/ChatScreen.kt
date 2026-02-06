@@ -52,6 +52,7 @@ fun ChatScreen() {
     val isProcessing by viewModel.isProcessing.collectAsState()
 
     val messages by viewModel.messages.collectAsState()
+    val contextRemainingPercent by viewModel.contextRemainingPercent.collectAsState()
 
     val writerMode by viewModel.writerMode.collectAsState()
     val theme = LocalTheme.current
@@ -191,6 +192,7 @@ fun ChatScreen() {
             ChatStatusBar(
                 isCommandPaletteVisible = commandPaletteState.isVisible,
                 writerMode = writerMode,
+                contextRemainingPercent = contextRemainingPercent,
             )
         }
     }

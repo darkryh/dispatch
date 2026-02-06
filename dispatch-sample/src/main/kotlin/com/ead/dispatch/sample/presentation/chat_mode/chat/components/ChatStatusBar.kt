@@ -2,9 +2,13 @@ package com.ead.dispatch.sample.presentation.chat_mode.chat.components
 
 import com.ead.dispatch.annotation.Dispatchable
 import com.ead.dispatch.layout.Row
+import com.ead.dispatch.layout.Spacer
+import com.ead.dispatch.modifier.weight
+import com.ead.dispatch.modifier.width
 import com.ead.dispatch.runtime.LocalDispatchConfig
 import com.ead.dispatch.runtime.LocalExitPromptState
 import com.ead.dispatch.sample.domain.model.story.WriterMode
+import com.ead.dispatch.ui.Modifier
 import com.ead.dispatch.widget.Text
 import com.github.ajalt.mordant.rendering.TextColors.Companion.rgb
 
@@ -17,6 +21,7 @@ import com.github.ajalt.mordant.rendering.TextColors.Companion.rgb
 fun ChatStatusBar(
     isCommandPaletteVisible: Boolean,
     writerMode: WriterMode,
+    contextRemainingPercent: Int?,
 ) {
     val exitPromptState = LocalExitPromptState.current
     val dispatchConfig = LocalDispatchConfig.current
@@ -55,6 +60,15 @@ fun ChatStatusBar(
                 Text(
                     text = "(shift+tab to cycle)"
                 )
+
+                contextRemainingPercent?.let { remaining ->
+                    Spacer(modifier = Modifier.weight(1f))
+                    Text(
+                        text = "$remaining% context left",
+                        style = rgb("#A6B6A7")
+                    )
+                    Spacer(modifier = Modifier.width(2))
+                }
             }
         }
     }

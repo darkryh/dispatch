@@ -15,6 +15,7 @@ dependencies {
     implementation(projects.dispatchCore)
     implementation(projects.dispatchNavigation)
     implementation(projects.dispatchKoin)
+    implementation(projects.koogContextOrchestrator)
     implementation(libs.bundles.mordant)
     implementation(libs.coroutines.core)
 
