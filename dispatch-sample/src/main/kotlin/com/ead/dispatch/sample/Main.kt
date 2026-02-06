@@ -19,10 +19,10 @@ fun main(args: Array<String>) = DispatchApplication(args) {
         targetFps = 60
 
         argument(name = "start", shortName = 's', description = "Start screen route")
-
         flag(name = "resume", shortName = 'r', description = "Start on session selector screen")
 
-        exitKeys(ExitKeyBinding.ctrl("C"),)
+        exitKeys(ExitKeyBinding.ctrl("C"))
+
         requireExitDoublePress = true
         exitTimeoutOnDoublePress = 1500.milliseconds
 

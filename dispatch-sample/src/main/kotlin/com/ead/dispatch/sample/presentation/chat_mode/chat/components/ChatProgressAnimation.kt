@@ -1,4 +1,4 @@
-package com.ead.dispatch.sample.presentation.chat.components
+package com.ead.dispatch.sample.presentation.chat_mode.chat.components
 
 import ai.koog.prompt.structure.markdown.markdownStreamingParser
 import com.ead.dispatch.annotation.Dispatchable

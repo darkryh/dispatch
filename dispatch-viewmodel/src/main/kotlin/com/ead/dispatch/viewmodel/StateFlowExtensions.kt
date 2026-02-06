@@ -32,12 +32,17 @@ fun <T> StateFlow<T>.collectAsState(): State<T> {
 
     val flow = this
     val recomposer = com.ead.dispatch.runtime.Recomposer.current
+    val scopeToken = com.ead.dispatch.runtime.Recomposer.currentScope
     DisposableEffect(flow) {
         val scope = dispatchCoroutineScope()
         scope.launch {
             flow.collect { value ->
                 state.value = value
-                recomposer?.requestRecomposition()
+                if (recomposer != null && scopeToken != null) {
+                    recomposer.invalidate(scopeToken)
+                } else {
+                    recomposer?.requestRecomposition()
+                }
             }
         }
         onDispose { scope.cancel() }
@@ -55,12 +60,17 @@ fun <T> StateFlow<T>.collectAsState(initial: T): State<T> {
 
     val flow = this
     val recomposer = com.ead.dispatch.runtime.Recomposer.current
+    val scopeToken = com.ead.dispatch.runtime.Recomposer.currentScope
     DisposableEffect(flow) {
         val scope = dispatchCoroutineScope()
         scope.launch {
             flow.collect { value ->
                 state.value = value
-                recomposer?.requestRecomposition()
+                if (recomposer != null && scopeToken != null) {
+                    recomposer.invalidate(scopeToken)
+                } else {
+                    recomposer?.requestRecomposition()
+                }
             }
         }
         onDispose { scope.cancel() }
@@ -81,12 +91,17 @@ fun <T> Flow<T>.collectAsState(initial: T): State<T> {
 
     val flow = this
     val recomposer = com.ead.dispatch.runtime.Recomposer.current
+    val scopeToken = com.ead.dispatch.runtime.Recomposer.currentScope
     DisposableEffect(flow) {
         val scope = dispatchCoroutineScope()
         scope.launch {
             flow.collect { value ->
                 state.value = value
-                recomposer?.requestRecomposition()
+                if (recomposer != null && scopeToken != null) {
+                    recomposer.invalidate(scopeToken)
+                } else {
+                    recomposer?.requestRecomposition()
+                }
             }
         }
         onDispose { scope.cancel() }
@@ -104,12 +119,17 @@ fun <T> SharedFlow<T>.collectAsState(initial: T): State<T> {
 
     val flow = this
     val recomposer = com.ead.dispatch.runtime.Recomposer.current
+    val scopeToken = com.ead.dispatch.runtime.Recomposer.currentScope
     DisposableEffect(flow) {
         val scope = dispatchCoroutineScope()
         scope.launch {
             flow.collect { value ->
                 state.value = value
-                recomposer?.requestRecomposition()
+                if (recomposer != null && scopeToken != null) {
+                    recomposer.invalidate(scopeToken)
+                } else {
+                    recomposer?.requestRecomposition()
+                }
             }
         }
         onDispose { scope.cancel() }

@@ -1,4 +1,4 @@
-package com.ead.dispatch.sample.presentation.chat
+package com.ead.dispatch.sample.presentation.chat_mode.chat
 
 import com.ead.dispatch.annotation.Dispatchable
 import com.ead.dispatch.koin.inject
@@ -16,8 +16,13 @@ import com.ead.dispatch.sample.domain.entity.EntityOptionType
 import com.ead.dispatch.sample.domain.CommandManager
 import com.ead.dispatch.sample.domain.model.message.CliMessageRole
 import com.ead.dispatch.sample.domain.model.story.WriterMode
-import com.ead.dispatch.sample.presentation.chat.components.*
-import com.ead.dispatch.sample.presentation.chat.event.ChatEvent
+import com.ead.dispatch.sample.presentation.chat_mode.chat.components.ChatCommandPalette
+import com.ead.dispatch.sample.presentation.chat_mode.chat.components.ChatHeader
+import com.ead.dispatch.sample.presentation.chat_mode.chat.components.ChatInputTextField
+import com.ead.dispatch.sample.presentation.chat_mode.chat.components.ChatMessage
+import com.ead.dispatch.sample.presentation.chat_mode.chat.components.ChatProgressAnimation
+import com.ead.dispatch.sample.presentation.chat_mode.chat.components.ChatStatusBar
+import com.ead.dispatch.sample.presentation.chat_mode.chat.event.ChatEvent
 import com.ead.dispatch.state.getValue
 import com.ead.dispatch.state.remember
 import com.ead.dispatch.viewmodel.collectAsState
@@ -162,7 +167,14 @@ fun ChatScreen() {
                 state = commandPaletteState,
                 options = commands,
                 inputValue = inputText,
-                onOptionSelected = { option ->  viewModel.onEvent(ChatEvent.OnSubmitMessage(navigator, "/${option.data}")) },
+                onOptionSelected = { option ->
+                    viewModel.onEvent(
+                        ChatEvent.OnSubmitMessage(
+                            navigator,
+                            "/${option.data}"
+                        )
+                    )
+                },
                 onInputTransform = { newInput -> viewModel.onEvent(ChatEvent.OnTextChanged(newInput)) },
                 textStyles = CommandPaletteTextStyles(
                     prefix = theme.muted,

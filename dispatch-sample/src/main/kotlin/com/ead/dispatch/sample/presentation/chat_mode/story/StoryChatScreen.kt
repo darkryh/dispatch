@@ -1,4 +1,4 @@
-package com.ead.dispatch.sample.presentation.story_chat
+package com.ead.dispatch.sample.presentation.chat_mode.story
 
 import com.ead.dispatch.annotation.Dispatchable
 import com.ead.dispatch.layout.Row
@@ -36,6 +36,7 @@ import com.github.ajalt.mordant.input.KeyboardEvent
 import com.github.ajalt.mordant.rendering.TextColors
 import com.github.ajalt.mordant.rendering.TextStyle
 import com.ead.dispatch.navigation.LocalNavigator
+import com.ead.dispatch.theme.DispatchTheme
 
 @Dispatchable
 fun StoryChatScreen(route: StoryChatRoute) {
@@ -198,7 +199,7 @@ private fun fieldStyle(value: String, required: Boolean, highlightEmpty: Boolean
     return theme.primary
 }
 
-private fun countStyle(count: Int, theme: com.ead.dispatch.theme.DispatchTheme): TextStyle {
+private fun countStyle(count: Int, theme: DispatchTheme): TextStyle {
     return when {
         count <= 0 -> TextColors.brightRed
         count <= 2 -> theme.info

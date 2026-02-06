@@ -1,4 +1,4 @@
-package com.ead.dispatch.sample.presentation.chat.event
+package com.ead.dispatch.sample.presentation.chat_mode.chat.event
 
 import com.ead.dispatch.navigation.Navigator
 

@@ -1,4 +1,4 @@
-package com.ead.dispatch.sample.presentation.chat.components
+package com.ead.dispatch.sample.presentation.chat_mode.chat.components
 
 internal fun extractJsonObject(raw: String): String? {
     val start = raw.indexOf('{')

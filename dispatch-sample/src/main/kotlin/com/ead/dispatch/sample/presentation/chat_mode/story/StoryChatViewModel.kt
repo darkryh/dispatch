@@ -1,4 +1,4 @@
-package com.ead.dispatch.sample.presentation.story_chat
+package com.ead.dispatch.sample.presentation.chat_mode.story
 
 import com.ead.dispatch.navigation.toRoute
 import com.ead.dispatch.runtime.SavedStateHandle

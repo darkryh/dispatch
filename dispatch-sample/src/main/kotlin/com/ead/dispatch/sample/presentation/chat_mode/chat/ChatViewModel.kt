@@ -1,4 +1,4 @@
-package com.ead.dispatch.sample.presentation.chat
+package com.ead.dispatch.sample.presentation.chat_mode.chat
 
 import ai.koog.prompt.message.Message
 import ai.koog.prompt.streaming.StreamFrame
@@ -30,7 +30,7 @@ import com.ead.dispatch.sample.navigation.StoryChatRoute
 import com.ead.dispatch.sample.navigation.TimelineListRoute
 import com.ead.dispatch.sample.navigation.WorldRuleListRoute
 import com.ead.dispatch.sample.navigation.ArtifactListRoute
-import com.ead.dispatch.sample.presentation.chat.event.ChatEvent
+import com.ead.dispatch.sample.presentation.chat_mode.chat.event.ChatEvent
 import com.ead.dispatch.sample.presentation.commands.CommandAction
 import com.ead.dispatch.viewmodel.ViewModel
 import kotlinx.coroutines.Dispatchers

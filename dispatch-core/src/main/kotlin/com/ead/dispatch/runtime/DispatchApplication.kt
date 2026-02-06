@@ -197,7 +197,7 @@ internal class DispatchApplicationBuilder(
                 }
 
                 frameScheduler.start()
-                recomposer.registerComposition { frameScheduler.requestFrame() }
+                recomposer.registerComposition(compositionScopeToken) { frameScheduler.requestFrame() }
                 // Render once before starting the recomposer loop to avoid concurrent initial renders.
                 composeAndRender()
                 frameScheduler.markFrame()

@@ -11,7 +11,7 @@ import com.ead.dispatch.runtime.LocalDispatchArgs
 import com.ead.dispatch.sample.domain.embedding.EmbeddingReindexer
 import com.ead.dispatch.sample.navigation.*
 import com.ead.dispatch.sample.presentation.characters.CharacterScreen
-import com.ead.dispatch.sample.presentation.chat.ChatScreen
+import com.ead.dispatch.sample.presentation.chat_mode.chat.ChatScreen
 import com.ead.dispatch.sample.presentation.library.arcs.ArcListScreen
 import com.ead.dispatch.sample.presentation.library.arcs.ArcEditorScreen
 import com.ead.dispatch.sample.presentation.library.artifacts.ArtifactListScreen
@@ -34,7 +34,7 @@ import com.ead.dispatch.sample.presentation.library.timeline.TimelineEditorScree
 import com.ead.dispatch.sample.presentation.library.world_rules.WorldRuleListScreen
 import com.ead.dispatch.sample.presentation.library.world_rules.WorldRuleEditorScreen
 import com.ead.dispatch.sample.presentation.session.SessionScreen
-import com.ead.dispatch.sample.presentation.story_chat.StoryChatScreen
+import com.ead.dispatch.sample.presentation.chat_mode.story.StoryChatScreen
 
 @Dispatchable
 fun DispatchSampleApp() {

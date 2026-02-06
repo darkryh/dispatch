@@ -22,7 +22,7 @@ import com.ead.dispatch.sample.domain.embedding.EmbeddingIndexService
 import com.ead.dispatch.sample.domain.embedding.EmbeddingReindexer
 import com.ead.dispatch.sample.domain.embedding.RagContextService
 import com.ead.dispatch.sample.presentation.characters.CharacterViewModel
-import com.ead.dispatch.sample.presentation.chat.ChatViewModel
+import com.ead.dispatch.sample.presentation.chat_mode.chat.ChatViewModel
 import com.ead.dispatch.sample.presentation.library.arcs.ArcEditorViewModel
 import com.ead.dispatch.sample.presentation.library.arcs.ArcListViewModel
 import com.ead.dispatch.sample.presentation.library.artifacts.ArtifactListViewModel
@@ -45,7 +45,7 @@ import com.ead.dispatch.sample.presentation.library.timeline.TimelineEditorViewM
 import com.ead.dispatch.sample.presentation.library.world_rules.WorldRuleListViewModel
 import com.ead.dispatch.sample.presentation.library.world_rules.WorldRuleEditorViewModel
 import com.ead.dispatch.sample.presentation.session.SessionViewModel
-import com.ead.dispatch.sample.presentation.story_chat.StoryChatViewModel
+import com.ead.dispatch.sample.presentation.chat_mode.story.StoryChatViewModel
 
 val module = dispatchModule {
 
