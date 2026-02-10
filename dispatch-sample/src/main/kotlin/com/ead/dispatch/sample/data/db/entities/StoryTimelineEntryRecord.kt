@@ -10,4 +10,5 @@ data class StoryTimelineEntryRecord(
     val description: String? = null,
     val orderIndex: Long,
     val createdAt: Long,
+    val updatedAt: Long = createdAt,
 )

@@ -238,7 +238,10 @@ class CultureEditorViewModel(
 
         viewModelScope.launch(Dispatchers.IO) {
             runCatching {
-                repository.deleteStoryCulture(cultureId)
+                repository.deleteStoryCulture(
+                    storyId = storyId,
+                    cultureId = cultureId,
+                )
             }.onSuccess {
                 _uiState.update { it.copy(confirmDelete = false, status = "Culture deleted.") }
             }.onFailure { error ->

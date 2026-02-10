@@ -23,6 +23,7 @@ import com.ead.dispatch.sample.navigation.*
 import com.ead.dispatch.sample.presentation.chat_mode.chat.event.ChatEvent
 import com.ead.dispatch.sample.presentation.commands.CommandAction
 import com.ead.dispatch.viewmodel.ViewModel
+import com.ead.dispatch.widget.DecisionSelection
 import com.ead.koog.context.orchestrator.api.currentRemainingPercent
 import com.ead.koog.context.orchestrator.api.remainingPercentFlow
 import com.ead.koog.context.orchestrator.telemetry.ContextCheckpointProperties
@@ -59,6 +60,8 @@ class ChatViewModel(
 
     private val _messages = MutableStateFlow(emptyList<CliMessage>())
     val messages: StateFlow<List<CliMessage>> = _messages.asStateFlow()
+    private val _pendingDecision = MutableStateFlow<DecisionPromptPayload?>(null)
+    internal val pendingDecision: StateFlow<DecisionPromptPayload?> = _pendingDecision.asStateFlow()
     private val _contextRemainingPercent = MutableStateFlow<Int?>(null)
     val contextRemainingPercent: StateFlow<Int?> = _contextRemainingPercent.asStateFlow()
 
@@ -97,7 +100,30 @@ class ChatViewModel(
             .sortedBy { message -> message.metaInfo.timestamp }
             .distinctBy { message -> Triple(message.role, message.metaInfo.timestamp, message.content) }
 
-        _messages.value = messages.map { it.toCliMessage() }
+        val restored = mutableListOf<CliMessage>()
+        var pendingDecision: DecisionPromptPayload? = null
+        messages.map { it.toCliMessage() }.forEach { cliMessage ->
+            when (cliMessage.role) {
+                CliMessageRole.TOOL -> {
+                    val decision = parseDecisionPromptPayload(cliMessage.toolName, cliMessage.data)
+                    if (decision != null) {
+                        pendingDecision = decision
+                    } else {
+                        restored += cliMessage
+                    }
+                }
+                CliMessageRole.USER -> {
+                    if (pendingDecision != null) {
+                        pendingDecision = null
+                    }
+                    restored += cliMessage
+                }
+                else -> restored += cliMessage
+            }
+        }
+
+        _messages.value = restored
+        _pendingDecision.value = pendingDecision
         _contextRemainingPercent.value = ContextCheckpointProperties.readRemainingPercent(latest?.properties)
     }
 
@@ -110,6 +136,7 @@ class ChatViewModel(
                 _inputText.value = event.text
             }
             is ChatEvent.OnSubmitMessage -> {
+                if (_pendingDecision.value != null) return
                 val navigator = event.navigator
                 val text = event.text
 
@@ -151,6 +178,7 @@ class ChatViewModel(
         when (commandAction) {
             CommandAction.ClearContext -> {
                 _messages.value = emptyList()
+                _pendingDecision.value = null
                 _contextRemainingPercent.value = null
                 val activeSessionId = _session.value?.id ?: route.conversationId
                 if (!activeSessionId.isNullOrBlank()) {
@@ -205,13 +233,20 @@ class ChatViewModel(
             }
 
             cancelRequested = false
+
             val job = viewModelScope.launch(Dispatchers.IO) {
                 val currentJob = coroutineContext[Job]
+
                 try {
                     assistantStreamingResponse.collect { frame ->
                         if (cancelRequested) {
                             return@collect
                         }
+                        if (_pendingDecision.value != null && frame !is StreamFrame.End) {
+                            // When a decision prompt is active, pause visible streaming until user responds.
+                            return@collect
+                        }
+
                     when (frame) {
                         is StreamFrame.Append -> {
                             _isProcessing.value = true
@@ -245,15 +280,20 @@ class ChatViewModel(
                             }
                         }
                         is StreamFrame.ToolCall -> {
-                            _isProcessing.value = true
-
-                            _messages.update { messages ->
-                                messages + CliMessage(
-                                    toolId = frame.id,
-                                    toolName = frame.name,
-                                    data = frame.content,
-                                    role = CliMessageRole.TOOL
-                                )
+                            val decision = parseDecisionPromptPayload(frame.name, frame.content)
+                            if (decision != null) {
+                                _pendingDecision.value = decision
+                                _isProcessing.value = false
+                            } else {
+                                _isProcessing.value = true
+                                _messages.update { messages ->
+                                    messages + CliMessage(
+                                        toolId = frame.id,
+                                        toolName = frame.name,
+                                        data = frame.content,
+                                        role = CliMessageRole.TOOL
+                                    )
+                                }
                             }
                         }
                         is StreamFrame.End -> {
@@ -271,11 +311,14 @@ class ChatViewModel(
                     }
                     }
                 } finally {
+
                     metadataJob.cancelAndJoin()
                     _contextRemainingPercent.value = response.metadata.currentRemainingPercent()
+
                     if (_contextRemainingPercent.value == null) {
                         refreshContextStatus(session.id)
                     }
+
                     if (activeStreamJob === currentJob) {
                         activeStreamJob = null
                     }
@@ -286,6 +329,18 @@ class ChatViewModel(
 
             onEvent(ChatEvent.OnClearTextField)
         }
+    }
+
+    fun onDecisionSelected(selection: DecisionSelection) {
+        _pendingDecision.value ?: return
+        val selectedText = when (selection) {
+            is DecisionSelection.Option -> selection.option.label
+            is DecisionSelection.Custom -> selection.text.trim()
+        }.trim()
+        if (selectedText.isBlank()) return
+
+        _pendingDecision.value = null
+        submitMessage(selectedText)
     }
 
     private fun openEntityList(

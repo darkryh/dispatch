@@ -240,7 +240,10 @@ class EventEditorViewModel(
 
         viewModelScope.launch(Dispatchers.IO) {
             runCatching {
-                repository.deleteStoryEvent(eventId)
+                repository.deleteStoryEvent(
+                    storyId = storyId,
+                    eventId = eventId,
+                )
             }.onSuccess {
                 _uiState.update { it.copy(confirmDelete = false, status = "Event deleted.") }
             }.onFailure { error ->

@@ -250,7 +250,10 @@ class ArtifactEditorViewModel(
 
         viewModelScope.launch(Dispatchers.IO) {
             runCatching {
-                repository.deleteStoryArtifact(artifactId)
+                repository.deleteStoryArtifact(
+                    storyId = storyId,
+                    artifactId = artifactId,
+                )
             }.onSuccess {
                 _uiState.update { it.copy(confirmDelete = false, status = "Artifact deleted.") }
             }.onFailure { error ->

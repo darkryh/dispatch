@@ -238,7 +238,10 @@ class TimelineEditorViewModel(
 
         viewModelScope.launch(Dispatchers.IO) {
             runCatching {
-                repository.deleteStoryTimelineEntry(entryId)
+                repository.deleteStoryTimelineEntry(
+                    storyId = storyId,
+                    entryId = entryId,
+                )
             }.onSuccess {
                 _uiState.update { it.copy(confirmDelete = false, status = "Timeline entry deleted.") }
             }.onFailure { error ->

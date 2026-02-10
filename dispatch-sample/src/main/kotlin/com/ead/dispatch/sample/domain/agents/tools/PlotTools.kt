@@ -151,7 +151,10 @@ class PlotTools(
             return failure("NOT_FOUND", "Arc with id '$entityId' not found.")
         }
 
-        repository.deleteStoryArc(entityId)
+        repository.deleteStoryArc(
+            storyId = storyId,
+            arcId = entityId,
+        )
 
         return success(
             action = "delete",
@@ -250,7 +253,10 @@ class PlotTools(
         @LLMDescription("Event id to delete")
         entityId: String,
     ): ToolResult<OperationOutcome> {
-        repository.deleteStoryEvent(entityId)
+        repository.deleteStoryEvent(
+            storyId = storyId,
+            eventId = entityId,
+        )
         return success("delete", OperationEntity.EVENT, storyId, entityId, "Deleted event '$entityId'.")
     }
 
@@ -344,7 +350,10 @@ class PlotTools(
         @LLMDescription("Timeline entry id to delete")
         entityId: String,
     ): ToolResult<OperationOutcome> {
-        repository.deleteStoryTimelineEntry(entityId)
+        repository.deleteStoryTimelineEntry(
+            storyId = storyId,
+            entryId = entityId,
+        )
         return success("delete", OperationEntity.TIMELINE_ENTRY, storyId, entityId, "Deleted timeline entry '$entityId'.")
     }
 }

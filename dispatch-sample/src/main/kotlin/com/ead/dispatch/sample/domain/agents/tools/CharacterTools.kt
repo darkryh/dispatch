@@ -196,7 +196,10 @@ class CharacterTools(
         repository.getStoryCharacters(storyId).firstOrNull { it.id == entityId }
             ?: return failure("NOT_FOUND", "Character with id '$entityId' not found.")
 
-        repository.deleteStoryCharacter(entityId)
+        repository.deleteStoryCharacter(
+            storyId = storyId,
+            characterId = entityId,
+        )
 
         return success(
             action = "delete",
@@ -256,15 +259,25 @@ class CharacterTools(
     ): ToolResult<OperationOutcome> {
         val relation = request.relation.trim()
         if (relation.isBlank()) return failure("MISSING_FIELD", "Relationship label is required.")
-        val record = StoryRelationshipRecord(
-            id = UUID.randomUUID().toString(),
+        val validation = repository.validateRelationshipEndpoints(
             storyId = storyId,
             subjectId = request.subjectId,
             subjectType = request.subjectType,
             objectId = request.objectId,
             objectType = request.objectType,
+        )
+        if (!validation.isValid) {
+            return failure("INVALID_REFERENCE", validation.error ?: "Invalid relationship references.")
+        }
+        val record = StoryRelationshipRecord(
+            id = UUID.randomUUID().toString(),
+            storyId = storyId,
+            subjectId = request.subjectId.trim(),
+            subjectType = validation.normalizedSubjectType ?: request.subjectType.trim().uppercase(),
+            objectId = request.objectId.trim(),
+            objectType = validation.normalizedObjectType ?: request.objectType.trim().uppercase(),
             relation = relation,
-            notes = request.notes,
+            notes = request.notes?.trim()?.takeIf { it.isNotBlank() },
             createdAt = Clock.System.now().toEpochMilliseconds(),
         )
         repository.insertStoryRelationship(record)
@@ -283,13 +296,34 @@ class CharacterTools(
     ): ToolResult<OperationOutcome> {
         val current = repository.getRelationshipsByStory(storyId).firstOrNull { it.id == entityId }
             ?: return failure("NOT_FOUND", "Relationship with id '$entityId' not found.")
+        if (request.relation != null && request.relation.isBlank()) {
+            return failure("MISSING_FIELD", "Relationship label cannot be blank.")
+        }
+
+        val subjectId = (request.subjectId ?: current.subjectId).trim()
+        val subjectType = request.subjectType ?: current.subjectType
+        val objectId = (request.objectId ?: current.objectId).trim()
+        val objectType = request.objectType ?: current.objectType
+        val relation = (request.relation ?: current.relation).trim()
+
+        val validation = repository.validateRelationshipEndpoints(
+            storyId = storyId,
+            subjectId = subjectId,
+            subjectType = subjectType,
+            objectId = objectId,
+            objectType = objectType,
+        )
+        if (!validation.isValid) {
+            return failure("INVALID_REFERENCE", validation.error ?: "Invalid relationship references.")
+        }
+
         val updated = current.copy(
-            subjectId = request.subjectId ?: current.subjectId,
-            subjectType = request.subjectType ?: current.subjectType,
-            objectId = request.objectId ?: current.objectId,
-            objectType = request.objectType ?: current.objectType,
-            relation = request.relation ?: current.relation,
-            notes = request.notes ?: current.notes,
+            subjectId = subjectId,
+            subjectType = validation.normalizedSubjectType ?: subjectType.trim().uppercase(),
+            objectId = objectId,
+            objectType = validation.normalizedObjectType ?: objectType.trim().uppercase(),
+            relation = relation,
+            notes = request.notes?.trim()?.takeIf { it.isNotBlank() } ?: current.notes,
         )
         repository.updateStoryRelationship(updated)
         return success("update", OperationEntity.RELATIONSHIP, storyId, updated.id, "Updated relationship '$entityId'.")
@@ -303,7 +337,10 @@ class CharacterTools(
         @LLMDescription("Relationship id to delete")
         entityId: String,
     ): ToolResult<OperationOutcome> {
-        repository.deleteStoryRelationship(entityId)
+        repository.deleteStoryRelationship(
+            storyId = storyId,
+            relationshipId = entityId,
+        )
         return success("delete", OperationEntity.RELATIONSHIP, storyId, entityId, "Deleted relationship '$entityId'.")
     }
 

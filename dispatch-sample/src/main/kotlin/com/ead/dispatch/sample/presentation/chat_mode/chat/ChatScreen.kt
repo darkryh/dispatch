@@ -25,6 +25,7 @@ import com.ead.dispatch.sample.presentation.chat_mode.chat.components.ChatStatus
 import com.ead.dispatch.sample.presentation.chat_mode.chat.event.ChatEvent
 import com.ead.dispatch.state.getValue
 import com.ead.dispatch.state.remember
+import com.ead.dispatch.theme.DispatchTheme
 import com.ead.dispatch.viewmodel.collectAsState
 import com.ead.dispatch.viewmodel.viewModel
 import com.ead.dispatch.widget.*
@@ -52,6 +53,7 @@ fun ChatScreen() {
     val isProcessing by viewModel.isProcessing.collectAsState()
 
     val messages by viewModel.messages.collectAsState()
+    val pendingDecision by viewModel.pendingDecision.collectAsState()
     val contextRemainingPercent by viewModel.contextRemainingPercent.collectAsState()
 
     val writerMode by viewModel.writerMode.collectAsState()
@@ -101,6 +103,9 @@ fun ChatScreen() {
     }
 
     val commandPaletteState = rememberCommandPaletteState<String>()
+    val decisionPromptStyles = remember(theme) {
+        buildDecisionPromptStyles(theme)
+    }
 
     LazyColumn(modifier = Modifier.fillMaxWidth()) {
         item {
@@ -138,6 +143,21 @@ fun ChatScreen() {
         items(messages) { message ->
             ChatMessage(message = message)
         }
+        pendingDecision?.let { decision ->
+            item {
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    Spacer(modifier = Modifier.width(2))
+                    DecisionPrompt(
+                        question = decision.question,
+                        options = decision.options,
+                        placeholder = decision.placeholder,
+                        textStyles = decisionPromptStyles,
+                        onSubmit = { selection -> viewModel.onDecisionSelected(selection) },
+                    )
+                    Spacer(modifier = Modifier.width(2))
+                }
+            }
+        }
         item {
             Spacer(Modifier.height(1))
         }
@@ -153,8 +173,8 @@ fun ChatScreen() {
                 placeholder = placeholder,
                 textStyle = rgb("#FFFFFF"),
                 placeholderStyle = rgb("#82858A"),
-                enabled = !isProcessing,
-                showCursor = !isProcessing,
+                enabled = !isProcessing && pendingDecision == null,
+                showCursor = !isProcessing && pendingDecision == null,
                 onSubmit = { text -> viewModel.onEvent(event = ChatEvent.OnSubmitMessage(navigator, text)) },
                 historyItems = historyItems,
                 historyIndexState = historyIndexState,
@@ -208,3 +228,16 @@ private fun buildQuickJump(
     }
     return labels.joinToString(separator = ", ") { "/$it" }
 }
+
+private fun buildDecisionPromptStyles(theme: DispatchTheme): DecisionPromptTextStyles =
+    DecisionPromptTextStyles(
+        question = theme.primary,
+        option = DECISION_OPTION_UNSELECTED_COLOR,
+        selectedOption = theme.accent + TextStyle(bold = false),
+        prefix = DECISION_OPTION_UNSELECTED_COLOR,
+        selectedPrefix = theme.accent + TextStyle(bold = false),
+        placeholder = theme.muted,
+        customText = theme.primary,
+    )
+
+private val DECISION_OPTION_UNSELECTED_COLOR = rgb("#FFFFFF")

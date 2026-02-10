@@ -248,7 +248,10 @@ class CharacterViewModel(
         }
         viewModelScope.launch(Dispatchers.IO) {
             runCatching {
-                repository.deleteStoryCharacter(characterId)
+                repository.deleteStoryCharacter(
+                    storyId = storyId,
+                    characterId = characterId,
+                )
                 _uiState.update { it.copy(confirmDelete = false, status = "Character deleted.") }
             }.onFailure { error ->
                 _uiState.update {

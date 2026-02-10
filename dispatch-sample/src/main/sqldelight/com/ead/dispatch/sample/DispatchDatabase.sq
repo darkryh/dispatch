@@ -236,6 +236,7 @@ CREATE TABLE story_world_rules (
   title TEXT NOT NULL,
   description TEXT,
   created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
   UNIQUE(story_id, title)
 );
 
@@ -245,6 +246,7 @@ CREATE TABLE story_cultures (
   name TEXT NOT NULL,
   description TEXT,
   created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
   UNIQUE(story_id, name)
 );
 
@@ -254,6 +256,7 @@ CREATE TABLE story_events (
   name TEXT NOT NULL,
   description TEXT,
   created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
   UNIQUE(story_id, name)
 );
 
@@ -263,6 +266,7 @@ CREATE TABLE story_organizations (
   name TEXT NOT NULL,
   description TEXT,
   created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
   UNIQUE(story_id, name)
 );
 
@@ -276,6 +280,7 @@ CREATE TABLE story_relationships (
   relation TEXT NOT NULL,
   notes TEXT,
   created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
   CHECK (
     subject_type IN ('CHARACTER', 'LOCATION', 'ORGANIZATION', 'ARTIFACT', 'EVENT', 'CULTURE', 'WORLD_RULE', 'TIMELINE')
   ),
@@ -290,7 +295,8 @@ CREATE TABLE story_location_features (
   location_id TEXT REFERENCES story_locations(id) ON DELETE SET NULL,
   name TEXT NOT NULL,
   description TEXT,
-  created_at INTEGER NOT NULL
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
 );
 
 CREATE TABLE story_artifacts (
@@ -303,7 +309,8 @@ CREATE TABLE story_artifacts (
     owner_type IS NULL OR owner_type IN ('CHARACTER', 'LOCATION', 'ORGANIZATION', 'ARTIFACT', 'EVENT', 'CULTURE', 'WORLD_RULE', 'TIMELINE')
   ),
   location_id TEXT REFERENCES story_locations(id) ON DELETE SET NULL,
-  created_at INTEGER NOT NULL
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
 );
 
 CREATE TABLE story_timeline_entries (
@@ -313,6 +320,7 @@ CREATE TABLE story_timeline_entries (
   description TEXT,
   order_index INTEGER NOT NULL CHECK (order_index >= 1),
   created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL,
   UNIQUE(story_id, order_index)
 );
 
@@ -340,6 +348,14 @@ CREATE INDEX story_arcs_story_id_idx ON story_arcs(story_id);
 CREATE INDEX story_arcs_scope_idx ON story_arcs(scope_type, scope_id);
 CREATE INDEX story_scenes_chapter_id_idx ON story_scenes(chapter_id);
 CREATE INDEX story_scenes_location_id_idx ON story_scenes(location_id);
+CREATE INDEX story_world_rules_story_updated_idx ON story_world_rules(story_id, updated_at DESC);
+CREATE INDEX story_cultures_story_updated_idx ON story_cultures(story_id, updated_at DESC);
+CREATE INDEX story_events_story_updated_idx ON story_events(story_id, updated_at DESC);
+CREATE INDEX story_organizations_story_updated_idx ON story_organizations(story_id, updated_at DESC);
+CREATE INDEX story_relationships_story_updated_idx ON story_relationships(story_id, updated_at DESC);
+CREATE INDEX story_location_features_story_updated_idx ON story_location_features(story_id, updated_at DESC);
+CREATE INDEX story_artifacts_story_updated_idx ON story_artifacts(story_id, updated_at DESC);
+CREATE INDEX story_timeline_entries_story_updated_idx ON story_timeline_entries(story_id, updated_at DESC);
 CREATE INDEX rag_documents_session_id_idx ON rag_documents(session_id);
 CREATE INDEX rag_documents_story_id_idx ON rag_documents(story_id);
 CREATE INDEX rag_documents_chapter_id_idx ON rag_documents(chapter_id);
@@ -584,11 +600,13 @@ UPDATE story_characters SET
   skin_tone = :skin_tone,
   distinguishing_marks = :distinguishing_marks,
   style_notes = :style_notes
-WHERE id = :id;
+WHERE id = :id
+  AND story_id = :story_id;
 
 deleteStoryCharacterById:
 DELETE FROM story_characters
-WHERE id = :id;
+WHERE id = :id
+  AND story_id = :story_id;
 
 deleteStoryCharactersByStoryId:
 DELETE FROM story_characters
@@ -616,6 +634,11 @@ selectCharactersByStoryId:
 SELECT * FROM story_characters
 WHERE story_id = :story_id
 ORDER BY name ASC;
+
+selectCharacterIdByStoryAndId:
+SELECT id FROM story_characters
+WHERE story_id = :story_id
+  AND id = :id;
 
 insertStoryCharacterTrait:
 INSERT OR REPLACE INTO story_character_traits(
@@ -839,11 +862,13 @@ updateStoryLocation:
 UPDATE story_locations
 SET name = :name,
     description = :description
-WHERE id = :id;
+WHERE id = :id
+  AND story_id = :story_id;
 
 deleteStoryLocationById:
 DELETE FROM story_locations
-WHERE id = :id;
+WHERE id = :id
+  AND story_id = :story_id;
 
 selectLocationsByStoryId:
 SELECT * FROM story_locations
@@ -853,6 +878,11 @@ ORDER BY name ASC;
 selectLocationById:
 SELECT * FROM story_locations
 WHERE id = :id;
+
+selectLocationIdByStoryAndId:
+SELECT id FROM story_locations
+WHERE story_id = :story_id
+  AND id = :id;
 
 insertStoryLocationTag:
 INSERT OR REPLACE INTO story_location_tags(
@@ -917,12 +947,18 @@ SET scope_type = :scope_type,
     summary = :summary,
     status = :status,
     updated_at = :updated_at
-WHERE id = :id;
+WHERE id = :id
+  AND story_id = :story_id;
 
 selectArcsByStoryId:
 SELECT * FROM story_arcs
 WHERE story_id = :story_id
 ORDER BY created_at ASC;
+
+selectArcIdByStoryAndId:
+SELECT id FROM story_arcs
+WHERE story_id = :story_id
+  AND id = :id;
 
 selectArcsByScope:
 SELECT * FROM story_arcs
@@ -936,7 +972,8 @@ WHERE id = :id;
 
 deleteStoryArcById:
 DELETE FROM story_arcs
-WHERE id = :id;
+WHERE id = :id
+  AND story_id = :story_id;
 
 deleteArcsByStoryId:
 DELETE FROM story_arcs
@@ -1048,29 +1085,39 @@ INSERT INTO story_world_rules(
   story_id,
   title,
   description,
-  created_at
+  created_at,
+  updated_at
 ) VALUES (
   :id,
   :story_id,
   :title,
   :description,
-  :created_at
+  :created_at,
+  :updated_at
 );
 
 updateStoryWorldRule:
 UPDATE story_world_rules
 SET title = :title,
-    description = :description
-WHERE id = :id;
+    description = :description,
+    updated_at = :updated_at
+WHERE id = :id
+  AND story_id = :story_id;
 
 deleteStoryWorldRuleById:
 DELETE FROM story_world_rules
-WHERE id = :id;
+WHERE id = :id
+  AND story_id = :story_id;
 
 selectWorldRulesByStoryId:
 SELECT * FROM story_world_rules
 WHERE story_id = :story_id
-ORDER BY created_at DESC;
+ORDER BY updated_at DESC, created_at DESC;
+
+selectWorldRuleIdByStoryAndId:
+SELECT id FROM story_world_rules
+WHERE story_id = :story_id
+  AND id = :id;
 
 deleteWorldRulesByStoryId:
 DELETE FROM story_world_rules
@@ -1082,29 +1129,39 @@ INSERT INTO story_cultures(
   story_id,
   name,
   description,
-  created_at
+  created_at,
+  updated_at
 ) VALUES (
   :id,
   :story_id,
   :name,
   :description,
-  :created_at
+  :created_at,
+  :updated_at
 );
 
 updateStoryCulture:
 UPDATE story_cultures
 SET name = :name,
-    description = :description
-WHERE id = :id;
+    description = :description,
+    updated_at = :updated_at
+WHERE id = :id
+  AND story_id = :story_id;
 
 deleteStoryCultureById:
 DELETE FROM story_cultures
-WHERE id = :id;
+WHERE id = :id
+  AND story_id = :story_id;
 
 selectCulturesByStoryId:
 SELECT * FROM story_cultures
 WHERE story_id = :story_id
-ORDER BY created_at DESC;
+ORDER BY updated_at DESC, created_at DESC;
+
+selectCultureIdByStoryAndId:
+SELECT id FROM story_cultures
+WHERE story_id = :story_id
+  AND id = :id;
 
 deleteCulturesByStoryId:
 DELETE FROM story_cultures
@@ -1116,29 +1173,39 @@ INSERT INTO story_events(
   story_id,
   name,
   description,
-  created_at
+  created_at,
+  updated_at
 ) VALUES (
   :id,
   :story_id,
   :name,
   :description,
-  :created_at
+  :created_at,
+  :updated_at
 );
 
 updateStoryEvent:
 UPDATE story_events
 SET name = :name,
-    description = :description
-WHERE id = :id;
+    description = :description,
+    updated_at = :updated_at
+WHERE id = :id
+  AND story_id = :story_id;
 
 deleteStoryEventById:
 DELETE FROM story_events
-WHERE id = :id;
+WHERE id = :id
+  AND story_id = :story_id;
 
 selectEventsByStoryId:
 SELECT * FROM story_events
 WHERE story_id = :story_id
-ORDER BY created_at DESC;
+ORDER BY updated_at DESC, created_at DESC;
+
+selectEventIdByStoryAndId:
+SELECT id FROM story_events
+WHERE story_id = :story_id
+  AND id = :id;
 
 deleteEventsByStoryId:
 DELETE FROM story_events
@@ -1150,29 +1217,39 @@ INSERT INTO story_organizations(
   story_id,
   name,
   description,
-  created_at
+  created_at,
+  updated_at
 ) VALUES (
   :id,
   :story_id,
   :name,
   :description,
-  :created_at
+  :created_at,
+  :updated_at
 );
 
 updateStoryOrganization:
 UPDATE story_organizations
 SET name = :name,
-    description = :description
-WHERE id = :id;
+    description = :description,
+    updated_at = :updated_at
+WHERE id = :id
+  AND story_id = :story_id;
 
 deleteStoryOrganizationById:
 DELETE FROM story_organizations
-WHERE id = :id;
+WHERE id = :id
+  AND story_id = :story_id;
 
 selectOrganizationsByStoryId:
 SELECT * FROM story_organizations
 WHERE story_id = :story_id
-ORDER BY created_at DESC;
+ORDER BY updated_at DESC, created_at DESC;
+
+selectOrganizationIdByStoryAndId:
+SELECT id FROM story_organizations
+WHERE story_id = :story_id
+  AND id = :id;
 
 deleteOrganizationsByStoryId:
 DELETE FROM story_organizations
@@ -1188,7 +1265,8 @@ INSERT INTO story_relationships(
   object_type,
   relation,
   notes,
-  created_at
+  created_at,
+  updated_at
 ) VALUES (
   :id,
   :story_id,
@@ -1198,7 +1276,8 @@ INSERT INTO story_relationships(
   :object_type,
   :relation,
   :notes,
-  :created_at
+  :created_at,
+  :updated_at
 );
 
 updateStoryRelationship:
@@ -1208,17 +1287,20 @@ SET subject_id = :subject_id,
     object_id = :object_id,
     object_type = :object_type,
     relation = :relation,
-    notes = :notes
-WHERE id = :id;
+    notes = :notes,
+    updated_at = :updated_at
+WHERE id = :id
+  AND story_id = :story_id;
 
 deleteStoryRelationshipById:
 DELETE FROM story_relationships
-WHERE id = :id;
+WHERE id = :id
+  AND story_id = :story_id;
 
 selectRelationshipsByStoryId:
 SELECT * FROM story_relationships
 WHERE story_id = :story_id
-ORDER BY created_at DESC;
+ORDER BY updated_at DESC, created_at DESC;
 
 deleteRelationshipsByStoryId:
 DELETE FROM story_relationships
@@ -1231,31 +1313,41 @@ INSERT INTO story_location_features(
   location_id,
   name,
   description,
-  created_at
+  created_at,
+  updated_at
 ) VALUES (
   :id,
   :story_id,
   :location_id,
   :name,
   :description,
-  :created_at
+  :created_at,
+  :updated_at
 );
 
 updateStoryLocationFeature:
 UPDATE story_location_features
 SET location_id = :location_id,
     name = :name,
-    description = :description
-WHERE id = :id;
+    description = :description,
+    updated_at = :updated_at
+WHERE id = :id
+  AND story_id = :story_id;
 
 deleteStoryLocationFeatureById:
 DELETE FROM story_location_features
-WHERE id = :id;
+WHERE id = :id
+  AND story_id = :story_id;
 
 selectLocationFeaturesByStoryId:
 SELECT * FROM story_location_features
 WHERE story_id = :story_id
-ORDER BY created_at DESC;
+ORDER BY updated_at DESC, created_at DESC;
+
+selectLocationFeatureIdByStoryAndId:
+SELECT id FROM story_location_features
+WHERE story_id = :story_id
+  AND id = :id;
 
 deleteLocationFeaturesByStoryId:
 DELETE FROM story_location_features
@@ -1270,7 +1362,8 @@ INSERT INTO story_artifacts(
   owner_id,
   owner_type,
   location_id,
-  created_at
+  created_at,
+  updated_at
 ) VALUES (
   :id,
   :story_id,
@@ -1279,7 +1372,8 @@ INSERT INTO story_artifacts(
   :owner_id,
   :owner_type,
   :location_id,
-  :created_at
+  :created_at,
+  :updated_at
 );
 
 updateStoryArtifact:
@@ -1288,17 +1382,25 @@ SET name = :name,
     description = :description,
     owner_id = :owner_id,
     owner_type = :owner_type,
-    location_id = :location_id
-WHERE id = :id;
+    location_id = :location_id,
+    updated_at = :updated_at
+WHERE id = :id
+  AND story_id = :story_id;
 
 deleteStoryArtifactById:
 DELETE FROM story_artifacts
-WHERE id = :id;
+WHERE id = :id
+  AND story_id = :story_id;
 
 selectArtifactsByStoryId:
 SELECT * FROM story_artifacts
 WHERE story_id = :story_id
-ORDER BY created_at DESC;
+ORDER BY updated_at DESC, created_at DESC;
+
+selectArtifactIdByStoryAndId:
+SELECT id FROM story_artifacts
+WHERE story_id = :story_id
+  AND id = :id;
 
 deleteArtifactsByStoryId:
 DELETE FROM story_artifacts
@@ -1311,31 +1413,41 @@ INSERT INTO story_timeline_entries(
   title,
   description,
   order_index,
-  created_at
+  created_at,
+  updated_at
 ) VALUES (
   :id,
   :story_id,
   :title,
   :description,
   :order_index,
-  :created_at
+  :created_at,
+  :updated_at
 );
 
 updateStoryTimelineEntry:
 UPDATE story_timeline_entries
 SET title = :title,
     description = :description,
-    order_index = :order_index
-WHERE id = :id;
+    order_index = :order_index,
+    updated_at = :updated_at
+WHERE id = :id
+  AND story_id = :story_id;
 
 deleteStoryTimelineEntryById:
 DELETE FROM story_timeline_entries
-WHERE id = :id;
+WHERE id = :id
+  AND story_id = :story_id;
 
 selectTimelineEntriesByStoryId:
 SELECT * FROM story_timeline_entries
 WHERE story_id = :story_id
-ORDER BY order_index ASC, created_at DESC;
+ORDER BY order_index ASC, updated_at DESC, created_at DESC;
+
+selectTimelineEntryIdByStoryAndId:
+SELECT id FROM story_timeline_entries
+WHERE story_id = :story_id
+  AND id = :id;
 
 deleteTimelineEntriesByStoryId:
 DELETE FROM story_timeline_entries

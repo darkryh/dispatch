@@ -54,7 +54,7 @@ fun SideEffect(effect: () -> Unit) {
  */
 fun LaunchedEffect(key1: Any?, block: suspend CoroutineScope.() -> Unit) {
     val recomposer = Recomposer.current
-    val effectState = remember(key1) { LaunchedEffectState(key1, recomposer) }
+    val effectState = remember(LaunchedEffectRememberSlotKey) { LaunchedEffectState(key1, recomposer) }
 
     if (effectState.key != key1) {
         effectState.cancel()
@@ -65,6 +65,8 @@ fun LaunchedEffect(key1: Any?, block: suspend CoroutineScope.() -> Unit) {
         effectState.launch(block)
     }
 }
+
+private object LaunchedEffectRememberSlotKey
 
 /**
  * Launch a coroutine when entering the composition.
@@ -153,7 +155,7 @@ internal class LaunchedEffectState(var key: Any?, private val recomposer: Recomp
  * @param effect The effect that returns a dispose callback.
  */
 fun DisposableEffect(key1: Any?, effect: DisposableEffectScope.() -> DisposableEffectResult) {
-    val effectState = remember { DisposableEffectState(key1) }
+    val effectState = remember(DisposableEffectRememberSlotKey) { DisposableEffectState(key1) }
 
     if (effectState.key != key1) {
         effectState.dispose()
@@ -173,6 +175,8 @@ fun DisposableEffect(key1: Any?, effect: DisposableEffectScope.() -> DisposableE
 fun DisposableEffect(effect: DisposableEffectScope.() -> DisposableEffectResult) {
     DisposableEffect(Unit, effect)
 }
+
+private object DisposableEffectRememberSlotKey
 
 /**
  * Scope for [DisposableEffect].

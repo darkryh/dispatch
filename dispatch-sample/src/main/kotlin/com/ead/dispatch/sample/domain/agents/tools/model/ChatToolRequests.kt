@@ -225,3 +225,38 @@ data class UpdateTimelineEntryRequest(
     val description: String? = null,
     val orderIndex: Long? = null,
 )
+
+@Serializable
+data class ChoiceOptionRequest(
+    val id: String? = null,
+    val label: String,
+)
+
+@Serializable
+data class UserChoiceRequest(
+    val promptId: String? = null,
+    val question: String,
+    val options: List<ChoiceOptionRequest>,
+    val allowCustom: Boolean = true,
+    val minChoices: Int = 1,
+    val maxChoices: Int = 1,
+    val customPlaceholder: String? = null,
+)
+
+@Serializable
+data class ChoiceOptionPayload(
+    val id: String,
+    val label: String,
+)
+
+@Serializable
+data class UserChoicePayload(
+    val type: String = "user_choice",
+    val promptId: String,
+    val question: String,
+    val options: List<ChoiceOptionPayload>,
+    val allowCustom: Boolean,
+    val minChoices: Int,
+    val maxChoices: Int,
+    val customPlaceholder: String,
+)

@@ -13,4 +13,5 @@ data class StoryRelationshipRecord(
     val relation: String,
     val notes: String? = null,
     val createdAt: Long,
+    val updatedAt: Long = createdAt,
 )

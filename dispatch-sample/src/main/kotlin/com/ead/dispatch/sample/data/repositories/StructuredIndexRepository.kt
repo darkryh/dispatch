@@ -23,6 +23,13 @@ class StructuredIndexRepository(
     private val database: DispatchDatabase,
     private val embeddingIndexService: EmbeddingIndexService,
 ) {
+    data class RelationshipIntegrityResult(
+        val isValid: Boolean,
+        val normalizedSubjectType: String? = null,
+        val normalizedObjectType: String? = null,
+        val error: String? = null,
+    )
+
     private data class LimitedSlice<T>(
         val items: List<T>,
         val overflow: Int,
@@ -52,6 +59,16 @@ class StructuredIndexRepository(
         const val CHAT_CONTEXT_LOCATION_FEATURE_LIMIT = 3
         const val CHAT_CONTEXT_ARTIFACT_LIMIT = 3
         const val CHAT_CONTEXT_TIMELINE_LIMIT = 3
+        val RELATIONSHIP_ENTITY_TYPES = setOf(
+            "CHARACTER",
+            "LOCATION",
+            "ORGANIZATION",
+            "ARTIFACT",
+            "EVENT",
+            "CULTURE",
+            "WORLD_RULE",
+            "TIMELINE",
+        )
     }
 
     private val queries = database.dispatchDatabaseQueries
@@ -61,6 +78,121 @@ class StructuredIndexRepository(
 
     private suspend inline fun <T> query(crossinline block: () -> T): T =
         withContext(coroutineDispatcher) { block() }
+
+    private fun normalizeRelationshipEntityType(rawType: String): String? =
+        rawType.trim().uppercase().takeIf { it in RELATIONSHIP_ENTITY_TYPES }
+
+    private suspend fun storyEntityExists(
+        storyId: String,
+        entityType: String,
+        entityId: String,
+    ): Boolean {
+        val normalizedId = entityId.trim()
+        if (normalizedId.isBlank()) return false
+        return query {
+            when (entityType) {
+                "CHARACTER" -> queries.selectCharacterIdByStoryAndId(story_id = storyId, id = normalizedId).executeAsOneOrNull() != null
+                "LOCATION" -> queries.selectLocationIdByStoryAndId(story_id = storyId, id = normalizedId).executeAsOneOrNull() != null
+                "ORGANIZATION" -> queries.selectOrganizationIdByStoryAndId(story_id = storyId, id = normalizedId).executeAsOneOrNull() != null
+                "ARTIFACT" -> queries.selectArtifactIdByStoryAndId(story_id = storyId, id = normalizedId).executeAsOneOrNull() != null
+                "EVENT" -> queries.selectEventIdByStoryAndId(story_id = storyId, id = normalizedId).executeAsOneOrNull() != null
+                "CULTURE" -> queries.selectCultureIdByStoryAndId(story_id = storyId, id = normalizedId).executeAsOneOrNull() != null
+                "WORLD_RULE" -> queries.selectWorldRuleIdByStoryAndId(story_id = storyId, id = normalizedId).executeAsOneOrNull() != null
+                "TIMELINE" -> queries.selectTimelineEntryIdByStoryAndId(story_id = storyId, id = normalizedId).executeAsOneOrNull() != null
+                else -> false
+            }
+        }
+    }
+
+    suspend fun validateRelationshipEndpoints(
+        storyId: String,
+        subjectId: String,
+        subjectType: String,
+        objectId: String,
+        objectType: String,
+    ): RelationshipIntegrityResult {
+        val normalizedSubjectId = subjectId.trim()
+        if (normalizedSubjectId.isBlank()) {
+            return RelationshipIntegrityResult(
+                isValid = false,
+                error = "Relationship subject id is required.",
+            )
+        }
+
+        val normalizedObjectId = objectId.trim()
+        if (normalizedObjectId.isBlank()) {
+            return RelationshipIntegrityResult(
+                isValid = false,
+                error = "Relationship object id is required.",
+            )
+        }
+
+        val normalizedSubjectType = normalizeRelationshipEntityType(subjectType)
+            ?: return RelationshipIntegrityResult(
+                isValid = false,
+                error = "Unsupported subject type '$subjectType'.",
+            )
+        val normalizedObjectType = normalizeRelationshipEntityType(objectType)
+            ?: return RelationshipIntegrityResult(
+                isValid = false,
+                error = "Unsupported object type '$objectType'.",
+            )
+
+        val subjectExists = storyEntityExists(
+            storyId = storyId,
+            entityType = normalizedSubjectType,
+            entityId = normalizedSubjectId,
+        )
+        if (!subjectExists) {
+            return RelationshipIntegrityResult(
+                isValid = false,
+                error = "Subject not found in story: $normalizedSubjectType:$normalizedSubjectId",
+            )
+        }
+
+        val objectExists = storyEntityExists(
+            storyId = storyId,
+            entityType = normalizedObjectType,
+            entityId = normalizedObjectId,
+        )
+        if (!objectExists) {
+            return RelationshipIntegrityResult(
+                isValid = false,
+                error = "Object not found in story: $normalizedObjectType:$normalizedObjectId",
+            )
+        }
+
+        return RelationshipIntegrityResult(
+            isValid = true,
+            normalizedSubjectType = normalizedSubjectType,
+            normalizedObjectType = normalizedObjectType,
+        )
+    }
+
+    private suspend fun normalizeAndValidateRelationshipRecord(
+        record: StoryRelationshipRecord,
+    ): StoryRelationshipRecord {
+        val relation = record.relation.trim()
+        require(relation.isNotBlank()) { "Relationship label is required." }
+
+        val validation = validateRelationshipEndpoints(
+            storyId = record.storyId,
+            subjectId = record.subjectId,
+            subjectType = record.subjectType,
+            objectId = record.objectId,
+            objectType = record.objectType,
+        )
+        require(validation.isValid) { validation.error ?: "Invalid relationship references." }
+
+        return record.copy(
+            subjectId = record.subjectId.trim(),
+            subjectType = validation.normalizedSubjectType ?: record.subjectType.trim().uppercase(),
+            objectId = record.objectId.trim(),
+            objectType = validation.normalizedObjectType ?: record.objectType.trim().uppercase(),
+            relation = relation,
+            notes = record.notes?.trim()?.takeIf { it.isNotBlank() },
+        )
+    }
 
     private fun getSessionMetadata(sessionId: String): Map<String, String> =
         queries.selectSessionMetadataBySessionId(sessionId) { _, key, value ->
@@ -604,14 +736,14 @@ class StructuredIndexRepository(
         val characterSlice = limitLatest(getStoryCharacters(storyId), CHAT_CONTEXT_CHARACTER_LIMIT) { it.createdAt }
         val locationSlice = limitLatest(getLocationsByStory(storyId), CHAT_CONTEXT_LOCATION_LIMIT) { it.createdAt }
         val arcSlice = limitLatest(getArcsByStory(storyId), CHAT_CONTEXT_ARC_LIMIT) { it.updatedAt }
-        val worldRuleSlice = limitLatest(getWorldRulesByStory(storyId), CHAT_CONTEXT_WORLD_RULE_LIMIT) { it.createdAt }
-        val cultureSlice = limitLatest(getCulturesByStory(storyId), CHAT_CONTEXT_CULTURE_LIMIT) { it.createdAt }
-        val eventSlice = limitLatest(getEventsByStory(storyId), CHAT_CONTEXT_EVENT_LIMIT) { it.createdAt }
-        val organizationSlice = limitLatest(getOrganizationsByStory(storyId), CHAT_CONTEXT_ORGANIZATION_LIMIT) { it.createdAt }
-        val relationshipSlice = limitLatest(getRelationshipsByStory(storyId), CHAT_CONTEXT_RELATIONSHIP_LIMIT) { it.createdAt }
-        val locationFeatureSlice = limitLatest(getLocationFeaturesByStory(storyId), CHAT_CONTEXT_LOCATION_FEATURE_LIMIT) { it.createdAt }
-        val artifactSlice = limitLatest(getArtifactsByStory(storyId), CHAT_CONTEXT_ARTIFACT_LIMIT) { it.createdAt }
-        val timelineSlice = limitLatest(getTimelineEntriesByStory(storyId), CHAT_CONTEXT_TIMELINE_LIMIT) { it.createdAt }
+        val worldRuleSlice = limitLatest(getWorldRulesByStory(storyId), CHAT_CONTEXT_WORLD_RULE_LIMIT) { it.updatedAt }
+        val cultureSlice = limitLatest(getCulturesByStory(storyId), CHAT_CONTEXT_CULTURE_LIMIT) { it.updatedAt }
+        val eventSlice = limitLatest(getEventsByStory(storyId), CHAT_CONTEXT_EVENT_LIMIT) { it.updatedAt }
+        val organizationSlice = limitLatest(getOrganizationsByStory(storyId), CHAT_CONTEXT_ORGANIZATION_LIMIT) { it.updatedAt }
+        val relationshipSlice = limitLatest(getRelationshipsByStory(storyId), CHAT_CONTEXT_RELATIONSHIP_LIMIT) { it.updatedAt }
+        val locationFeatureSlice = limitLatest(getLocationFeaturesByStory(storyId), CHAT_CONTEXT_LOCATION_FEATURE_LIMIT) { it.updatedAt }
+        val artifactSlice = limitLatest(getArtifactsByStory(storyId), CHAT_CONTEXT_ARTIFACT_LIMIT) { it.updatedAt }
+        val timelineSlice = limitLatest(getTimelineEntriesByStory(storyId), CHAT_CONTEXT_TIMELINE_LIMIT) { it.updatedAt }
 
         return StoryChatContext(
             story = story,
@@ -687,6 +819,7 @@ class StructuredIndexRepository(
                 val physical = record.physical
                 queries.updateStoryCharacter(
                     id = record.id,
+                    story_id = record.storyId,
                     name = record.name,
                     description = record.description,
                     goal = record.goal,
@@ -718,14 +851,15 @@ class StructuredIndexRepository(
         )
     }
 
-    suspend fun deleteStoryCharacter(characterId: String) {
+    suspend fun deleteStoryCharacter(
+        storyId: String,
+        characterId: String,
+    ) {
         query {
-            database.transaction {
-                queries.deleteStoryCharacterTraitsByCharacterId(characterId)
-                queries.deleteStoryCharacterRolesByCharacterId(characterId)
-                queries.deleteStoryCharacterQuirksByCharacterId(characterId)
-                queries.deleteStoryCharacterById(characterId)
-            }
+            queries.deleteStoryCharacterById(
+                id = characterId,
+                story_id = storyId,
+            )
         }
         deleteEntityEmbedding(sourceRef = "character:$characterId")
     }
@@ -1092,6 +1226,7 @@ class StructuredIndexRepository(
                 } else {
                     queries.updateStoryLocation(
                         id = record.id,
+                        story_id = record.storyId,
                         name = record.profile.name,
                         description = record.profile.description,
                     )
@@ -1113,12 +1248,15 @@ class StructuredIndexRepository(
         )
     }
 
-    suspend fun deleteStoryLocation(locationId: String) {
+    suspend fun deleteStoryLocation(
+        storyId: String,
+        locationId: String,
+    ) {
         query {
-            database.transaction {
-                queries.deleteStoryLocationTagsByLocationId(locationId)
-                queries.deleteStoryLocationById(locationId)
-            }
+            queries.deleteStoryLocationById(
+                id = locationId,
+                story_id = storyId,
+            )
         }
         deleteEntityEmbedding(sourceRef = "location:$locationId")
     }
@@ -1193,6 +1331,7 @@ class StructuredIndexRepository(
                 } else {
                     queries.updateStoryArc(
                         id = record.id,
+                        story_id = record.storyId,
                         scope_type = record.scopeType.name,
                         scope_id = record.scopeId,
                         title = record.title,
@@ -1210,9 +1349,15 @@ class StructuredIndexRepository(
         )
     }
 
-    suspend fun deleteStoryArc(arcId: String) {
+    suspend fun deleteStoryArc(
+        storyId: String,
+        arcId: String,
+    ) {
         query {
-            queries.deleteStoryArcById(arcId)
+            queries.deleteStoryArcById(
+                id = arcId,
+                story_id = storyId,
+            )
         }
         deleteEntityEmbedding(sourceRef = "arc:$arcId")
     }
@@ -1414,6 +1559,7 @@ class StructuredIndexRepository(
                 title = record.title,
                 description = record.description,
                 created_at = record.createdAt,
+                updated_at = record.updatedAt,
             )
         }
         upsertEntityEmbedding(
@@ -1424,35 +1570,46 @@ class StructuredIndexRepository(
     }
 
     suspend fun updateStoryWorldRule(record: StoryWorldRuleRecord) {
+        val now = System.currentTimeMillis()
+        val updatedRecord = record.copy(updatedAt = now)
         query {
             queries.updateStoryWorldRule(
-                id = record.id,
-                title = record.title,
-                description = record.description,
+                id = updatedRecord.id,
+                story_id = updatedRecord.storyId,
+                title = updatedRecord.title,
+                description = updatedRecord.description,
+                updated_at = updatedRecord.updatedAt,
             )
         }
         upsertEntityEmbedding(
-            storyId = record.storyId,
-            sourceRef = "world_rule:${record.id}",
-            text = EmbeddingTextBuilder.worldRule(record),
+            storyId = updatedRecord.storyId,
+            sourceRef = "world_rule:${updatedRecord.id}",
+            text = EmbeddingTextBuilder.worldRule(updatedRecord),
         )
     }
 
-    suspend fun deleteStoryWorldRule(ruleId: String) {
+    suspend fun deleteStoryWorldRule(
+        storyId: String,
+        ruleId: String,
+    ) {
         query {
-            queries.deleteStoryWorldRuleById(ruleId)
+            queries.deleteStoryWorldRuleById(
+                id = ruleId,
+                story_id = storyId,
+            )
         }
         deleteEntityEmbedding(sourceRef = "world_rule:$ruleId")
     }
 
     suspend fun getWorldRulesByStory(storyId: String): List<StoryWorldRuleRecord> = query {
-        queries.selectWorldRulesByStoryId(storyId) { id, storyId, title, description, createdAt ->
+        queries.selectWorldRulesByStoryId(storyId) { id, storyId, title, description, createdAt, updatedAt ->
             StoryWorldRuleRecord(
                 id = id,
                 storyId = storyId,
                 title = title,
                 description = description,
                 createdAt = createdAt,
+                updatedAt = updatedAt,
             )
         }.executeAsList()
     }
@@ -1465,6 +1622,7 @@ class StructuredIndexRepository(
                 name = record.name,
                 description = record.description,
                 created_at = record.createdAt,
+                updated_at = record.updatedAt,
             )
         }
         upsertEntityEmbedding(
@@ -1475,35 +1633,46 @@ class StructuredIndexRepository(
     }
 
     suspend fun updateStoryCulture(record: StoryCultureRecord) {
+        val now = System.currentTimeMillis()
+        val updatedRecord = record.copy(updatedAt = now)
         query {
             queries.updateStoryCulture(
-                id = record.id,
-                name = record.name,
-                description = record.description,
+                id = updatedRecord.id,
+                story_id = updatedRecord.storyId,
+                name = updatedRecord.name,
+                description = updatedRecord.description,
+                updated_at = updatedRecord.updatedAt,
             )
         }
         upsertEntityEmbedding(
-            storyId = record.storyId,
-            sourceRef = "culture:${record.id}",
-            text = EmbeddingTextBuilder.culture(record),
+            storyId = updatedRecord.storyId,
+            sourceRef = "culture:${updatedRecord.id}",
+            text = EmbeddingTextBuilder.culture(updatedRecord),
         )
     }
 
-    suspend fun deleteStoryCulture(cultureId: String) {
+    suspend fun deleteStoryCulture(
+        storyId: String,
+        cultureId: String,
+    ) {
         query {
-            queries.deleteStoryCultureById(cultureId)
+            queries.deleteStoryCultureById(
+                id = cultureId,
+                story_id = storyId,
+            )
         }
         deleteEntityEmbedding(sourceRef = "culture:$cultureId")
     }
 
     suspend fun getCulturesByStory(storyId: String): List<StoryCultureRecord> = query {
-        queries.selectCulturesByStoryId(storyId) { id, storyId, name, description, createdAt ->
+        queries.selectCulturesByStoryId(storyId) { id, storyId, name, description, createdAt, updatedAt ->
             StoryCultureRecord(
                 id = id,
                 storyId = storyId,
                 name = name,
                 description = description,
                 createdAt = createdAt,
+                updatedAt = updatedAt,
             )
         }.executeAsList()
     }
@@ -1516,6 +1685,7 @@ class StructuredIndexRepository(
                 name = record.name,
                 description = record.description,
                 created_at = record.createdAt,
+                updated_at = record.updatedAt,
             )
         }
         upsertEntityEmbedding(
@@ -1526,35 +1696,46 @@ class StructuredIndexRepository(
     }
 
     suspend fun updateStoryEvent(record: StoryEventRecord) {
+        val now = System.currentTimeMillis()
+        val updatedRecord = record.copy(updatedAt = now)
         query {
             queries.updateStoryEvent(
-                id = record.id,
-                name = record.name,
-                description = record.description,
+                id = updatedRecord.id,
+                story_id = updatedRecord.storyId,
+                name = updatedRecord.name,
+                description = updatedRecord.description,
+                updated_at = updatedRecord.updatedAt,
             )
         }
         upsertEntityEmbedding(
-            storyId = record.storyId,
-            sourceRef = "event:${record.id}",
-            text = EmbeddingTextBuilder.event(record),
+            storyId = updatedRecord.storyId,
+            sourceRef = "event:${updatedRecord.id}",
+            text = EmbeddingTextBuilder.event(updatedRecord),
         )
     }
 
-    suspend fun deleteStoryEvent(eventId: String) {
+    suspend fun deleteStoryEvent(
+        storyId: String,
+        eventId: String,
+    ) {
         query {
-            queries.deleteStoryEventById(eventId)
+            queries.deleteStoryEventById(
+                id = eventId,
+                story_id = storyId,
+            )
         }
         deleteEntityEmbedding(sourceRef = "event:$eventId")
     }
 
     suspend fun getEventsByStory(storyId: String): List<StoryEventRecord> = query {
-        queries.selectEventsByStoryId(storyId) { id, storyId, name, description, createdAt ->
+        queries.selectEventsByStoryId(storyId) { id, storyId, name, description, createdAt, updatedAt ->
             StoryEventRecord(
                 id = id,
                 storyId = storyId,
                 name = name,
                 description = description,
                 createdAt = createdAt,
+                updatedAt = updatedAt,
             )
         }.executeAsList()
     }
@@ -1567,6 +1748,7 @@ class StructuredIndexRepository(
                 name = record.name,
                 description = record.description,
                 created_at = record.createdAt,
+                updated_at = record.updatedAt,
             )
         }
         upsertEntityEmbedding(
@@ -1577,88 +1759,113 @@ class StructuredIndexRepository(
     }
 
     suspend fun updateStoryOrganization(record: StoryOrganizationRecord) {
+        val now = System.currentTimeMillis()
+        val updatedRecord = record.copy(updatedAt = now)
         query {
             queries.updateStoryOrganization(
-                id = record.id,
-                name = record.name,
-                description = record.description,
+                id = updatedRecord.id,
+                story_id = updatedRecord.storyId,
+                name = updatedRecord.name,
+                description = updatedRecord.description,
+                updated_at = updatedRecord.updatedAt,
             )
         }
         upsertEntityEmbedding(
-            storyId = record.storyId,
-            sourceRef = "organization:${record.id}",
-            text = EmbeddingTextBuilder.organization(record),
+            storyId = updatedRecord.storyId,
+            sourceRef = "organization:${updatedRecord.id}",
+            text = EmbeddingTextBuilder.organization(updatedRecord),
         )
     }
 
-    suspend fun deleteStoryOrganization(organizationId: String) {
+    suspend fun deleteStoryOrganization(
+        storyId: String,
+        organizationId: String,
+    ) {
         query {
-            queries.deleteStoryOrganizationById(organizationId)
+            queries.deleteStoryOrganizationById(
+                id = organizationId,
+                story_id = storyId,
+            )
         }
         deleteEntityEmbedding(sourceRef = "organization:$organizationId")
     }
 
     suspend fun getOrganizationsByStory(storyId: String): List<StoryOrganizationRecord> = query {
-        queries.selectOrganizationsByStoryId(storyId) { id, storyId, name, description, createdAt ->
+        queries.selectOrganizationsByStoryId(storyId) { id, storyId, name, description, createdAt, updatedAt ->
             StoryOrganizationRecord(
                 id = id,
                 storyId = storyId,
                 name = name,
                 description = description,
                 createdAt = createdAt,
+                updatedAt = updatedAt,
             )
         }.executeAsList()
     }
 
     suspend fun insertStoryRelationship(record: StoryRelationshipRecord) {
+        val normalized = normalizeAndValidateRelationshipRecord(record)
         query {
             queries.insertStoryRelationship(
-                id = record.id,
-                story_id = record.storyId,
-                subject_id = record.subjectId,
-                subject_type = record.subjectType,
-                object_id = record.objectId,
-                object_type = record.objectType,
-                relation = record.relation,
-                notes = record.notes,
-                created_at = record.createdAt,
+                id = normalized.id,
+                story_id = normalized.storyId,
+                subject_id = normalized.subjectId,
+                subject_type = normalized.subjectType,
+                object_id = normalized.objectId,
+                object_type = normalized.objectType,
+                relation = normalized.relation,
+                notes = normalized.notes,
+                created_at = normalized.createdAt,
+                updated_at = normalized.updatedAt,
             )
         }
         upsertEntityEmbedding(
-            storyId = record.storyId,
-            sourceRef = "relationship:${record.id}",
-            text = EmbeddingTextBuilder.relationship(record),
+            storyId = normalized.storyId,
+            sourceRef = "relationship:${normalized.id}",
+            text = EmbeddingTextBuilder.relationship(normalized),
         )
     }
 
     suspend fun updateStoryRelationship(record: StoryRelationshipRecord) {
+        val now = System.currentTimeMillis()
+        val normalized = normalizeAndValidateRelationshipRecord(
+            record = record.copy(updatedAt = now),
+        )
         query {
             queries.updateStoryRelationship(
-                id = record.id,
-                subject_id = record.subjectId,
-                subject_type = record.subjectType,
-                object_id = record.objectId,
-                object_type = record.objectType,
-                relation = record.relation,
-                notes = record.notes,
+                id = normalized.id,
+                story_id = normalized.storyId,
+                subject_id = normalized.subjectId,
+                subject_type = normalized.subjectType,
+                object_id = normalized.objectId,
+                object_type = normalized.objectType,
+                relation = normalized.relation,
+                notes = normalized.notes,
+                updated_at = normalized.updatedAt,
             )
         }
         upsertEntityEmbedding(
-            storyId = record.storyId,
-            sourceRef = "relationship:${record.id}",
-            text = EmbeddingTextBuilder.relationship(record),
+            storyId = normalized.storyId,
+            sourceRef = "relationship:${normalized.id}",
+            text = EmbeddingTextBuilder.relationship(normalized),
         )
     }
 
-    suspend fun deleteStoryRelationship(relationshipId: String) {
+    suspend fun deleteStoryRelationship(
+        storyId: String,
+        relationshipId: String,
+    ) {
         query {
-            queries.deleteStoryRelationshipById(relationshipId)
+            queries.deleteStoryRelationshipById(
+                id = relationshipId,
+                story_id = storyId,
+            )
         }
         deleteEntityEmbedding(sourceRef = "relationship:$relationshipId")
     }
 
     suspend fun getRelationshipsByStory(storyId: String): List<StoryRelationshipRecord> = query {
-        queries.selectRelationshipsByStoryId(storyId) { id, storyId, subjectId, subjectType, objectId, objectType, relation, notes, createdAt ->
+        queries.selectRelationshipsByStoryId(storyId) { id, storyId, subjectId, subjectType, objectId, objectType, relation, notes, createdAt, updatedAt ->
             StoryRelationshipRecord(
                 id = id,
                 storyId = storyId,
@@ -1669,6 +1876,7 @@ class StructuredIndexRepository(
                 relation = relation,
                 notes = notes,
                 createdAt = createdAt,
+                updatedAt = updatedAt,
             )
         }.executeAsList()
     }
@@ -1682,6 +1890,7 @@ class StructuredIndexRepository(
                 name = record.name,
                 description = record.description,
                 created_at = record.createdAt,
+                updated_at = record.updatedAt,
             )
         }
         upsertEntityEmbedding(
@@ -1692,30 +1901,40 @@ class StructuredIndexRepository(
     }
 
     suspend fun updateStoryLocationFeature(record: StoryLocationFeatureRecord) {
+        val now = System.currentTimeMillis()
+        val updatedRecord = record.copy(updatedAt = now)
         query {
             queries.updateStoryLocationFeature(
-                id = record.id,
-                location_id = record.locationId,
-                name = record.name,
-                description = record.description,
+                id = updatedRecord.id,
+                story_id = updatedRecord.storyId,
+                location_id = updatedRecord.locationId,
+                name = updatedRecord.name,
+                description = updatedRecord.description,
+                updated_at = updatedRecord.updatedAt,
             )
         }
         upsertEntityEmbedding(
-            storyId = record.storyId,
-            sourceRef = "location_feature:${record.id}",
-            text = EmbeddingTextBuilder.locationFeature(record),
+            storyId = updatedRecord.storyId,
+            sourceRef = "location_feature:${updatedRecord.id}",
+            text = EmbeddingTextBuilder.locationFeature(updatedRecord),
         )
     }
 
-    suspend fun deleteStoryLocationFeature(featureId: String) {
+    suspend fun deleteStoryLocationFeature(
+        storyId: String,
+        featureId: String,
+    ) {
         query {
-            queries.deleteStoryLocationFeatureById(featureId)
+            queries.deleteStoryLocationFeatureById(
+                id = featureId,
+                story_id = storyId,
+            )
         }
         deleteEntityEmbedding(sourceRef = "location_feature:$featureId")
     }
 
     suspend fun getLocationFeaturesByStory(storyId: String): List<StoryLocationFeatureRecord> = query {
-        queries.selectLocationFeaturesByStoryId(storyId) { id, storyId, locationId, name, description, createdAt ->
+        queries.selectLocationFeaturesByStoryId(storyId) { id, storyId, locationId, name, description, createdAt, updatedAt ->
             StoryLocationFeatureRecord(
                 id = id,
                 storyId = storyId,
@@ -1723,6 +1942,7 @@ class StructuredIndexRepository(
                 name = name,
                 description = description,
                 createdAt = createdAt,
+                updatedAt = updatedAt,
             )
         }.executeAsList()
     }
@@ -1738,6 +1958,7 @@ class StructuredIndexRepository(
                 owner_type = record.ownerType,
                 location_id = record.locationId,
                 created_at = record.createdAt,
+                updated_at = record.updatedAt,
             )
         }
 
@@ -1749,32 +1970,42 @@ class StructuredIndexRepository(
     }
 
     suspend fun updateStoryArtifact(record: StoryArtifactRecord) {
+        val now = System.currentTimeMillis()
+        val updatedRecord = record.copy(updatedAt = now)
         query {
             queries.updateStoryArtifact(
-                id = record.id,
-                name = record.name,
-                description = record.description,
-                owner_id = record.ownerId,
-                owner_type = record.ownerType,
-                location_id = record.locationId,
+                id = updatedRecord.id,
+                story_id = updatedRecord.storyId,
+                name = updatedRecord.name,
+                description = updatedRecord.description,
+                owner_id = updatedRecord.ownerId,
+                owner_type = updatedRecord.ownerType,
+                location_id = updatedRecord.locationId,
+                updated_at = updatedRecord.updatedAt,
             )
         }
         upsertEntityEmbedding(
-            storyId = record.storyId,
-            sourceRef = "artifact:${record.id}",
-            text = EmbeddingTextBuilder.artifact(record),
+            storyId = updatedRecord.storyId,
+            sourceRef = "artifact:${updatedRecord.id}",
+            text = EmbeddingTextBuilder.artifact(updatedRecord),
         )
     }
 
-    suspend fun deleteStoryArtifact(artifactId: String) {
+    suspend fun deleteStoryArtifact(
+        storyId: String,
+        artifactId: String,
+    ) {
         query {
-            queries.deleteStoryArtifactById(artifactId)
+            queries.deleteStoryArtifactById(
+                id = artifactId,
+                story_id = storyId,
+            )
         }
         deleteEntityEmbedding(sourceRef = "artifact:$artifactId")
     }
 
     suspend fun getArtifactsByStory(storyId: String): List<StoryArtifactRecord> = query {
-        queries.selectArtifactsByStoryId(storyId) { id, storyId, name, description, ownerId, ownerType, locationId, createdAt ->
+        queries.selectArtifactsByStoryId(storyId) { id, storyId, name, description, ownerId, ownerType, locationId, createdAt, updatedAt ->
             StoryArtifactRecord(
                 id = id,
                 storyId = storyId,
@@ -1784,6 +2015,7 @@ class StructuredIndexRepository(
                 ownerType = ownerType,
                 locationId = locationId,
                 createdAt = createdAt,
+                updatedAt = updatedAt,
             )
         }.executeAsList()
     }
@@ -1797,6 +2029,7 @@ class StructuredIndexRepository(
                 description = record.description,
                 order_index = record.orderIndex,
                 created_at = record.createdAt,
+                updated_at = record.updatedAt,
             )
         }
         upsertEntityEmbedding(
@@ -1807,30 +2040,40 @@ class StructuredIndexRepository(
     }
 
     suspend fun updateStoryTimelineEntry(record: StoryTimelineEntryRecord) {
+        val now = System.currentTimeMillis()
+        val updatedRecord = record.copy(updatedAt = now)
         query {
             queries.updateStoryTimelineEntry(
-                id = record.id,
-                title = record.title,
-                description = record.description,
-                order_index = record.orderIndex,
+                id = updatedRecord.id,
+                story_id = updatedRecord.storyId,
+                title = updatedRecord.title,
+                description = updatedRecord.description,
+                order_index = updatedRecord.orderIndex,
+                updated_at = updatedRecord.updatedAt,
             )
         }
         upsertEntityEmbedding(
-            storyId = record.storyId,
-            sourceRef = "timeline:${record.id}",
-            text = EmbeddingTextBuilder.timelineEntry(record),
+            storyId = updatedRecord.storyId,
+            sourceRef = "timeline:${updatedRecord.id}",
+            text = EmbeddingTextBuilder.timelineEntry(updatedRecord),
         )
     }
 
-    suspend fun deleteStoryTimelineEntry(entryId: String) {
+    suspend fun deleteStoryTimelineEntry(
+        storyId: String,
+        entryId: String,
+    ) {
         query {
-            queries.deleteStoryTimelineEntryById(entryId)
+            queries.deleteStoryTimelineEntryById(
+                id = entryId,
+                story_id = storyId,
+            )
         }
         deleteEntityEmbedding(sourceRef = "timeline:$entryId")
     }
 
     suspend fun getTimelineEntriesByStory(storyId: String): List<StoryTimelineEntryRecord> = query {
-        queries.selectTimelineEntriesByStoryId(storyId) { id, storyId, title, description, orderIndex, createdAt ->
+        queries.selectTimelineEntriesByStoryId(storyId) { id, storyId, title, description, orderIndex, createdAt, updatedAt ->
             StoryTimelineEntryRecord(
                 id = id,
                 storyId = storyId,
@@ -1838,6 +2081,7 @@ class StructuredIndexRepository(
                 description = description,
                 orderIndex = orderIndex,
                 createdAt = createdAt,
+                updatedAt = updatedAt,
             )
         }.executeAsList()
     }

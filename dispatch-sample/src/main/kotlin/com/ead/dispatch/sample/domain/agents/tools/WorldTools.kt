@@ -118,7 +118,10 @@ class WorldTools(
         @LLMDescription("World rule id to delete")
         entityId: String,
     ): ToolResult<OperationOutcome> {
-        repository.deleteStoryWorldRule(entityId)
+        repository.deleteStoryWorldRule(
+            storyId = storyId,
+            ruleId = entityId,
+        )
         return success("delete", OperationEntity.WORLD_RULE, storyId, entityId, "Deleted world rule '$entityId'.")
     }
 
@@ -210,7 +213,10 @@ class WorldTools(
         @LLMDescription("Culture id to delete")
         entityId: String,
     ): ToolResult<OperationOutcome> {
-        repository.deleteStoryCulture(entityId)
+        repository.deleteStoryCulture(
+            storyId = storyId,
+            cultureId = entityId,
+        )
         return success("delete", OperationEntity.CULTURE, storyId, entityId, "Deleted culture '$entityId'.")
     }
 
@@ -302,7 +308,10 @@ class WorldTools(
         @LLMDescription("Organization id to delete")
         entityId: String,
     ): ToolResult<OperationOutcome> {
-        repository.deleteStoryOrganization(entityId)
+        repository.deleteStoryOrganization(
+            storyId = storyId,
+            organizationId = entityId,
+        )
         return success("delete", OperationEntity.ORGANIZATION, storyId, entityId, "Deleted organization '$entityId'.")
     }
 
@@ -400,7 +409,10 @@ class WorldTools(
         @LLMDescription("Artifact id to delete")
         entityId: String,
     ): ToolResult<OperationOutcome> {
-        repository.deleteStoryArtifact(entityId)
+        repository.deleteStoryArtifact(
+            storyId = storyId,
+            artifactId = entityId,
+        )
         return success("delete", OperationEntity.ARTIFACT, storyId, entityId, "Deleted artifact '$entityId'.")
     }
 }

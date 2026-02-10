@@ -12,6 +12,8 @@ import kotlin.test.assertNotSame
 import kotlin.test.assertTrue
 
 class RuntimeCompositionTest {
+    private class SlotProbe
+
     @Test
     fun `remember caches values until key changes`() {
         val composer = Composer()
@@ -172,5 +174,58 @@ class RuntimeCompositionTest {
         assertEquals("first", compose())
         input = "second"
         assertEquals("second", compose())
+    }
+
+    @Test
+    fun `remember keeps type-safe values when conditional remember appears before mutable state`() {
+        val composer = Composer()
+        var showPrefixSlot = false
+
+        fun compose(): Int {
+            return withComposer(composer) {
+                composer.startComposition()
+                if (showPrefixSlot) {
+                    remember { SlotProbe() }
+                }
+                val counter = remember { mutableStateOf(0) }
+                counter.value += 1
+                val value = counter.value
+                composer.endComposition()
+                value
+            }
+        }
+
+        assertEquals(1, compose())
+        showPrefixSlot = true
+        assertEquals(1, compose())
+        showPrefixSlot = false
+        assertEquals(1, compose())
+    }
+
+    @Test
+    fun `remember keeps mutable state generic values when conditional mutable state appears before`() {
+        val composer = Composer()
+        var showPrefixSlot = false
+
+        fun compose(): Int {
+            return withComposer(composer) {
+                composer.startComposition()
+                if (showPrefixSlot) {
+                    val callbackState = remember { mutableStateOf<Any>({ "callback" }) }
+                    callbackState.value = { "callback-updated" }
+                }
+                val animationState = remember { mutableStateOf(0) }
+                animationState.value = animationState.value + 1
+                val value = animationState.value
+                composer.endComposition()
+                value
+            }
+        }
+
+        assertEquals(1, compose())
+        showPrefixSlot = true
+        assertEquals(1, compose())
+        showPrefixSlot = false
+        assertEquals(1, compose())
     }
 }

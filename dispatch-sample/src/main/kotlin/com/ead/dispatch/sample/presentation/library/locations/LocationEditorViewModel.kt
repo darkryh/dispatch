@@ -238,7 +238,10 @@ class LocationEditorViewModel(
 
         viewModelScope.launch(Dispatchers.IO) {
             runCatching {
-                repository.deleteStoryLocation(locationId)
+                repository.deleteStoryLocation(
+                    storyId = storyId,
+                    locationId = locationId,
+                )
             }.onSuccess {
                 _uiState.update { it.copy(confirmDelete = false, status = "Location deleted.") }
             }.onFailure { error ->

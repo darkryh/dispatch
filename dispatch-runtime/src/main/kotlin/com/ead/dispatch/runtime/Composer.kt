@@ -95,6 +95,9 @@ class Composer(
             @Suppress("UNCHECKED_CAST")
             existing.value as T
         } else {
+            if (existing != null) {
+                disposeSlot(existing)
+            }
             val value = calculation()
             slots[slot] = SlotEntry(key = null, value = value)
             value
@@ -115,6 +118,9 @@ class Composer(
             @Suppress("UNCHECKED_CAST")
             existing.value as T
         } else {
+            if (existing != null) {
+                disposeSlot(existing)
+            }
             val value = calculation()
             slots[slot] = SlotEntry(key = key, value = value)
             value

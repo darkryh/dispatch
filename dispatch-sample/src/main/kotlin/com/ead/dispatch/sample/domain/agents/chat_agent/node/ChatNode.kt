@@ -170,14 +170,16 @@ private fun AIAgentGraphContextBase.setupAndStreamChatMode(
                 publishSnapshot()
 
                 if (toolCalls.isEmpty()) break
+                val decisionToolCall = toolCalls.firstOrNull { isDecisionToolName(it.tool) }
+                val effectiveToolCalls = decisionToolCall?.let { listOf(it) } ?: toolCalls
 
                 runtimeOrchestrator.beforeToolLoop(
                     context = agentContext,
-                    hints = baseHints(request, toolCalls.size)
+                    hints = baseHints(request, effectiveToolCalls.size)
                 )
                 publishSnapshot()
 
-                val toolResults = toolCalls.map { executeToolWithFix(it) }
+                val toolResults = effectiveToolCalls.map { executeToolWithFix(it) }
                 toolResults
                     .filter { it.resultKind !is ToolResultKind.Success }
                     .forEach { result ->
@@ -188,15 +190,16 @@ private fun AIAgentGraphContextBase.setupAndStreamChatMode(
                 llm.writeSession {
                     appendPrompt {
                         tool {
-                            toolCalls.forEach { call(it) }
+                            effectiveToolCalls.forEach { call(it) }
                             toolResults.forEach { result(it) }
                         }
                     }
                 }
 
-                previousToolCalls = toolCalls.size
+                previousToolCalls = effectiveToolCalls.size
                 runtimeOrchestrator.afterToolLoop(agentContext)
                 publishSnapshot()
+                if (decisionToolCall != null) break
             }
         } finally {
             publishSnapshot()
@@ -209,6 +212,9 @@ private fun AIAgentGraphContextBase.setupAndStreamChatMode(
         }
     }
 }
+
+private fun isDecisionToolName(toolName: String?): Boolean =
+    toolName?.lowercase() == "requestuserchoice"
 
 private fun baseHints(
     request: ChatRequest,

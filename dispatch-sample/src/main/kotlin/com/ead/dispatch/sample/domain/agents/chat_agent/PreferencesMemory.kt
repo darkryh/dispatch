@@ -5,89 +5,130 @@ import ai.koog.agents.memory.model.FactType
 
 object PreferencesMemory {
 
-    val writingStyleConcept = Concept(
-        keyword = "writing_style",
-        description = """
-            The user's preferred style for prose and narrative generation.
-            Includes:
-            - POV (First, Third Limited/Omniscient)
-            - Tense (Past, Present)
-            - Regional spelling (US, UK, Canadian)
-            - Formatting habits (e.g., em-dashes vs hyphens)
-            Use this to ensure generated text matches the user's voice.
-            Allowed:
-            - Stable style preferences that apply across sessions.
-            Forbidden:
-            - Any story/character/plot/setting details.
-            - Any session- or project-specific facts.
-        """.trimIndent(),
-        factType = FactType.MULTIPLE,
-    )
+    private val globalContract = """
+        Extraction contract (must follow all):
+        - Evidence rule: extract only when the user explicitly states a reusable preference.
+        - No-inference rule: do not infer preferences from story/character/plot/world details.
+        - Output shape: save short normalized values (2-6 words), not explanations.
+        - Unknown rule: if no valid preference is present, return no facts.
+        - Volume rule: extract at most 3 facts for this concept per turn.
+        Forbidden in all cases:
+        - Names, story titles, settings, events, timelines, character bios, lore.
+        - One-task instructions that do not apply across sessions.
+    """.trimIndent()
 
-    val collaborationModeConcept = Concept(
-        keyword = "collaboration_mode",
+    val writerPovPreferenceConcept = Concept(
+        keyword = "writer_pov_preference",
         description = """
-            How the user prefers to interact with the AI assistant.
+            Writer preference for narrative point of view (POV).
             Examples:
-            - "Coach": Ask probing questions, don't write the story.
-            - "Co-writer": Draft scenes and propose concrete dialogue.
-            - "Editor": Critique logic, grammar, and pacing.
-            - "Architect": Focus on structure and world-building, not prose.
-            Use this to adjust the agent's persona and initiative level.
-            Allowed:
-            - A single stable mode choice (coach/co-writer/editor/architect).
-            - General guidance on level of initiative.
-            Forbidden:
-            - Any story/character/plot/setting details.
-            - Any session- or project-specific facts.
-        """.trimIndent(),
-        factType = FactType.SINGLE,
-    )
-
-    val narrativePreferencesConcept = Concept(
-        keyword = "narrative_preferences",
-        description = """
-            The user's creative likes, dislikes, and constraints.
-            Includes:
-            - Favorite tropes or genres (e.g., "Found Family", "Cyberpunk")
-            - Disliked tropes (e.g., "Love Triangles")
-            - Hard constraints (e.g., "No gore", "PG-13 only")
-            Use this to guide creative suggestions and avoid unwanted content.
-            Allowed:
-            - General genre/trope preferences and constraints that apply across stories.
-            - Content boundaries (rating, gore, romance limits).
-            Forbidden:
-            - Any story/character/plot/setting details.
-            - Any session- or project-specific facts.
+            - First person.
+            - Third-person limited.
+            - Third-person omniscient.
+            - Mixed POV.
+            Sample value patterns (examples, not strict enums):
+            - first_person
+            - third_limited
+            - third_omniscient
+            - mixed_pov
+            Allowed scope:
+            - Only global POV preference and POV mixing preference.
+            $globalContract
         """.trimIndent(),
         factType = FactType.MULTIPLE,
     )
 
-    val outputFormatConcept = Concept(
-        keyword = "output_format",
+    val writerTensePreferenceConcept = Concept(
+        keyword = "writer_tense_preference",
         description = """
-            Technical preferences for how the AI should structure its output.
+            Writer preference for narrative tense.
             Examples:
-            - "Always provide JSON for character sheets"
-            - "Use markdown tables for timelines"
-            - "Keep summaries under 50 words"
-            Use this to format responses exactly as the user expects.
-            Allowed:
-            - Formatting and structure preferences that apply across sessions.
-            - Output constraints like brevity, bullet style, JSON/table formats.
-            Forbidden:
-            - Any quantity requirements tied to a specific request (e.g., "create 4 characters").
-            - Any task-specific instructions or workflow goals.
-            - Any story/character/plot/setting details.
-            - Any session- or project-specific facts.
+            - Present tense.
+            - Past tense.
+            - Present for main timeline with past flashbacks.
+            Sample value patterns (examples, not strict enums):
+            - present
+            - past
+            - mixed_tense
+            Allowed scope:
+            - Only global tense preference and tense-mixing preference.
+            $globalContract
         """.trimIndent(),
         factType = FactType.MULTIPLE,
     )
 
+    val writerToneLikePreferenceConcept = Concept(
+        keyword = "writer_tone_like_preference",
+        description = """
+            Writer preferred tones (liked).
+            Examples:
+            - Atmospheric, melancholic, hopeful, gritty, whimsical.
+            - Psychological, suspenseful, intimate, epic.
+            Sample value patterns (examples, not strict enums):
+            - atmospheric
+            - melancholic
+            - dark
+            - hopeful
+            - gritty
+            - psychological
+            - suspenseful
+            Allowed scope:
+            - Only tones the writer prefers repeatedly across stories.
+            - Do not store avoided tones here.
+            $globalContract
+        """.trimIndent(),
+        factType = FactType.MULTIPLE,
+    )
+
+    val writerProseStylePreferenceConcept = Concept(
+        keyword = "writer_prose_style_preference",
+        description = """
+            Writer preference for prose texture and sentence style.
+            Examples:
+            - Minimalist prose vs lyrical prose.
+            - Short punchy sentences vs flowing descriptive sentences.
+            - Dense imagery vs clean direct language.
+            Sample value patterns (examples, not strict enums):
+            - minimalist
+            - lyrical
+            - direct
+            - descriptive
+            - introspective
+            Allowed scope:
+            - Global prose texture, diction density, and sentence style preferences.
+            $globalContract
+        """.trimIndent(),
+        factType = FactType.MULTIPLE,
+    )
+
+    val writerContentBoundaryPreferenceConcept = Concept(
+        keyword = "writer_content_boundary_preference",
+        description = """
+            Writer preference for content boundaries and sensitivity limits.
+            Examples:
+            - No explicit gore.
+            - Keep romance mild.
+            - Target PG-13 intensity.
+            Sample value patterns (examples, not strict enums):
+            - no_explicit_gore
+            - pg_13
+            - limited_romance
+            - no_sexual_content
+            - limited_profanity
+            Allowed scope:
+            - Stable boundaries for explicitness, violence, intimacy, and language.
+            - Do not store one-scene safety notes here.
+            $globalContract
+        """.trimIndent(),
+        factType = FactType.MULTIPLE,
+    )
+
+    // Core writer-preference memory only (top 5).
     val userConcepts = listOf(
-        writingStyleConcept,
-        collaborationModeConcept,
-        narrativePreferencesConcept,
-        outputFormatConcept,
+        writerPovPreferenceConcept,
+        writerTensePreferenceConcept,
+        writerToneLikePreferenceConcept,
+        writerProseStylePreferenceConcept,
+        writerContentBoundaryPreferenceConcept,
     )
 }

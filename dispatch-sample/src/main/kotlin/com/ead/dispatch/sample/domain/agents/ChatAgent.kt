@@ -29,6 +29,7 @@ import com.ead.dispatch.sample.domain.agents.tools.CharacterTools
 import com.ead.dispatch.sample.domain.agents.tools.LocationTools
 import com.ead.dispatch.sample.domain.agents.tools.PlotTools
 import com.ead.dispatch.sample.domain.agents.tools.StoryInfoTools
+import com.ead.dispatch.sample.domain.agents.tools.InteractionTools
 import com.ead.dispatch.sample.domain.agents.tools.WorldTools
 import com.ead.dispatch.sample.domain.embedding.RagContextService
 import com.ead.dispatch.sample.domain.model.session.Session
@@ -48,6 +49,7 @@ class ChatAgent(
         tools(CharacterTools(repository).asTools())
         tools(WorldTools(repository).asTools())
         tools(PlotTools(repository).asTools())
+        tools(InteractionTools(repository).asTools())
     }
 
     /**

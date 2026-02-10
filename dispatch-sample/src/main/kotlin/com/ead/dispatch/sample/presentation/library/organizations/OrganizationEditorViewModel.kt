@@ -238,7 +238,10 @@ class OrganizationEditorViewModel(
 
         viewModelScope.launch(Dispatchers.IO) {
             runCatching {
-                repository.deleteStoryOrganization(orgId)
+                repository.deleteStoryOrganization(
+                    storyId = storyId,
+                    organizationId = orgId,
+                )
             }.onSuccess {
                 _uiState.update { it.copy(confirmDelete = false, status = "Organization deleted.") }
             }.onFailure { error ->

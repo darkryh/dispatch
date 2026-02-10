@@ -12,4 +12,5 @@ data class StoryArtifactRecord(
     val ownerType: String? = null,
     val locationId: String? = null,
     val createdAt: Long,
+    val updatedAt: Long = createdAt,
 )

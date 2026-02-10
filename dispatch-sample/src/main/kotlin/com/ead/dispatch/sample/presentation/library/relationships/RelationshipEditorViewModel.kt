@@ -246,7 +246,10 @@ class RelationshipEditorViewModel(
 
         viewModelScope.launch(Dispatchers.IO) {
             runCatching {
-                repository.deleteStoryRelationship(relationshipId)
+                repository.deleteStoryRelationship(
+                    storyId = storyId,
+                    relationshipId = relationshipId,
+                )
             }.onSuccess {
                 _uiState.update { it.copy(confirmDelete = false, status = "Relationship deleted.") }
             }.onFailure { error ->

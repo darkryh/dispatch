@@ -110,7 +110,10 @@ class ArcEditorViewModel(
 
         viewModelScope.launch(Dispatchers.IO) {
             runCatching {
-                repository.deleteStoryArc(arcId)
+                repository.deleteStoryArc(
+                    storyId = storyId,
+                    arcId = arcId,
+                )
             }.onSuccess {
                 _uiState.update { it.copy(confirmDelete = false, status = "Arc deleted.") }
             }.onFailure { error ->

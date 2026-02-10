@@ -2,6 +2,15 @@ package com.ead.dispatch.state
 
 import com.ead.dispatch.runtime.currentComposer
 
+private data class RememberCallsiteKey(
+    val callsiteId: String,
+    val userKey: Any? = NoUserRememberKey,
+)
+
+private object NoUserRememberKey
+
+private fun rememberCallsiteId(calculation: () -> Any?): String = calculation::class.java.name
+
 /**
  * Remember a state that always updates to the latest [value] without triggering recomposition.
  *
@@ -34,7 +43,10 @@ private class UpdatedState<T>(override var value: T) : State<T>
  * @return The remembered value.
  */
 fun <T> remember(calculation: () -> T): T {
-    return currentComposer.remember(calculation)
+    return currentComposer.remember(
+        RememberCallsiteKey(callsiteId = rememberCallsiteId(calculation)),
+        calculation,
+    )
 }
 
 /**
@@ -55,7 +67,13 @@ fun <T> remember(calculation: () -> T): T {
  * @return The remembered value.
  */
 fun <T> remember(key1: Any?, calculation: () -> T): T {
-    return currentComposer.remember(key1, calculation)
+    return currentComposer.remember(
+        RememberCallsiteKey(
+            callsiteId = rememberCallsiteId(calculation),
+            userKey = key1,
+        ),
+        calculation,
+    )
 }
 
 /**
@@ -69,7 +87,7 @@ fun <T> remember(key1: Any?, calculation: () -> T): T {
  * @return The remembered value.
  */
 fun <T> remember(key1: Any?, key2: Any?, calculation: () -> T): T {
-    return currentComposer.remember(key1 to key2, calculation)
+    return remember(key1 to key2, calculation)
 }
 
 /**
@@ -87,7 +105,7 @@ fun <T> remember(
     key3: Any?,
     calculation: () -> T
 ): T {
-    return currentComposer.remember(Triple(key1, key2, key3), calculation)
+    return remember(Triple(key1, key2, key3), calculation)
 }
 
 /**
@@ -100,7 +118,7 @@ fun <T> remember(
  * @return The remembered value.
  */
 fun <T> rememberWithKeys(vararg keys: Any?, calculation: () -> T): T {
-    return currentComposer.remember(keys.toList(), calculation)
+    return remember(keys.toList(), calculation)
 }
 
 /**

@@ -9,4 +9,5 @@ data class StoryOrganizationRecord(
     val name: String,
     val description: String? = null,
     val createdAt: Long,
+    val updatedAt: Long = createdAt,
 )

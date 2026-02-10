@@ -188,7 +188,10 @@ class LocationTools(
             return failure("NOT_FOUND", "Location with id '$entityId' not found.")
         }
 
-        repository.deleteStoryLocation(entityId)
+        repository.deleteStoryLocation(
+            storyId = storyId,
+            locationId = entityId,
+        )
 
         return success(
             action = "delete",
@@ -289,7 +292,10 @@ class LocationTools(
         @LLMDescription("Location feature id to delete")
         entityId: String,
     ): ToolResult<OperationOutcome> {
-        repository.deleteStoryLocationFeature(entityId)
+        repository.deleteStoryLocationFeature(
+            storyId = storyId,
+            featureId = entityId,
+        )
         return success("delete", OperationEntity.LOCATION_FEATURE, storyId, entityId, "Deleted location feature '$entityId'.")
     }
 }

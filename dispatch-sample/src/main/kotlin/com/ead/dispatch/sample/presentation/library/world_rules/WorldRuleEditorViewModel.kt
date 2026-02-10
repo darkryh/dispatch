@@ -238,7 +238,10 @@ class WorldRuleEditorViewModel(
 
         viewModelScope.launch(Dispatchers.IO) {
             runCatching {
-                repository.deleteStoryWorldRule(ruleId)
+                repository.deleteStoryWorldRule(
+                    storyId = storyId,
+                    ruleId = ruleId,
+                )
             }.onSuccess {
                 _uiState.update { it.copy(confirmDelete = false, status = "World rule deleted.") }
             }.onFailure { error ->
