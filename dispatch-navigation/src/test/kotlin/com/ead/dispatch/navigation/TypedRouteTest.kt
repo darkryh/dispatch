@@ -7,7 +7,9 @@ import kotlin.test.assertEquals
 
 @Serializable
 @SerialName("demo")
-private data class DemoRoute(val value: String) : NavKey
+private data class DemoRoute(
+    val value: String,
+) : NavKey
 
 class TypedRouteTest {
     @Test

@@ -58,11 +58,10 @@ fun <T : NavKey> rememberDecoratedNavEntries(
 private fun <T : NavKey> decorateEntry(
     entry: NavBackStackEntry<T>,
     decorators: List<NavEntryDecorator<T>>,
-): NavBackStackEntry<T> {
-    return decorators.foldRight(entry) { decorator, wrapped ->
+): NavBackStackEntry<T> =
+    decorators.foldRight(entry) { decorator, wrapped ->
         wrapped.wrap { decorator.decorate(wrapped) }
     }
-}
 
 private class NavEntryState(
     val savedStateRegistry: SavedStateRegistry,
@@ -79,9 +78,14 @@ private fun <T : NavKey> rememberNavEntries(
 ): List<NavBackStackEntry<T>> {
     val stateStore = remember { mutableMapOf<Any, NavEntryState>() }
     val activeContentKeys = remember { mutableSetOf<Any>() }
+    val lastStableBackStack = remember { mutableListOf<T>() }
+
+    val stableBackStack = snapshotBackStack(backStack, fallback = lastStableBackStack)
+    lastStableBackStack.clear()
+    lastStableBackStack.addAll(stableBackStack)
 
     val entries =
-        backStack.map { key ->
+        stableBackStack.map { key ->
             val entry = entryProvider(key)
             require(entry.key == key) {
                 "EntryProvider must return a NavEntry for the provided key. " +
@@ -92,7 +96,13 @@ private fun <T : NavKey> rememberNavEntries(
                     val registry = SavedStateRegistry()
                     val handle = SavedStateHandle(registry)
                     val provider = ViewModelProvider(viewModelFactory, handle)
-                    NavEntryState(registry, handle, provider, com.ead.dispatch.lifecycle.LifecycleRegistry())
+                    NavEntryState(
+                        registry,
+                        handle,
+                        provider,
+                        com.ead.dispatch.lifecycle
+                            .LifecycleRegistry(),
+                    )
                 }
 
             state.savedStateHandle[ROUTE_PAYLOAD_KEY] = encodeNavKeyPayload(key, json)
@@ -125,3 +135,29 @@ private fun <T : NavKey> rememberNavEntries(
 
     return entries
 }
+
+internal fun <T> snapshotBackStack(
+    source: List<T>,
+    fallback: List<T> = emptyList(),
+    maxRetries: Int = 8,
+): List<T> {
+    repeat(maxRetries.coerceAtLeast(1)) {
+        val snapshot = trySnapshot(source)
+        if (snapshot != null) return snapshot
+    }
+    return fallback.toList()
+}
+
+private fun <T> trySnapshot(source: List<T>): List<T>? =
+    try {
+        val size = source.size
+        val snapshot = ArrayList<T>(size)
+        for (index in 0 until size) {
+            snapshot.add(source[index])
+        }
+        snapshot
+    } catch (_: ConcurrentModificationException) {
+        null
+    } catch (_: IndexOutOfBoundsException) {
+        null
+    }

@@ -5,9 +5,13 @@ import ai.koog.agents.core.annotation.InternalAgentsApi
 import ai.koog.agents.core.utils.SerializationUtils
 import ai.koog.agents.snapshot.feature.AgentCheckpointData
 import ai.koog.agents.snapshot.feature.persistence
+import ai.koog.prompt.message.Message
 import com.ead.koog.context.orchestrator.state.ContextSnapshot
 import com.ead.koog.context.orchestrator.telemetry.ContextCheckpointProperties
 import com.ead.dispatch.sample.domain.agents.chat_agent.ChatRequest
+import com.ead.dispatch.sample.domain.agents.chat_agent.policy.ChatTurnCheckpointProperties
+import com.ead.dispatch.sample.domain.agents.chat_agent.policy.currentChatTurnMetrics
+import com.ead.dispatch.sample.domain.agents.chat_agent.policy.currentChatTurnPolicy
 import kotlinx.datetime.Clock
 import kotlin.reflect.typeOf
 
@@ -22,8 +26,14 @@ suspend fun saveCheckpointForHistory(
         ?: return
 
     val messageHistory = context.llm.readSession { prompt.messages }
+        .filterNot { message -> message is Message.System }
     val parent = context.persistence().getLatestCheckpoint(context.agentId)
-    val properties = ContextCheckpointProperties.merge(parent?.properties, contextSnapshot)
+    val baseProperties = ContextCheckpointProperties.merge(parent?.properties, contextSnapshot)
+    val properties = ChatTurnCheckpointProperties.merge(
+        existing = baseProperties,
+        policy = context.currentChatTurnPolicy(),
+        metrics = context.currentChatTurnMetrics(),
+    )
 
     val checkpoint = AgentCheckpointData(
         checkpointId = context.runId,

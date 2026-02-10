@@ -4,6 +4,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.concurrent.Volatile
 
 /**
@@ -40,7 +41,7 @@ class Recomposer(
     /**
      * Callbacks to invoke during recomposition, grouped by scope.
      */
-    private val compositionCallbacks = ConcurrentHashMap<Any, MutableList<() -> Unit>>()
+    private val compositionCallbacks = ConcurrentHashMap<Any, CopyOnWriteArrayList<() -> Unit>>()
     private val defaultScope = Any()
 
     /**
@@ -61,18 +62,19 @@ class Recomposer(
      * Register a composition with a scope token.
      */
     fun registerComposition(scope: Any, callback: () -> Unit) {
-        val list = compositionCallbacks.getOrPut(scope) { mutableListOf() }
-        list.add(callback)
+        compositionCallbacks.compute(scope) { _, callbacks ->
+            (callbacks ?: CopyOnWriteArrayList()).also { it.add(callback) }
+        }
     }
 
     /**
      * Unregister a composition for a specific scope.
      */
     fun unregisterComposition(scope: Any, callback: () -> Unit) {
-        val list = compositionCallbacks[scope] ?: return
-        list.remove(callback)
-        if (list.isEmpty()) {
-            compositionCallbacks.remove(scope)
+        val callbacks = compositionCallbacks[scope] ?: return
+        callbacks.remove(callback)
+        if (callbacks.isEmpty()) {
+            compositionCallbacks.remove(scope, callbacks)
         }
     }
 
@@ -144,6 +146,16 @@ class Recomposer(
      * Check if a scope needs recomposition.
      */
     fun needsRecomposition(scope: Any): Boolean = scope in invalidScopes
+
+    /**
+     * Create a child scope for composition effects that should stay dispatcher-aligned
+     * with this recomposer while still being independently cancellable.
+     */
+    internal fun createEffectScope(): CoroutineScope {
+        val parentJob = coroutineScope.coroutineContext[Job]
+        val childJob = if (parentJob != null) SupervisorJob(parentJob) else SupervisorJob()
+        return CoroutineScope(coroutineScope.coroutineContext + childJob)
+    }
 
     /**
      * Check if there are any pending changes that need recomposition.

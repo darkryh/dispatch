@@ -18,6 +18,8 @@ detekt {
 }
 
 tasks.withType<io.gitlab.arturbosch.detekt.Detekt>().configureEach {
+    // Detekt 1.23.x currently supports JVM targets up to 22.
+    jvmTarget = "22"
     reports {
         html.required.set(true)
         xml.required.set(true)
@@ -30,6 +32,12 @@ ktlint {
     android.set(false)
     outputToConsole.set(true)
     ignoreFailures.set(false)
+    additionalEditorconfig.set(
+        mapOf(
+            // Dispatch uses Compose-style PascalCase names for @Dispatchable UI functions.
+            "ktlint_function_naming_ignore_when_annotated_with" to "Dispatchable,DispatchRenderer",
+        ),
+    )
 
     filter {
         exclude("**/generated/**")

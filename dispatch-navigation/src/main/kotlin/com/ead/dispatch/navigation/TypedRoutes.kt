@@ -8,8 +8,7 @@ import kotlinx.serialization.serializer
 
 @PublishedApi
 @OptIn(ExperimentalSerializationApi::class)
-internal fun <T : Any> routeName(serializer: KSerializer<T>): String =
-    serializer.descriptor.serialName
+internal fun <T : Any> routeName(serializer: KSerializer<T>): String = serializer.descriptor.serialName
 
 @OptIn(ExperimentalSerializationApi::class)
 inline fun <reified T : Any> routeKey(): String = routeName(serializer())
@@ -18,8 +17,8 @@ fun <T : Any> decodeRoutePayload(
     serializer: KSerializer<T>,
     payload: String,
     json: Json = DefaultRouteJson,
-): T {
-    return try {
+): T =
+    try {
         json.decodeFromString(serializer, payload)
     } catch (primary: SerializationException) {
         val routedPayload = """{"value":$payload}"""
@@ -29,11 +28,8 @@ fun <T : Any> decodeRoutePayload(
             throw primary
         }
     }
-}
 
-inline fun <reified T : Any> NavBackStackEntry<*>.toRoute(
-    json: Json = DefaultRouteJson,
-): T? {
+inline fun <reified T : Any> NavBackStackEntry<*>.toRoute(json: Json = DefaultRouteJson): T? {
     val payload = savedStateHandle.getStringArgument(ROUTE_PAYLOAD_KEY) ?: return null
     return decodeRoutePayload(serializer(), payload, json)
 }

@@ -22,9 +22,13 @@ import com.ead.dispatch.sample.domain.Storage
 import com.ead.dispatch.sample.domain.agents.chat_agent.ChatRequest
 import com.ead.dispatch.sample.domain.agents.chat_agent.PreferencesMemory
 import com.ead.dispatch.sample.domain.agents.chat_agent.extensions.runWithStartCheckpoint
+import com.ead.dispatch.sample.domain.agents.chat_agent.node.nodeApplyTurnPolicy
+import com.ead.dispatch.sample.domain.agents.chat_agent.node.nodeAuditTurn
+import com.ead.dispatch.sample.domain.agents.chat_agent.node.nodeClassifyIntent
 import com.ead.dispatch.sample.domain.agents.chat_agent.node.nodeLoadUserPreferences
 import com.ead.dispatch.sample.domain.agents.chat_agent.node.nodeSaveUserPreferences
 import com.ead.dispatch.sample.domain.agents.chat_agent.node.nodeSetupAndStreamChatMode
+import com.ead.dispatch.sample.domain.agents.chat_agent.policy.ChatTurnInput
 import com.ead.dispatch.sample.domain.agents.tools.CharacterTools
 import com.ead.dispatch.sample.domain.agents.tools.LocationTools
 import com.ead.dispatch.sample.domain.agents.tools.PlotTools
@@ -65,34 +69,54 @@ class ChatAgent(
             llmModel = AIProvider.deepseekChatLlmModel,
             toolRegistry = toolRegistry,
             strategy = strategy<ChatRequest, ContextualResponse<Flow<StreamFrame>>>("chat-mode.planner") {
+                val classifyIntent by nodeClassifyIntent()
+
+                val applyTurnPolicy by nodeApplyTurnPolicy()
+
                 val loadUserPreferences by nodeLoadUserPreferences()
 
-                val contextBeforeLlm by nodeManageContextBeforeLlm<ChatRequest>(
-                    hints = { chatRequest ->
+                val contextBeforeLlm by nodeManageContextBeforeLlm<ChatTurnInput>(
+                    hints = { turnInput ->
                         ContextHints(
                             phase = TaskPhase.EXECUTION,
                             factConcepts = PreferencesMemory.userConcepts,
                             continuityPacket = ContinuityPacket(
-                                objective = "Respond to user request and persist only with explicit write intent.",
-                                criticalReferences = listOf("storyId=${chatRequest.storyId}"),
+                                objective = "Follow chat turn policy: ${turnInput.policy.decisionPath.name}.",
+                                constraints = listOf(
+                                    "write_tools_allowed=${turnInput.policy.allowWriteTools}",
+                                    "require_selector_for_destructive=${turnInput.policy.requireSelectorForDestructive}",
+                                ),
+                                criticalReferences = listOf("storyId=${turnInput.request.storyId}"),
                             )
                         )
                     }
                 )
+
                 val chatAgentModel by nodeSetupAndStreamChatMode(
                     repository = repository,
                     ragContextService = ragContextService
                 )
+
                 val contextAfterLlm by nodeManageContextAfterLlm<ContextualResponse<Flow<StreamFrame>>>()
 
                 val saveUserPreferences by nodeSaveUserPreferences()
 
-                edge(nodeStart forwardTo loadUserPreferences)
+                val auditTurn by nodeAuditTurn()
+
+                edge(nodeStart forwardTo classifyIntent)
+
+                edge(classifyIntent forwardTo applyTurnPolicy)
+                edge(applyTurnPolicy forwardTo loadUserPreferences)
                 edge(loadUserPreferences forwardTo contextBeforeLlm)
+
                 edge(contextBeforeLlm forwardTo chatAgentModel)
+
                 edge(chatAgentModel forwardTo contextAfterLlm)
+
                 edge(contextAfterLlm forwardTo saveUserPreferences)
-                edge(saveUserPreferences forwardTo nodeFinish)
+
+                edge(saveUserPreferences forwardTo auditTurn)
+                edge(auditTurn forwardTo nodeFinish)
             },
             maxIterations = 50,
             temperature = 1.0,

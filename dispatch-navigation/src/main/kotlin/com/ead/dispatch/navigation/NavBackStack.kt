@@ -18,7 +18,7 @@ interface NavKey
  * A mutable back stack of NavKeys that integrates with Dispatch state.
  */
 class NavBackStack<T : NavKey> internal constructor(
-    internal val base: SnapshotStateList<T>
+    internal val base: SnapshotStateList<T>,
 ) : MutableList<T> by base {
     constructor() : this(base = mutableStateListOf())
     constructor(vararg elements: T) : this(base = mutableStateListOf(*elements))
@@ -38,18 +38,16 @@ fun rememberNavBackStack(
     }
 }
 
-private fun navBackStackSaver(
-    json: Json,
-): Saver<NavBackStack<NavKey>, Any> = object : Saver<NavBackStack<NavKey>, Any> {
-    override fun save(value: NavBackStack<NavKey>): Any =
-        value.map { encodeNavKeyForSave(it, json) }
+private fun navBackStackSaver(json: Json): Saver<NavBackStack<NavKey>, Any> =
+    object : Saver<NavBackStack<NavKey>, Any> {
+        override fun save(value: NavBackStack<NavKey>): Any = value.map { encodeNavKeyForSave(it, json) }
 
-    override fun restore(value: Any): NavBackStack<NavKey>? {
-        val encoded = value as? List<*> ?: return null
-        val entries = encoded.filterIsInstance<String>()
-        if (entries.size != encoded.size) return null
-        return NavBackStack<NavKey>().apply {
-            addAll(entries.map { decodeNavKeyFromSave(it, json) })
+        override fun restore(value: Any): NavBackStack<NavKey>? {
+            val encoded = value as? List<*> ?: return null
+            val entries = encoded.filterIsInstance<String>()
+            if (entries.size != encoded.size) return null
+            return NavBackStack<NavKey>().apply {
+                addAll(entries.map { decodeNavKeyFromSave(it, json) })
+            }
         }
     }
-}

@@ -10,7 +10,9 @@ import kotlin.test.assertFailsWith
 
 @Serializable
 @SerialName("demo-handle")
-private data class HandleRoute(val value: String)
+private data class HandleRoute(
+    val value: String,
+)
 
 class SavedStateHandleExtensionsTest {
     @Test
@@ -31,5 +33,4 @@ class SavedStateHandleExtensionsTest {
             handle.toRoute<HandleRoute>()
         }
     }
-
 }

@@ -313,13 +313,8 @@ fun <T> CommandPalette(
     if (!state.isVisible) return
 
     // Calculate visible window for scrolling
-    val startIndex = maxOf(0, state.selectedIndex - visibleCount + 1)
-    val endIndex = minOf(filteredOptions.size, startIndex + visibleCount)
-    val visibleOptions = if (filteredOptions.isNotEmpty()) {
-        filteredOptions.subList(startIndex, endIndex)
-    } else {
-        emptyList()
-    }
+    val windowSlice = computeWindowSlice(filteredOptions, state.selectedIndex, visibleCount)
+    val visibleOptions = windowSlice.window
 
     // Render the palette
     Column(modifier = modifier) {
@@ -330,8 +325,7 @@ fun <T> CommandPalette(
             )
         } else {
             visibleOptions.forEachIndexed { localIndex, option ->
-                val globalIndex = startIndex + localIndex
-                val isSelected = globalIndex == state.selectedIndex
+                val isSelected = localIndex == windowSlice.localSelected
 
                 CommandPaletteItem(
                     option = option,

@@ -7,7 +7,9 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 @Serializable
-private data class TestKey(val id: Int) : NavKey
+private data class TestKey(
+    val id: Int,
+) : NavKey
 
 class NavBackStackExtensionsTest {
     @Test

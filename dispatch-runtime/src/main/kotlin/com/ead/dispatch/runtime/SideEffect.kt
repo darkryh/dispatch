@@ -107,7 +107,7 @@ fun LaunchedEffect(vararg keys: Any?, block: suspend CoroutineScope.() -> Unit) 
  */
 internal class LaunchedEffectState(var key: Any?, private val recomposer: Recomposer?) {
     private var job: Job? = null
-    private val scope = dispatchCoroutineScope()
+    private val scope = recomposer?.createEffectScope() ?: dispatchCoroutineScope()
 
     val isRunning: Boolean get() = job?.isActive == true
 

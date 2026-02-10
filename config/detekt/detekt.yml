@@ -491,11 +491,12 @@ style:
     active: true
   ForbiddenComment:
     active: true
-    values:
-      - 'FIXME:'
-      - 'STOPSHIP:'
+    comments:
+      - value: 'FIXME:'
+        reason: 'Track blockers in issue management instead of inline comments.'
+      - value: 'STOPSHIP:'
+        reason: 'Use release-blocking issue labels instead of inline comments.'
     allowedPatterns: ''
-    customMessage: ''
   ForbiddenImport:
     active: false
   ForbiddenMethodCall:
@@ -537,7 +538,6 @@ style:
   MultilineRawStringIndentation:
     active: true
     indentSize: 4
-    trimmingMethod: 'trimIndent'
   NestedClassesVisibility:
     active: true
   NewLineAtEndOfFile:
@@ -588,7 +588,6 @@ style:
     active: true
   TrimMultilineRawString:
     active: true
-    trimmingMethod: 'trimIndent'
   UnderscoresInNumericLiterals:
     active: true
     acceptableLength: 4

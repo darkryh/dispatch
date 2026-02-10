@@ -57,7 +57,9 @@ internal class DispatchApplicationBuilder(
     @Volatile
     private var exitCode = 0
 
-    private lateinit var appScope: CoroutineScope
+    private lateinit var uiScope: CoroutineScope
+    private lateinit var backgroundScope: CoroutineScope
+    private lateinit var appJob: Job
     private lateinit var composer: Composer
     private lateinit var recomposer: Recomposer
     private lateinit var renderer: TerminalRenderer
@@ -98,7 +100,10 @@ internal class DispatchApplicationBuilder(
     private var lastWindowTitleApplied: String? = null
 
     suspend fun run(content: DispatchScope.() -> Unit): Int {
-        appScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+        val uiDispatcher = Dispatchers.Default.limitedParallelism(1)
+        appJob = SupervisorJob()
+        uiScope = CoroutineScope(uiDispatcher + appJob)
+        backgroundScope = CoroutineScope(Dispatchers.Default + appJob)
 
         val shadowColor = rgb("#24218c")
 
@@ -115,7 +120,7 @@ internal class DispatchApplicationBuilder(
             val scope = DispatchScopeImpl()
             dispatchScopeInstance = scope
             composer = Composer()
-            recomposer = Recomposer(appScope)
+            recomposer = Recomposer(uiScope)
             registerResizeHandler()
 
             scope.content()
@@ -130,12 +135,12 @@ internal class DispatchApplicationBuilder(
                 return 0
             }
 
-            activeAreaHeight = config.activeAreaHeight
-            frameScheduler = FrameScheduler(
-                scope = appScope,
-                targetFps = config.targetFps,
-                onFrame = { composeAndRender() },
-            )
+                activeAreaHeight = config.activeAreaHeight
+                frameScheduler = FrameScheduler(
+                    scope = uiScope,
+                    targetFps = config.targetFps,
+                    onFrame = { composeAndRender() },
+                )
 
             terminal!!.enterRawMode(config.mouseTracking).use { rawMode ->
                 val initialSize = terminal!!.updateSize()
@@ -144,9 +149,9 @@ internal class DispatchApplicationBuilder(
                 sizeDirty = false
                 // Start input handling in raw mode before the first render so early keypresses
                 // (especially Enter) aren't echoed into the UI and don't desync the renderer.
-                val inputJob = appScope.launch(Dispatchers.IO) {
+                val inputJob = backgroundScope.launch(Dispatchers.IO) {
                     var consecutiveErrors = 0
-                    inputLoop@ while (isActive && !exitRequested) {
+                    while (isActive && !exitRequested) {
                         val event = try {
                             rawMode.readEventOrNull(50.milliseconds)
                         } catch (e: CancellationException) {
@@ -159,39 +164,19 @@ internal class DispatchApplicationBuilder(
                         } ?: continue
 
                         consecutiveErrors = 0
-                        when (event) {
-                            is KeyboardEvent -> {
-                                if (shouldHandleExit(event)) {
-                                    if (!config.requireExitDoublePress) {
-                                        exitRequested = true
-                                        return@launch
+                        val shouldExitInputLoop =
+                            withContext(uiDispatcher) {
+                                when (event) {
+                                    is KeyboardEvent -> handleKeyboardEvent(event)
+                                    is MouseEvent -> {
+                                        handleMouseEvent(event)
+                                        false
                                     }
-
-                                    if (exitPromptState.isArmed) {
-                                        exitRequested = true
-                                        return@launch
-                                    }
-
-                                    exitPromptState.isArmed = true
-                                    exitResetJob?.cancel()
-                                    exitResetJob = appScope.launch {
-                                        delay(config.exitTimeoutOnDoublePress)
-                                        exitPromptState.isArmed = false
-                                        recomposer.requestRecomposition()
-                                    }
-                                    recomposer.requestRecomposition()
-                                    continue@inputLoop
                                 }
-                                val consumed = keyboardInterceptor.tryIntercept(event)
-                                if (!consumed) {
-                                    keyEventHandlers.forEach { handler -> handler(event) }
-                                }
-                                recomposer.requestRecomposition()
                             }
-                            is MouseEvent -> {
-                                mouseEventHandler?.invoke(event)
-                                recomposer.requestRecomposition()
-                            }
+
+                        if (shouldExitInputLoop) {
+                            return@launch
                         }
                     }
                 }
@@ -203,7 +188,7 @@ internal class DispatchApplicationBuilder(
                 frameScheduler.markFrame()
                 val recomposerJob = recomposer.start()
 
-                while (!exitRequested && appScope.isActive) {
+                while (!exitRequested && uiScope.isActive) {
                     delay(50)
                 }
 
@@ -225,10 +210,46 @@ internal class DispatchApplicationBuilder(
 
         } finally {
             ViewModelStore.clear()
-            appScope.cancel()
+            appJob.cancel()
         }
 
         return exitCode
+    }
+
+    private fun handleKeyboardEvent(event: KeyboardEvent): Boolean {
+        if (shouldHandleExit(event)) {
+            if (!config.requireExitDoublePress) {
+                exitRequested = true
+                return true
+            }
+
+            if (exitPromptState.isArmed) {
+                exitRequested = true
+                return true
+            }
+
+            exitPromptState.isArmed = true
+            exitResetJob?.cancel()
+            exitResetJob = uiScope.launch {
+                delay(config.exitTimeoutOnDoublePress)
+                exitPromptState.isArmed = false
+                recomposer.requestRecomposition()
+            }
+            recomposer.requestRecomposition()
+            return false
+        }
+
+        val consumed = keyboardInterceptor.tryIntercept(event)
+        if (!consumed) {
+            keyEventHandlers.forEach { handler -> handler(event) }
+        }
+        recomposer.requestRecomposition()
+        return false
+    }
+
+    private fun handleMouseEvent(event: MouseEvent) {
+        mouseEventHandler?.invoke(event)
+        recomposer.requestRecomposition()
     }
 
     private fun composeAndRender() {
@@ -401,7 +422,7 @@ internal class DispatchApplicationBuilder(
         }
         override fun hasFlag(name: String) = name in parsedFlags
         override fun getArgument(name: String) = parsedArguments[name]
-        override fun launch(block: suspend CoroutineScope.() -> Unit) = appScope.launch(block = block)
+        override fun launch(block: suspend CoroutineScope.() -> Unit) = backgroundScope.launch(block = block)
 
         override fun clearScreen(clearScrollback: Boolean) {
             renderer.clearScreen(clearScrollback)

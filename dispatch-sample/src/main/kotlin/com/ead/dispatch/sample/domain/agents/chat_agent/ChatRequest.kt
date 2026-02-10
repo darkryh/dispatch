@@ -6,4 +6,5 @@ import kotlinx.serialization.Serializable
 data class ChatRequest(
     val text: String,
     val storyId: String,
+    val fromDecisionPrompt: Boolean = false,
 )

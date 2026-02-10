@@ -125,11 +125,12 @@ internal class InputEditor(
             "ArrowUp" -> {
                 val historyItems = historyItemsProvider()
                 if (historyItems.isNotEmpty() && getCursor() == 0) {
+                    historyIndexState.index = historyIndexState.index.coerceIn(0, historyItems.size)
                     if (historyIndexState.index == historyItems.size) {
                         historyIndexState.draft = getValue()
                     }
-                    historyIndexState.index = (historyIndexState.index - 1).coerceAtLeast(0)
-                    val previous = historyItems[historyIndexState.index]
+                    historyIndexState.index = (historyIndexState.index - 1).coerceIn(0, historyItems.lastIndex)
+                    val previous = historyItems.getOrNull(historyIndexState.index) ?: return
                     setValue(previous)
                     updateCursorPosition(previous.length)
                     onValueChange(getValue())
@@ -158,13 +159,14 @@ internal class InputEditor(
             "ArrowDown" -> {
                 val historyItems = historyItemsProvider()
                 if (historyItems.isNotEmpty() && getCursor() == getValue().length) {
+                    historyIndexState.index = historyIndexState.index.coerceIn(0, historyItems.size)
                     if (historyIndexState.index < historyItems.size) {
                         historyIndexState.index =
-                            (historyIndexState.index + 1).coerceAtMost(historyItems.size)
+                            (historyIndexState.index + 1).coerceIn(0, historyItems.size)
                         val next = if (historyIndexState.index == historyItems.size) {
                             historyIndexState.draft ?: ""
                         } else {
-                            historyItems[historyIndexState.index]
+                            historyItems.getOrElse(historyIndexState.index) { "" }
                         }
                         setValue(next)
                         updateCursorPosition(next.length)

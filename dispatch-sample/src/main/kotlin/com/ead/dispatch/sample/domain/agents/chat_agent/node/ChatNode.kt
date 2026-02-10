@@ -7,25 +7,22 @@ import ai.koog.agents.core.dsl.builder.AIAgentSubgraphBuilderBase
 import ai.koog.agents.core.environment.ReceivedToolResult
 import ai.koog.agents.core.environment.ToolResultKind
 import ai.koog.agents.core.environment.result
+import ai.koog.agents.core.feature.model.AIAgentError
+import ai.koog.agents.core.tools.ToolDescriptor
 import ai.koog.prompt.dsl.prompt
 import ai.koog.prompt.message.Message
 import ai.koog.prompt.message.RequestMetaInfo
 import ai.koog.prompt.message.ResponseMetaInfo
 import ai.koog.prompt.streaming.StreamFrame
-import com.ead.koog.context.orchestrator.api.ContextHints
-import com.ead.koog.context.orchestrator.api.ContextualMetadata
-import com.ead.koog.context.orchestrator.api.ContextualResponse
-import com.ead.koog.context.orchestrator.api.KoogContextOrchestrator
-import com.ead.koog.context.orchestrator.api.TaskPhase
-import com.ead.koog.context.orchestrator.api.resolveContextOrchestrator
-import com.ead.koog.context.orchestrator.state.ContinuityPacket
-import com.ead.koog.context.orchestrator.state.ContextSnapshot
 import com.ead.dispatch.sample.data.repositories.StructuredIndexRepository
-import com.ead.dispatch.sample.domain.agents.chat_agent.ChatRequest
 import com.ead.dispatch.sample.domain.agents.chat_agent.PreferencesMemory
 import com.ead.dispatch.sample.domain.agents.chat_agent.chatAgentPrompt
-import com.ead.dispatch.sample.domain.embedding.RagContextService
+import com.ead.dispatch.sample.domain.agents.chat_agent.policy.*
 import com.ead.dispatch.sample.domain.agents.chat_agent.util.saveCheckpointForHistory
+import com.ead.dispatch.sample.domain.embedding.RagContextService
+import com.ead.koog.context.orchestrator.api.*
+import com.ead.koog.context.orchestrator.state.ContextSnapshot
+import com.ead.koog.context.orchestrator.state.ContinuityPacket
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,8 +30,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerializationException
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.*
 
 @AIAgentBuilderDslMarker
 fun AIAgentSubgraphBuilderBase<*, *>.nodeSetupAndStreamChatMode(
@@ -42,17 +38,19 @@ fun AIAgentSubgraphBuilderBase<*, *>.nodeSetupAndStreamChatMode(
     repository: StructuredIndexRepository,
     ragContextService: RagContextService,
     contextOrchestrator: KoogContextOrchestrator? = null,
-): AIAgentNodeDelegate<ChatRequest, ContextualResponse<Flow<StreamFrame>>> =
+): AIAgentNodeDelegate<ChatTurnInput, ContextualResponse<Flow<StreamFrame>>> =
     node(name) {
-        request ->
+        turnInput ->
         val snapshots = MutableStateFlow<ContextSnapshot?>(null)
+
         val response = setupAndStreamChatMode(
             repository = repository,
             ragContextService = ragContextService,
             contextOrchestrator = contextOrchestrator,
-            request = request,
+            turnInput = turnInput,
             onContextSnapshot = { snapshot -> snapshots.value = snapshot },
         )
+
         ContextualResponse(
             value = response,
             metadata = ContextualMetadata(
@@ -70,13 +68,14 @@ private fun AIAgentGraphContextBase.setupAndStreamChatMode(
     repository: StructuredIndexRepository,
     ragContextService: RagContextService,
     contextOrchestrator: KoogContextOrchestrator?,
-    request: ChatRequest,
+    turnInput: ChatTurnInput,
     onContextSnapshot: (ContextSnapshot) -> Unit,
 ): Flow<StreamFrame> {
     val nodePath = executionInfo.path()
     return channelFlow {
         val agentContext = this@setupAndStreamChatMode
         val runtimeOrchestrator = agentContext.resolveContextOrchestrator(contextOrchestrator)
+        val request = turnInput.request
 
         fun publishSnapshot() {
             onContextSnapshot(runtimeOrchestrator.snapshot())
@@ -95,6 +94,7 @@ private fun AIAgentGraphContextBase.setupAndStreamChatMode(
                     query = ragQuery,
                 )
             }
+            val loadedUserPreferencesContext = agentContext.currentLoadedUserPreferencesContext()
 
             llm.writeSession {
                 rewritePrompt { existing ->
@@ -108,6 +108,8 @@ private fun AIAgentGraphContextBase.setupAndStreamChatMode(
                         context = context,
                         inputRequest = request,
                         ragContext = ragContext,
+                        turnPolicy = turnInput.policy,
+                        loadedUserPreferencesContext = loadedUserPreferencesContext,
                     )
 
                     basePrompt.withMessages { baseMessages ->
@@ -129,31 +131,37 @@ private fun AIAgentGraphContextBase.setupAndStreamChatMode(
             while (true) {
                 runtimeOrchestrator.beforeLlmCall(
                     context = agentContext,
-                    hints = baseHints(request, previousToolCalls)
+                    hints = baseHints(turnInput, previousToolCalls)
                 )
                 publishSnapshot()
 
                 val toolCalls = llm.writeSession {
                     val currentToolCalls = mutableListOf<Message.Tool.Call>()
                     val responseBuffer = StringBuilder()
+                    val originalTools = tools
+                    tools = originalTools.filterAllowedByPolicy(turnInput.policy)
 
-                    requestLLMStreaming().collect { frame ->
-                        if (frame is StreamFrame.ToolCall) {
-                            currentToolCalls.add(
-                                Message.Tool.Call(
-                                    id = frame.id,
-                                    tool = frame.name,
-                                    content = frame.content,
-                                    metaInfo = ResponseMetaInfo.create(clock)
+                    try {
+                        requestLLMStreaming().collect { frame ->
+                            if (frame is StreamFrame.ToolCall) {
+                                currentToolCalls.add(
+                                    Message.Tool.Call(
+                                        id = frame.id,
+                                        tool = frame.name,
+                                        content = frame.content,
+                                        metaInfo = ResponseMetaInfo.create(clock)
+                                    )
                                 )
-                            )
-                        }
+                            }
 
-                        if (frame is StreamFrame.Append) {
-                            responseBuffer.append(frame.text)
-                        }
+                            if (frame is StreamFrame.Append) {
+                                responseBuffer.append(frame.text)
+                            }
 
-                        send(frame)
+                            send(frame)
+                        }
+                    } finally {
+                        tools = originalTools
                     }
 
                     val responseText = responseBuffer.toString().trim()
@@ -175,9 +183,22 @@ private fun AIAgentGraphContextBase.setupAndStreamChatMode(
 
                 runtimeOrchestrator.beforeToolLoop(
                     context = agentContext,
-                    hints = baseHints(request, effectiveToolCalls.size)
+                    hints = baseHints(turnInput, effectiveToolCalls.size)
                 )
                 publishSnapshot()
+
+                agentContext.updateChatTurnMetrics { metrics ->
+                    metrics.requestedToolCalls += effectiveToolCalls.size
+                    effectiveToolCalls.forEach { call ->
+                        if (isDecisionToolName(call.tool)) {
+                            metrics.decisionToolCalls += 1
+                            metrics.selectorShown = true
+                        }
+                        if (isWriteToolName(call.tool)) {
+                            metrics.writeToolCalls += 1
+                        }
+                    }
+                }
 
                 val toolResults = effectiveToolCalls.map { executeToolWithFix(it) }
                 toolResults
@@ -213,17 +234,18 @@ private fun AIAgentGraphContextBase.setupAndStreamChatMode(
     }
 }
 
-private fun isDecisionToolName(toolName: String?): Boolean =
-    toolName?.lowercase() == "requestuserchoice"
-
 private fun baseHints(
-    request: ChatRequest,
+    turnInput: ChatTurnInput,
     recentToolCalls: Int,
 ): ContextHints {
+    val request = turnInput.request
+    val policy = turnInput.policy
     val continuity = ContinuityPacket(
-        objective = "Respond to the user's request and only persist story changes on explicit write intent.",
+        objective = "Follow decision path ${policy.decisionPath.name} for this turn.",
         constraints = listOf(
             "Story scope must remain within storyId=${request.storyId}",
+            "write_tools_allowed=${policy.allowWriteTools}",
+            "require_selector_for_destructive=${policy.requireSelectorForDestructive}",
             "Do not fabricate tool outputs or IDs.",
         ),
         pendingActions = listOf("Process latest user input: ${request.text.take(140)}"),
@@ -242,6 +264,17 @@ private suspend fun AIAgentGraphContextBase.executeToolWithFix(
     call: Message.Tool.Call,
     retries: Int = 2,
 ): ReceivedToolResult {
+    val blockedReason = policyBlockReason(call.tool)
+    if (blockedReason != null) {
+        updateChatTurnMetrics { metrics ->
+            metrics.blockedToolCalls += 1
+            if (isWriteToolName(call.tool)) {
+                metrics.writeToolCallsBlocked += 1
+            }
+        }
+        return blockedToolResult(call, blockedReason)
+    }
+
     val validated = try {
         call.contentJson
         call
@@ -271,7 +304,82 @@ private suspend fun AIAgentGraphContextBase.executeToolWithFix(
         fallback
     }
 
-    return environment.executeTool(validated)
+    val result = environment.executeTool(validated)
+
+    updateChatTurnMetrics { metrics ->
+        metrics.executedToolCalls += 1
+        if (result.resultKind !is ToolResultKind.Success) {
+            metrics.failedToolCalls += 1
+        }
+        mutationAction(result.content)?.let { action ->
+            when (action.lowercase()) {
+                "create" -> metrics.mutationCreateCount += 1
+                "update" -> metrics.mutationUpdateCount += 1
+                "delete" -> metrics.mutationDeleteCount += 1
+            }
+        }
+    }
+
+    return result
+}
+
+private suspend fun AIAgentGraphContextBase.policyBlockReason(toolName: String?): String? {
+    val policy = currentChatTurnPolicy() ?: return null
+    if (!isToolAllowedForTurn(policy, toolName)) {
+        if (!policy.allowWriteTools && isWriteToolName(toolName)) {
+            return "Write tool call blocked: explicit write intent is required for this turn."
+        }
+        if (policy.requireSelectorForDestructive && isWriteToolName(toolName)) {
+            return "Write tool call blocked: call requestUserChoice first for this destructive turn."
+        }
+        return "Tool call blocked by chat turn policy."
+    }
+    return null
+}
+
+private fun List<ToolDescriptor>.filterAllowedByPolicy(policy: ChatTurnPolicy): List<ToolDescriptor> =
+    filter { descriptor -> isToolAllowedForTurn(policy, descriptor.name) }
+
+private fun blockedToolResult(
+    call: Message.Tool.Call,
+    reason: String,
+): ReceivedToolResult {
+    val payloadJson = buildJsonObject {
+        put("type", JsonPrimitive("failure"))
+        put(
+            "error",
+            buildJsonObject {
+                put("code", JsonPrimitive("POLICY_BLOCKED"))
+                put("details", JsonPrimitive(reason))
+            }
+        )
+        put("message", JsonPrimitive(reason))
+    }
+
+    val toolArgs = runCatching { call.contentJson }.getOrElse { buildJsonObject { } }
+
+    return ReceivedToolResult(
+        id = call.id,
+        tool = call.tool,
+        toolArgs = toolArgs,
+        toolDescription = "Blocked by chat policy guard.",
+        content = payloadJson.toString(),
+        resultKind = ToolResultKind.ValidationError(
+            AIAgentError(
+                message = reason,
+                stackTrace = "",
+                cause = "POLICY_GUARD",
+            )
+        ),
+        result = payloadJson,
+    )
+}
+
+private fun mutationAction(rawResult: String): String? {
+    val root = runCatching { Json.parseToJsonElement(rawResult) }.getOrNull() as? JsonObject ?: return null
+    if (root["type"]?.jsonPrimitive?.content != "success") return null
+    val data = root["data"] as? JsonObject ?: return null
+    return data["action"]?.jsonPrimitive?.content
 }
 
 private fun normalizeToolArgsJson(raw: String): String {

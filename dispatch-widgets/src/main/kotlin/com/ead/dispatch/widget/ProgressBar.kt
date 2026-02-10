@@ -82,7 +82,7 @@ internal class ProgressBarMeasurable(
             20 + percentageText.length
         }
 
-        val barWidth = width - 2 - percentageText.length // -2 for caps
+        val barWidth = (width - 2 - percentageText.length).coerceAtLeast(0) // -2 for caps
         val filledWidth = (barWidth * progress).toInt()
         val emptyWidth = barWidth - filledWidth
 
@@ -149,7 +149,7 @@ internal class SpinnerMeasurable(
 ) : Measurable {
 
     override fun measure(constraints: Constraints): Placeable {
-        val frameIndex = frame % style.frames.size
+        val frameIndex = positiveModulo(frame, style.frames.size)
         val char = style.frames[frameIndex]
         val renderedChar = textStyle?.invoke(char) ?: char
 
@@ -195,7 +195,7 @@ internal class LoadingIndicatorMeasurable(
 ) : Measurable {
 
     override fun measure(constraints: Constraints): Placeable {
-        val frameIndex = frame % style.frames.size
+        val frameIndex = positiveModulo(frame, style.frames.size)
         val spinner = style.frames[frameIndex]
         val display = "$spinner $text"
 
@@ -205,6 +205,12 @@ internal class LoadingIndicatorMeasurable(
             lines = listOf(display),
         )
     }
+}
+
+private fun positiveModulo(value: Int, modulus: Int): Int {
+    if (modulus <= 0) return 0
+    val result = value % modulus
+    return if (result < 0) result + modulus else result
 }
 
 /**

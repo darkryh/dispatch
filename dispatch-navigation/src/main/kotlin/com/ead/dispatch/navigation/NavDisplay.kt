@@ -45,16 +45,17 @@ fun <T : NavKey> NavDisplay(
     val currentEntry = decoratedEntries.lastOrNull() ?: return
     val contentKey = currentEntry.contentKey
 
-    val navigator = remember(backStack) {
-        object : Navigator {
-            @Suppress("UNCHECKED_CAST")
-            override fun <K : NavKey> navigate(key: K) {
-                backStack.navigate(key as T)
-            }
+    val navigator =
+        remember(backStack) {
+            object : Navigator {
+                @Suppress("UNCHECKED_CAST")
+                override fun <K : NavKey> navigate(key: K) {
+                    backStack.navigate(key as T)
+                }
 
-            override fun popBackStack(): Boolean = backStack.popBackStack()
+                override fun popBackStack(): Boolean = backStack.popBackStack()
+            }
         }
-    }
 
     if (lastContentKeyState.value != contentKey) {
         screenSlotRange.value?.let { range ->
@@ -91,8 +92,8 @@ fun <T : NavKey> NavDisplay(
 }
 
 @Dispatchable
-private fun <T : NavKey> rememberNavEntryLocalsDecorator(): NavEntryDecorator<T> {
-    return remember {
+private fun <T : NavKey> rememberNavEntryLocalsDecorator(): NavEntryDecorator<T> =
+    remember {
         NavEntryDecorator { entry ->
             CompositionLocalProvider(
                 LocalNavBackStackEntry provides entry,
@@ -104,4 +105,3 @@ private fun <T : NavKey> rememberNavEntryLocalsDecorator(): NavEntryDecorator<T>
             }
         }
     }
-}

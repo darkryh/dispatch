@@ -216,4 +216,30 @@ class ProgressBarMeasurableTest {
         assertEquals(1, placeable.height, "progress bar should be single line")
         assertEquals(1, placeable.lines.size, "should have exactly one line")
     }
+
+    @Test
+    fun `very small width with percentage does not throw`() {
+        val measurable = ProgressBarMeasurable(
+            progress = 0.5f,
+            modifier = Modifier,
+            style = ProgressBarStyle.Blocks,
+            showPercentage = true
+        )
+
+        val placeable = measurable.measure(Constraints(maxWidth = 4))
+        assertEquals(1, placeable.height)
+    }
+
+    @Test
+    fun `zero width constraint does not throw`() {
+        val measurable = ProgressBarMeasurable(
+            progress = 0.5f,
+            modifier = Modifier,
+            style = ProgressBarStyle.Blocks,
+            showPercentage = true
+        )
+
+        val placeable = measurable.measure(Constraints(maxWidth = 0))
+        assertEquals(1, placeable.height)
+    }
 }

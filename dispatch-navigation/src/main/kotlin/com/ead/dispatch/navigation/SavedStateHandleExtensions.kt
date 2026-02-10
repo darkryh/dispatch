@@ -20,10 +20,9 @@ fun SavedStateHandle.getStringArgument(key: String): String? {
 /**
  * Read a string argument or throw if missing.
  */
-fun SavedStateHandle.requireStringArgument(key: String): String {
-    return getStringArgument(key)
+fun SavedStateHandle.requireStringArgument(key: String): String =
+    getStringArgument(key)
         ?: throw IllegalArgumentException("Missing required argument: $key")
-}
 
 /**
  * Read an int argument from a SavedStateHandle.
@@ -40,10 +39,9 @@ fun SavedStateHandle.getIntArgument(key: String): Int? {
 /**
  * Read an int argument or throw if missing or invalid.
  */
-fun SavedStateHandle.requireIntArgument(key: String): Int {
-    return getIntArgument(key)
+fun SavedStateHandle.requireIntArgument(key: String): Int =
+    getIntArgument(key)
         ?: throw IllegalArgumentException("Missing or invalid int argument: $key")
-}
 
 /**
  * Read a long argument from a SavedStateHandle.
@@ -61,10 +59,9 @@ fun SavedStateHandle.getLongArgument(key: String): Long? {
 /**
  * Read a long argument or throw if missing or invalid.
  */
-fun SavedStateHandle.requireLongArgument(key: String): Long {
-    return getLongArgument(key)
+fun SavedStateHandle.requireLongArgument(key: String): Long =
+    getLongArgument(key)
         ?: throw IllegalArgumentException("Missing or invalid long argument: $key")
-}
 
 /**
  * Read a boolean argument from a SavedStateHandle.
@@ -81,20 +78,18 @@ fun SavedStateHandle.getBooleanArgument(key: String): Boolean? {
 /**
  * Read a boolean argument or throw if missing or invalid.
  */
-fun SavedStateHandle.requireBooleanArgument(key: String): Boolean {
-    return getBooleanArgument(key)
+fun SavedStateHandle.requireBooleanArgument(key: String): Boolean =
+    getBooleanArgument(key)
         ?: throw IllegalArgumentException("Missing or invalid boolean argument: $key")
-}
 
 /**
  * Decode a typed route payload stored in the SavedStateHandle.
  */
 @OptIn(ExperimentalSerializationApi::class)
-inline fun <reified T : Any> SavedStateHandle.toRoute(
-    json: Json = DefaultRouteJson,
-): T {
-    val payload = getStringArgument(ROUTE_PAYLOAD_KEY)
-        ?: throw IllegalArgumentException("Missing route payload for ${routeKey<T>()}")
+inline fun <reified T : Any> SavedStateHandle.toRoute(json: Json = DefaultRouteJson): T {
+    val payload =
+        getStringArgument(ROUTE_PAYLOAD_KEY)
+            ?: throw IllegalArgumentException("Missing route payload for ${routeKey<T>()}")
     return decodeRoutePayload(serializer(), payload, json)
 }
 
@@ -102,6 +97,4 @@ inline fun <reified T : Any> SavedStateHandle.toRoute(
  * Decode a typed route payload or throw if missing.
  */
 @OptIn(ExperimentalSerializationApi::class)
-inline fun <reified T : Any> SavedStateHandle.requireRoute(
-    json: Json = DefaultRouteJson,
-): T = toRoute(json)
+inline fun <reified T : Any> SavedStateHandle.requireRoute(json: Json = DefaultRouteJson): T = toRoute(json)

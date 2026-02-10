@@ -258,4 +258,32 @@ class CommandPaletteTest {
         assertEquals("re", state.filterText)
         assertEquals(listOf("review"), state.filteredOptions.map { it.label })
     }
+
+    @Test
+    fun `visibleCount zero does not crash`() {
+        val lines = renderPaletteLines(
+            options = listOf(
+                CommandOption(label = "model", description = "desc", data = "model"),
+                CommandOption(label = "help", description = "desc", data = "help"),
+            ),
+            visibleCount = 0,
+        )
+
+        assertEquals(1, lines.size)
+        assertTrue(lines.first().contains("/model"))
+    }
+
+    @Test
+    fun `visibleCount negative does not crash`() {
+        val lines = renderPaletteLines(
+            options = listOf(
+                CommandOption(label = "model", description = "desc", data = "model"),
+                CommandOption(label = "help", description = "desc", data = "help"),
+            ),
+            visibleCount = -3,
+        )
+
+        assertEquals(1, lines.size)
+        assertTrue(lines.first().contains("/model"))
+    }
 }

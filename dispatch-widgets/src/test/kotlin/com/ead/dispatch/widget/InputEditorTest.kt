@@ -330,4 +330,18 @@ class InputEditorTest {
         assertEquals("a", harness.value)
         assertEquals(1, harness.cursor)
     }
+
+    @Test
+    fun `history navigation clamps corrupted history index`() {
+        val harness = EditorHarness()
+        harness.historyItems = listOf("one", "two")
+        harness.historyState.index = 99
+        harness.value = "draft"
+        harness.cursor = 0
+
+        harness.press("ArrowUp")
+
+        assertEquals("two", harness.value)
+        assertEquals(3, harness.cursor)
+    }
 }

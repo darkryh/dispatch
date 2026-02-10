@@ -84,6 +84,19 @@ class SpinnerMeasurableTest {
     }
 
     @Test
+    fun `negative frame wraps to valid index`() {
+        val style = SpinnerStyle.Circle // has 4 frames
+        val measurable = SpinnerMeasurable(
+            frame = -1, // should wrap to last frame
+            modifier = Modifier,
+            style = style
+        )
+
+        val placeable = measurable.measure(Constraints())
+        assertEquals(style.frames.last(), placeable.lines.first(), "should wrap to last frame")
+    }
+
+    @Test
     fun `large frame value wraps correctly`() {
         val style = SpinnerStyle.Circle // has 4 frames
         val measurable = SpinnerMeasurable(

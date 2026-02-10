@@ -153,24 +153,39 @@ internal class TextMeasurable(
         renderedWidth: Int,
         align: TextAlign,
     ): Lines {
-        return if (markdown) {
-            val lines = Markdown(text).render(terminal, width = renderedWidth)
-            style?.let { lines.withBaseStyle(it) } ?: lines
-        } else {
-            val styledText = style?.invoke(text) ?: text
-            val renderedText = styledText
-                // Whitespace.PRE_WRAP trims whitespace at EOL; preserve trailing spaces by ensuring a
-                // non-whitespace, zero-width sentinel is present at each explicit line end.
-                .replace("\n", "$TRIM_SENTINEL\n") + TRIM_SENTINEL
-
-            MordantText(
-                renderedText,
-                whitespace = Whitespace.PRE_WRAP,
-                align = align,
-                overflowWrap = OverflowWrap.NORMAL,
-                width = maxWidth,
-            ).render(terminal, width = renderedWidth)
+        if (!markdown) {
+            return renderPlainText(maxWidth = maxWidth, renderedWidth = renderedWidth, align = align)
         }
+
+        val markdownLines = try {
+            Markdown(text).render(terminal, width = renderedWidth)
+        } catch (_: Exception) {
+            // Streaming LLM output can contain transient malformed markdown (e.g., unfinished fences).
+            // Fall back to plain text so a parser failure can't crash the render loop.
+            return renderPlainText(maxWidth = maxWidth, renderedWidth = renderedWidth, align = align)
+        }
+
+        return style?.let { markdownLines.withBaseStyle(it) } ?: markdownLines
+    }
+
+    private fun renderPlainText(
+        maxWidth: Int?,
+        renderedWidth: Int,
+        align: TextAlign,
+    ): Lines {
+        val styledText = style?.invoke(text) ?: text
+        val renderedText = styledText
+            // Whitespace.PRE_WRAP trims whitespace at EOL; preserve trailing spaces by ensuring a
+            // non-whitespace, zero-width sentinel is present at each explicit line end.
+            .replace("\n", "$TRIM_SENTINEL\n") + TRIM_SENTINEL
+
+        return MordantText(
+            renderedText,
+            whitespace = Whitespace.PRE_WRAP,
+            align = align,
+            overflowWrap = OverflowWrap.NORMAL,
+            width = maxWidth,
+        ).render(terminal, width = renderedWidth)
     }
 
     private companion object {

@@ -31,7 +31,7 @@ class EntryProviderScope<T : NavKey>(
         content: @Dispatchable (K) -> Unit,
     ) {
         require(key !in providers) {
-            "An `entry` with the key `key` has already been added: ${key}."
+            "An `entry` with the key `key` has already been added: $key."
         }
         providers[key] = EntryProvider(key, contentKey, { metadata }, content)
     }
@@ -43,7 +43,7 @@ class EntryProviderScope<T : NavKey>(
         content: @Dispatchable (K) -> Unit,
     ) {
         require(key !in providers) {
-            "An `entry` with the key `key` has already been added: ${key}."
+            "An `entry` with the key `key` has already been added: $key."
         }
         providers[key] = EntryProvider(key, contentKey, metadata, content)
     }
@@ -110,15 +110,16 @@ class EntryProviderScope<T : NavKey>(
 
     @Suppress("UNCHECKED_CAST")
     @PublishedApi
-    internal fun build(): (T) -> NavEntry<T> = { key ->
-        val entryClassProvider = clazzProviders[key::class] as? EntryClassProvider<T>
-        val entryProvider = providers[key] as? EntryProvider<T>
-        entryClassProvider?.run {
-            NavEntry(key, clazzContentKey(key), metadata(key), content)
+    internal fun build(): (T) -> NavEntry<T> =
+        { key ->
+            val entryClassProvider = clazzProviders[key::class] as? EntryClassProvider<T>
+            val entryProvider = providers[key] as? EntryProvider<T>
+            entryClassProvider?.run {
+                NavEntry(key, clazzContentKey(key), metadata(key), content)
+            }
+                ?: entryProvider?.run { NavEntry(key, contentKey, metadata(key), content) }
+                ?: fallback.invoke(key)
         }
-            ?: entryProvider?.run { NavEntry(key, contentKey, metadata(key), content) }
-            ?: fallback.invoke(key)
-    }
 }
 
 @Suppress("DataClassDefinition")

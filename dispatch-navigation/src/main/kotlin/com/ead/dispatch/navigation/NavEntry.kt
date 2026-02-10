@@ -41,10 +41,8 @@ class NavBackStackEntry<T : NavKey>(
 }
 
 @PublishedApi
-internal fun <T : NavKey> NavBackStackEntry<T>.wrap(
-    content: @Dispatchable () -> Unit,
-): NavBackStackEntry<T> {
-    return NavBackStackEntry(
+internal fun <T : NavKey> NavBackStackEntry<T>.wrap(content: @Dispatchable () -> Unit): NavBackStackEntry<T> =
+    NavBackStackEntry(
         key = key,
         contentKey = contentKey,
         metadata = metadata,
@@ -53,4 +51,3 @@ internal fun <T : NavKey> NavBackStackEntry<T>.wrap(
         viewModelProvider = viewModelProvider,
         lifecycleRegistry = lifecycleRegistry,
     )
-}

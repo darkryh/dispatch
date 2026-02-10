@@ -150,7 +150,7 @@ class ChatViewModel(
 
 
                 onEvent(ChatEvent.OnClearTextField)
-                submitMessage(text = text)
+                submitMessage(text = text, fromDecisionPrompt = false)
             }
             is ChatEvent.OnChatModeChanged -> {
                 countWriterMode++
@@ -199,7 +199,10 @@ class ChatViewModel(
     /**
      * Process a submitted message based on the current mode.
      */
-    private fun submitMessage(text: String) {
+    private fun submitMessage(
+        text: String,
+        fromDecisionPrompt: Boolean,
+    ) {
         val input = text.trim()
         if (input.isBlank()) {
             return
@@ -222,6 +225,7 @@ class ChatViewModel(
                 input = ChatRequest(
                     text = input,
                     storyId = session.id,
+                    fromDecisionPrompt = fromDecisionPrompt,
                 )
             )
             val assistantStreamingResponse = response.value
@@ -340,7 +344,7 @@ class ChatViewModel(
         if (selectedText.isBlank()) return
 
         _pendingDecision.value = null
-        submitMessage(selectedText)
+        submitMessage(selectedText, fromDecisionPrompt = true)
     }
 
     private fun openEntityList(

@@ -59,13 +59,6 @@ internal class SnapshotMutableState<T>(
         observers.forEach { it.onChanged() }
     }
 
-    /**
-     * Clear reader tracking (called during recomposition).
-     */
-    internal fun clearReaders() {
-        readers.clear()
-    }
-
     override fun addDependent(dependent: Any) {
         val derived = dependent as? DerivedState<*> ?: return
         dependents.add(derived)

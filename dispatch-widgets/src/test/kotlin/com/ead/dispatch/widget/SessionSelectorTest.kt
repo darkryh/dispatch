@@ -60,6 +60,7 @@ class SessionSelectorTest {
 
     private class SelectorHarness(
         options: List<SessionOption<String>>,
+        private val visibleCount: Int = 10,
     ) {
         private val terminal = Terminal(
             ansiLevel = AnsiLevel.NONE,
@@ -112,6 +113,7 @@ class SessionSelectorTest {
                         onExit = { exitCount += 1 },
                         textStyles = plainStyles,
                         showHeaders = false,
+                        visibleCount = visibleCount,
                         state = state,
                     )
                 }
@@ -229,5 +231,25 @@ class SessionSelectorTest {
         harness.render()
 
         assertEquals(0, harness.state.selectedIndex)
+    }
+
+    @Test
+    fun `visibleCount zero does not crash`() {
+        val harness = SelectorHarness(sampleOptions(), visibleCount = 0)
+
+        val lines = harness.render()
+
+        assertEquals(1, lines.size)
+        assertNotNull(lines.firstOrNull { it.contains("Alpha") })
+    }
+
+    @Test
+    fun `visibleCount negative does not crash`() {
+        val harness = SelectorHarness(sampleOptions(), visibleCount = -2)
+
+        val lines = harness.render()
+
+        assertEquals(1, lines.size)
+        assertNotNull(lines.firstOrNull { it.contains("Alpha") })
     }
 }

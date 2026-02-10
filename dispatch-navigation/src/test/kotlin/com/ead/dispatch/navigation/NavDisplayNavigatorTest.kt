@@ -18,10 +18,11 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 @Serializable
-private data class TestRoute(val id: Int) : NavKey
+private data class TestRoute(
+    val id: Int,
+) : NavKey
 
 class NavDisplayNavigatorTest {
-
     @Test
     fun `NavDisplay provides LocalNavigator backed by backStack`() {
         val backStack = NavBackStack(TestRoute(1))
@@ -30,11 +31,12 @@ class NavDisplayNavigatorTest {
         render {
             NavDisplay(
                 backStack = backStack,
-                entryProvider = entryProvider<TestRoute> {
-                    entry<TestRoute> {
-                        navigatorRef = LocalNavigator.current
-                    }
-                }
+                entryProvider =
+                    entryProvider<TestRoute> {
+                        entry<TestRoute> {
+                            navigatorRef = LocalNavigator.current
+                        }
+                    },
             )
         }
 
@@ -52,12 +54,13 @@ class NavDisplayNavigatorTest {
 }
 
 private fun render(content: @Dispatchable () -> Unit) {
-    val terminal = Terminal(
-        ansiLevel = AnsiLevel.NONE,
-        width = 80,
-        height = 20,
-        interactive = false,
-    )
+    val terminal =
+        Terminal(
+            ansiLevel = AnsiLevel.NONE,
+            width = 80,
+            height = 20,
+            interactive = false,
+        )
     val composer = Composer()
 
     withComposer(composer) {

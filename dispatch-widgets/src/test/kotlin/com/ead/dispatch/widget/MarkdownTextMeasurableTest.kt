@@ -237,4 +237,53 @@ class MarkdownTextMeasurableTest {
         assertTrue(rendered.contains("gone"))
         assertTrue(!rendered.contains("~~gone~~"))
     }
+
+    @Test
+    fun `malformed streaming markdown does not throw`() {
+        val rendered = renderMarkdown(
+            """
+What I can offer right now:
+
+ 1. The exact command you'd need to create the character when you have write access
+ 2. A fully developed character sheet ready for creation
+ 3. Suggestions for your next message that might trigger write permissions
+
+**For example, here's the exact character data structure you could use
+""".trim(),
+            width = 80,
+            height = 40,
+        )
+
+        assertTrue(rendered.contains("What I can offer right now"))
+        assertTrue(rendered.contains("For example"))
+    }
+
+    @Test
+    fun `unterminated code fence does not crash renderer`() {
+        val rendered = renderMarkdown(
+            """
+Here is a JSON payload:
+```json
+{
+  "name": "Cassian"
+}
+""".trim(),
+            width = 80,
+            height = 40,
+        )
+
+        assertTrue(rendered.contains("Here is a JSON payload"))
+        assertTrue(rendered.contains("Cassian"))
+    }
+
+    @Test
+    fun `bare fence opener does not crash renderer`() {
+        val rendered = renderMarkdown(
+            "```",
+            width = 40,
+            height = 10,
+        )
+
+        assertTrue(rendered.isNotEmpty())
+    }
 }

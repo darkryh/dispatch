@@ -17,7 +17,11 @@ internal suspend inline fun <reified Input, Output> AIAgent<Input, Output>.runWi
     agentId: String,
     input: Input,
 ): Output {
-    overrideCheckpointInput(agentId, input)
+    overrideCheckpointInput(
+        agentId = agentId,
+        input = input,
+        startNodePath = "$agentId/chat-mode.planner/classify-intent",
+    )
     return run(input)
 }
 
@@ -26,7 +30,11 @@ internal suspend inline fun <reified Input, Output> AIAgent<Input, Output>.runWi
  * This keeps the existing history but forces the next run to use the new input.
  */
 @OptIn(ExperimentalStdlibApi::class, InternalAgentsApi::class)
-internal suspend inline fun <reified Input> overrideCheckpointInput(agentId: String, input: Input) {
+internal suspend inline fun <reified Input> overrideCheckpointInput(
+    agentId: String,
+    input: Input,
+    startNodePath: String,
+) {
     val latest = Storage.provider.getLatestCheckpoint(agentId) ?: return
     if (latest.isTombstone()) return
 
@@ -36,7 +44,9 @@ internal suspend inline fun <reified Input> overrideCheckpointInput(agentId: Str
     val updated = AgentCheckpointData(
         checkpointId = latest.checkpointId,
         createdAt = Clock.System.now(),
-        nodePath = latest.nodePath,
+        // Always restart from graph start with the latest input to avoid
+        // deserializing ChatRequest payloads into intermediate node input types.
+        nodePath = startNodePath,
         lastInput = inputJson,
         messageHistory = latest.messageHistory,
         version = latest.version + 1,
