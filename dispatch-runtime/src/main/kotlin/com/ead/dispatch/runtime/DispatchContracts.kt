@@ -15,6 +15,7 @@ import kotlin.time.Duration.Companion.milliseconds
 /**
  * Scope for configuring the Dispatch application.
  */
+@Suppress("ComplexInterface")
 interface DispatchScope {
     val terminal: Terminal
     val theme: DispatchTheme
@@ -89,4 +90,10 @@ class DispatchConfig {
 }
 
 data class FlagDefinition(val name: String, val shortName: Char?, val description: String)
-data class ArgumentDefinition(val name: String, val shortName: Char?, val description: String, val default: String?, val required: Boolean)
+data class ArgumentDefinition(
+    val name: String,
+    val shortName: Char?,
+    val description: String,
+    val default: String?,
+    val required: Boolean,
+)

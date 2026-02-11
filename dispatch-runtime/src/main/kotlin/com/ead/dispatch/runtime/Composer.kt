@@ -15,8 +15,9 @@ import java.util.concurrent.atomic.AtomicInteger
  * - Saveable state
  * - Current position in the composition tree
  */
+@Suppress("TooManyFunctions", "ClassOrdering")
 class Composer(
-    private val savedStateRegistry: SavedStateRegistry? = null
+    private val savedStateRegistry: SavedStateRegistry? = null,
 ) {
     /**
      * Storage for remembered values, keyed by slot index.
@@ -68,7 +69,7 @@ class Composer(
     /**
      * Start a group (for tracking nested content).
      */
-    fun startGroup(key: Any?) {
+    fun startGroup(@Suppress("UNUSED_PARAMETER") key: Any?) {
         groupStack.add(currentSlot.get())
     }
 
@@ -320,8 +321,9 @@ class Composer(
          * @throws IllegalStateException if not currently composing.
          */
         val current: Composer
-            get() = threadLocalComposer.get()
-                ?: throw IllegalStateException("Not currently composing. Remember can only be called during composition.")
+            get() =
+                threadLocalComposer.get()
+                    ?: error("Not currently composing. Remember can only be called during composition.")
     }
 }
 
@@ -330,7 +332,7 @@ class Composer(
  */
 internal data class SlotEntry(
     val key: Any?,
-    val value: Any?
+    val value: Any?,
 )
 
 /**
@@ -344,8 +346,9 @@ private val threadLocalComposer = ThreadLocal<Composer>()
  * @throws IllegalStateException if not currently composing.
  */
 val currentComposer: Composer
-    get() = threadLocalComposer.get()
-        ?: throw IllegalStateException("Not currently composing. Remember can only be called during composition.")
+    get() =
+        threadLocalComposer.get()
+            ?: error("Not currently composing. Remember can only be called during composition.")
 
 /**
  * Returns true if the current thread is inside a composition.

@@ -19,14 +19,13 @@ class RuntimeCompositionTest {
         val composer = Composer()
         var counter = 0
 
-        fun compose(key: Any?): Int {
-            return withComposer(composer) {
+        fun compose(key: Any?): Int =
+            withComposer(composer) {
                 composer.startComposition()
                 val value = remember(key) { counter++ }
                 composer.endComposition()
                 value
             }
-        }
 
         assertEquals(0, compose("alpha"))
         assertEquals(0, compose("alpha"))
@@ -44,14 +43,13 @@ class RuntimeCompositionTest {
             override fun restore(value: Any): MutableState<String> = mutableStateOf(value as String)
         }
 
-        fun compose(composer: Composer): MutableState<String> {
-            return withComposer(composer) {
+        fun compose(composer: Composer): MutableState<String> =
+            withComposer(composer) {
                 composer.startComposition()
                 val state = rememberSaveable(saver) { mutableStateOf("initial") }
                 composer.endComposition()
                 state
             }
-        }
 
         val firstComposer = Composer(registry)
         val original = compose(firstComposer)
@@ -161,15 +159,14 @@ class RuntimeCompositionTest {
         val composer = Composer()
         var input = "first"
 
-        fun compose(): String {
-            return withComposer(composer) {
+        fun compose(): String =
+            withComposer(composer) {
                 composer.startComposition()
                 val state = rememberUpdatedState(input)
                 val value = state.value
                 composer.endComposition()
                 value
             }
-        }
 
         assertEquals("first", compose())
         input = "second"
@@ -181,8 +178,8 @@ class RuntimeCompositionTest {
         val composer = Composer()
         var showPrefixSlot = false
 
-        fun compose(): Int {
-            return withComposer(composer) {
+        fun compose(): Int =
+            withComposer(composer) {
                 composer.startComposition()
                 if (showPrefixSlot) {
                     remember { SlotProbe() }
@@ -193,7 +190,6 @@ class RuntimeCompositionTest {
                 composer.endComposition()
                 value
             }
-        }
 
         assertEquals(1, compose())
         showPrefixSlot = true
@@ -207,8 +203,8 @@ class RuntimeCompositionTest {
         val composer = Composer()
         var showPrefixSlot = false
 
-        fun compose(): Int {
-            return withComposer(composer) {
+        fun compose(): Int =
+            withComposer(composer) {
                 composer.startComposition()
                 if (showPrefixSlot) {
                     val callbackState = remember { mutableStateOf<Any>({ "callback" }) }
@@ -220,7 +216,6 @@ class RuntimeCompositionTest {
                 composer.endComposition()
                 value
             }
-        }
 
         assertEquals(1, compose())
         showPrefixSlot = true

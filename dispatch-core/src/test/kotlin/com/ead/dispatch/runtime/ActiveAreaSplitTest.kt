@@ -5,14 +5,16 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class ActiveAreaSplitTest {
-    private fun placeable(lines: List<String>, segmentHeights: List<Int>): SegmentedSimplePlaceable {
-        return SegmentedSimplePlaceable(
+    private fun placeable(
+        lines: List<String>,
+        segmentHeights: List<Int>,
+    ): SegmentedSimplePlaceable =
+        SegmentedSimplePlaceable(
             width = 1,
             height = lines.size,
             lines = lines,
             segmentHeights = segmentHeights,
         )
-    }
 
     @Test
     fun `clips oversized last segment without pushing into scrollback`() {
@@ -52,28 +54,32 @@ class ActiveAreaSplitTest {
         val tracker = ScrollingContentTracker()
         val history = listOf("h1", "h2")
 
-        val initial = placeable(
-            lines = history + listOf("i1", "i2", "s1"),
-            segmentHeights = listOf(2, 2, 1),
-        )
-        val (scrollingInitial, activeInitial) = splitContentForRendering(
-            initial,
-            activeAreaHeight = 3,
-            committedLineCount = 0,
-        )
+        val initial =
+            placeable(
+                lines = history + listOf("i1", "i2", "s1"),
+                segmentHeights = listOf(2, 2, 1),
+            )
+        val (scrollingInitial, activeInitial) =
+            splitContentForRendering(
+                initial,
+                activeAreaHeight = 3,
+                committedLineCount = 0,
+            )
         assertEquals(history, scrollingInitial)
         assertEquals(listOf("i1", "i2", "s1"), activeInitial)
         assertEquals(ScrollUpdate(history, reset = false), tracker.consume(scrollingInitial))
 
-        val grown = placeable(
-            lines = history + listOf("i1", "i2", "i3", "s1"),
-            segmentHeights = listOf(2, 3, 1),
-        )
-        val (scrollingGrown, activeGrown) = splitContentForRendering(
-            grown,
-            activeAreaHeight = 3,
-            committedLineCount = scrollingInitial.size,
-        )
+        val grown =
+            placeable(
+                lines = history + listOf("i1", "i2", "i3", "s1"),
+                segmentHeights = listOf(2, 3, 1),
+            )
+        val (scrollingGrown, activeGrown) =
+            splitContentForRendering(
+                grown,
+                activeAreaHeight = 3,
+                committedLineCount = scrollingInitial.size,
+            )
         assertEquals(history, scrollingGrown)
         assertEquals(listOf("i2", "i3", "s1"), activeGrown)
         assertEquals(ScrollUpdate(emptyList(), reset = false), tracker.consume(scrollingGrown))
@@ -84,28 +90,32 @@ class ActiveAreaSplitTest {
         val tracker = ScrollingContentTracker()
         val history = listOf("h1", "h2", "h3")
 
-        val withoutPalette = placeable(
-            lines = history + listOf("i1", "status"),
-            segmentHeights = listOf(3, 1, 1),
-        )
-        val (scrollingInitial, activeInitial) = splitContentForRendering(
-            withoutPalette,
-            activeAreaHeight = 3,
-            committedLineCount = 0,
-        )
+        val withoutPalette =
+            placeable(
+                lines = history + listOf("i1", "status"),
+                segmentHeights = listOf(3, 1, 1),
+            )
+        val (scrollingInitial, activeInitial) =
+            splitContentForRendering(
+                withoutPalette,
+                activeAreaHeight = 3,
+                committedLineCount = 0,
+            )
         assertEquals(listOf("h1", "h2"), scrollingInitial)
         assertEquals(listOf("h3", "i1", "status"), activeInitial)
         assertEquals(ScrollUpdate(listOf("h1", "h2"), reset = false), tracker.consume(scrollingInitial))
 
-        val withPalette = placeable(
-            lines = history + listOf("i1", "p1", "p2"),
-            segmentHeights = listOf(3, 1, 2),
-        )
-        val (scrollingPalette, activePalette) = splitContentForRendering(
-            withPalette,
-            activeAreaHeight = 3,
-            committedLineCount = scrollingInitial.size,
-        )
+        val withPalette =
+            placeable(
+                lines = history + listOf("i1", "p1", "p2"),
+                segmentHeights = listOf(3, 1, 2),
+            )
+        val (scrollingPalette, activePalette) =
+            splitContentForRendering(
+                withPalette,
+                activeAreaHeight = 3,
+                committedLineCount = scrollingInitial.size,
+            )
         assertEquals(history, scrollingPalette)
         assertEquals(listOf("i1", "p1", "p2"), activePalette)
         assertEquals(ScrollUpdate(listOf("h3"), reset = false), tracker.consume(scrollingPalette))

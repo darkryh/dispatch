@@ -4,7 +4,6 @@ package com.ead.dispatch.layout
  * Arrangement for distributing children in a layout.
  */
 object Arrangement {
-
     /**
      * Vertical arrangement options for Column.
      */
@@ -16,7 +15,10 @@ object Arrangement {
          * @param sizes Sizes of each child.
          * @return List of Y positions for each child.
          */
-        fun arrange(totalSize: Int, sizes: List<Int>): List<Int>
+        fun arrange(
+            totalSize: Int,
+            sizes: List<Int>,
+        ): List<Int>
     }
 
     /**
@@ -30,13 +32,18 @@ object Arrangement {
          * @param sizes Sizes of each child.
          * @return List of X positions for each child.
          */
-        fun arrange(totalSize: Int, sizes: List<Int>): List<Int>
+        fun arrange(
+            totalSize: Int,
+            sizes: List<Int>,
+        ): List<Int>
     }
 
     /**
      * Arrangement that can be used for both directions.
      */
-    sealed interface HorizontalOrVertical : Vertical, Horizontal
+    sealed interface HorizontalOrVertical :
+        Vertical,
+        Horizontal
 
     // ========================================================================
     // Vertical Arrangements
@@ -46,7 +53,10 @@ object Arrangement {
      * Place children at the top/start.
      */
     object Top : Vertical {
-        override fun arrange(totalSize: Int, sizes: List<Int>): List<Int> {
+        override fun arrange(
+            totalSize: Int,
+            sizes: List<Int>,
+        ): List<Int> {
             val positions = mutableListOf<Int>()
             var offset = 0
             for (size in sizes) {
@@ -61,7 +71,10 @@ object Arrangement {
      * Place children at the bottom/end.
      */
     object Bottom : Vertical {
-        override fun arrange(totalSize: Int, sizes: List<Int>): List<Int> {
+        override fun arrange(
+            totalSize: Int,
+            sizes: List<Int>,
+        ): List<Int> {
             val contentSize = sizes.sum()
             val startOffset = (totalSize - contentSize).coerceAtLeast(0)
             val positions = mutableListOf<Int>()
@@ -82,7 +95,10 @@ object Arrangement {
      * Place children at the start (left in LTR).
      */
     object Start : Horizontal {
-        override fun arrange(totalSize: Int, sizes: List<Int>): List<Int> {
+        override fun arrange(
+            totalSize: Int,
+            sizes: List<Int>,
+        ): List<Int> {
             val positions = mutableListOf<Int>()
             var offset = 0
             for (size in sizes) {
@@ -97,7 +113,10 @@ object Arrangement {
      * Place children at the end (right in LTR).
      */
     object End : Horizontal {
-        override fun arrange(totalSize: Int, sizes: List<Int>): List<Int> {
+        override fun arrange(
+            totalSize: Int,
+            sizes: List<Int>,
+        ): List<Int> {
             val contentSize = sizes.sum()
             val startOffset = (totalSize - contentSize).coerceAtLeast(0)
             val positions = mutableListOf<Int>()
@@ -118,7 +137,10 @@ object Arrangement {
      * Center children in the available space.
      */
     object Center : HorizontalOrVertical {
-        override fun arrange(totalSize: Int, sizes: List<Int>): List<Int> {
+        override fun arrange(
+            totalSize: Int,
+            sizes: List<Int>,
+        ): List<Int> {
             val contentSize = sizes.sum()
             val startOffset = ((totalSize - contentSize) / 2).coerceAtLeast(0)
             val positions = mutableListOf<Int>()
@@ -135,7 +157,10 @@ object Arrangement {
      * Distribute space evenly between children.
      */
     object SpaceBetween : HorizontalOrVertical {
-        override fun arrange(totalSize: Int, sizes: List<Int>): List<Int> {
+        override fun arrange(
+            totalSize: Int,
+            sizes: List<Int>,
+        ): List<Int> {
             if (sizes.isEmpty()) return emptyList()
             if (sizes.size == 1) return listOf(0)
 
@@ -160,7 +185,10 @@ object Arrangement {
      * Distribute space evenly around children.
      */
     object SpaceAround : HorizontalOrVertical {
-        override fun arrange(totalSize: Int, sizes: List<Int>): List<Int> {
+        override fun arrange(
+            totalSize: Int,
+            sizes: List<Int>,
+        ): List<Int> {
             if (sizes.isEmpty()) return emptyList()
 
             val contentSize = sizes.sum()
@@ -181,7 +209,10 @@ object Arrangement {
      * Distribute space evenly, with equal space before, between, and after children.
      */
     object SpaceEvenly : HorizontalOrVertical {
-        override fun arrange(totalSize: Int, sizes: List<Int>): List<Int> {
+        override fun arrange(
+            totalSize: Int,
+            sizes: List<Int>,
+        ): List<Int> {
             if (sizes.isEmpty()) return emptyList()
 
             val contentSize = sizes.sum()
@@ -203,8 +234,13 @@ object Arrangement {
      *
      * @param spacing Space between children.
      */
-    class SpacedBy(private val spacing: Int) : HorizontalOrVertical {
-        override fun arrange(totalSize: Int, sizes: List<Int>): List<Int> {
+    class SpacedBy(
+        private val spacing: Int,
+    ) : HorizontalOrVertical {
+        override fun arrange(
+            totalSize: Int,
+            sizes: List<Int>,
+        ): List<Int> {
             val positions = mutableListOf<Int>()
             var offset = 0
             for ((index, size) in sizes.withIndex()) {

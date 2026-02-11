@@ -56,9 +56,8 @@ class KeyboardInterceptor(
      * @param handler The handler function that receives keyboard events.
      * @return A dispose function to unregister the handler.
      */
-    fun register(handler: (KeyboardEvent) -> Boolean): () -> Unit {
-        return register(priority = 0, handler = handler)
-    }
+    fun register(handler: (KeyboardEvent) -> Boolean): () -> Unit =
+        register(priority = 0, handler = handler)
 
     /**
      * Register an interceptor with a priority.
@@ -106,7 +105,7 @@ class KeyboardInterceptor(
     /**
      * Check if there are any registered interceptors.
      */
-    fun hasInterceptors(): Boolean = interceptors.isNotEmpty() || (parent?.hasInterceptors() == true)
+    fun hasInterceptors(): Boolean = interceptors.isNotEmpty() || parent?.hasInterceptors() == true
 
     private fun rebuildOrder() {
         orderedInterceptors = interceptors.sortedWith(

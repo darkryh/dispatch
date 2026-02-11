@@ -8,7 +8,6 @@ import io.kotest.matchers.shouldBe
 import kotlin.test.Test
 
 class CompositionLocalTest {
-
     @Test
     fun `compositionLocalOf should return default value when not provided`() {
         val local = compositionLocalOf { "default" }
@@ -60,7 +59,7 @@ class CompositionLocalTest {
 
         CompositionLocalProvider(
             localA provides "valueA",
-            localB provides 42
+            localB provides 42,
         ) {
             localA.current shouldBe "valueA"
             localB.current shouldBe 42
@@ -125,13 +124,11 @@ class CompositionLocalTest {
     fun `CompositionLocalProvider should restore previous value on exception`() {
         val local = compositionLocalOf { "default" }
 
-        try {
+        shouldThrow<IllegalStateException> {
             CompositionLocalProvider(local provides "custom") {
                 local.current shouldBe "custom"
-                throw RuntimeException("Test exception")
+                error("Test exception")
             }
-        } catch (e: RuntimeException) {
-            // Expected
         }
 
         local.current shouldBe "default"

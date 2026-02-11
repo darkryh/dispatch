@@ -21,6 +21,7 @@ import com.ead.dispatch.runtime.Recomposer
  * }
  * ```
  */
+@Suppress("TooManyFunctions", "ClassOrdering")
 class SnapshotStateList<T> : MutableList<T>, DerivedStateDependency {
     private val backing = mutableListOf<T>()
     private val readers = mutableSetOf<Any>()
@@ -200,6 +201,7 @@ class SnapshotStateList<T> : MutableList<T>, DerivedStateDependency {
         }
     }
 
+    @Suppress("TooManyFunctions")
     private inner class SnapshotSubList(
         private val delegate: MutableList<T>
     ) : MutableList<T> {
@@ -324,9 +326,8 @@ class SnapshotStateList<T> : MutableList<T>, DerivedStateDependency {
 /**
  * Create a [SnapshotStateList] with initial elements.
  */
-fun <T> mutableStateListOf(vararg elements: T): SnapshotStateList<T> {
-    return SnapshotStateList<T>().apply { addAll(elements) }
-}
+fun <T> mutableStateListOf(vararg elements: T): SnapshotStateList<T> =
+    SnapshotStateList<T>().apply { addAll(elements) }
 
 /**
  * Create an empty [SnapshotStateList].
@@ -336,6 +337,7 @@ fun <T> mutableStateListOf(): SnapshotStateList<T> = SnapshotStateList()
 /**
  * A [MutableMap] that triggers recomposition when modified.
  */
+@Suppress("ClassOrdering")
 class SnapshotStateMap<K, V> : MutableMap<K, V>, DerivedStateDependency {
     private val backing = mutableMapOf<K, V>()
     private val readers = mutableSetOf<Any>()
@@ -684,9 +686,8 @@ class SnapshotStateMap<K, V> : MutableMap<K, V>, DerivedStateDependency {
 /**
  * Create a [SnapshotStateMap] with initial entries.
  */
-fun <K, V> mutableStateMapOf(vararg pairs: Pair<K, V>): SnapshotStateMap<K, V> {
-    return SnapshotStateMap<K, V>().apply { putAll(pairs) }
-}
+fun <K, V> mutableStateMapOf(vararg pairs: Pair<K, V>): SnapshotStateMap<K, V> =
+    SnapshotStateMap<K, V>().apply { putAll(pairs) }
 
 /**
  * Create an empty [SnapshotStateMap].

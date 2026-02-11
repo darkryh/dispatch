@@ -38,7 +38,7 @@ fun Column(
     Layout(
         modifier = modifier,
         measurePolicy = ColumnMeasurePolicy(verticalArrangement, horizontalAlignment),
-        content = { scope.content() }
+        content = { scope.content() },
     )
 }
 
@@ -55,7 +55,7 @@ interface ColumnScope : LayoutScope {
 /**
  * Implementation of ColumnScope.
  */
-class ColumnScopeInstance(
+data class ColumnScopeInstance(
     override val horizontalAlignment: Alignment.Horizontal,
 ) : ColumnScope
 
@@ -66,8 +66,11 @@ internal class ColumnMeasurePolicy(
     private val verticalArrangement: Arrangement.Vertical,
     private val horizontalAlignment: Alignment.Horizontal,
 ) : MeasurePolicy {
-
-    override fun measure(measurables: List<Measurable>, constraints: Constraints): MeasureResult {
+    @Suppress("LongMethod", "CyclomaticComplexMethod", "CognitiveComplexMethod")
+    override fun measure(
+        measurables: List<Measurable>,
+        constraints: Constraints,
+    ): MeasureResult {
         if (measurables.isEmpty()) {
             return MeasureResult(
                 width = constraints.minWidth,
@@ -85,11 +88,12 @@ internal class ColumnMeasurePolicy(
         var totalWeight = 0f
 
         for (measurable in measurables) {
-            val weightModifier = if (weightsEnabled) {
-                measurable.modifier.firstOrNull(WeightModifier::class.java)
-            } else {
-                null
-            }
+            val weightModifier =
+                if (weightsEnabled) {
+                    measurable.modifier.firstOrNull(WeightModifier::class.java)
+                } else {
+                    null
+                }
             val weight = weightModifier?.weight
             if (weight != null) {
                 weightedMeasurables.add(measurable to weight)
@@ -100,17 +104,19 @@ internal class ColumnMeasurePolicy(
         }
 
         // Measure fixed children first
-        val childConstraints = Constraints(
-            minWidth = 0,
-            maxWidth = constraints.maxWidth,
-            minHeight = 0,
-            maxHeight = constraints.maxHeight,
-        )
+        val childConstraints =
+            Constraints(
+                minWidth = 0,
+                maxWidth = constraints.maxWidth,
+                minHeight = 0,
+                maxHeight = constraints.maxHeight,
+            )
 
-        val fixedPlaceables = fixedMeasurables.map { measurable ->
-            val modifiedConstraints = measurable.modifier.applyToConstraints(childConstraints)
-            measurable.measure(modifiedConstraints)
-        }
+        val fixedPlaceables =
+            fixedMeasurables.map { measurable ->
+                val modifiedConstraints = measurable.modifier.applyToConstraints(childConstraints)
+                measurable.measure(modifiedConstraints)
+            }
 
         val fixedHeight = fixedPlaceables.sumOf { it.height }
         val remainingHeight = (constraints.maxHeight - fixedHeight).coerceAtLeast(0)
@@ -119,13 +125,14 @@ internal class ColumnMeasurePolicy(
         val weightedPlaceables = mutableListOf<Placeable>()
         if (weightsEnabled && totalWeight > 0) {
             for ((measurable, weight) in weightedMeasurables) {
-                val weightedHeight = ((remainingHeight * weight) / totalWeight).toInt()
-                val weightedConstraints = Constraints(
-                    minWidth = 0,
-                    maxWidth = constraints.maxWidth,
-                    minHeight = weightedHeight,
-                    maxHeight = weightedHeight,
-                )
+                val weightedHeight = (remainingHeight * weight / totalWeight).toInt()
+                val weightedConstraints =
+                    Constraints(
+                        minWidth = 0,
+                        maxWidth = constraints.maxWidth,
+                        minHeight = weightedHeight,
+                        maxHeight = weightedHeight,
+                    )
                 val modifiedConstraints = measurable.modifier.applyToConstraints(weightedConstraints)
                 weightedPlaceables.add(measurable.measure(modifiedConstraints))
             }
@@ -137,11 +144,12 @@ internal class ColumnMeasurePolicy(
         var weightedIndex = 0
 
         for (measurable in measurables) {
-            val weightModifier = if (weightsEnabled) {
-                measurable.modifier.firstOrNull(WeightModifier::class.java)
-            } else {
-                null
-            }
+            val weightModifier =
+                if (weightsEnabled) {
+                    measurable.modifier.firstOrNull(WeightModifier::class.java)
+                } else {
+                    null
+                }
             if (weightModifier != null) {
                 allPlaceables.add(weightedPlaceables[weightedIndex++])
             } else {
@@ -150,18 +158,20 @@ internal class ColumnMeasurePolicy(
         }
 
         // Calculate layout size
-        val layoutWidth = if (constraints.hasBoundedWidth) {
-            constraints.maxWidth
-        } else {
-            allPlaceables.maxOfOrNull { it.width } ?: 0
-        }
+        val layoutWidth =
+            if (constraints.hasBoundedWidth) {
+                constraints.maxWidth
+            } else {
+                allPlaceables.maxOfOrNull { it.width } ?: 0
+            }
 
         val contentHeight = allPlaceables.sumOf { it.height }
-        val layoutHeight = if (constraints.hasBoundedHeight) {
-            constraints.constrainHeight(contentHeight)
-        } else {
-            contentHeight
-        }
+        val layoutHeight =
+            if (constraints.hasBoundedHeight) {
+                constraints.constrainHeight(contentHeight)
+            } else {
+                contentHeight
+            }
 
         // Arrange children vertically
         val sizes = allPlaceables.map { it.height }

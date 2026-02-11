@@ -42,6 +42,21 @@ class TerminalRenderer(
     private var activeAreaInitialized = false
 
     /**
+     * The frame buffer for differential rendering (legacy).
+     */
+    private val frameBuffer = FrameBuffer()
+
+    /**
+     * Whether the initial frame has been rendered (legacy).
+     */
+    private var initialFrameRendered = false
+
+    /**
+     * Placeholder until cursor queries are implemented.
+     */
+    private val unavailableCursorPosition: Pair<Int, Int>? = null
+
+    /**
      * Append scrolling content to the terminal.
      * This content flows naturally with terminal scrollback.
      *
@@ -55,42 +70,10 @@ class TerminalRenderer(
 
         renderLock.withLock {
             val buffer = StringBuilder()
-
-            // Clear the active area first (move up and clear each line)
-            if (activeAreaInitialized && activeAreaLines.isNotEmpty()) {
-                val lastIndex = activeAreaLines.lastIndex
-                for (index in 0..lastIndex) {
-                    buffer.append("\r")
-                    buffer.append(AnsiCodes.CLEAR_LINE)
-                    if (index < lastIndex) {
-                        buffer.append(AnsiCodes.moveUp(1))
-                    }
-                }
-            }
-
-            // Append scrolling content (these will naturally scroll)
-            for (line in lines) {
-                buffer.append(line)
-                buffer.append("\n")
-            }
-
-            // Restore the active area in-place
-            if (activeAreaInitialized && activeAreaLines.isNotEmpty()) {
-                for ((index, line) in activeAreaLines.withIndex()) {
-                    buffer.append("\r")
-                    buffer.append(AnsiCodes.CLEAR_LINE)
-                    buffer.append(line)
-                    if (index < activeAreaLines.lastIndex) {
-                        buffer.append("\n")
-                    }
-                }
-            }
-
-            // Send everything atomically
-            OutputCapture.suppress {
-                terminal.rawPrint(buffer)
-                System.out.flush()
-            }
+            clearActiveAreaInto(buffer)
+            appendLines(buffer, lines)
+            restoreActiveAreaInto(buffer)
+            flushBuffer(buffer)
         }
     }
 
@@ -119,46 +102,15 @@ class TerminalRenderer(
 
             // Build entire update in a buffer to send atomically (prevents flickering)
             val buffer = StringBuilder()
-
-            // Move cursor to the top of the active area
-            if (oldLineCount > 1) {
-                buffer.append(AnsiCodes.moveUp(oldLineCount - 1))
-            }
-
-            // Render lines top-to-bottom, only rewriting when content changes.
-            for (index in 0 until maxLineCount) {
-                val oldLine = activeAreaLines.getOrNull(index)
-                val newLine = displayedLines.getOrNull(index)
-
-                buffer.append("\r")
-                when {
-                    newLine == null -> {
-                        buffer.append(AnsiCodes.CLEAR_LINE)
-                    }
-                    forceRedraw || newLine != oldLine -> {
-                        buffer.append(AnsiCodes.CLEAR_LINE)
-                        buffer.append(newLine)
-                    }
-                    else -> {
-                        // Line unchanged; leave it as-is to avoid flicker.
-                    }
-                }
-
-                if (index < maxLineCount - 1) {
-                    buffer.append("\n")
-                }
-            }
-
-            // Move cursor back up to the last line of new content when we cleared extra lines.
-            if (oldLineCount > newLineCount && newLineCount > 0) {
-                buffer.append(AnsiCodes.moveUp(oldLineCount - newLineCount))
-            }
-
-            // Send everything atomically
-            OutputCapture.suppress {
-                terminal.rawPrint(buffer)
-                System.out.flush()
-            }
+            moveToActiveAreaTop(buffer, oldLineCount)
+            appendActiveAreaUpdates(
+                buffer = buffer,
+                newLines = displayedLines,
+                maxLineCount = maxLineCount,
+                forceRedraw = forceRedraw,
+            )
+            moveCursorAfterShrink(buffer, oldLineCount, newLineCount)
+            flushBuffer(buffer)
 
             activeAreaLines = displayedLines
             activeAreaInitialized = true
@@ -173,35 +125,121 @@ class TerminalRenderer(
         renderLock.withLock {
             if (activeAreaInitialized && activeAreaLines.isNotEmpty()) {
                 val buffer = StringBuilder()
-                val lastIndex = activeAreaLines.lastIndex
-                for (index in 0..lastIndex) {
-                    buffer.append("\r")
-                    buffer.append(AnsiCodes.CLEAR_LINE)
-                    if (index < lastIndex) {
-                        buffer.append(AnsiCodes.moveUp(1))
-                    }
-                }
-                OutputCapture.suppress {
-                    terminal.rawPrint(buffer)
-                    System.out.flush()
-                }
+                clearActiveAreaInto(buffer)
+                flushBuffer(buffer)
             }
             activeAreaLines = emptyList()
             activeAreaInitialized = false
         }
     }
 
+    private fun clearActiveAreaInto(buffer: StringBuilder) {
+        if (!activeAreaInitialized || activeAreaLines.isEmpty()) return
+        val lastIndex = activeAreaLines.lastIndex
+        for (index in 0..lastIndex) {
+            buffer.append("\r")
+            buffer.append(AnsiCodes.CLEAR_LINE)
+            if (index < lastIndex) {
+                buffer.append(AnsiCodes.moveUp(1))
+            }
+        }
+    }
+
+    private fun appendLines(
+        buffer: StringBuilder,
+        lines: List<String>,
+    ) {
+        for (line in lines) {
+            buffer.append(line)
+            buffer.append("\n")
+        }
+    }
+
+    private fun restoreActiveAreaInto(buffer: StringBuilder) {
+        if (!activeAreaInitialized || activeAreaLines.isEmpty()) return
+        for ((index, line) in activeAreaLines.withIndex()) {
+            buffer.append("\r")
+            buffer.append(AnsiCodes.CLEAR_LINE)
+            buffer.append(line)
+            if (index < activeAreaLines.lastIndex) {
+                buffer.append("\n")
+            }
+        }
+    }
+
+    private fun moveToActiveAreaTop(
+        buffer: StringBuilder,
+        oldLineCount: Int,
+    ) {
+        if (oldLineCount > 1) {
+            buffer.append(AnsiCodes.moveUp(oldLineCount - 1))
+        }
+    }
+
+    private fun appendActiveAreaUpdates(
+        buffer: StringBuilder,
+        newLines: List<String>,
+        maxLineCount: Int,
+        forceRedraw: Boolean,
+    ) {
+        for (index in 0 until maxLineCount) {
+            appendSingleActiveAreaLine(
+                buffer = buffer,
+                index = index,
+                maxLineCount = maxLineCount,
+                newLines = newLines,
+                forceRedraw = forceRedraw,
+            )
+        }
+    }
+
+    private fun appendSingleActiveAreaLine(
+        buffer: StringBuilder,
+        index: Int,
+        maxLineCount: Int,
+        newLines: List<String>,
+        forceRedraw: Boolean,
+    ) {
+        val oldLine = activeAreaLines.getOrNull(index)
+        val newLine = newLines.getOrNull(index)
+
+        buffer.append("\r")
+        when {
+            newLine == null -> {
+                buffer.append(AnsiCodes.CLEAR_LINE)
+            }
+            forceRedraw || newLine != oldLine -> {
+                buffer.append(AnsiCodes.CLEAR_LINE)
+                buffer.append(newLine)
+            }
+            else -> {
+                Unit
+            }
+        }
+
+        if (index < maxLineCount - 1) {
+            buffer.append("\n")
+        }
+    }
+
+    private fun moveCursorAfterShrink(
+        buffer: StringBuilder,
+        oldLineCount: Int,
+        newLineCount: Int,
+    ) {
+        if (oldLineCount > newLineCount && newLineCount > 0) {
+            buffer.append(AnsiCodes.moveUp(oldLineCount - newLineCount))
+        }
+    }
+
+    private fun flushBuffer(buffer: StringBuilder) {
+        OutputCapture.suppress {
+            terminal.rawPrint(buffer)
+            System.out.flush()
+        }
+    }
+
     // ========== Legacy render method (for backward compatibility during migration) ==========
-
-    /**
-     * The frame buffer for differential rendering (legacy).
-     */
-    private val frameBuffer = FrameBuffer()
-
-    /**
-     * Whether the initial frame has been rendered (legacy).
-     */
-    private var initialFrameRendered = false
 
     /**
      * Render a frame to the terminal (legacy method - full screen update).
@@ -209,7 +247,10 @@ class TerminalRenderer(
      * @param lines Lines to render (should not exceed terminal height).
      * @param forceFullRedraw Force a complete redraw instead of differential.
      */
-    fun render(lines: List<String>, forceFullRedraw: Boolean = false) {
+    fun render(
+        lines: List<String>,
+        forceFullRedraw: Boolean = false,
+    ) {
         renderLock.withLock {
             val width = terminalWidth
             val height = terminalHeight
@@ -272,7 +313,7 @@ class TerminalRenderer(
             output.append(
                 terminal.cursor.getMoves {
                     setPosition(change.x, change.y)
-                }
+                },
             )
             output.append(change.text)
         }
@@ -313,7 +354,10 @@ class TerminalRenderer(
      * @param x Column (0-indexed).
      * @param y Row (0-indexed).
      */
-    fun moveCursor(x: Int, y: Int) {
+    fun moveCursor(
+        x: Int,
+        y: Int,
+    ) {
         renderLock.withLock {
             OutputCapture.suppress {
                 terminal.cursor.move {
@@ -363,13 +407,7 @@ class TerminalRenderer(
      *
      * Note: This requires terminal cooperation and may not work in all environments.
      */
-    fun getCursorPosition(): Pair<Int, Int>? {
-        // DSR (Device Status Report) request for cursor position
-        // Response is ESC [ row ; col R
-        // This is complex to implement properly and often unreliable
-        // For now, return null
-        return null
-    }
+    fun getCursorPosition(): Pair<Int, Int>? = unavailableCursorPosition
 }
 
 /**
@@ -380,6 +418,8 @@ object AnsiCodes {
     const val CURSOR_HOME = "\u001B[H"
     const val CURSOR_HIDE = "\u001B[?25l"
     const val CURSOR_SHOW = "\u001B[?25h"
+    const val SAVE_CURSOR = "\u001B[s"
+    const val RESTORE_CURSOR = "\u001B[u"
 
     // Screen control
     const val CLEAR_SCREEN = "\u001B[2J"
@@ -388,17 +428,21 @@ object AnsiCodes {
     const val CLEAR_TO_END = "\u001B[J"
 
     // Cursor movement
-    fun moveTo(row: Int, col: Int) = "\u001B[${row};${col}H"
+    fun moveTo(
+        row: Int,
+        col: Int,
+    ) = "\u001B[$row;${col}H"
+
     fun moveUp(n: Int = 1) = "\u001B[${n}A"
+
     fun moveDown(n: Int = 1) = "\u001B[${n}B"
+
     fun moveRight(n: Int = 1) = "\u001B[${n}C"
+
     fun moveLeft(n: Int = 1) = "\u001B[${n}D"
 
     // Scrolling
     fun scrollUp(n: Int = 1) = "\u001B[${n}S"
-    fun scrollDown(n: Int = 1) = "\u001B[${n}T"
 
-    // Save/restore cursor position
-    const val SAVE_CURSOR = "\u001B[s"
-    const val RESTORE_CURSOR = "\u001B[u"
+    fun scrollDown(n: Int = 1) = "\u001B[${n}T"
 }

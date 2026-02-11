@@ -20,18 +20,16 @@ interface ScrollModifier : Modifier.Element {
  *
  * @param enabled Whether scrolling is enabled.
  */
-fun Modifier.verticalScroll(enabled: Boolean = true): Modifier {
-    return then(ScrollModifierImpl(horizontalScrollEnabled = false, verticalScrollEnabled = enabled))
-}
+fun Modifier.verticalScroll(enabled: Boolean = true): Modifier =
+    then(ScrollModifierImpl(horizontalScrollEnabled = false, verticalScrollEnabled = enabled))
 
 /**
  * Enable horizontal scrolling for content that exceeds available width.
  *
  * @param enabled Whether scrolling is enabled.
  */
-fun Modifier.horizontalScroll(enabled: Boolean = true): Modifier {
-    return then(ScrollModifierImpl(horizontalScrollEnabled = enabled, verticalScrollEnabled = false))
-}
+fun Modifier.horizontalScroll(enabled: Boolean = true): Modifier =
+    then(ScrollModifierImpl(horizontalScrollEnabled = enabled, verticalScrollEnabled = false))
 
 /**
  * Enable both horizontal and vertical scrolling.
@@ -41,9 +39,7 @@ fun Modifier.horizontalScroll(enabled: Boolean = true): Modifier {
 fun Modifier.scrollable(
     horizontal: Boolean = false,
     vertical: Boolean = true,
-): Modifier {
-    return then(ScrollModifierImpl(horizontalScrollEnabled = horizontal, verticalScrollEnabled = vertical))
-}
+): Modifier = then(ScrollModifierImpl(horizontalScrollEnabled = horizontal, verticalScrollEnabled = vertical))
 
 private data class ScrollModifierImpl(
     override val horizontalScrollEnabled: Boolean,
@@ -55,9 +51,8 @@ private data class ScrollModifierImpl(
 /**
  * Check if the modifier chain has scrolling enabled.
  */
-fun Modifier.isScrollable(): Boolean {
-    return any { it is ScrollModifier && (it.horizontalScrollEnabled || it.verticalScrollEnabled) }
-}
+fun Modifier.isScrollable(): Boolean =
+    any { it is ScrollModifier && (it.horizontalScrollEnabled || it.verticalScrollEnabled) }
 
 /**
  * Get scroll configuration from modifier chain.

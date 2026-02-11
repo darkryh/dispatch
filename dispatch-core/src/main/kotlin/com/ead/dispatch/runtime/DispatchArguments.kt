@@ -1,3 +1,5 @@
+@file:Suppress("MatchingDeclarationName", "ktlint:standard:filename")
+
 package com.ead.dispatch.runtime
 
 internal data class ParsedArguments(
@@ -12,44 +14,16 @@ internal fun parseDispatchArguments(
     val parsedFlags = mutableSetOf<String>()
     val parsedArguments = mutableMapOf<String, String>()
 
-    var i = 0
-    while (i < args.size) {
-        val arg = args[i]
-        when {
-            arg.startsWith("--") -> {
-                i = parseLongArgument(
-                    name = arg.substring(2),
-                    args = args,
-                    index = i,
-                    config = config,
-                    parsedFlags = parsedFlags,
-                    parsedArguments = parsedArguments,
-                )
-            }
-            arg.startsWith("-") && arg.length > 2 -> {
-                i = parseLongArgument(
-                    name = arg.substring(1),
-                    args = args,
-                    index = i,
-                    config = config,
-                    parsedFlags = parsedFlags,
-                    parsedArguments = parsedArguments,
-                )
-            }
-            arg.startsWith("-") && arg.length == 2 -> {
-                val shortName = arg[1]
-                val flag = config.flags.values.find { it.shortName == shortName }
-                if (flag != null) {
-                    parsedFlags.add(flag.name)
-                } else {
-                    val argument = config.arguments.values.find { it.shortName == shortName }
-                    if (argument != null && i + 1 < args.size) {
-                        parsedArguments[argument.name] = args[++i]
-                    }
-                }
-            }
-        }
-        i++
+    var index = 0
+    while (index < args.size) {
+        index =
+            parseArgumentAt(
+                args = args,
+                index = index,
+                config = config,
+                parsedFlags = parsedFlags,
+                parsedArguments = parsedArguments,
+            )
     }
 
     config.arguments.forEach { (name, def) ->
@@ -59,6 +33,69 @@ internal fun parseDispatchArguments(
     }
 
     return ParsedArguments(parsedFlags.toSet(), parsedArguments.toMap())
+}
+
+private fun parseArgumentAt(
+    args: Array<String>,
+    index: Int,
+    config: DispatchConfig,
+    parsedFlags: MutableSet<String>,
+    parsedArguments: MutableMap<String, String>,
+): Int {
+    val arg = args[index]
+    return when {
+        arg.startsWith("--") ->
+            parseLongArgument(
+                name = arg.substring(2),
+                args = args,
+                index = index,
+                config = config,
+                parsedFlags = parsedFlags,
+                parsedArguments = parsedArguments,
+            ) + 1
+        arg.startsWith("-") && arg.length > 2 ->
+            parseLongArgument(
+                name = arg.substring(1),
+                args = args,
+                index = index,
+                config = config,
+                parsedFlags = parsedFlags,
+                parsedArguments = parsedArguments,
+            ) + 1
+        arg.startsWith("-") && arg.length == 2 ->
+            parseShortArgument(
+                shortName = arg[1],
+                args = args,
+                index = index,
+                config = config,
+                parsedFlags = parsedFlags,
+                parsedArguments = parsedArguments,
+            ) + 1
+        else -> index + 1
+    }
+}
+
+private fun parseShortArgument(
+    shortName: Char,
+    args: Array<String>,
+    index: Int,
+    config: DispatchConfig,
+    parsedFlags: MutableSet<String>,
+    parsedArguments: MutableMap<String, String>,
+): Int {
+    val flag = config.flags.values.find { it.shortName == shortName }
+    if (flag != null) {
+        parsedFlags.add(flag.name)
+        return index
+    }
+
+    val argument = config.arguments.values.find { it.shortName == shortName }
+    if (argument != null && index + 1 < args.size) {
+        parsedArguments[argument.name] = args[index + 1]
+        return index + 1
+    }
+
+    return index
 }
 
 private fun parseLongArgument(
@@ -88,6 +125,8 @@ private fun parseLongArgument(
             parsedFlags.add(name)
             index
         }
-        else -> index
+        else -> {
+            index
+        }
     }
 }

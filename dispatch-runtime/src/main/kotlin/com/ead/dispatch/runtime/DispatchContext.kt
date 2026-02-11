@@ -9,13 +9,12 @@ data class DispatchArgs(
 
     fun getArgument(name: String): String? = arguments[name]
 
-    fun requireArgument(name: String): String {
-        return arguments[name]
+    fun requireArgument(name: String): String =
+        arguments[name]
             ?: error(
                 "Missing required argument '$name'. " +
                     "Provided: ${arguments.keys.sorted().joinToString(", ")}"
             )
-    }
 
     fun requireFlag(name: String) {
         if (!hasFlag(name)) {

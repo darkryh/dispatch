@@ -37,7 +37,7 @@ fun Row(
     Layout(
         modifier = modifier,
         measurePolicy = RowMeasurePolicy(horizontalArrangement, verticalAlignment),
-        content = { scope.content() }
+        content = { scope.content() },
     )
 }
 
@@ -54,7 +54,7 @@ interface RowScope : LayoutScope {
 /**
  * Implementation of RowScope.
  */
-class RowScopeInstance(
+data class RowScopeInstance(
     override val verticalAlignment: Alignment.Vertical,
 ) : RowScope
 
@@ -65,8 +65,11 @@ internal class RowMeasurePolicy(
     private val horizontalArrangement: Arrangement.Horizontal,
     private val verticalAlignment: Alignment.Vertical,
 ) : MeasurePolicy {
-
-    override fun measure(measurables: List<Measurable>, constraints: Constraints): MeasureResult {
+    @Suppress("LongMethod", "CyclomaticComplexMethod", "CognitiveComplexMethod")
+    override fun measure(
+        measurables: List<Measurable>,
+        constraints: Constraints,
+    ): MeasureResult {
         if (measurables.isEmpty()) {
             return MeasureResult(
                 width = constraints.minWidth,
@@ -84,11 +87,12 @@ internal class RowMeasurePolicy(
         var totalWeight = 0f
 
         for (measurable in measurables) {
-            val weightModifier = if (weightsEnabled) {
-                measurable.modifier.firstOrNull(WeightModifier::class.java)
-            } else {
-                null
-            }
+            val weightModifier =
+                if (weightsEnabled) {
+                    measurable.modifier.firstOrNull(WeightModifier::class.java)
+                } else {
+                    null
+                }
             val weight = weightModifier?.weight
             if (weight != null) {
                 weightedMeasurables.add(measurable to weight)
@@ -103,12 +107,13 @@ internal class RowMeasurePolicy(
         var remainingWidthForFixed = if (constraints.hasBoundedWidth) constraints.maxWidth else Int.MAX_VALUE
 
         for (measurable in fixedMeasurables) {
-            val childConstraints = Constraints(
-                minWidth = 0,
-                maxWidth = remainingWidthForFixed,
-                minHeight = 0,
-                maxHeight = constraints.maxHeight,
-            )
+            val childConstraints =
+                Constraints(
+                    minWidth = 0,
+                    maxWidth = remainingWidthForFixed,
+                    minHeight = 0,
+                    maxHeight = constraints.maxHeight,
+                )
             val modifiedConstraints = measurable.modifier.applyToConstraints(childConstraints)
             val placeable = measurable.measure(modifiedConstraints)
             fixedPlaceables.add(placeable)
@@ -124,13 +129,14 @@ internal class RowMeasurePolicy(
         val weightedPlaceables = mutableListOf<Placeable>()
         if (weightsEnabled && totalWeight > 0) {
             for ((measurable, weight) in weightedMeasurables) {
-                val weightedWidth = ((remainingWidth * weight) / totalWeight).toInt()
-                val weightedConstraints = Constraints(
-                    minWidth = weightedWidth,
-                    maxWidth = weightedWidth,
-                    minHeight = 0,
-                    maxHeight = constraints.maxHeight,
-                )
+                val weightedWidth = (remainingWidth * weight / totalWeight).toInt()
+                val weightedConstraints =
+                    Constraints(
+                        minWidth = weightedWidth,
+                        maxWidth = weightedWidth,
+                        minHeight = 0,
+                        maxHeight = constraints.maxHeight,
+                    )
                 val modifiedConstraints = measurable.modifier.applyToConstraints(weightedConstraints)
                 weightedPlaceables.add(measurable.measure(modifiedConstraints))
             }
@@ -142,11 +148,12 @@ internal class RowMeasurePolicy(
         var weightedIndex = 0
 
         for (measurable in measurables) {
-            val weightModifier = if (weightsEnabled) {
-                measurable.modifier.firstOrNull(WeightModifier::class.java)
-            } else {
-                null
-            }
+            val weightModifier =
+                if (weightsEnabled) {
+                    measurable.modifier.firstOrNull(WeightModifier::class.java)
+                } else {
+                    null
+                }
             if (weightModifier != null) {
                 allPlaceables.add(weightedPlaceables[weightedIndex++])
             } else {
@@ -156,17 +163,19 @@ internal class RowMeasurePolicy(
 
         // Calculate layout size
         val contentWidth = allPlaceables.sumOf { it.width }
-        val layoutWidth = if (constraints.hasBoundedWidth) {
-            constraints.constrainWidth(contentWidth)
-        } else {
-            contentWidth
-        }
+        val layoutWidth =
+            if (constraints.hasBoundedWidth) {
+                constraints.constrainWidth(contentWidth)
+            } else {
+                contentWidth
+            }
 
-        val layoutHeight = if (constraints.hasBoundedHeight) {
-            constraints.maxHeight
-        } else {
-            allPlaceables.maxOfOrNull { it.height } ?: 0
-        }
+        val layoutHeight =
+            if (constraints.hasBoundedHeight) {
+                constraints.maxHeight
+            } else {
+                allPlaceables.maxOfOrNull { it.height } ?: 0
+            }
 
         // Arrange children horizontally
         val sizes = allPlaceables.map { it.width }

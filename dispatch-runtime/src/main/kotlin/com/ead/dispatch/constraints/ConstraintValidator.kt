@@ -154,12 +154,11 @@ object ConstraintValidator {
         constraints: Constraints,
         width: Int,
         height: Int,
-    ): Boolean {
-        return width >= constraints.minWidth &&
-               width <= constraints.maxWidth &&
-               height >= constraints.minHeight &&
-               height <= constraints.maxHeight
-    }
+    ): Boolean =
+        width >= constraints.minWidth &&
+            width <= constraints.maxWidth &&
+            height >= constraints.minHeight &&
+            height <= constraints.maxHeight
 
     /**
      * Create a validation scope that temporarily changes the mode.

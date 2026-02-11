@@ -15,14 +15,14 @@ import kotlin.reflect.KClass
  */
 class KoinViewModelFactory(
     private val koin: Koin = DispatchKoin.koin(),
-) : ViewModelFactory, SavedStateViewModelFactory {
-    override fun <T : ViewModel> create(modelClass: KClass<T>): T {
-        return koin.get(clazz = modelClass)
-    }
+) : ViewModelFactory,
+    SavedStateViewModelFactory {
+    override fun <T : ViewModel> create(modelClass: KClass<T>): T = koin.get(clazz = modelClass)
 
-    override fun <T : ViewModel> create(modelClass: KClass<T>, savedStateHandle: SavedStateHandle): T {
-        return koin.get(clazz = modelClass, parameters = { parametersOf(savedStateHandle) })
-    }
+    override fun <T : ViewModel> create(
+        modelClass: KClass<T>,
+        savedStateHandle: SavedStateHandle,
+    ): T = koin.get(clazz = modelClass, parameters = { parametersOf(savedStateHandle) })
 }
 
 /**

@@ -5,7 +5,6 @@ import io.kotest.matchers.shouldBe
 import kotlin.test.Test
 
 class ConstraintsTest {
-
     @Test
     fun `default constraints should be unbounded`() {
         val constraints = Constraints()
@@ -81,10 +80,13 @@ class ConstraintsTest {
 
     @Test
     fun `constrain should clamp both dimensions`() {
-        val constraints = Constraints(
-            minWidth = 10, maxWidth = 100,
-            minHeight = 5, maxHeight = 50
-        )
+        val constraints =
+            Constraints(
+                minWidth = 10,
+                maxWidth = 100,
+                minHeight = 5,
+                maxHeight = 50,
+            )
 
         val (w, h) = constraints.constrain(5, 2)
         w shouldBe 10
@@ -173,7 +175,7 @@ class ConstraintsTest {
     @Test
     fun `offset should adjust constraints by subtracting`() {
         val constraints = Constraints(minWidth = 20, maxWidth = 100, minHeight = 10, maxHeight = 50)
-        val offset = constraints.offset(5, 2)  // Subtracts from constraints
+        val offset = constraints.offset(5, 2) // Subtracts from constraints
 
         offset.minWidth shouldBe 15
         offset.maxWidth shouldBe 95
@@ -184,7 +186,7 @@ class ConstraintsTest {
     @Test
     fun `offset should not go below zero`() {
         val constraints = Constraints(minWidth = 5, maxWidth = 10, minHeight = 3, maxHeight = 8)
-        val offset = constraints.offset(20, 20)  // Large offset subtracts to zero
+        val offset = constraints.offset(20, 20) // Large offset subtracts to zero
 
         offset.minWidth shouldBe 0
         offset.maxWidth shouldBe 0

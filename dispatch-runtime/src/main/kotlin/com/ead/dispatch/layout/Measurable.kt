@@ -68,6 +68,7 @@ interface SegmentedPlaceable : Placeable {
 /**
  * Simple implementation of Placeable.
  */
+@Suppress("DataClassShouldBeImmutable")
 data class SimplePlaceable(
     override val width: Int,
     override val height: Int,
@@ -83,6 +84,7 @@ data class SimplePlaceable(
 /**
  * Simple implementation of [SegmentedPlaceable].
  */
+@Suppress("DataClassShouldBeImmutable")
 data class SegmentedSimplePlaceable(
     override val width: Int,
     override val height: Int,

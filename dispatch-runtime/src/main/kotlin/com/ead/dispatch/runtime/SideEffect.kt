@@ -185,16 +185,15 @@ class DisposableEffectScope {
     /**
      * Register a dispose callback.
      */
-    fun onDispose(onDisposeCallback: () -> Unit): DisposableEffectResult {
-        return DisposableEffectResult(onDisposeCallback)
-    }
+    fun onDispose(onDisposeCallback: () -> Unit): DisposableEffectResult =
+        DisposableEffectResult(onDisposeCallback)
 }
 
 /**
  * Result of a [DisposableEffect].
  */
-class DisposableEffectResult(
-    internal val onDispose: () -> Unit
+data class DisposableEffectResult(
+    internal val onDispose: () -> Unit,
 )
 
 /**
@@ -228,6 +227,7 @@ object EffectRunner {
     /**
      * Run all pending side effects.
      */
+    @Suppress("TooGenericExceptionCaught")
     fun runPendingEffects() {
         val effects = pendingEffects.get() ?: return
         pendingEffects.remove()
@@ -235,7 +235,7 @@ object EffectRunner {
         effects.forEach { effect ->
             try {
                 effect()
-            } catch (e: Exception) {
+            } catch (e: RuntimeException) {
                 System.err.println("Side effect error: ${e.message}")
             }
         }

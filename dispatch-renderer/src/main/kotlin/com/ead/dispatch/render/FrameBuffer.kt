@@ -1,7 +1,5 @@
 package com.ead.dispatch.render
 
-import kotlin.text.iterator
-
 /**
  * A double-buffered frame buffer for flicker-free terminal rendering.
  *
@@ -50,7 +48,10 @@ class FrameBuffer(
     /**
      * Resize the buffers if needed.
      */
-    fun resize(newWidth: Int, newHeight: Int) {
+    fun resize(
+        newWidth: Int,
+        newHeight: Int,
+    ) {
         if (newWidth != width || newHeight != height) {
             width = newWidth
             height = newHeight
@@ -66,7 +67,11 @@ class FrameBuffer(
      * @param y Row (0-indexed).
      * @param text Text to write.
      */
-    fun write(x: Int, y: Int, text: String) {
+    fun write(
+        x: Int,
+        y: Int,
+        text: String,
+    ) {
         if (y < 0 || y >= height) return
 
         var col = x
@@ -85,7 +90,11 @@ class FrameBuffer(
      * @param y Starting row.
      * @param lines Lines to write.
      */
-    fun writeLines(x: Int, y: Int, lines: List<String>) {
+    fun writeLines(
+        x: Int,
+        y: Int,
+        lines: List<String>,
+    ) {
         for ((index, line) in lines.withIndex()) {
             write(x, y + index, line)
         }
@@ -138,9 +147,7 @@ class FrameBuffer(
     /**
      * Get a full frame render (for initial display).
      */
-    fun fullFrame(): List<String> {
-        return nextBuffer.map { String(it) }
-    }
+    fun fullFrame(): List<String> = nextBuffer.map { String(it) }
 
     /**
      * Copy current buffer state to next buffer.
@@ -154,9 +161,10 @@ class FrameBuffer(
     }
 
     private companion object {
-        fun createBuffer(width: Int, height: Int): Array<CharArray> {
-            return Array(height) { CharArray(width) { ' ' } }
-        }
+        fun createBuffer(
+            width: Int,
+            height: Int,
+        ): Array<CharArray> = Array(height) { CharArray(width) { ' ' } }
     }
 }
 

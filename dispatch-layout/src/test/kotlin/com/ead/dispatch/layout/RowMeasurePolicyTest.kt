@@ -22,19 +22,22 @@ class RowMeasurePolicyTest {
     fun `fixed children are measured with remaining width`() {
         val seen = mutableListOf<Int>()
 
-        val first = CapturingMeasurable(
-            onMeasure = { seen += it.maxWidth },
-            placeable = SimplePlaceable(width = 2, height = 1, lines = listOf("> ")),
-        )
-        val second = CapturingMeasurable(
-            onMeasure = { seen += it.maxWidth },
-            placeable = SimplePlaceable(width = 8, height = 1, lines = listOf("hi")),
-        )
+        val first =
+            CapturingMeasurable(
+                onMeasure = { seen += it.maxWidth },
+                placeable = SimplePlaceable(width = 2, height = 1, lines = listOf("> ")),
+            )
+        val second =
+            CapturingMeasurable(
+                onMeasure = { seen += it.maxWidth },
+                placeable = SimplePlaceable(width = 8, height = 1, lines = listOf("hi")),
+            )
 
-        val policy = RowMeasurePolicy(
-            horizontalArrangement = Arrangement.Start,
-            verticalAlignment = Alignment.Top,
-        )
+        val policy =
+            RowMeasurePolicy(
+                horizontalArrangement = Arrangement.Start,
+                verticalAlignment = Alignment.Top,
+            )
 
         policy.measure(
             measurables = listOf(first, second),
@@ -48,16 +51,18 @@ class RowMeasurePolicyTest {
     fun `weight is ignored when width is unbounded`() {
         var seen: Constraints? = null
 
-        val weighted = CapturingMeasurable(
-            onMeasure = { seen = it },
-            placeable = SimplePlaceable(width = 1, height = 1, lines = listOf("X")),
-            modifier = Modifier.weight(1f),
-        )
+        val weighted =
+            CapturingMeasurable(
+                onMeasure = { seen = it },
+                placeable = SimplePlaceable(width = 1, height = 1, lines = listOf("X")),
+                modifier = Modifier.weight(1f),
+            )
 
-        val policy = RowMeasurePolicy(
-            horizontalArrangement = Arrangement.Start,
-            verticalAlignment = Alignment.Top,
-        )
+        val policy =
+            RowMeasurePolicy(
+                horizontalArrangement = Arrangement.Start,
+                verticalAlignment = Alignment.Top,
+            )
 
         policy.measure(
             measurables = listOf(weighted),

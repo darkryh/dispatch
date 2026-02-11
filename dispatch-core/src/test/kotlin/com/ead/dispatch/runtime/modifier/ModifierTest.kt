@@ -23,7 +23,6 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlin.test.Test
 
 class ModifierTest {
-
     @Test
     fun `Modifier companion should be empty modifier`() {
         val modifier = Modifier
@@ -32,9 +31,10 @@ class ModifierTest {
 
     @Test
     fun `then should chain modifiers`() {
-        val modifier = Modifier
-            .width(10)
-            .height(5)
+        val modifier =
+            Modifier
+                .width(10)
+                .height(5)
 
         var count = 0
         modifier.foldIn(Unit) { _, _ -> count++ }
@@ -191,10 +191,11 @@ class ModifierTest {
 
     @Test
     fun `chained modifiers should all be applied`() {
-        val modifier = Modifier
-            .width(50)
-            .height(10)
-            .padding(2)
+        val modifier =
+            Modifier
+                .width(50)
+                .height(10)
+                .padding(2)
 
         val elements = mutableListOf<Modifier.Element>()
         modifier.foldIn(Unit) { _, element -> elements.add(element) }
@@ -204,10 +205,11 @@ class ModifierTest {
 
     @Test
     fun `firstOrNull should return first matching element`() {
-        val modifier = Modifier
-            .width(50)
-            .padding(2)
-            .height(10)
+        val modifier =
+            Modifier
+                .width(50)
+                .padding(2)
+                .height(10)
 
         val sizeMod = modifier.firstOrNull(SizeModifier::class.java)
         sizeMod.shouldBeInstanceOf<SizeModifier>()
@@ -215,10 +217,11 @@ class ModifierTest {
 
     @Test
     fun `allOf should return all matching elements`() {
-        val modifier = Modifier
-            .width(50)
-            .padding(2)
-            .height(10)
+        val modifier =
+            Modifier
+                .width(50)
+                .padding(2)
+                .height(10)
 
         val sizeModifiers = modifier.allOf(SizeModifier::class.java)
         sizeModifiers.size shouldBe 2

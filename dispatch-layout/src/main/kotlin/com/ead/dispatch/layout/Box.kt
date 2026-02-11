@@ -36,7 +36,7 @@ fun Box(
     Layout(
         modifier = modifier,
         measurePolicy = BoxMeasurePolicy(contentAlignment),
-        content = { scope.content() }
+        content = { scope.content() },
     )
 }
 
@@ -53,7 +53,7 @@ interface BoxScope : LayoutScope {
 /**
  * Implementation of BoxScope.
  */
-class BoxScopeInstance(
+data class BoxScopeInstance(
     override val contentAlignment: Alignment.Alignment2D,
 ) : BoxScope
 
@@ -63,8 +63,10 @@ class BoxScopeInstance(
 internal class BoxMeasurePolicy(
     private val contentAlignment: Alignment.Alignment2D,
 ) : MeasurePolicy {
-
-    override fun measure(measurables: List<Measurable>, constraints: Constraints): MeasureResult {
+    override fun measure(
+        measurables: List<Measurable>,
+        constraints: Constraints,
+    ): MeasureResult {
         if (measurables.isEmpty()) {
             return MeasureResult(
                 width = constraints.minWidth,
@@ -73,45 +75,50 @@ internal class BoxMeasurePolicy(
         }
 
         // Measure all children
-        val childConstraints = Constraints(
-            minWidth = 0,
-            maxWidth = constraints.maxWidth,
-            minHeight = 0,
-            maxHeight = constraints.maxHeight,
-        )
+        val childConstraints =
+            Constraints(
+                minWidth = 0,
+                maxWidth = constraints.maxWidth,
+                minHeight = 0,
+                maxHeight = constraints.maxHeight,
+            )
 
-        val placeables = measurables.map { measurable ->
-            val modifiedConstraints = measurable.modifier.applyToConstraints(childConstraints)
-            measurable.measure(modifiedConstraints)
-        }
+        val placeables =
+            measurables.map { measurable ->
+                val modifiedConstraints = measurable.modifier.applyToConstraints(childConstraints)
+                measurable.measure(modifiedConstraints)
+            }
 
         // Calculate layout size (largest child)
         val contentWidth = placeables.maxOfOrNull { it.width } ?: 0
         val contentHeight = placeables.maxOfOrNull { it.height } ?: 0
 
-        val layoutWidth = if (constraints.hasBoundedWidth) {
-            constraints.constrainWidth(contentWidth)
-        } else {
-            contentWidth
-        }
+        val layoutWidth =
+            if (constraints.hasBoundedWidth) {
+                constraints.constrainWidth(contentWidth)
+            } else {
+                contentWidth
+            }
 
-        val layoutHeight = if (constraints.hasBoundedHeight) {
-            constraints.constrainHeight(contentHeight)
-        } else {
-            contentHeight
-        }
+        val layoutHeight =
+            if (constraints.hasBoundedHeight) {
+                constraints.constrainHeight(contentHeight)
+            } else {
+                contentHeight
+            }
 
         return MeasureResult(
             width = layoutWidth,
             height = layoutHeight,
         ) {
             for (placeable in placeables) {
-                val (x, y) = contentAlignment.align(
-                    containerWidth = layoutWidth,
-                    containerHeight = layoutHeight,
-                    contentWidth = placeable.width,
-                    contentHeight = placeable.height,
-                )
+                val (x, y) =
+                    contentAlignment.align(
+                        containerWidth = layoutWidth,
+                        containerHeight = layoutHeight,
+                        contentWidth = placeable.width,
+                        contentHeight = placeable.height,
+                    )
                 placeable.placeAt(x, y)
             }
         }

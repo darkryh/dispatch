@@ -63,7 +63,7 @@ class Recomposer(
      */
     fun registerComposition(scope: Any, callback: () -> Unit) {
         compositionCallbacks.compute(scope) { _, callbacks ->
-            (callbacks ?: CopyOnWriteArrayList()).also { it.add(callback) }
+            (callbacks ?: CopyOnWriteArrayList()).apply { add(callback) }
         }
     }
 
@@ -118,6 +118,7 @@ class Recomposer(
     /**
      * Perform recomposition for all invalid scopes.
      */
+    @Suppress("TooGenericExceptionCaught")
     private fun performRecomposition() {
         if (invalidScopes.isEmpty() && compositionCallbacks.isEmpty()) return
 
@@ -134,7 +135,7 @@ class Recomposer(
             callbacks.forEach { callback ->
                 try {
                     callback()
-                } catch (e: Exception) {
+                } catch (e: RuntimeException) {
                     // Log error but continue with other compositions
                     System.err.println("Recomposition error: ${e.message}")
                 }

@@ -25,11 +25,12 @@ internal class ScrollingContentTracker {
         }
 
         val shouldReset = !isAppend(scrollingLines)
-        val linesToAppend = if (shouldReset) {
-            scrollingLines
-        } else {
-            scrollingLines.drop(scrolledLineCount)
-        }
+        val linesToAppend =
+            if (shouldReset) {
+                scrollingLines
+            } else {
+                scrollingLines.drop(scrolledLineCount)
+            }
 
         scrolledLineCount = scrollingLines.size
         previousContentHash = contentHash

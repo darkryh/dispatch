@@ -42,12 +42,11 @@ private class UpdatedState<T>(override var value: T) : State<T>
  * @param calculation The function to compute the initial value.
  * @return The remembered value.
  */
-fun <T> remember(calculation: () -> T): T {
-    return currentComposer.remember(
+fun <T> remember(calculation: () -> T): T =
+    currentComposer.remember(
         RememberCallsiteKey(callsiteId = rememberCallsiteId(calculation)),
         calculation,
     )
-}
 
 /**
  * Remember a value that depends on [key1].
@@ -66,15 +65,14 @@ fun <T> remember(calculation: () -> T): T {
  * @param calculation The function to compute the value.
  * @return The remembered value.
  */
-fun <T> remember(key1: Any?, calculation: () -> T): T {
-    return currentComposer.remember(
+fun <T> remember(key1: Any?, calculation: () -> T): T =
+    currentComposer.remember(
         RememberCallsiteKey(
             callsiteId = rememberCallsiteId(calculation),
             userKey = key1,
         ),
         calculation,
     )
-}
 
 /**
  * Remember a value that depends on [key1] and [key2].
@@ -86,9 +84,8 @@ fun <T> remember(key1: Any?, calculation: () -> T): T {
  * @param calculation The function to compute the value.
  * @return The remembered value.
  */
-fun <T> remember(key1: Any?, key2: Any?, calculation: () -> T): T {
-    return remember(key1 to key2, calculation)
-}
+fun <T> remember(key1: Any?, key2: Any?, calculation: () -> T): T =
+    remember(key1 to key2, calculation)
 
 /**
  * Remember a value that depends on [key1], [key2], and [key3].
@@ -103,10 +100,8 @@ fun <T> remember(
     key1: Any?,
     key2: Any?,
     key3: Any?,
-    calculation: () -> T
-): T {
-    return remember(Triple(key1, key2, key3), calculation)
-}
+    calculation: () -> T,
+): T = remember(Triple(key1, key2, key3), calculation)
 
 /**
  * Remember a value that depends on multiple keys.
@@ -117,9 +112,8 @@ fun <T> remember(
  * @param calculation The function to compute the value.
  * @return The remembered value.
  */
-fun <T> rememberWithKeys(vararg keys: Any?, calculation: () -> T): T {
-    return remember(keys.toList(), calculation)
-}
+fun <T> rememberWithKeys(vararg keys: Any?, calculation: () -> T): T =
+    remember(keys.toList(), calculation)
 
 /**
  * Remember a value that will be saved and restored during navigation.
@@ -139,9 +133,7 @@ fun <T> rememberWithKeys(vararg keys: Any?, calculation: () -> T): T {
  * @param calculation The function to compute the initial value.
  * @return The remembered and saveable value.
  */
-fun <T> rememberSaveable(calculation: () -> T): T {
-    return currentComposer.rememberSaveable(calculation)
-}
+fun <T> rememberSaveable(calculation: () -> T): T = currentComposer.rememberSaveable(calculation)
 
 /**
  * Remember a value with a custom saver for serialization.
@@ -152,10 +144,8 @@ fun <T> rememberSaveable(calculation: () -> T): T {
  */
 fun <T> rememberSaveable(
     saver: Saver<T, Any>,
-    calculation: () -> T
-): T {
-    return currentComposer.rememberSaveableWithSaver(saver, calculation)
-}
+    calculation: () -> T,
+): T = currentComposer.rememberSaveableWithSaver(saver, calculation)
 
 /**
  * Interface for saving and restoring state.

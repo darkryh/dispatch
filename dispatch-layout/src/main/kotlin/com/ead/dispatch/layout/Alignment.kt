@@ -4,7 +4,6 @@ package com.ead.dispatch.layout
  * Alignment options for positioning content within a container.
  */
 object Alignment {
-
     /**
      * Vertical alignment options.
      */
@@ -16,7 +15,10 @@ object Alignment {
          * @param contentHeight Content height.
          * @return Y offset.
          */
-        fun align(containerHeight: Int, contentHeight: Int): Int
+        fun align(
+            containerHeight: Int,
+            contentHeight: Int,
+        ): Int
     }
 
     /**
@@ -30,7 +32,10 @@ object Alignment {
          * @param contentWidth Content width.
          * @return X offset.
          */
-        fun align(containerWidth: Int, contentWidth: Int): Int
+        fun align(
+            containerWidth: Int,
+            contentWidth: Int,
+        ): Int
     }
 
     /**
@@ -45,10 +50,9 @@ object Alignment {
             containerHeight: Int,
             contentWidth: Int,
             contentHeight: Int,
-        ): Pair<Int, Int> {
-            return horizontal.align(containerWidth, contentWidth) to
-                   vertical.align(containerHeight, contentHeight)
-        }
+        ): Pair<Int, Int> =
+            horizontal.align(containerWidth, contentWidth) to
+                vertical.align(containerHeight, contentHeight)
     }
 
     // ========================================================================
@@ -59,23 +63,30 @@ object Alignment {
      * Align to the top.
      */
     object Top : Vertical {
-        override fun align(containerHeight: Int, contentHeight: Int): Int = 0
+        override fun align(
+            containerHeight: Int,
+            contentHeight: Int,
+        ): Int = 0
     }
 
     /**
      * Align to the center vertically.
      */
     object CenterVertically : Vertical {
-        override fun align(containerHeight: Int, contentHeight: Int): Int =
-            ((containerHeight - contentHeight) / 2).coerceAtLeast(0)
+        override fun align(
+            containerHeight: Int,
+            contentHeight: Int,
+        ): Int = ((containerHeight - contentHeight) / 2).coerceAtLeast(0)
     }
 
     /**
      * Align to the bottom.
      */
     object Bottom : Vertical {
-        override fun align(containerHeight: Int, contentHeight: Int): Int =
-            (containerHeight - contentHeight).coerceAtLeast(0)
+        override fun align(
+            containerHeight: Int,
+            contentHeight: Int,
+        ): Int = (containerHeight - contentHeight).coerceAtLeast(0)
     }
 
     // ========================================================================
@@ -86,23 +97,30 @@ object Alignment {
      * Align to the start (left in LTR).
      */
     object Start : Horizontal {
-        override fun align(containerWidth: Int, contentWidth: Int): Int = 0
+        override fun align(
+            containerWidth: Int,
+            contentWidth: Int,
+        ): Int = 0
     }
 
     /**
      * Align to the center horizontally.
      */
     object CenterHorizontally : Horizontal {
-        override fun align(containerWidth: Int, contentWidth: Int): Int =
-            ((containerWidth - contentWidth) / 2).coerceAtLeast(0)
+        override fun align(
+            containerWidth: Int,
+            contentWidth: Int,
+        ): Int = ((containerWidth - contentWidth) / 2).coerceAtLeast(0)
     }
 
     /**
      * Align to the end (right in LTR).
      */
     object End : Horizontal {
-        override fun align(containerWidth: Int, contentWidth: Int): Int =
-            (containerWidth - contentWidth).coerceAtLeast(0)
+        override fun align(
+            containerWidth: Int,
+            contentWidth: Int,
+        ): Int = (containerWidth - contentWidth).coerceAtLeast(0)
     }
 
     // ========================================================================

@@ -3,13 +3,13 @@ package com.ead.dispatch.render
 import com.ead.dispatch.constraints.Constraints
 import com.ead.dispatch.layout.Measurable
 import com.ead.dispatch.layout.Placeable
-import com.ead.dispatch.modifier.BorderModifierElement
 import com.ead.dispatch.modifier.BorderCharacters
+import com.ead.dispatch.modifier.BorderModifierElement
 import com.ead.dispatch.modifier.BorderStyle
-import com.ead.dispatch.modifier.PaddingValues
-import com.ead.dispatch.modifier.getPadding
-import com.ead.dispatch.modifier.getBorder
 import com.ead.dispatch.modifier.Modifier
+import com.ead.dispatch.modifier.PaddingValues
+import com.ead.dispatch.modifier.getBorder
+import com.ead.dispatch.modifier.getPadding
 
 /**
  * Renders composition output to a list of strings.
@@ -24,12 +24,13 @@ class CompositionRenderer(
     /**
      * Root constraints based on terminal size.
      */
-    val rootConstraints = Constraints(
-        minWidth = 0,
-        maxWidth = terminalWidth,
-        minHeight = 0,
-        maxHeight = terminalHeight,
-    )
+    val rootConstraints =
+        Constraints(
+            minWidth = 0,
+            maxWidth = terminalWidth,
+            minHeight = 0,
+            maxHeight = terminalHeight,
+        )
 
     /**
      * Render a measurable tree to lines.
@@ -45,7 +46,10 @@ class CompositionRenderer(
     /**
      * Apply decorations like borders and padding to the rendered content.
      */
-    private fun applyDecorations(placeable: Placeable, modifier: Modifier): List<String> {
+    private fun applyDecorations(
+        placeable: Placeable,
+        modifier: Modifier,
+    ): List<String> {
         var lines = placeable.lines.toMutableList()
 
         // Apply padding first (inside border)
@@ -108,23 +112,24 @@ class CompositionRenderer(
         val borderedLines = mutableListOf<String>()
 
         // Top border
-        val topBorder = if (border.title != null) {
-            val title = border.title!!
-            val titleWithPadding = " $title "
-            val remainingWidth = contentWidth - titleWithPadding.length
-            val leftLength = remainingWidth / 2
-            val rightLength = remainingWidth - leftLength
+        val topBorder =
+            if (border.title != null) {
+                val title = border.title!!
+                val titleWithPadding = " $title "
+                val remainingWidth = contentWidth - titleWithPadding.length
+                val leftLength = remainingWidth / 2
+                val rightLength = remainingWidth - leftLength
 
-            buildString {
-                append(chars.topLeft)
-                append(chars.horizontal.toString().repeat(leftLength.coerceAtLeast(0)))
-                append(titleWithPadding)
-                append(chars.horizontal.toString().repeat(rightLength.coerceAtLeast(0)))
-                append(chars.topRight)
+                buildString {
+                    append(chars.topLeft)
+                    append(chars.horizontal.toString().repeat(leftLength.coerceAtLeast(0)))
+                    append(titleWithPadding)
+                    append(chars.horizontal.toString().repeat(rightLength.coerceAtLeast(0)))
+                    append(chars.topRight)
+                }
+            } else {
+                "${chars.topLeft}${chars.horizontal.toString().repeat(contentWidth)}${chars.topRight}"
             }
-        } else {
-            "${chars.topLeft}${chars.horizontal.toString().repeat(contentWidth)}${chars.topRight}"
-        }
         borderedLines.add(topBorder)
 
         // Content with side borders
@@ -142,19 +147,16 @@ class CompositionRenderer(
     /**
      * Render raw lines (no measurable tree).
      */
-    fun renderLines(lines: List<String>): List<String> {
+    fun renderLines(lines: List<String>): List<String> =
         // Truncate lines to fit terminal
-        return lines.take(terminalHeight).map { line ->
+        lines.take(terminalHeight).map { line ->
             if (line.length > terminalWidth) line.take(terminalWidth) else line
         }
-    }
 
     /**
      * Create an empty frame.
      */
-    fun emptyFrame(): List<String> {
-        return List(terminalHeight) { " ".repeat(terminalWidth) }
-    }
+    fun emptyFrame(): List<String> = List(terminalHeight) { " ".repeat(terminalWidth) }
 
     /**
      * Fill remaining space with empty lines.
@@ -179,22 +181,18 @@ data class RenderContext(
      * Current constraints for this node.
      */
     val constraints: Constraints,
-
     /**
      * X offset from parent.
      */
     val offsetX: Int = 0,
-
     /**
      * Y offset from parent.
      */
     val offsetY: Int = 0,
-
     /**
      * Whether the node is visible.
      */
     val visible: Boolean = true,
-
     /**
      * Clipping bounds (if any).
      */
@@ -210,6 +208,8 @@ data class ClipBounds(
     val width: Int,
     val height: Int,
 ) {
-    fun contains(px: Int, py: Int): Boolean =
-        px in x until (x + width) && py in y until (y + height)
+    fun contains(
+        px: Int,
+        py: Int,
+    ): Boolean = px in x until x + width && py in y until y + height
 }

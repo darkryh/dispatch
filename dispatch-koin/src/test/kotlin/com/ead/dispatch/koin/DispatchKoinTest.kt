@@ -15,10 +15,12 @@ import kotlin.test.assertTrue
 class DispatchKoinTest {
     private class TestViewModel : ViewModel()
 
-    private class RouteViewModel(savedStateHandle: SavedStateHandle) : ViewModel() {
+    private class RouteViewModel(
+        savedStateHandle: SavedStateHandle,
+    ) : ViewModel() {
         init {
-            if (!savedStateHandle.contains(ROUTE_PAYLOAD_KEY)) {
-                throw IllegalArgumentException("Missing route payload for demo")
+            require(savedStateHandle.contains(ROUTE_PAYLOAD_KEY)) {
+                "Missing route payload for demo"
             }
         }
     }
@@ -59,9 +61,11 @@ class DispatchKoinTest {
         val config = DispatchConfig()
 
         config.koin {
-            modules(dispatchModule {
-                viewModel { (savedStateHandle: SavedStateHandle) -> RouteViewModel(savedStateHandle) }
-            })
+            modules(
+                dispatchModule {
+                    viewModel { (savedStateHandle: SavedStateHandle) -> RouteViewModel(savedStateHandle) }
+                },
+            )
         }
     }
 
@@ -71,14 +75,16 @@ class DispatchKoinTest {
         val used = AtomicBoolean(false)
 
         config.koin {
-            modules(dispatchModule {
-                viewModel(savedStateHandleProvider = {
-                    used.set(true)
-                    SavedStateHandle().apply { this[ROUTE_PAYLOAD_KEY] = "{}" }
-                }) { (savedStateHandle: SavedStateHandle) ->
-                    RouteViewModel(savedStateHandle)
-                }
-            })
+            modules(
+                dispatchModule {
+                    viewModel(savedStateHandleProvider = {
+                        used.set(true)
+                        SavedStateHandle().apply { this[ROUTE_PAYLOAD_KEY] = "{}" }
+                    }) { (savedStateHandle: SavedStateHandle) ->
+                        RouteViewModel(savedStateHandle)
+                    }
+                },
+            )
         }
 
         assertTrue(used.get())

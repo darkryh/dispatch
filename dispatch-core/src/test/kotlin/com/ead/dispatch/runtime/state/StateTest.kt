@@ -6,15 +6,14 @@ import com.ead.dispatch.state.mutableStateListOf
 import com.ead.dispatch.state.mutableStateMapOf
 import com.ead.dispatch.state.mutableStateOf
 import com.ead.dispatch.state.referentialEqualityPolicy
-import com.ead.dispatch.state.structuralEqualityPolicy
 import com.ead.dispatch.state.setValue
+import com.ead.dispatch.state.structuralEqualityPolicy
 import io.kotest.matchers.shouldBe
 import kotlin.test.Test
 import kotlin.test.assertNotSame
 import kotlin.test.assertSame
 
 class StateTest {
-
     @Test
     fun `mutableStateOf should hold initial value`() {
         val state = mutableStateOf(42)
@@ -61,10 +60,11 @@ class StateTest {
     fun `derivedStateOf should compute value lazily`() {
         var computeCount = 0
         val source = mutableStateOf("initial")
-        val derived = derivedStateOf {
-            computeCount++
-            source.value.uppercase()
-        }
+        val derived =
+            derivedStateOf {
+                computeCount++
+                source.value.uppercase()
+            }
 
         // First access should compute
         derived.value shouldBe "INITIAL"
@@ -137,7 +137,10 @@ class StateTest {
 
     @Test
     fun `mutableStateOf should work with complex types`() {
-        data class User(val name: String, val age: Int)
+        data class User(
+            val name: String,
+            val age: Int,
+        )
 
         val state = mutableStateOf(User("Alice", 30))
         state.value shouldBe User("Alice", 30)
@@ -157,7 +160,9 @@ class StateTest {
 
     @Test
     fun `structural equality policy should skip equivalent updates`() {
-        data class User(val name: String)
+        data class User(
+            val name: String,
+        )
 
         val original = User("Alice")
         val state = mutableStateOf(original, structuralEqualityPolicy())
@@ -170,7 +175,9 @@ class StateTest {
 
     @Test
     fun `referential equality policy should treat equal instances as changes`() {
-        data class User(val name: String)
+        data class User(
+            val name: String,
+        )
 
         val original = User("Alice")
         val state = mutableStateOf(original, referentialEqualityPolicy())
@@ -184,13 +191,16 @@ class StateTest {
 
     @Test
     fun `derived state respects structural equality policy`() {
-        data class User(val name: String)
+        data class User(
+            val name: String,
+        )
 
         val source = mutableStateOf(0)
-        val derived = derivedStateOf(structuralEqualityPolicy()) {
-            source.value
-            User("same")
-        }
+        val derived =
+            derivedStateOf(structuralEqualityPolicy()) {
+                source.value
+                User("same")
+            }
 
         val first = derived.value
         source.value = 1
@@ -201,13 +211,16 @@ class StateTest {
 
     @Test
     fun `derived state respects referential equality policy`() {
-        data class User(val name: String)
+        data class User(
+            val name: String,
+        )
 
         val source = mutableStateOf(0)
-        val derived = derivedStateOf(referentialEqualityPolicy()) {
-            source.value
-            User("same")
-        }
+        val derived =
+            derivedStateOf(referentialEqualityPolicy()) {
+                source.value
+                User("same")
+            }
 
         val first = derived.value
         source.value = 1

@@ -9,14 +9,14 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class TerminalRendererTest {
-
     private fun createRenderer(): Pair<TerminalRenderer, TerminalRecorder> {
-        val recorder = TerminalRecorder(
-            ansiLevel = AnsiLevel.TRUECOLOR,
-            width = 80,
-            height = 24,
-            supportsAnsiCursor = true,
-        )
+        val recorder =
+            TerminalRecorder(
+                ansiLevel = AnsiLevel.TRUECOLOR,
+                width = 80,
+                height = 24,
+                supportsAnsiCursor = true,
+            )
         val terminal = Terminal(terminalInterface = recorder)
         return TerminalRenderer(terminal) to recorder
     }

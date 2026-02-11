@@ -58,7 +58,7 @@ fun BannerLayout(
                     footer()
                 }
             }
-        }
+        },
     )
 }
 
@@ -97,7 +97,10 @@ internal data class BannerSectionModifier(
  * Simple measure policy that measures a single child or returns empty.
  */
 internal class SingleChildMeasurePolicy : MeasurePolicy {
-    override fun measure(measurables: List<Measurable>, constraints: Constraints): MeasureResult {
+    override fun measure(
+        measurables: List<Measurable>,
+        constraints: Constraints,
+    ): MeasureResult {
         if (measurables.isEmpty()) {
             return MeasureResult(
                 width = constraints.minWidth,
@@ -120,8 +123,11 @@ internal class SingleChildMeasurePolicy : MeasurePolicy {
  * Measure policy for BannerLayout.
  */
 internal class BannerLayoutMeasurePolicy : MeasurePolicy {
-
-    override fun measure(measurables: List<Measurable>, constraints: Constraints): MeasureResult {
+    @Suppress("LongMethod", "CyclomaticComplexMethod", "CognitiveComplexMethod")
+    override fun measure(
+        measurables: List<Measurable>,
+        constraints: Constraints,
+    ): MeasureResult {
         if (measurables.isEmpty()) {
             return MeasureResult(
                 width = constraints.minWidth,
@@ -129,17 +135,19 @@ internal class BannerLayoutMeasurePolicy : MeasurePolicy {
             )
         }
 
-        val layoutWidth = if (constraints.hasBoundedWidth) {
-            constraints.maxWidth
-        } else {
-            0
-        }
+        val layoutWidth =
+            if (constraints.hasBoundedWidth) {
+                constraints.maxWidth
+            } else {
+                0
+            }
 
-        val layoutHeight = if (constraints.hasBoundedHeight) {
-            constraints.maxHeight
-        } else {
-            Int.MAX_VALUE
-        }
+        val layoutHeight =
+            if (constraints.hasBoundedHeight) {
+                constraints.maxHeight
+            } else {
+                Int.MAX_VALUE
+            }
 
         // Separate sections by type
         var headerMeasurable: Measurable? = null
@@ -157,22 +165,25 @@ internal class BannerLayoutMeasurePolicy : MeasurePolicy {
         }
 
         // Measure header and footer first (fixed height)
-        val headerConstraints = Constraints(
-            minWidth = 0,
-            maxWidth = layoutWidth,
-            minHeight = 0,
-            maxHeight = layoutHeight,
-        )
+        val headerConstraints =
+            Constraints(
+                minWidth = 0,
+                maxWidth = layoutWidth,
+                minHeight = 0,
+                maxHeight = layoutHeight,
+            )
 
-        val headerPlaceable = headerMeasurable?.let { measurable ->
-            val modified = measurable.modifier.applyToConstraints(headerConstraints)
-            measurable.measure(modified)
-        }
+        val headerPlaceable =
+            headerMeasurable?.let { measurable ->
+                val modified = measurable.modifier.applyToConstraints(headerConstraints)
+                measurable.measure(modified)
+            }
 
-        val footerPlaceable = footerMeasurable?.let { measurable ->
-            val modified = measurable.modifier.applyToConstraints(headerConstraints)
-            measurable.measure(modified)
-        }
+        val footerPlaceable =
+            footerMeasurable?.let { measurable ->
+                val modified = measurable.modifier.applyToConstraints(headerConstraints)
+                measurable.measure(modified)
+            }
 
         // Calculate remaining height for body
         val headerHeight = headerPlaceable?.height ?: 0
@@ -180,17 +191,19 @@ internal class BannerLayoutMeasurePolicy : MeasurePolicy {
         val bodyHeight = (layoutHeight - headerHeight - footerHeight).coerceAtLeast(0)
 
         // Measure body with remaining space
-        val bodyConstraints = Constraints(
-            minWidth = 0,
-            maxWidth = layoutWidth,
-            minHeight = bodyHeight,
-            maxHeight = bodyHeight,
-        )
+        val bodyConstraints =
+            Constraints(
+                minWidth = 0,
+                maxWidth = layoutWidth,
+                minHeight = bodyHeight,
+                maxHeight = bodyHeight,
+            )
 
-        val bodyPlaceable = bodyMeasurable?.let { measurable ->
-            val modified = measurable.modifier.applyToConstraints(bodyConstraints)
-            measurable.measure(modified)
-        }
+        val bodyPlaceable =
+            bodyMeasurable?.let { measurable ->
+                val modified = measurable.modifier.applyToConstraints(bodyConstraints)
+                measurable.measure(modified)
+            }
 
         // Calculate total height
         val totalHeight = headerHeight + (bodyPlaceable?.height ?: bodyHeight) + footerHeight

@@ -9,7 +9,6 @@ import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 
 class ViewModelTest {
-
     @Test
     fun `ViewModel should have active coroutine scope`() {
         val viewModel = TestViewModel()
@@ -46,36 +45,39 @@ class ViewModelTest {
         val viewModel = TestViewModel()
 
         viewModel.clear()
-        viewModel.clear()  // Second call should not throw
+        viewModel.clear() // Second call should not throw
 
         viewModel.onClearedCalled shouldBe true
         viewModel.isCleared shouldBe true
     }
 
     @Test
-    fun `StateViewModel should hold initial state`() = runTest {
-        val viewModel = TestStateViewModel("initial")
-        viewModel.state.value shouldBe "initial"
-        viewModel.currentState shouldBe "initial"
-    }
+    fun `StateViewModel should hold initial state`() =
+        runTest {
+            val viewModel = TestStateViewModel("initial")
+            viewModel.state.value shouldBe "initial"
+            viewModel.currentState shouldBe "initial"
+        }
 
     @Test
-    fun `StateViewModel updateState should update state`() = runTest {
-        val viewModel = TestStateViewModel("initial")
+    fun `StateViewModel updateState should update state`() =
+        runTest {
+            val viewModel = TestStateViewModel("initial")
 
-        viewModel.testUpdateState { "$it updated" }
-        viewModel.state.value shouldBe "initial updated"
-        viewModel.currentState shouldBe "initial updated"
-    }
+            viewModel.testUpdateState { "$it updated" }
+            viewModel.state.value shouldBe "initial updated"
+            viewModel.currentState shouldBe "initial updated"
+        }
 
     @Test
-    fun `StateViewModel setState should replace state`() = runTest {
-        val viewModel = TestStateViewModel("initial")
+    fun `StateViewModel setState should replace state`() =
+        runTest {
+            val viewModel = TestStateViewModel("initial")
 
-        viewModel.testSetState("new state")
-        viewModel.state.value shouldBe "new state"
-        viewModel.currentState shouldBe "new state"
-    }
+            viewModel.testSetState("new state")
+            viewModel.state.value shouldBe "new state"
+            viewModel.currentState shouldBe "new state"
+        }
 
     @Test
     fun `LoadingState Loading should have correct properties`() {
@@ -172,8 +174,11 @@ class ViewModelTest {
         }
     }
 
-    private class TestStateViewModel(initial: String) : StateViewModel<String>(initial) {
+    private class TestStateViewModel(
+        initial: String,
+    ) : StateViewModel<String>(initial) {
         fun testUpdateState(transform: (String) -> String) = updateState(transform)
+
         fun testSetState(state: String) = setState(state)
     }
 }

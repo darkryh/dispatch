@@ -29,11 +29,12 @@ internal class SystemOutputRouter(
         val outputChannel = Channel<List<String>>(Channel.UNLIMITED)
         channel = outputChannel
 
-        job = scope.launch(Dispatchers.IO) {
-            for (lines in outputChannel) {
-                renderer.appendScrollingContent(lines)
+        job =
+            scope.launch(Dispatchers.IO) {
+                for (lines in outputChannel) {
+                    renderer.appendScrollingContent(lines)
+                }
             }
-        }
 
         originalOut = System.out
         originalErr = System.err
@@ -88,7 +89,11 @@ internal class SystemOutputRouter(
             }
         }
 
-        override fun write(b: ByteArray, off: Int, len: Int) {
+        override fun write(
+            b: ByteArray,
+            off: Int,
+            len: Int,
+        ) {
             for (i in off until off + len) {
                 write(b[i].toInt())
             }

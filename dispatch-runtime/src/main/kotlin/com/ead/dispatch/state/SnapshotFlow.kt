@@ -9,6 +9,7 @@ import kotlinx.coroutines.launch
 /**
  * Create a [Flow] that emits values from [block] whenever any state read inside it changes.
  */
+@Suppress("CognitiveComplexMethod")
 fun <T> snapshotFlow(block: () -> T): Flow<T> = callbackFlow {
     val changes = Channel<Unit>(Channel.CONFLATED)
     val observer = StateObserver { changes.trySend(Unit) }

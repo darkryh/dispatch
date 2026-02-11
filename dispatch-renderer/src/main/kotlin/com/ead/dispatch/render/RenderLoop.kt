@@ -1,9 +1,16 @@
 package com.ead.dispatch.render
 
 import com.github.ajalt.mordant.terminal.Terminal
-import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.isActive
+import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 
@@ -36,11 +43,6 @@ class RenderLoop(
     private var renderJob: Job? = null
 
     /**
-     * Channel for render requests.
-     */
-    private val renderRequests = Channel<RenderRequest>(Channel.CONFLATED)
-
-    /**
      * Last render timestamp.
      */
     private val lastRenderTime = AtomicLong(0)
@@ -59,7 +61,7 @@ class RenderLoop(
     /**
      * State flow for triggering re-renders.
      */
-    private val _renderTrigger = MutableSharedFlow<Unit>(replay = 0, extraBufferCapacity = 1)
+    private val renderTrigger = MutableSharedFlow<Unit>(replay = 0, extraBufferCapacity = 1)
 
     /**
      * Start the render loop.
@@ -71,30 +73,39 @@ class RenderLoop(
 
         contentProvider = provider
 
-        renderJob = scope.launch {
-            if (targetFps > 0) {
-                // Fixed frame rate mode
-                while (isActive && running.get()) {
-                    val startTime = System.currentTimeMillis()
-
-                    // Render the frame
-                    renderFrame()
-
-                    // Calculate sleep time to maintain frame rate
-                    val elapsed = System.currentTimeMillis() - startTime
-                    val sleepTime = frameTimeMs - elapsed
-                    if (sleepTime > 0) {
-                        delay(sleepTime)
-                    }
-                }
-            } else {
-                // Immediate mode - render on trigger
-                _renderTrigger.collect {
-                    if (running.get()) {
-                        renderFrame()
-                    }
+        renderJob =
+            scope.launch {
+                if (targetFps > 0) {
+                    runFixedRateLoop()
+                } else {
+                    runTriggeredLoop()
                 }
             }
+    }
+
+    private suspend fun runFixedRateLoop() {
+        while (shouldContinueLoop()) {
+            val startTime = System.currentTimeMillis()
+            renderFrame()
+            delayToRespectFrameBudget(startTime)
+        }
+    }
+
+    private suspend fun runTriggeredLoop() {
+        renderTrigger.collect {
+            if (running.get()) {
+                renderFrame()
+            }
+        }
+    }
+
+    private suspend fun shouldContinueLoop(): Boolean = currentCoroutineContext().isActive && running.get()
+
+    private suspend fun delayToRespectFrameBudget(frameStartTime: Long) {
+        val elapsed = System.currentTimeMillis() - frameStartTime
+        val sleepTime = frameTimeMs - elapsed
+        if (sleepTime > 0) {
+            delay(sleepTime)
         }
     }
 
@@ -113,7 +124,7 @@ class RenderLoop(
      */
     fun requestRender() {
         if (targetFps == 0) {
-            _renderTrigger.tryEmit(Unit)
+            renderTrigger.tryEmit(Unit)
         }
         // In fixed frame rate mode, the next frame will pick up changes
     }
@@ -131,6 +142,7 @@ class RenderLoop(
     /**
      * Render a single frame.
      */
+    @Suppress("TooGenericExceptionCaught")
     private fun renderFrame() {
         val provider = contentProvider ?: return
 
@@ -138,7 +150,7 @@ class RenderLoop(
             val lines = provider()
             renderer.render(lines)
             lastRenderTime.set(System.currentTimeMillis())
-        } catch (e: Exception) {
+        } catch (e: RuntimeException) {
             // Log error but continue rendering
             System.err.println("Render error: ${e.message}")
         }
@@ -157,13 +169,6 @@ class RenderLoop(
         return if (last > 0) System.currentTimeMillis() - last else 0
     }
 }
-
-/**
- * Internal render request.
- */
-private data class RenderRequest(
-    val forceFullRedraw: Boolean = false,
-)
 
 /**
  * A simplified render controller for simple use cases.
@@ -224,7 +229,10 @@ class SimpleRenderer(
     /**
      * Move cursor to position.
      */
-    fun moveCursor(x: Int, y: Int) {
+    fun moveCursor(
+        x: Int,
+        y: Int,
+    ) {
         renderer.moveCursor(x, y)
     }
 }

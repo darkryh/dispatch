@@ -22,16 +22,18 @@ class ColumnMeasurePolicyTest {
     fun `weight is ignored when height is unbounded`() {
         var seen: Constraints? = null
 
-        val weighted = CapturingMeasurable(
-            onMeasure = { seen = it },
-            placeable = SimplePlaceable(width = 1, height = 1, lines = listOf("X")),
-            modifier = Modifier.weight(1f),
-        )
+        val weighted =
+            CapturingMeasurable(
+                onMeasure = { seen = it },
+                placeable = SimplePlaceable(width = 1, height = 1, lines = listOf("X")),
+                modifier = Modifier.weight(1f),
+            )
 
-        val policy = ColumnMeasurePolicy(
-            verticalArrangement = Arrangement.Top,
-            horizontalAlignment = Alignment.Start,
-        )
+        val policy =
+            ColumnMeasurePolicy(
+                verticalArrangement = Arrangement.Top,
+                horizontalAlignment = Alignment.Start,
+            )
 
         policy.measure(
             measurables = listOf(weighted),
@@ -42,4 +44,3 @@ class ColumnMeasurePolicyTest {
         assertEquals(Int.MAX_VALUE, seen?.maxHeight)
     }
 }
-

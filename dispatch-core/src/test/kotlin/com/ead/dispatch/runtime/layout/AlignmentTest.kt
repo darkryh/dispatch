@@ -5,7 +5,6 @@ import io.kotest.matchers.shouldBe
 import kotlin.test.Test
 
 class AlignmentTest {
-
     // ═══════════════════════════════════════════════════════════════════════════
     // Horizontal Alignment
     // ═══════════════════════════════════════════════════════════════════════════

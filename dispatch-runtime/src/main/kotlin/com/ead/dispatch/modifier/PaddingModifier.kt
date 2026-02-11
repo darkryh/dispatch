@@ -67,7 +67,8 @@ fun Modifier.padding(
     require(end >= 0) { "end padding must be >= 0" }
     require(top >= 0) { "top padding must be >= 0" }
     require(bottom >= 0) { "bottom padding must be >= 0" }
-    if (start == 0 && end == 0 && top == 0 && bottom == 0) return this
+    val combinedPadding = start or end or top or bottom
+    if (combinedPadding == 0) return this
     return then(PaddingModifierImpl(start, end, top, bottom))
 }
 
@@ -140,9 +141,8 @@ data class PaddingValues(
 /**
  * Apply padding offset to constraints.
  */
-fun Constraints.offsetByPadding(padding: PaddingValues): Constraints {
-    return offset(horizontal = padding.horizontal, vertical = padding.vertical)
-}
+fun Constraints.offsetByPadding(padding: PaddingValues): Constraints =
+    offset(horizontal = padding.horizontal, vertical = padding.vertical)
 
 /**
  * Get padding from the modifier chain (returns null if no padding).

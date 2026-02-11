@@ -164,12 +164,11 @@ fun Modifier.sizeIn(
 ): Modifier = widthIn(minWidth, maxWidth).heightIn(minHeight, maxHeight)
 
 private class WidthInModifier(private val min: Int, private val max: Int) : SizeModifier {
-    override fun modifyConstraints(constraints: Constraints): Constraints {
-        return constraints.copy(
+    override fun modifyConstraints(constraints: Constraints): Constraints =
+        constraints.copy(
             minWidth = maxOf(constraints.minWidth, min),
-            maxWidth = minOf(constraints.maxWidth, max)
+            maxWidth = minOf(constraints.maxWidth, max),
         )
-    }
 
     override fun equals(other: Any?): Boolean =
         other is WidthInModifier && other.min == min && other.max == max
@@ -178,12 +177,11 @@ private class WidthInModifier(private val min: Int, private val max: Int) : Size
 }
 
 private class HeightInModifier(private val min: Int, private val max: Int) : SizeModifier {
-    override fun modifyConstraints(constraints: Constraints): Constraints {
-        return constraints.copy(
+    override fun modifyConstraints(constraints: Constraints): Constraints =
+        constraints.copy(
             minHeight = maxOf(constraints.minHeight, min),
-            maxHeight = minOf(constraints.maxHeight, max)
+            maxHeight = minOf(constraints.maxHeight, max),
         )
-    }
 
     override fun equals(other: Any?): Boolean =
         other is HeightInModifier && other.min == min && other.max == max
@@ -269,12 +267,11 @@ private class DefaultSizeModifier(
 /**
  * Apply all size modifiers in the chain to constraints.
  */
-fun Modifier.applyToConstraints(constraints: Constraints): Constraints {
-    return foldIn(constraints) { acc, element ->
+fun Modifier.applyToConstraints(constraints: Constraints): Constraints =
+    foldIn(constraints) { acc, element ->
         if (element is SizeModifier) {
             element.modifyConstraints(acc)
         } else {
             acc
         }
     }
-}

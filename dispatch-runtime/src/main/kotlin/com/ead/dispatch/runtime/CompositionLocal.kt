@@ -93,11 +93,10 @@ fun <T> staticCompositionLocalOf(defaultFactory: () -> T): CompositionLocal<T> =
 internal object CompositionLocalContext {
     private val threadLocalMap = ThreadLocal<MutableMap<CompositionLocal<*>, Any?>>()
 
-    private fun getMap(): MutableMap<CompositionLocal<*>, Any?> {
-        return threadLocalMap.get() ?: mutableMapOf<CompositionLocal<*>, Any?>().also {
+    private fun getMap(): MutableMap<CompositionLocal<*>, Any?> =
+        threadLocalMap.get() ?: mutableMapOf<CompositionLocal<*>, Any?>().also {
             threadLocalMap.set(it)
         }
-    }
 
     fun get(key: CompositionLocal<*>): Any? = getMap()[key]
 

@@ -52,9 +52,7 @@ val LocalTerminalHeight = compositionLocalOf { 24 }
  * @return A [MutableState] that persists across recompositions.
  */
 @Dispatchable
-fun <T> rememberState(value: T): MutableState<T> {
-    return remember { mutableStateOf(value) }
-}
+fun <T> rememberState(value: T): MutableState<T> = remember { mutableStateOf(value) }
 
 /**
  * Remember a mutable state with a key.
@@ -66,9 +64,8 @@ fun <T> rememberState(value: T): MutableState<T> {
  * @return A [MutableState] that persists across recompositions.
  */
 @Dispatchable
-fun <T> rememberState(key: Any?, value: T): MutableState<T> {
-    return remember(key) { mutableStateOf(value) }
-}
+fun <T> rememberState(key: Any?, value: T): MutableState<T> =
+    remember(key) { mutableStateOf(value) }
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Utility Composables

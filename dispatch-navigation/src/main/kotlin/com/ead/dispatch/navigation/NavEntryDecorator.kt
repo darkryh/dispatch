@@ -63,7 +63,7 @@ private fun <T : NavKey> decorateEntry(
         wrapped.wrap { decorator.decorate(wrapped) }
     }
 
-private class NavEntryState(
+private data class NavEntryState(
     val savedStateRegistry: SavedStateRegistry,
     val savedStateHandle: SavedStateHandle,
     val viewModelProvider: ViewModelProvider,

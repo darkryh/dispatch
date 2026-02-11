@@ -131,14 +131,13 @@ data class Constraints(
      *
      * Useful for accounting for padding/borders.
      */
-    fun offset(horizontal: Int = 0, vertical: Int = 0): Constraints {
-        return Constraints(
+    fun offset(horizontal: Int = 0, vertical: Int = 0): Constraints =
+        Constraints(
             minWidth = (minWidth - horizontal).coerceAtLeast(0),
             maxWidth = (maxWidth - horizontal).coerceAtLeast(0),
             minHeight = (minHeight - vertical).coerceAtLeast(0),
             maxHeight = (maxHeight - vertical).coerceAtLeast(0),
         )
-    }
 
     companion object {
         /**

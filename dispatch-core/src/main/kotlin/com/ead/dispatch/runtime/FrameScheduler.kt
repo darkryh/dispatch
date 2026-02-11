@@ -28,27 +28,15 @@ internal class FrameScheduler(
     fun start() {
         if (!running.compareAndSet(false, true)) return
 
-        job = scope.launch {
-            for (ignored in frameRequests) {
-                if (!running.get() || !isActive) break
-
-                if (frameTimeMs > 0) {
-                    val last = lastFrameTime.get()
-                    if (last > 0) {
-                        val elapsed = timeProvider() - last
-                        val sleepTime = frameTimeMs - elapsed
-                        if (sleepTime > 0) {
-                            delay(sleepTime)
-                        }
-                    }
+        job =
+            scope.launch {
+                for (ignored in frameRequests) {
+                    if (!canRenderNow()) return@launch
+                    delayToRespectFrameBudget()
+                    if (!canRenderNow()) return@launch
+                    renderFrame()
                 }
-
-                if (!running.get() || !isActive) break
-
-                onFrame()
-                lastFrameTime.set(timeProvider())
             }
-        }
     }
 
     fun stop() {
@@ -64,6 +52,25 @@ internal class FrameScheduler(
     }
 
     fun markFrame() {
+        lastFrameTime.set(timeProvider())
+    }
+
+    private fun canRenderNow(): Boolean = running.get() && scope.isActive
+
+    private suspend fun delayToRespectFrameBudget() {
+        if (frameTimeMs <= 0) return
+        val last = lastFrameTime.get()
+        if (last <= 0) return
+
+        val elapsed = timeProvider() - last
+        val sleepTime = frameTimeMs - elapsed
+        if (sleepTime > 0) {
+            delay(sleepTime)
+        }
+    }
+
+    private fun renderFrame() {
+        onFrame()
         lastFrameTime.set(timeProvider())
     }
 }

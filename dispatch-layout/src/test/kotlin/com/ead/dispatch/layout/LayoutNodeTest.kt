@@ -13,16 +13,17 @@ import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
 class LayoutNodeTest {
-    private data class TagModifier(val tag: String) : Modifier.Element
+    private data class TagModifier(
+        val tag: String,
+    ) : Modifier.Element
 
     private class StubMeasurable(
         override val modifier: Modifier = Modifier,
         private val width: Int = 1,
         private val height: Int = 1,
     ) : Measurable {
-        override fun measure(constraints: Constraints): Placeable {
-            return SimplePlaceable(width = width, height = height, lines = List(height) { " ".repeat(width) })
-        }
+        override fun measure(constraints: Constraints): Placeable =
+            SimplePlaceable(width = width, height = height, lines = List(height) { " ".repeat(width) })
     }
 
     @Test

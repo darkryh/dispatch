@@ -38,11 +38,12 @@ fun Layout(
     val constraints = modifier.applyToConstraints(parentConstraints)
 
     // Create a measurable for this layout
-    val layoutMeasurable = LayoutMeasurable(
-        modifier = modifier,
-        measurePolicy = measurePolicy,
-        children = childMeasurables,
-    )
+    val layoutMeasurable =
+        LayoutMeasurable(
+            modifier = modifier,
+            measurePolicy = measurePolicy,
+            children = childMeasurables,
+        )
 
     // Register this measurable with parent
     composer.registerMeasurable(layoutMeasurable)
@@ -58,19 +59,26 @@ internal class LayoutMeasurable(
     private val measurePolicy: MeasurePolicy,
     private val children: List<Measurable>,
 ) : Measurable {
-
-    private class LineCanvas(val width: Int) {
+    private class LineCanvas(
+        val width: Int,
+    ) {
         private val chars: CharArray = CharArray(width) { ' ' }
         private val inserts: Array<StringBuilder?> = arrayOfNulls(width + 1)
 
         private var hasAnsi: Boolean = false
 
-        fun setCharAt(column: Int, value: Char) {
+        fun setCharAt(
+            column: Int,
+            value: Char,
+        ) {
             if (column !in 0 until width) return
             chars[column] = value
         }
 
-        fun insertAt(column: Int, sequence: CharSequence) {
+        fun insertAt(
+            column: Int,
+            sequence: CharSequence,
+        ) {
             val safeColumn = column.coerceIn(0, width)
             val sb = inserts[safeColumn] ?: StringBuilder().also { inserts[safeColumn] = it }
             sb.append(sequence)
@@ -109,7 +117,11 @@ internal class LayoutMeasurable(
         )
     }
 
-    private fun renderChildren(result: MeasureResult, constraints: Constraints): List<String> {
+    @Suppress("CognitiveComplexMethod", "LoopWithTooManyJumpStatements")
+    private fun renderChildren(
+        result: MeasureResult,
+        constraints: Constraints,
+    ): List<String> {
         // Execute placement to get child positions
         val scope = SimplePlacementScope()
         result.placementBlock(scope)
@@ -145,7 +157,11 @@ internal class LayoutMeasurable(
         return canvas.map { it.buildLine() }
     }
 
-    private fun paintLine(canvas: LineCanvas, startColumn: Int, line: String) {
+    private fun paintLine(
+        canvas: LineCanvas,
+        startColumn: Int,
+        line: String,
+    ) {
         if (canvas.width == 0) return
 
         var column = startColumn
@@ -193,7 +209,10 @@ internal class LayoutMeasurable(
          * - OSC: ESC `]` ... BEL or ESC `\\`
          * - Single-char escapes: ESC <char>
          */
-        private fun ansiSequenceLength(text: String, start: Int): Int {
+        private fun ansiSequenceLength(
+            text: String,
+            start: Int,
+        ): Int {
             if (start !in text.indices || text[start] != '\u001B') return 0
             if (start + 1 !in text.indices) return 0
 
@@ -204,7 +223,10 @@ internal class LayoutMeasurable(
             }
         }
 
-        private fun parseCsi(text: String, start: Int): Int {
+        private fun parseCsi(
+            text: String,
+            start: Int,
+        ): Int {
             var i = start + 2
             while (i < text.length) {
                 val c = text[i]
@@ -215,7 +237,10 @@ internal class LayoutMeasurable(
             return 0
         }
 
-        private fun parseOsc(text: String, start: Int): Int {
+        private fun parseOsc(
+            text: String,
+            start: Int,
+        ): Int {
             var i = start + 2
             while (i < text.length) {
                 val c = text[i]

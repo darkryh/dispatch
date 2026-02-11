@@ -9,8 +9,8 @@ import org.koin.core.KoinApplication
 import org.koin.core.context.GlobalContext
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
-import org.koin.dsl.KoinAppDeclaration
 import org.koin.core.parameter.parametersOf
+import org.koin.dsl.KoinAppDeclaration
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.reflect.KClass
 
@@ -31,17 +31,18 @@ fun DispatchConfig.koin(
     if (stopOnExit) {
         DispatchKoin.installShutdownHook()
     }
-    val viewModels = if (validateViewModels.isNotEmpty()) {
-        validateViewModels.map { modelClass ->
-            RegisteredViewModel(
-                modelClass = modelClass,
-                closeAfterValidation = false,
-                savedStateHandleProvider = null,
-            )
+    val viewModels =
+        if (validateViewModels.isNotEmpty()) {
+            validateViewModels.map { modelClass ->
+                RegisteredViewModel(
+                    modelClass = modelClass,
+                    closeAfterValidation = false,
+                    savedStateHandleProvider = null,
+                )
+            }
+        } else {
+            DispatchKoinRegistry.registeredViewModels()
         }
-    } else {
-        DispatchKoinRegistry.registeredViewModels()
-    }
     if (viewModels.isNotEmpty()) {
         DispatchKoin.validateRegisteredViewModels(viewModels, koin = application.koin)
     }
@@ -59,14 +60,14 @@ object DispatchKoin {
         DispatchKoinRegistry.clear()
     }
 
-    fun koin(): Koin {
-        return runCatching { GlobalContext.get() }.getOrElse { error ->
+    fun koin(): Koin =
+        runCatching { GlobalContext.get() }.getOrElse { error ->
             throw IllegalStateException(
-                "Koin has not been started. Call DispatchConfig.koin { ... } or startKoin { ... } before using Dispatch Koin integration.",
-                error
+                "Koin has not been started. Call DispatchConfig.koin { ... } " +
+                    "or startKoin { ... } before using Dispatch Koin integration.",
+                error,
             )
         }
-    }
 
     fun installShutdownHook() {
         if (shutdownHookInstalled.compareAndSet(false, true)) {
@@ -114,53 +115,68 @@ object DispatchKoin {
         closeAfterValidation: Boolean,
         savedStateHandleProvider: (() -> SavedStateHandle)? = null,
     ) {
-        val instance: ViewModel = try {
-            koin.get<ViewModel>(clazz = modelClass)
-        } catch (primary: Exception) {
-            try {
-                val savedStateHandle = savedStateHandleProvider?.invoke()
-                    ?: SavedStateHandle().apply {
-                        this[ROUTE_PAYLOAD_KEY] = "{}"
-                    }
-                koin.get<ViewModel>(
-                    clazz = modelClass,
-                    parameters = { parametersOf(savedStateHandle) },
-                )
-            } catch (secondary: Exception) {
-                if (savedStateHandleProvider == null && isRoutePayloadFailure(secondary)) {
-                    return
-                }
-                val name = modelClass.qualifiedName ?: modelClass.simpleName ?: "Unknown"
-                val error = IllegalStateException("Koin could not resolve ViewModel: $name", primary)
-                error.addSuppressed(secondary)
-                throw error
-            }
-        }
+        val instance =
+            resolveViewModel(
+                modelClass = modelClass,
+                koin = koin,
+                savedStateHandleProvider = savedStateHandleProvider,
+            ) ?: return
 
-        if (closeAfterValidation) {
-            val name = modelClass.qualifiedName ?: modelClass.simpleName ?: "Unknown"
-            try {
-                instance.close()
-            } catch (e: Exception) {
-                throw IllegalStateException(
-                    "Koin ViewModel failed lifecycle validation (close): $name",
-                    e
-                )
-            }
-            if (!instance.isCleared) {
-                throw IllegalStateException(
-                    "Koin ViewModel failed lifecycle validation (clear): $name"
-                )
-            }
+        if (!closeAfterValidation) return
+
+        val name = modelClass.qualifiedName ?: modelClass.simpleName ?: "Unknown"
+        val closeFailure = runCatching { instance.close() }.exceptionOrNull()
+        if (closeFailure != null) {
+            throw IllegalStateException(
+                "Koin ViewModel failed lifecycle validation (close): $name",
+                closeFailure,
+            )
+        }
+        check(instance.isCleared) {
+            "Koin ViewModel failed lifecycle validation (clear): $name"
         }
     }
 }
 
-private fun isRoutePayloadFailure(error: Throwable): Boolean {
-    return generateSequence(error) { it.cause }.any { cause ->
-        when (cause) {
-            is IllegalArgumentException -> cause.message?.startsWith("Missing route payload for") == true
-            else -> cause::class.qualifiedName == "kotlinx.serialization.SerializationException"
+private fun resolveViewModel(
+    modelClass: KClass<out ViewModel>,
+    koin: Koin,
+    savedStateHandleProvider: (() -> SavedStateHandle)?,
+): ViewModel? {
+    val primaryResolution = runCatching { koin.get<ViewModel>(clazz = modelClass) }
+    val primaryFailure = primaryResolution.exceptionOrNull()
+    if (primaryFailure == null) return primaryResolution.getOrThrow()
+
+    val savedStateHandle =
+        savedStateHandleProvider?.invoke() ?: SavedStateHandle().apply {
+            this[ROUTE_PAYLOAD_KEY] = "{}"
+        }
+    val secondaryResolution =
+        runCatching {
+            koin.get<ViewModel>(
+                clazz = modelClass,
+                parameters = { parametersOf(savedStateHandle) },
+            )
+        }
+
+    val secondaryFailure = secondaryResolution.exceptionOrNull()
+    if (secondaryFailure == null) return secondaryResolution.getOrThrow()
+
+    if (savedStateHandleProvider == null && isRoutePayloadFailure(secondaryFailure)) {
+        return null
+    }
+
+    val name = modelClass.qualifiedName ?: modelClass.simpleName ?: "Unknown"
+    val error = IllegalStateException("Koin could not resolve ViewModel: $name", primaryFailure)
+    error.addSuppressed(secondaryFailure)
+    throw error
+}
+
+private fun isRoutePayloadFailure(error: Throwable): Boolean =
+    generateSequence(error) { it.cause }.any { cause ->
+        if (cause is IllegalArgumentException) {
+            cause.message?.startsWith("Missing route payload for") == true
+        } else {
+            cause::class.qualifiedName == "kotlinx.serialization.SerializationException"
         }
     }
-}

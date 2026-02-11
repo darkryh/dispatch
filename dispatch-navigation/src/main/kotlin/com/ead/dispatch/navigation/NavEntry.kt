@@ -31,13 +31,13 @@ class NavBackStackEntry<T : NavKey>(
     val viewModelProvider: ViewModelProvider,
     val lifecycleRegistry: LifecycleRegistry,
 ) : LifecycleOwner {
+    override val lifecycle: LifecycleRegistry
+        get() = lifecycleRegistry
+
     @Dispatchable
     fun Content() {
         content()
     }
-
-    override val lifecycle: LifecycleRegistry
-        get() = lifecycleRegistry
 }
 
 @PublishedApi

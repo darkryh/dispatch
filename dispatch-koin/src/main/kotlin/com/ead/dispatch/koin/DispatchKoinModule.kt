@@ -26,15 +26,15 @@ internal object DispatchKoinRegistry {
         closeAfterValidation: Boolean = true,
         savedStateHandleProvider: (() -> SavedStateHandle)? = null,
     ) {
-        viewModels[modelClass] = RegisteredViewModel(
-            modelClass = modelClass,
-            closeAfterValidation = closeAfterValidation,
-            savedStateHandleProvider = savedStateHandleProvider,
-        )
+        viewModels[modelClass] =
+            RegisteredViewModel(
+                modelClass = modelClass,
+                closeAfterValidation = closeAfterValidation,
+                savedStateHandleProvider = savedStateHandleProvider,
+            )
     }
 
-    internal fun registeredViewModels(): List<RegisteredViewModel> =
-        viewModels.values.toList()
+    internal fun registeredViewModels(): List<RegisteredViewModel> = viewModels.values.toList()
 
     internal fun clear() {
         viewModels.clear()
@@ -58,15 +58,11 @@ class DispatchKoinModuleScope internal constructor(
         )
     }
 
-    inline fun <reified T> factory(
-        noinline definition: Definition<T>,
-    ) {
+    inline fun <reified T> factory(noinline definition: Definition<T>) {
         module.factory(definition = definition)
     }
 
-    inline fun <reified T> single(
-        noinline definition: Definition<T>,
-    ) {
+    inline fun <reified T> single(noinline definition: Definition<T>) {
         module.single(definition = definition)
     }
 
@@ -75,8 +71,7 @@ class DispatchKoinModuleScope internal constructor(
     }
 }
 
-fun dispatchModule(builder: DispatchKoinModuleScope.() -> Unit): Module {
-    return module {
+fun dispatchModule(builder: DispatchKoinModuleScope.() -> Unit): Module =
+    module {
         DispatchKoinModuleScope(this).builder()
     }
-}
