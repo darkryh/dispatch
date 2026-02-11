@@ -92,13 +92,16 @@ class TerminalRenderer(
             // Naive truncation with take() breaks ANSI escape codes.
             val displayedLines = lines
 
+            val hasAnyContentChange = displayedLines != activeAreaLines
             // Skip if nothing changed
-            if (displayedLines == activeAreaLines && activeAreaInitialized) return
+            if (!hasAnyContentChange && activeAreaInitialized) return
 
             val oldLineCount = if (activeAreaInitialized) activeAreaLines.size else 0
             val newLineCount = displayedLines.size
             val maxLineCount = maxOf(oldLineCount, newLineCount)
-            val forceRedraw = oldLineCount != newLineCount
+            // If any line changed, repaint the whole active area. This keeps sibling lines stable
+            // when external input methods momentarily desynchronize terminal output.
+            val forceRedraw = oldLineCount != newLineCount || hasAnyContentChange
 
             // Build entire update in a buffer to send atomically (prevents flickering)
             val buffer = StringBuilder()

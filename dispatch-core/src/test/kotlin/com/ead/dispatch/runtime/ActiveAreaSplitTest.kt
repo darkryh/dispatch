@@ -120,4 +120,39 @@ class ActiveAreaSplitTest {
         assertEquals(listOf("i1", "p1", "p2"), activePalette)
         assertEquals(ScrollUpdate(listOf("h3"), reset = false), tracker.consume(scrollingPalette))
     }
+
+    @Test
+    fun `submit after long input keeps active area visible`() {
+        val history = listOf("h1", "h2", "h3")
+        val tracker = ScrollingContentTracker()
+
+        val beforeSubmit =
+            placeable(
+                lines = history + listOf("i1", "i2", "i3", "i4", "i5", "i6", "i7", "i8", "status"),
+                segmentHeights = listOf(3, 8, 1),
+            )
+        val (scrollingBeforeSubmit, activeBeforeSubmit) =
+            splitContentForRendering(
+                beforeSubmit,
+                activeAreaHeight = 4,
+                committedLineCount = 0,
+            )
+        assertEquals(listOf("i6", "i7", "i8", "status"), activeBeforeSubmit)
+        tracker.consume(scrollingBeforeSubmit)
+
+        val processingAfterSubmit =
+            placeable(
+                lines = history + listOf("spin1", "spin2", "input", "status"),
+                segmentHeights = listOf(3, 2, 1, 1),
+            )
+        val (scrollingAfterSubmit, activeAfterSubmit) =
+            splitContentForRendering(
+                processingAfterSubmit,
+                activeAreaHeight = 4,
+                committedLineCount = scrollingBeforeSubmit.size,
+            )
+
+        assertEquals(history, scrollingAfterSubmit)
+        assertEquals(listOf("spin1", "spin2", "input", "status"), activeAfterSubmit)
+    }
 }

@@ -16,6 +16,7 @@ dependencies {
     implementation(projects.dispatchNavigation)
     implementation(projects.dispatchKoin)
     implementation(projects.koogContextOrchestrator)
+    implementation(projects.koogAgentBenchmarkKoog)
     implementation(libs.bundles.mordant)
     implementation(libs.coroutines.core)
 
@@ -31,6 +32,8 @@ dependencies {
 
     // Prevent SLF4J's "no providers" warnings from printing to stderr and corrupting the TUI.
     runtimeOnly(libs.slf4j.nop)
+
+    testImplementation(libs.koog.agents.test)
 
 }
 

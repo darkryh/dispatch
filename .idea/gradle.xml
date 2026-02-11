@@ -26,6 +26,7 @@
             <option value="$PROJECT_DIR$/dispatch-layout" />
             <option value="$PROJECT_DIR$/dispatch-lifecycle" />
             <option value="$PROJECT_DIR$/dispatch-navigation" />
+            <option value="$PROJECT_DIR$/dispatch-reliability" />
             <option value="$PROJECT_DIR$/dispatch-renderer" />
             <option value="$PROJECT_DIR$/dispatch-runtime" />
             <option value="$PROJECT_DIR$/dispatch-sample" />
@@ -37,6 +38,8 @@
             <option value="$PROJECT_DIR$/dispatch-viewmodel" />
             <option value="$PROJECT_DIR$/dispatch-widgets" />
             <option value="$PROJECT_DIR$/dispatch-workspace" />
+            <option value="$PROJECT_DIR$/koog-agent-benchmark-core" />
+            <option value="$PROJECT_DIR$/koog-agent-benchmark-koog" />
             <option value="$PROJECT_DIR$/koog-context-orchestrator" />
           </set>
         </option>

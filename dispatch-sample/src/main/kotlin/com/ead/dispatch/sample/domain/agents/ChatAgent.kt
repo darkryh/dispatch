@@ -18,6 +18,7 @@ import com.ead.koog.context.orchestrator.state.ContinuityPacket
 import com.ead.dispatch.sample.data.repositories.StructuredIndexRepository
 import com.ead.dispatch.sample.domain.AIProvider
 import com.ead.dispatch.sample.domain.MemoryStore
+import com.ead.dispatch.sample.domain.Pathing
 import com.ead.dispatch.sample.domain.Storage
 import com.ead.dispatch.sample.domain.agents.chat_agent.ChatRequest
 import com.ead.dispatch.sample.domain.agents.chat_agent.PreferencesMemory
@@ -37,12 +38,22 @@ import com.ead.dispatch.sample.domain.agents.tools.InteractionTools
 import com.ead.dispatch.sample.domain.agents.tools.WorldTools
 import com.ead.dispatch.sample.domain.embedding.RagContextService
 import com.ead.dispatch.sample.domain.model.session.Session
+import com.ead.koog.benchmark.core.JsonlBenchmarkRecorder
+import com.ead.koog.benchmark.koog.KoogBenchmark
+import com.ead.koog.benchmark.koog.KoogBenchmarkConfig
 import kotlinx.coroutines.flow.Flow
 
 class ChatAgent(
     private val repository: StructuredIndexRepository,
     private val ragContextService: RagContextService,
 ) {
+    private val benchmarkEnabled: Boolean = true
+    private val benchmarkRecorder by lazy {
+        JsonlBenchmarkRecorder(
+            outputDirectory = Pathing.applicationDirectory.resolve("benchmarks"),
+            fileNamePrefix = "chat-agent-runs",
+        )
+    }
 
     /**
      * Tool registry used by the chat agent. Tools are injected via Koog's DSL.
@@ -121,18 +132,31 @@ class ChatAgent(
             maxIterations = 50,
             temperature = 1.0,
             installFeatures = {
-              install(Persistence) {
-                  this.storage = Storage.provider
-                  this.enableAutomaticPersistence = false
-                  this.rollbackStrategy = RollbackStrategy.Default
-              }
-              install(AgentMemory.Feature) {
-                  memoryProvider = MemoryStore.provider
-                  productName = "dispatch"
-                  organizationName = "ead"
-                  featureName = "chat"
-                  this.agentName = agentName
-              }
+                install(KoogBenchmark.Feature) {
+                    enabled = benchmarkEnabled
+                    recorder = benchmarkRecorder
+                    staticAttributes = mapOf(
+                        "dispatch.agent_kind" to "chat",
+                        "dispatch.module" to "dispatch-sample",
+                    )
+                    extraAttributesProvider = { context ->
+                        mapOf(
+                            "dispatch.strategy_name" to context.strategyName,
+                        )
+                    }
+                }
+                install(Persistence) {
+                    this.storage = Storage.provider
+                    this.enableAutomaticPersistence = false
+                    this.rollbackStrategy = RollbackStrategy.Default
+                }
+                install(AgentMemory.Feature) {
+                    memoryProvider = MemoryStore.provider
+                    productName = "dispatch"
+                    organizationName = "ead"
+                    featureName = "chat"
+                    this.agentName = agentName
+                }
             },
             id = agentName,
         )

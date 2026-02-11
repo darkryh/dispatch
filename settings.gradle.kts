@@ -18,6 +18,7 @@ dependencyResolutionManagement {
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 include(":dispatch-core")
+include(":dispatch-reliability")
 include(":dispatch-runtime")
 include(":dispatch-renderer")
 include(":dispatch-layout")
@@ -34,3 +35,5 @@ include(":dispatch-update-github")
 include(":dispatch-workspace")
 include(":dispatch-sample")
 include(":koog-context-orchestrator")
+include(":koog-agent-benchmark-core")
+include(":koog-agent-benchmark-koog")

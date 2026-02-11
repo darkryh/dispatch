@@ -17,6 +17,7 @@ import com.ead.koog.context.orchestrator.api.ContextualResponse
 import com.ead.dispatch.sample.domain.agents.chat_agent.MemorySubjects
 import com.ead.dispatch.sample.domain.agents.chat_agent.PreferencesMemory
 import com.ead.dispatch.sample.domain.agents.chat_agent.policy.ChatDecisionPath
+import com.ead.dispatch.sample.domain.agents.chat_agent.policy.ChatTurnPolicy
 import com.ead.dispatch.sample.domain.agents.chat_agent.policy.ChatTurnInput
 import com.ead.dispatch.sample.domain.agents.chat_agent.policy.currentChatTurnPolicy
 import com.ead.dispatch.sample.domain.agents.chat_agent.policy.currentLastSavedPreferenceHash
@@ -28,7 +29,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.Flow
 
-private const val preferenceSaveConfidenceThreshold = 0.75
+internal const val preferenceSaveConfidenceThreshold = 0.75
 
 @AIAgentBuilderDslMarker
 fun AIAgentSubgraphBuilderBase<*, *>.nodeLoadUserPreferences(
@@ -83,7 +84,7 @@ private suspend fun AIAgentGraphContextBase.loadUserPreferencesOnce(
     return turnInput
 }
 
-private fun shouldLoadUserPreferences(turnInput: ChatTurnInput): Boolean {
+internal fun shouldLoadUserPreferences(turnInput: ChatTurnInput): Boolean {
     if (turnInput.policy.fromDecisionPrompt) return false
 
     return when (turnInput.policy.decisionPath) {
@@ -156,8 +157,8 @@ private suspend fun AIAgentGraphContextBase.saveUserPreferencesOnce(
     response
 }
 
-private fun preferenceSaveSkipReason(
-    policy: com.ead.dispatch.sample.domain.agents.chat_agent.policy.ChatTurnPolicy,
+internal fun preferenceSaveSkipReason(
+    policy: ChatTurnPolicy,
     previousSavedHash: String?,
 ): String? {
     if (policy.fromDecisionPrompt) return "from_decision_prompt"
@@ -169,7 +170,7 @@ private fun preferenceSaveSkipReason(
     return null
 }
 
-private fun resolvePreferenceConcepts(keywords: List<String>): List<Concept> {
+internal fun resolvePreferenceConcepts(keywords: List<String>): List<Concept> {
     if (keywords.isEmpty()) return emptyList()
 
     val conceptsByKeyword = PreferencesMemory.userConcepts.associateBy { it.keyword.lowercase() }

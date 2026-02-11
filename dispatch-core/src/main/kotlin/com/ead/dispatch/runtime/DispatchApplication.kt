@@ -620,18 +620,19 @@ private fun splitSegmentedContent(
     val selection = selectActiveSegmentWindow(segmentHeights, activeAreaHeight)
     val segmentStartLine = segmentHeights.take(selection.activeStartSegmentIndex).sum()
     val activeStartLine = (segmentStartLine + selection.clipFromStartSegment).coerceIn(0, allLines.size)
+    val maxScrollingLineCount = activeStartLine
 
     var scrollingLineCount = segmentStartLine
     if (selection.clipFromStartSegment > 0 && committedLineCount == 0) {
         scrollingLineCount = activeStartLine
     }
+    val committedFloor = committedLineCount.coerceAtMost(maxScrollingLineCount)
     scrollingLineCount =
         scrollingLineCount
-            .coerceAtLeast(committedLineCount)
-            .coerceAtMost(allLines.size)
+            .coerceAtLeast(committedFloor)
+            .coerceAtMost(maxScrollingLineCount)
 
-    val activeStartForRender = maxOf(activeStartLine, scrollingLineCount)
-    return allLines.take(scrollingLineCount) to allLines.drop(activeStartForRender)
+    return allLines.take(scrollingLineCount) to allLines.drop(activeStartLine)
 }
 
 private fun splitUnsegmentedContent(
@@ -641,12 +642,13 @@ private fun splitUnsegmentedContent(
 ): Pair<List<String>, List<String>> {
     val activeLineCount = minOf(activeAreaHeight, allLines.size)
     val activeStartLine = allLines.size - activeLineCount
+    val maxScrollingLineCount = activeStartLine
+    val committedFloor = committedLineCount.coerceAtMost(maxScrollingLineCount)
     val scrollingLineCount =
         activeStartLine
-            .coerceAtLeast(committedLineCount)
-            .coerceAtMost(allLines.size)
-    val activeStartForRender = maxOf(activeStartLine, scrollingLineCount)
-    return allLines.take(scrollingLineCount) to allLines.drop(activeStartForRender)
+            .coerceAtLeast(committedFloor)
+            .coerceAtMost(maxScrollingLineCount)
+    return allLines.take(scrollingLineCount) to allLines.drop(activeStartLine)
 }
 
 private fun selectActiveSegmentWindow(

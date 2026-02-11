@@ -290,4 +290,20 @@ class TerminalRendererTest {
         // Final state should include the last update
         assertTrue(output.contains("> abcd"))
     }
+
+    @Test
+    fun `updateActiveArea redraws sibling lines when one line changes`() {
+        val (renderer, recorder) = createRenderer()
+
+        renderer.updateActiveArea(listOf("Line A", "Line B"))
+        val before = recorder.output()
+
+        renderer.updateActiveArea(listOf("Line A*", "Line B"))
+        val delta = recorder.output().removePrefix(before)
+
+        val clearCount = delta.windowed(AnsiCodes.CLEAR_LINE.length).count { it == AnsiCodes.CLEAR_LINE }
+        assertTrue(clearCount >= 2, "expected both active lines to be cleared/redrawn")
+        assertTrue(delta.contains("Line A*"))
+        assertTrue(delta.contains("Line B"))
+    }
 }

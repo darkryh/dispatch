@@ -78,6 +78,7 @@ koog-agents-planner = { module = "ai.koog:agents-planner", version.ref = "koog" 
 koog-tools = { module = "ai.koog:agents-tools", version.ref = "koog" }
 koog-features-event-handler = { module = "ai.koog:agents-features-event-handler", version.ref = "koog" }
 koog-features-memory = { module = "ai.koog:agents-features-memory", version.ref = "koog" }
+koog-agents-test = { module = "ai.koog:agents-test", version.ref = "koog" }
 
 # SQLDelight
 sqldelight-sqlite-driver = { module = "app.cash.sqldelight:sqlite-driver", version.ref = "sqldelight" }

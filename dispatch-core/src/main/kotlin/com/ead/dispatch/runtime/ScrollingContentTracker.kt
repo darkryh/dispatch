@@ -8,39 +8,62 @@ package com.ead.dispatch.runtime
  * appended yet.
  */
 internal class ScrollingContentTracker {
-    private var previousContentHash: Int = Int.MIN_VALUE
-    private var scrolledLineCount: Int = 0
+    private val committedLines = mutableListOf<String>()
 
     val committedLineCount: Int
-        get() = scrolledLineCount
+        get() = committedLines.size
 
     fun consume(scrollingLines: List<String>): ScrollUpdate {
         if (scrollingLines.isEmpty()) {
             return ScrollUpdate(emptyList(), reset = false)
         }
 
-        val contentHash = scrollingLines.hashCode()
-        if (contentHash == previousContentHash) {
+        if (scrollingLines == committedLines) {
             return ScrollUpdate(emptyList(), reset = false)
         }
 
-        val shouldReset = !isAppend(scrollingLines)
-        val linesToAppend =
-            if (shouldReset) {
-                scrollingLines
-            } else {
-                scrollingLines.drop(scrolledLineCount)
-            }
+        if (committedLines.isEmpty()) {
+            committedLines.clear()
+            committedLines.addAll(scrollingLines)
+            return ScrollUpdate(scrollingLines, reset = false)
+        }
 
-        scrolledLineCount = scrollingLines.size
-        previousContentHash = contentHash
+        if (startsWithCommitted(scrollingLines)) {
+            val linesToAppend = scrollingLines.drop(committedLines.size)
+            committedLines.clear()
+            committedLines.addAll(scrollingLines)
+            return ScrollUpdate(linesToAppend, reset = false)
+        }
 
-        return ScrollUpdate(linesToAppend, reset = shouldReset)
+        if (scrollingLines.size > committedLines.size) {
+            // Prefix changed (non-append rewrite), but new tail lines still arrived.
+            // Keep committed prefix immutable and append only the true new tail.
+            val tailLines = scrollingLines.drop(committedLines.size)
+            committedLines.addAll(tailLines)
+            return ScrollUpdate(tailLines, reset = false)
+        }
+
+        if (scrollingLines.size == committedLines.size) {
+            // Ignore in-place rewrites of already committed scrollback lines.
+            // Re-rendering those would require full terminal reset and causes visible flicker.
+            return ScrollUpdate(emptyList(), reset = false)
+        }
+
+        committedLines.clear()
+        committedLines.addAll(scrollingLines)
+        return ScrollUpdate(scrollingLines, reset = true)
+    }
+
+    private fun startsWithCommitted(scrollingLines: List<String>): Boolean {
+        if (scrollingLines.size < committedLines.size) return false
+        for (index in committedLines.indices) {
+            if (scrollingLines[index] != committedLines[index]) return false
+        }
+        return true
     }
 
     fun reset() {
-        previousContentHash = Int.MIN_VALUE
-        scrolledLineCount = 0
+        committedLines.clear()
     }
 
     fun sync(scrollingLines: List<String>) {
@@ -48,15 +71,8 @@ internal class ScrollingContentTracker {
             reset()
             return
         }
-        previousContentHash = scrollingLines.hashCode()
-        scrolledLineCount = scrollingLines.size
-    }
-
-    private fun isAppend(scrollingLines: List<String>): Boolean {
-        if (scrolledLineCount == 0) return true
-        if (scrollingLines.size < scrolledLineCount) return false
-        val prefixHash = scrollingLines.take(scrolledLineCount).hashCode()
-        return prefixHash == previousContentHash
+        committedLines.clear()
+        committedLines.addAll(scrollingLines)
     }
 }
 

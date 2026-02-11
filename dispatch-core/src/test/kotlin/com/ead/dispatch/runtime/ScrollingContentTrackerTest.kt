@@ -32,6 +32,21 @@ class ScrollingContentTrackerTest {
     }
 
     @Test
+    fun `consume with rewritten same-size prefix does not reset`() {
+        val tracker = ScrollingContentTracker()
+        tracker.consume(listOf("a", "b", "c")) shouldBe ScrollUpdate(listOf("a", "b", "c"), reset = false)
+        tracker.consume(listOf("x", "b", "c")) shouldBe ScrollUpdate(emptyList(), reset = false)
+    }
+
+    @Test
+    fun `consume appends new tail even when prefix rewrites occur`() {
+        val tracker = ScrollingContentTracker()
+        tracker.consume(listOf("a", "b", "c")) shouldBe ScrollUpdate(listOf("a", "b", "c"), reset = false)
+        tracker.consume(listOf("x", "b", "c", "d")) shouldBe ScrollUpdate(listOf("d"), reset = false)
+        tracker.consume(listOf("x", "b", "c", "d", "e")) shouldBe ScrollUpdate(listOf("e"), reset = false)
+    }
+
+    @Test
     fun `sync updates internal state without appending`() {
         val tracker = ScrollingContentTracker()
         tracker.consume(listOf("a", "b")) shouldBe ScrollUpdate(listOf("a", "b"), reset = false)
