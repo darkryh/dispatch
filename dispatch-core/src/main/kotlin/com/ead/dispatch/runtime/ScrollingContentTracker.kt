@@ -15,7 +15,11 @@ internal class ScrollingContentTracker {
 
     fun consume(scrollingLines: List<String>): ScrollUpdate {
         if (scrollingLines.isEmpty()) {
-            return ScrollUpdate(emptyList(), reset = false)
+            if (committedLines.isEmpty()) {
+                return ScrollUpdate(emptyList(), reset = false)
+            }
+            committedLines.clear()
+            return ScrollUpdate(emptyList(), reset = true)
         }
 
         if (scrollingLines == committedLines) {
@@ -35,20 +39,8 @@ internal class ScrollingContentTracker {
             return ScrollUpdate(linesToAppend, reset = false)
         }
 
-        if (scrollingLines.size > committedLines.size) {
-            // Prefix changed (non-append rewrite), but new tail lines still arrived.
-            // Keep committed prefix immutable and append only the true new tail.
-            val tailLines = scrollingLines.drop(committedLines.size)
-            committedLines.addAll(tailLines)
-            return ScrollUpdate(tailLines, reset = false)
-        }
-
-        if (scrollingLines.size == committedLines.size) {
-            // Ignore in-place rewrites of already committed scrollback lines.
-            // Re-rendering those would require full terminal reset and causes visible flicker.
-            return ScrollUpdate(emptyList(), reset = false)
-        }
-
+        // Non-append rewrite: the visible scrolling region changed in-place.
+        // Request a reset so screens with selectable/filterable lists stay visually correct.
         committedLines.clear()
         committedLines.addAll(scrollingLines)
         return ScrollUpdate(scrollingLines, reset = true)

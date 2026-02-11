@@ -104,7 +104,7 @@ fun CultureListScreen(
                         navigator.navigate(CultureEditorRoute(storyId = route.storyId, cultureId = null))
                         true
                     } else {
-                        false
+                        filterController.handleKeyEvent(event)
                     }
                 }
                 else -> {

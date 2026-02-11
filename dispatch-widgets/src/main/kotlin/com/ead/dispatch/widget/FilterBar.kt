@@ -14,6 +14,9 @@ import com.github.ajalt.mordant.rendering.TextStyle
 /**
  * Simple filter state holder for list screens.
  */
+@Deprecated(
+    message = "Unused legacy state holder; use TextFieldState + rememberFilterInputController instead.",
+)
 class FilterState(initialActive: Boolean = false) {
     var isActive: Boolean by mutableStateOf(initialActive)
 }
@@ -22,6 +25,9 @@ class FilterState(initialActive: Boolean = false) {
  * Remember a [FilterState] instance.
  */
 @Dispatchable
+@Deprecated(
+    message = "Unused legacy state holder; use rememberTextFieldState + rememberFilterInputController instead.",
+)
 fun rememberFilterState(initialActive: Boolean = false): FilterState {
     return remember { FilterState(initialActive) }
 }

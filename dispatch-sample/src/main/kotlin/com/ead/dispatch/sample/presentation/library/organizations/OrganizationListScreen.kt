@@ -104,7 +104,7 @@ fun OrganizationListScreen(
                         navigator.navigate(OrganizationEditorRoute(storyId = route.storyId, organizationId = null))
                         true
                     } else {
-                        false
+                        filterController.handleKeyEvent(event)
                     }
                 }
                 else -> {

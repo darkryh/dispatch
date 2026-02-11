@@ -155,4 +155,18 @@ class ActiveAreaSplitTest {
         assertEquals(history, scrollingAfterSubmit)
         assertEquals(listOf("spin1", "spin2", "input", "status"), activeAfterSubmit)
     }
+
+    @Test
+    fun `selection rewrite in scrolling region requests reset`() {
+        val tracker = ScrollingContentTracker()
+        val initial = listOf("> New", "  Dark", "  Silas", "status")
+        val changed = listOf("  New", "> Dark", "  Silas", "status")
+
+        tracker.consume(initial).let { update ->
+            assertEquals(ScrollUpdate(initial, reset = false), update)
+        }
+        tracker.consume(changed).let { update ->
+            assertEquals(ScrollUpdate(changed, reset = true), update)
+        }
+    }
 }

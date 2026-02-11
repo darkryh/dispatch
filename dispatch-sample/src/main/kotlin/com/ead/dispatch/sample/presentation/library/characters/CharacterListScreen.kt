@@ -104,7 +104,7 @@ fun CharacterListScreen(
                         navigator.navigate(CharacterRoute(storyId = route.storyId, characterId = null))
                         true
                     } else {
-                        false
+                        filterController.handleKeyEvent(event)
                     }
                 }
                 else -> {

@@ -104,7 +104,7 @@ fun ArtifactListScreen(
                         navigator.navigate(ArtifactEditorRoute(storyId = route.storyId, artifactId = null))
                         true
                     } else {
-                        false
+                        filterController.handleKeyEvent(event)
                     }
                 }
                 else -> {

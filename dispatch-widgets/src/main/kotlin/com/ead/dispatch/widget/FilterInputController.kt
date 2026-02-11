@@ -4,6 +4,13 @@ import com.ead.dispatch.annotation.Dispatchable
 import com.ead.dispatch.state.remember
 import com.github.ajalt.mordant.input.KeyboardEvent
 
+private val FILTER_TEXT_PARSE_CONFIG = KeyEventTextParseConfig(
+    mapSpaceKeyToSpace = true,
+    replaceNewlineWithSpace = true,
+    replaceTabWithSpace = true,
+    extraNonTextKeys = setOf("Up", "Down"),
+)
+
 class FilterInputController(private val state: TextFieldState) {
     fun handleKeyEvent(event: KeyboardEvent): Boolean {
         when (event.key) {
@@ -67,7 +74,7 @@ class FilterInputController(private val state: TextFieldState) {
                 true
             }
             else -> {
-                val text = textFromKeyEvent(event)
+                val text = parseTextFromKeyEvent(event, FILTER_TEXT_PARSE_CONFIG)
                 if (!text.isNullOrEmpty()) {
                     if (state.hasSelection()) {
                         state.deleteSelection()
@@ -161,55 +168,3 @@ class FilterInputController(private val state: TextFieldState) {
 fun rememberFilterInputController(state: TextFieldState): FilterInputController {
     return remember(state) { FilterInputController(state) }
 }
-
-private fun textFromKeyEvent(event: KeyboardEvent): String? {
-    if (event.ctrl || event.alt) return null
-    val key = event.key
-    if (key.isEmpty()) return null
-    if (key == "Space") return " "
-    if (key in NON_TEXT_KEYS) return null
-    if (isFunctionKey(key)) return null
-    val normalized = key.replace("\r\n", "\n").replace('\r', '\n')
-    if (normalized.any { it.isISOControl() && it != '\n' && it != '\t' }) return null
-    return normalized.replace('\n', ' ').replace('\t', ' ')
-}
-
-private fun isFunctionKey(key: String): Boolean {
-    if (key.length < 2 || key[0] != 'F') return false
-    return key.drop(1).all { it.isDigit() }
-}
-
-private val NON_TEXT_KEYS = setOf(
-    "ArrowDown",
-    "ArrowLeft",
-    "ArrowRight",
-    "ArrowUp",
-    "Alt",
-    "Backspace",
-    "CapsLock",
-    "Clear",
-    "Compose",
-    "Control",
-    "Dead",
-    "Delete",
-    "End",
-    "Enter",
-    "Escape",
-    "Home",
-    "Insert",
-    "Meta",
-    "NumLock",
-    "PageDown",
-    "PageUp",
-    "PasteEnd",
-    "PasteStart",
-    "Pause",
-    "PrintScreen",
-    "Process",
-    "ScrollLock",
-    "Shift",
-    "Tab",
-    "Unidentified",
-    "Up",
-    "Down",
-)

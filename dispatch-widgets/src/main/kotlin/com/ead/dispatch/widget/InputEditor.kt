@@ -198,7 +198,7 @@ internal class InputEditor(
             "End" -> updateCursorPosition(getValue().length)
             else -> {
                 // Handle printable characters or multi-codepoint text
-                val text = textFromKeyEvent(event)
+                val text = parseTextFromKeyEvent(event)
                 if (text != null) {
                     insertText(text)
                 } else {
@@ -402,55 +402,6 @@ private fun cursorLineInfo(
     val maxLine = visualAt(text.length).line
     return CursorLineInfo(line = current.line, maxLine = maxLine)
 }
-
-private fun textFromKeyEvent(event: KeyboardEvent): String? {
-    if (event.ctrl || event.alt) return null
-    val key = event.key
-    if (key.isEmpty()) return null
-    if (key in NON_TEXT_KEYS) return null
-    if (isFunctionKey(key)) return null
-    val normalized = key.replace("\r\n", "\n").replace('\r', '\n')
-    if (normalized.any { it.isISOControl() && it != '\n' && it != '\t' }) return null
-    return normalized
-}
-
-private fun isFunctionKey(key: String): Boolean {
-    if (key.length < 2 || key[0] != 'F') return false
-    return key.drop(1).all { it.isDigit() }
-}
-
-private val NON_TEXT_KEYS = setOf(
-    "ArrowDown",
-    "ArrowLeft",
-    "ArrowRight",
-    "ArrowUp",
-    "Alt",
-    "Backspace",
-    "CapsLock",
-    "Clear",
-    "Compose",
-    "Control",
-    "Dead",
-    "Delete",
-    "End",
-    "Enter",
-    "Escape",
-    "Home",
-    "Insert",
-    "Meta",
-    "NumLock",
-    "PageDown",
-    "PageUp",
-    "PasteEnd",
-    "PasteStart",
-    "Pause",
-    "PrintScreen",
-    "Process",
-    "ScrollLock",
-    "Shift",
-    "Tab",
-    "Unidentified",
-)
 
 private const val PASTE_BURST_NANOS: Long = 35_000_000
 private const val PASTE_BURST_COUNT: Int = 3

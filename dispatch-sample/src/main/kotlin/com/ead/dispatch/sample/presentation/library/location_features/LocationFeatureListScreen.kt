@@ -104,7 +104,7 @@ fun LocationFeatureListScreen(
                         navigator.navigate(LocationFeatureEditorRoute(storyId = route.storyId, locationFeatureId = null))
                         true
                     } else {
-                        false
+                        filterController.handleKeyEvent(event)
                     }
                 }
                 else -> {

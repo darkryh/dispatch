@@ -104,7 +104,7 @@ fun RelationshipListScreen(
                         navigator.navigate(RelationshipEditorRoute(storyId = route.storyId, relationshipId = null))
                         true
                     } else {
-                        false
+                        filterController.handleKeyEvent(event)
                     }
                 }
                 else -> {

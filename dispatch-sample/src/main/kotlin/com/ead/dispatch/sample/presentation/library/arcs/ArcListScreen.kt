@@ -104,7 +104,7 @@ fun ArcListScreen(
                         navigator.navigate(ArcEditorRoute(storyId = route.storyId, arcId = null))
                         true
                     } else {
-                        false
+                        filterController.handleKeyEvent(event)
                     }
                 }
                 else -> {

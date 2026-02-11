@@ -115,7 +115,7 @@ private class KoogBenchmarkCollector(
 ) {
     private val runStates = ConcurrentHashMap<String, MutableRunState>()
 
-    suspend fun onAgentStarting(context: AgentStartingContext) {
+    fun onAgentStarting(context: AgentStartingContext) {
         val nowMs = System.currentTimeMillis()
         val state = MutableRunState(
             runId = context.runId,

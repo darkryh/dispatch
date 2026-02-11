@@ -104,7 +104,7 @@ fun TimelineListScreen(
                         navigator.navigate(TimelineEditorRoute(storyId = route.storyId, timelineEntryId = null))
                         true
                     } else {
-                        false
+                        filterController.handleKeyEvent(event)
                     }
                 }
                 else -> {

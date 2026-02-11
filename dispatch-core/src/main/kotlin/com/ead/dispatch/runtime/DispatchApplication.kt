@@ -397,7 +397,7 @@ internal class DispatchApplicationBuilder(
 
             val update = scrollingContentTracker.consume(scrollingLines)
             if (update.reset) {
-                renderer.clearScreen(clearScrollback = true)
+                renderer.clearScreen(clearScrollback = false)
             }
             if (update.lines.isNotEmpty()) {
                 renderer.appendScrollingContent(update.lines)

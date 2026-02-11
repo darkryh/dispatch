@@ -104,7 +104,7 @@ fun WorldRuleListScreen(
                         navigator.navigate(WorldRuleEditorRoute(storyId = route.storyId, worldRuleId = null))
                         true
                     } else {
-                        false
+                        filterController.handleKeyEvent(event)
                     }
                 }
                 else -> {

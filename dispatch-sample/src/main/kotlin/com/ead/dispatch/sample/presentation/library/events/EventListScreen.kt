@@ -104,7 +104,7 @@ fun EventListScreen(
                         navigator.navigate(EventEditorRoute(storyId = route.storyId, eventId = null))
                         true
                     } else {
-                        false
+                        filterController.handleKeyEvent(event)
                     }
                 }
                 else -> {
