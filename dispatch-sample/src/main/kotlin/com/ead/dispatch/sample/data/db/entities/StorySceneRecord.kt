@@ -1,7 +1,9 @@
 package com.ead.dispatch.sample.data.db.entities
 
 import com.ead.dispatch.sample.data.db.type.ContentStatus
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class StorySceneRecord(
     /** Stable identifier for the scene record. */
     val id: String,
@@ -24,6 +26,7 @@ data class StorySceneRecord(
     /** Last update time for metadata changes. */
     val updatedAt: Long,
 ) {
+    @Serializable
     data class SceneContext(
         /** File range pointing to the scene section in chapter markdown. */
         val range: String? = null,

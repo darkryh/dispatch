@@ -34,7 +34,10 @@ import com.ead.dispatch.sample.presentation.library.timeline.TimelineEditorScree
 import com.ead.dispatch.sample.presentation.library.world_rules.WorldRuleListScreen
 import com.ead.dispatch.sample.presentation.library.world_rules.WorldRuleEditorScreen
 import com.ead.dispatch.sample.presentation.session.SessionScreen
+import com.ead.dispatch.sample.presentation.chat_mode.story.ChapterListScreen
+import com.ead.dispatch.sample.presentation.chat_mode.story.SceneListScreen
 import com.ead.dispatch.sample.presentation.chat_mode.story.StoryChatScreen
+import com.ead.dispatch.sample.presentation.chat_mode.story.VolumeListScreen
 
 @Dispatchable
 fun DispatchSampleApp() {
@@ -134,6 +137,15 @@ fun DispatchSampleApp() {
             }
             entry<StoryChatRoute> { route ->
                 StoryChatScreen(route)
+            }
+            entry<VolumeListRoute> { route ->
+                VolumeListScreen(route)
+            }
+            entry<ChapterListRoute> { route ->
+                ChapterListScreen(route)
+            }
+            entry<SceneListRoute> { route ->
+                SceneListScreen(route)
             }
         }
     )

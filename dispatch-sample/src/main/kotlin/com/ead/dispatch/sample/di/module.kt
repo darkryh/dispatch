@@ -2,11 +2,13 @@ package com.ead.dispatch.sample.di
 
 import com.ead.dispatch.koin.dispatchModule
 import com.ead.dispatch.runtime.SavedStateHandle
+import com.ead.dispatch.sample.data.db.entities.DatabaseRuntime
 import com.ead.dispatch.sample.data.db.entities.DispatchDatabaseFactory
 import com.ead.dispatch.sample.data.repositories.StructuredIndexRepository
 import com.ead.dispatch.sample.domain.CommandManager
 import com.ead.dispatch.sample.domain.SessionManager
 import com.ead.dispatch.sample.domain.agents.ChatAgent
+import com.ead.dispatch.sample.domain.agents.StoryAgent
 import com.ead.dispatch.sample.domain.agents.character_agent.CharacterAgent
 import com.ead.dispatch.sample.domain.agents.chat_agent.ChatAgentEmbedder
 import com.ead.dispatch.sample.domain.agents.artifact_agent.ArtifactAgent
@@ -23,6 +25,8 @@ import com.ead.dispatch.sample.domain.embedding.EmbeddingReindexer
 import com.ead.dispatch.sample.domain.embedding.RagContextService
 import com.ead.dispatch.sample.presentation.characters.CharacterViewModel
 import com.ead.dispatch.sample.presentation.chat_mode.chat.ChatViewModel
+import com.ead.dispatch.sample.presentation.chat_mode.story.ChapterListViewModel
+import com.ead.dispatch.sample.presentation.chat_mode.story.SceneListViewModel
 import com.ead.dispatch.sample.presentation.library.arcs.ArcEditorViewModel
 import com.ead.dispatch.sample.presentation.library.arcs.ArcListViewModel
 import com.ead.dispatch.sample.presentation.library.artifacts.ArtifactListViewModel
@@ -46,19 +50,36 @@ import com.ead.dispatch.sample.presentation.library.world_rules.WorldRuleListVie
 import com.ead.dispatch.sample.presentation.library.world_rules.WorldRuleEditorViewModel
 import com.ead.dispatch.sample.presentation.session.SessionViewModel
 import com.ead.dispatch.sample.presentation.chat_mode.story.StoryChatViewModel
+import com.ead.dispatch.sample.presentation.chat_mode.story.VolumeListViewModel
 
 val module = dispatchModule {
 
-    single { DispatchDatabaseFactory().create() }
+    single { DispatchDatabaseFactory() }
+    single {
+        DatabaseRuntime(factory = get()).also { runtime ->
+            Runtime.getRuntime().addShutdownHook(
+                Thread(
+                    { runCatching { runtime.closeBlocking() } },
+                    "dispatch-db-shutdown",
+                )
+            )
+        }
+    }
     single { ChatAgentEmbedder() }
     single { EmbeddingIndexService(embedderProvider = get()) }
     single { EmbeddingReindexer(repository = get()) }
-    single { StructuredIndexRepository(database = get(), embeddingIndexService = get()) }
+    single { StructuredIndexRepository(databaseRuntime = get(), embeddingIndexService = get()) }
     single { RagContextService(repository = get(), embeddingIndexService = get()) }
     single { CommandManager() }
     single { SessionManager(repository = get()) }
     single {
         ChatAgent(
+            repository = get(),
+            ragContextService = get(),
+        )
+    }
+    single {
+        StoryAgent(
             repository = get(),
             ragContextService = get(),
         )
@@ -79,6 +100,7 @@ val module = dispatchModule {
             commandManager = get(),
             sessionManager = get(),
             chatAgent = get(),
+            storyAgent = get(),
             savedStateHandle = savedStateHandle,
         )
     }
@@ -227,6 +249,24 @@ val module = dispatchModule {
     }
     viewModel { (savedStateHandle: SavedStateHandle) ->
         StoryChatViewModel(
+            repository = get(),
+            savedStateHandle = savedStateHandle,
+        )
+    }
+    viewModel { (savedStateHandle: SavedStateHandle) ->
+        VolumeListViewModel(
+            repository = get(),
+            savedStateHandle = savedStateHandle,
+        )
+    }
+    viewModel { (savedStateHandle: SavedStateHandle) ->
+        ChapterListViewModel(
+            repository = get(),
+            savedStateHandle = savedStateHandle,
+        )
+    }
+    viewModel { (savedStateHandle: SavedStateHandle) ->
+        SceneListViewModel(
             repository = get(),
             savedStateHandle = savedStateHandle,
         )

@@ -2,6 +2,7 @@ package com.ead.dispatch.sample.domain.agents.tools.model
 
 import com.ead.dispatch.sample.data.db.type.ArcScope
 import com.ead.dispatch.sample.data.db.type.ContentStatus
+import com.ead.dispatch.sample.data.db.type.ContentType
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -26,6 +27,114 @@ data class StoryStyleProfileRequest(
     val tense: String? = null,
     val targetAudience: String? = null,
     val pacing: String? = null,
+)
+
+@Serializable
+data class CreateVolumeRequest(
+    val number: Long,
+    val title: String,
+    val summary: String? = null,
+    val targetWordCount: Long? = null,
+    val status: ContentStatus? = null,
+    val notes: String? = null,
+    val keyEvents: List<String>? = null,
+)
+
+@Serializable
+data class UpdateVolumeRequest(
+    val title: String? = null,
+    val summary: String? = null,
+    val targetWordCount: Long? = null,
+    val status: ContentStatus? = null,
+    val notes: String? = null,
+    val keyEvents: List<String>? = null,
+)
+
+@Serializable
+data class ChapterContentRequest(
+    val ref: String? = null,
+    val type: ContentType? = null,
+    val checksum: String? = null,
+    val updatedAt: Long? = null,
+    val range: String? = null,
+    val wordCount: Long? = null,
+)
+
+@Serializable
+data class CreateChapterRequest(
+    val volumeId: String,
+    val number: Long,
+    val title: String,
+    val summary: String? = null,
+    val content: ChapterContentRequest? = null,
+    val keyEvents: List<String>? = null,
+    val targetWordCount: Long? = null,
+    val status: ContentStatus? = null,
+)
+
+@Serializable
+data class UpdateChapterRequest(
+    val title: String? = null,
+    val summary: String? = null,
+    val content: ChapterContentRequest? = null,
+    val keyEvents: List<String>? = null,
+    val targetWordCount: Long? = null,
+    val status: ContentStatus? = null,
+)
+
+@Serializable
+data class SceneContextRequest(
+    val range: String? = null,
+    val pov: String? = null,
+    val emotionalBeat: String? = null,
+    val locationId: String? = null,
+    val timeSpan: String? = null,
+)
+
+@Serializable
+data class CreateSceneRequest(
+    val chapterId: String,
+    val number: Long,
+    val title: String? = null,
+    val summary: String? = null,
+    val context: SceneContextRequest? = null,
+    val keyEvents: List<String>? = null,
+    val status: ContentStatus? = null,
+)
+
+@Serializable
+data class UpdateSceneRequest(
+    val title: String? = null,
+    val summary: String? = null,
+    val context: SceneContextRequest? = null,
+    val keyEvents: List<String>? = null,
+    val status: ContentStatus? = null,
+)
+
+@Serializable
+enum class ChapterDraftEditType {
+    REPLACE,
+    INSERT_BEFORE,
+    INSERT_AFTER,
+    DELETE,
+    PREPEND,
+    APPEND,
+}
+
+@Serializable
+data class ChapterDraftEditOperationRequest(
+    val type: ChapterDraftEditType,
+    val target: String? = null,
+    val text: String? = null,
+    val all: Boolean = false,
+)
+
+@Serializable
+data class ProposeChapterDraftEditRequest(
+    val chapterId: String,
+    val operations: List<ChapterDraftEditOperationRequest>,
+    val expectedChecksum: String? = null,
+    val note: String? = null,
 )
 
 @Serializable

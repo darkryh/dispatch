@@ -1,7 +1,9 @@
 package com.ead.dispatch.sample.data.db.entities
 
 import com.ead.dispatch.sample.data.db.type.ContentStatus
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class StoryVolumeRecord(
     /** Stable identifier for the volume record. */
     val id: String,
@@ -20,6 +22,7 @@ data class StoryVolumeRecord(
     /** Last update time for metadata changes. */
     val updatedAt: Long,
 ) {
+    @Serializable
     data class VolumePlan(
         /** Short volume summary for planning. */
         val summary: String? = null,

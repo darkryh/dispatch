@@ -10,6 +10,57 @@ import com.ead.dispatch.sample.data.repositories.StructuredIndexRepository
 import com.ead.dispatch.sample.domain.agents.tools.model.*
 import com.ead.dispatch.sample.domain.model.story.StoryChatContext
 import kotlinx.datetime.Clock
+import kotlinx.serialization.Serializable
+
+@Serializable
+data class StoryModeContextSnapshot(
+    val storyId: String,
+    val title: String? = null,
+    val status: String? = null,
+    val volumes: List<StoryVolumeSnapshot> = emptyList(),
+    val chapters: List<StoryChapterSnapshot> = emptyList(),
+    val scenes: List<StorySceneSnapshot> = emptyList(),
+    val ragDocuments: List<StoryRagDocumentSnapshot> = emptyList(),
+)
+
+@Serializable
+data class StoryVolumeSnapshot(
+    val id: String,
+    val number: Long,
+    val title: String,
+    val status: String? = null,
+    val summary: String? = null,
+)
+
+@Serializable
+data class StoryChapterSnapshot(
+    val id: String,
+    val volumeId: String,
+    val number: Long,
+    val title: String,
+    val status: String? = null,
+    val summary: String? = null,
+    val wordCount: Long? = null,
+)
+
+@Serializable
+data class StorySceneSnapshot(
+    val id: String,
+    val chapterId: String,
+    val number: Long,
+    val title: String? = null,
+    val status: String? = null,
+    val summary: String? = null,
+)
+
+@Serializable
+data class StoryRagDocumentSnapshot(
+    val docId: String,
+    val chapterId: String? = null,
+    val sourceType: String,
+    val sourceRef: String? = null,
+    val createdAt: Long,
+)
 
 class StoryInfoTools(
     private val repository: StructuredIndexRepository,
@@ -47,6 +98,68 @@ class StoryInfoTools(
             entityId = story.id,
             summary = "Loaded story metadata.",
             payload = story,
+        )
+    }
+
+    @Tool
+    @LLMDescription("Get story mode context (volumes, chapters, scenes, chapter rag refs).")
+    suspend fun getStoryModeContext(
+        @LLMDescription("Story/session id for scoping")
+        storyId: String,
+    ): ToolResult<QueryOutcome<StoryModeContextSnapshot>> {
+        repository.getStoryById(storyId)
+            ?: return failure("NOT_FOUND", "Story record not found for session.")
+        val context = repository.getStoryModeContext(storyId)
+        val snapshot = StoryModeContextSnapshot(
+            storyId = storyId,
+            title = context.story?.title,
+            status = context.story?.status?.name,
+            volumes = context.volumes.map { volume ->
+                StoryVolumeSnapshot(
+                    id = volume.id,
+                    number = volume.number,
+                    title = volume.title,
+                    status = volume.plan?.status?.name,
+                    summary = volume.plan?.summary,
+                )
+            },
+            chapters = context.chapters.map { chapter ->
+                StoryChapterSnapshot(
+                    id = chapter.id,
+                    volumeId = chapter.volumeId,
+                    number = chapter.number,
+                    title = chapter.title,
+                    status = chapter.status?.name,
+                    summary = chapter.summary,
+                    wordCount = chapter.content?.wordCount,
+                )
+            },
+            scenes = context.scenes.map { scene ->
+                StorySceneSnapshot(
+                    id = scene.id,
+                    chapterId = scene.chapterId,
+                    number = scene.number,
+                    title = scene.title,
+                    status = scene.status?.name,
+                    summary = scene.summary,
+                )
+            },
+            ragDocuments = context.ragDocuments.map { document ->
+                StoryRagDocumentSnapshot(
+                    docId = document.docId,
+                    chapterId = document.chapterId,
+                    sourceType = document.sourceType.name,
+                    sourceRef = document.sourceRef,
+                    createdAt = document.createdAt,
+                )
+            },
+        )
+        return querySuccess(
+            entity = OperationEntity.STORY,
+            storyId = storyId,
+            entityId = context.story?.id,
+            summary = "Loaded story mode context.",
+            payload = snapshot,
         )
     }
 

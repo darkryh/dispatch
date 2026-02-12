@@ -2,7 +2,9 @@ package com.ead.dispatch.sample.data.db.entities
 
 import com.ead.dispatch.sample.data.db.type.ContentStatus
 import com.ead.dispatch.sample.data.db.type.ContentType
+import kotlinx.serialization.Serializable
 
+@Serializable
 data class StoryChapterRecord(
     /** Stable identifier for the chapter record. */
     val id: String,
@@ -27,6 +29,7 @@ data class StoryChapterRecord(
     /** Last update time for metadata changes. */
     val updatedAt: Long,
 ) {
+    @Serializable
     data class ChapterContent(
         /** File reference to the chapter markdown (source of truth). */
         val ref: String? = null,

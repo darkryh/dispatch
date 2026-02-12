@@ -2,6 +2,7 @@ package com.ead.dispatch.sample.presentation.chat_mode.chat
 
 import ai.koog.agents.snapshot.feature.isTombstone
 import ai.koog.agents.snapshot.feature.tombstoneCheckpoint
+import ai.koog.agents.snapshot.feature.AgentCheckpointData
 import ai.koog.prompt.message.Message
 import ai.koog.prompt.streaming.StreamFrame
 import com.ead.dispatch.navigation.Navigator
@@ -12,7 +13,9 @@ import com.ead.dispatch.sample.domain.CommandManager
 import com.ead.dispatch.sample.domain.SessionManager
 import com.ead.dispatch.sample.domain.Storage
 import com.ead.dispatch.sample.domain.agents.ChatAgent
+import com.ead.dispatch.sample.domain.agents.StoryAgent
 import com.ead.dispatch.sample.domain.agents.chat_agent.ChatRequest
+import com.ead.dispatch.sample.domain.agents.story_agent.StoryRequest
 import com.ead.dispatch.sample.domain.entity.EntityOptionType
 import com.ead.dispatch.sample.domain.model.message.CliMessage
 import com.ead.dispatch.sample.domain.model.message.CliMessageRole
@@ -37,6 +40,12 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 
+private data class ModeHistoryState(
+    val messages: List<CliMessage> = emptyList(),
+    val pendingDecision: DecisionPromptPayload? = null,
+    val contextRemainingPercent: Int? = null,
+)
+
 /**
  * ViewModel for the chat screen with stub responses.
  */
@@ -44,6 +53,7 @@ class ChatViewModel(
     private val commandManager: CommandManager,
     private val sessionManager: SessionManager,
     private val chatAgent: ChatAgent,
+    private val storyAgent: StoryAgent,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
@@ -69,7 +79,11 @@ class ChatViewModel(
     private val _writerMode = MutableStateFlow(WriterMode.CHAT)
     val writerMode: StateFlow<WriterMode> = _writerMode.asStateFlow()
 
-    private var countWriterMode = 0
+    private val modeStateLock = Any()
+    private val modeHistories = WriterMode.entries
+        .associateWith { ModeHistoryState() }
+        .toMutableMap()
+
     private var activeStreamJob: Job? = null
     private var cancelRequested = false
 
@@ -85,46 +99,15 @@ class ChatViewModel(
     }
 
     private suspend fun loadMessagesForSession(sessionId: String) {
-        val checkpoints = storageProvider.getCheckpoints(AIProvider.getChatAgentId(sessionId))
-        val latest = checkpoints.maxByOrNull { it.createdAt }
-
-        val history = when {
-            latest == null -> emptyList()
-            latest.isTombstone() -> emptyList()
-            latest.messageHistory.isNotEmpty() -> latest.messageHistory
-            else -> checkpoints.flatMap { it.messageHistory }
-        }
-
-        val messages = history
-            .filter { message -> message.role != Message.Role.System }
-            .sortedBy { message -> message.metaInfo.timestamp }
-            .distinctBy { message -> Triple(message.role, message.metaInfo.timestamp, message.content) }
-
-        val restored = mutableListOf<CliMessage>()
-        var pendingDecision: DecisionPromptPayload? = null
-        messages.map { it.toCliMessage() }.forEach { cliMessage ->
-            when (cliMessage.role) {
-                CliMessageRole.TOOL -> {
-                    val decision = parseDecisionPromptPayload(cliMessage.toolName, cliMessage.data)
-                    if (decision != null) {
-                        pendingDecision = decision
-                    } else {
-                        restored += cliMessage
-                    }
-                }
-                CliMessageRole.USER -> {
-                    if (pendingDecision != null) {
-                        pendingDecision = null
-                    }
-                    restored += cliMessage
-                }
-                else -> restored += cliMessage
-            }
-        }
-
-        _messages.value = restored
-        _pendingDecision.value = pendingDecision
-        _contextRemainingPercent.value = ContextCheckpointProperties.readRemainingPercent(latest?.properties)
+        val chatState = restoreModeState(
+            checkpoints = storageProvider.getCheckpoints(AIProvider.getChatAgentId(sessionId))
+        )
+        val storyState = restoreModeState(
+            checkpoints = storageProvider.getCheckpoints(AIProvider.getStoryAgentId(sessionId))
+        )
+        setModeState(WriterMode.CHAT, chatState)
+        setModeState(WriterMode.CHAT_STORY, storyState)
+        applyModeState(_writerMode.value)
     }
 
     fun onEvent(event: ChatEvent) {
@@ -153,17 +136,13 @@ class ChatViewModel(
                 submitMessage(text = text, fromDecisionPrompt = false)
             }
             is ChatEvent.OnChatModeChanged -> {
-                countWriterMode++
-
-                if (countWriterMode > WriterMode.entries.size - 1) {
-                    countWriterMode = 0
+                if (_isProcessing.value || _pendingDecision.value != null) return
+                val nextMode = when (_writerMode.value) {
+                    WriterMode.CHAT -> WriterMode.CHAT_STORY
+                    WriterMode.CHAT_STORY -> WriterMode.CHAT
                 }
-
-                _writerMode.value =  when (countWriterMode) {
-                    0 -> WriterMode.CHAT
-                    1 -> WriterMode.CHAT_STORY
-                    else -> WriterMode.CHAT
-                }
+                _writerMode.value = nextMode
+                applyModeState(nextMode)
             }
             is ChatEvent.OnCancelProcessing -> {
                 cancelRequested = true
@@ -177,13 +156,12 @@ class ChatViewModel(
     private fun onCommandAction(navigator: Navigator, commandAction: CommandAction) {
         when (commandAction) {
             CommandAction.ClearContext -> {
-                _messages.value = emptyList()
-                _pendingDecision.value = null
-                _contextRemainingPercent.value = null
+                val activeMode = _writerMode.value
+                setModeState(activeMode, ModeHistoryState())
                 val activeSessionId = _session.value?.id ?: route.conversationId
                 if (!activeSessionId.isNullOrBlank()) {
                     viewModelScope.launch(Dispatchers.IO) {
-                        clearPersistedContext(activeSessionId)
+                        clearPersistedContext(activeSessionId, activeMode)
                     }
                 }
             }
@@ -210,29 +188,41 @@ class ChatViewModel(
 
         viewModelScope.launch {
             val session = activeSession(input)
+            val mode = writerMode.value
 
-            _messages.update { messages ->
-                messages + CliMessage(
+            appendMessage(
+                mode = mode,
+                message = CliMessage(
                     data = input,
                     role = CliMessageRole.USER
                 )
-            }
+            )
 
             _isProcessing.value = true
 
-            val response = chatAgent.run(
-                session = session,
-                input = ChatRequest(
-                    text = input,
-                    storyId = session.id,
-                    fromDecisionPrompt = fromDecisionPrompt,
+            val response = when (mode) {
+                WriterMode.CHAT -> chatAgent.run(
+                    session = session,
+                    input = ChatRequest(
+                        text = input,
+                        storyId = session.id,
+                        fromDecisionPrompt = fromDecisionPrompt,
+                    )
                 )
-            )
+                WriterMode.CHAT_STORY -> storyAgent.run(
+                    session = session,
+                    input = StoryRequest(
+                        text = input,
+                        storyId = session.id,
+                        fromDecisionPrompt = fromDecisionPrompt,
+                    )
+                )
+            }
             val assistantStreamingResponse = response.value
 
             val metadataJob = viewModelScope.launch(Dispatchers.IO) {
                 response.metadata.remainingPercentFlow().collect { remainingPercent ->
-                    _contextRemainingPercent.value = remainingPercent
+                    setContextRemainingPercent(mode, remainingPercent)
                 }
             }
 
@@ -246,7 +236,7 @@ class ChatViewModel(
                         if (cancelRequested) {
                             return@collect
                         }
-                        if (_pendingDecision.value != null && frame !is StreamFrame.End) {
+                        if (modeState(mode).pendingDecision != null && frame !is StreamFrame.End) {
                             // When a decision prompt is active, pause visible streaming until user responds.
                             return@collect
                         }
@@ -257,54 +247,31 @@ class ChatViewModel(
                             if (frame.text.isEmpty()) {
                                 return@collect
                             }
-                            _messages.update { messages ->
-                                if (messages.isEmpty()) {
-                                    return@update messages + CliMessage(
-                                        data = frame.text,
-                                        role = CliMessageRole.ASSISTANT
-                                    )
-                                }
-
-                                val updated = messages.toMutableList()
-                                val lastIndex = updated.lastIndex
-                                val existing = updated[lastIndex]
-
-                                if (existing.role != CliMessageRole.ASSISTANT) {
-                                    updated.add(
-                                        CliMessage(
-                                            data = frame.text,
-                                            role = CliMessageRole.ASSISTANT
-                                        )
-                                    )
-                                } else {
-                                    updated[lastIndex] = existing.copy(data = existing.data + frame.text)
-                                }
-
-                                updated
-                            }
+                            appendAssistantChunk(mode, frame.text)
                         }
                         is StreamFrame.ToolCall -> {
                             val decision = parseDecisionPromptPayload(frame.name, frame.content)
                             if (decision != null) {
-                                _pendingDecision.value = decision
+                                setPendingDecision(mode, decision)
                                 _isProcessing.value = false
                             } else {
                                 _isProcessing.value = true
-                                _messages.update { messages ->
-                                    messages + CliMessage(
+                                appendMessage(
+                                    mode = mode,
+                                    message = CliMessage(
                                         toolId = frame.id,
                                         toolName = frame.name,
                                         data = frame.content,
                                         role = CliMessageRole.TOOL
                                     )
-                                }
+                                )
                             }
                         }
                         is StreamFrame.End -> {
                             // Update session after receiving response (increment count again)
                             sessionManager.updateSession(
                                 sessionId = session.id,
-                                title = _messages.value.lastOrNull { it.role == CliMessageRole.USER }?.data,
+                                title = modeState(mode).messages.lastOrNull { it.role == CliMessageRole.USER }?.data,
                                 incrementMessageCount = true
                             )
                             _isProcessing.value = false
@@ -317,10 +284,10 @@ class ChatViewModel(
                 } finally {
 
                     metadataJob.cancelAndJoin()
-                    _contextRemainingPercent.value = response.metadata.currentRemainingPercent()
+                    setContextRemainingPercent(mode, response.metadata.currentRemainingPercent())
 
-                    if (_contextRemainingPercent.value == null) {
-                        refreshContextStatus(session.id)
+                    if (modeState(mode).contextRemainingPercent == null) {
+                        refreshContextStatus(session.id, mode)
                     }
 
                     if (activeStreamJob === currentJob) {
@@ -343,8 +310,123 @@ class ChatViewModel(
         }.trim()
         if (selectedText.isBlank()) return
 
-        _pendingDecision.value = null
+        setPendingDecision(writerMode.value, null)
         submitMessage(selectedText, fromDecisionPrompt = true)
+    }
+
+    private fun restoreModeState(checkpoints: List<AgentCheckpointData>): ModeHistoryState {
+        val latest = checkpoints.maxByOrNull { it.createdAt }
+        val messages = historyFor(checkpoints)
+            .filter { message -> message.role != Message.Role.System }
+            .sortedBy { message -> message.metaInfo.timestamp }
+            .distinctBy { message -> Triple(message.role, message.metaInfo.timestamp, message.content) }
+
+        val restored = mutableListOf<CliMessage>()
+        var pendingDecision: DecisionPromptPayload? = null
+        messages.map { it.toCliMessage() }.forEach { cliMessage ->
+            when (cliMessage.role) {
+                CliMessageRole.TOOL -> {
+                    val decision = parseDecisionPromptPayload(cliMessage.toolName, cliMessage.data)
+                    if (decision != null) {
+                        pendingDecision = decision
+                    } else {
+                        restored += cliMessage
+                    }
+                }
+                CliMessageRole.USER -> {
+                    if (pendingDecision != null) pendingDecision = null
+                    restored += cliMessage
+                }
+                else -> restored += cliMessage
+            }
+        }
+
+        return ModeHistoryState(
+            messages = restored,
+            pendingDecision = pendingDecision,
+            contextRemainingPercent = ContextCheckpointProperties.readRemainingPercent(latest?.properties),
+        )
+    }
+
+    private fun historyFor(checkpoints: List<AgentCheckpointData>): List<Message> {
+        val latestForAgent = checkpoints.maxByOrNull { it.createdAt } ?: return emptyList()
+        return when {
+            latestForAgent.isTombstone() -> emptyList()
+            latestForAgent.messageHistory.isNotEmpty() -> latestForAgent.messageHistory
+            else -> checkpoints.flatMap { it.messageHistory }
+        }
+    }
+
+    private fun modeState(mode: WriterMode): ModeHistoryState =
+        synchronized(modeStateLock) {
+            modeHistories[mode] ?: ModeHistoryState()
+        }
+
+    private fun setModeState(mode: WriterMode, state: ModeHistoryState) {
+        synchronized(modeStateLock) {
+            modeHistories[mode] = state
+        }
+        if (_writerMode.value == mode) {
+            applyModeState(mode)
+        }
+    }
+
+    private fun appendMessage(mode: WriterMode, message: CliMessage) {
+        val current = modeState(mode)
+        setModeState(
+            mode = mode,
+            state = current.copy(messages = current.messages + message),
+        )
+    }
+
+    private fun appendAssistantChunk(mode: WriterMode, text: String) {
+        val current = modeState(mode)
+        val messages = current.messages
+        val updated = if (messages.isEmpty()) {
+            messages + CliMessage(data = text, role = CliMessageRole.ASSISTANT)
+        } else {
+            val mutable = messages.toMutableList()
+            val lastIndex = mutable.lastIndex
+            val existing = mutable[lastIndex]
+            if (existing.role != CliMessageRole.ASSISTANT) {
+                mutable += CliMessage(data = text, role = CliMessageRole.ASSISTANT)
+            } else {
+                mutable[lastIndex] = existing.copy(data = existing.data + text)
+            }
+            mutable
+        }
+        setModeState(mode, current.copy(messages = updated))
+    }
+
+    private fun setPendingDecision(
+        mode: WriterMode,
+        decision: DecisionPromptPayload?,
+    ) {
+        val current = modeState(mode)
+        setModeState(mode, current.copy(pendingDecision = decision))
+    }
+
+    private fun setContextRemainingPercent(
+        mode: WriterMode,
+        value: Int?,
+    ) {
+        val current = modeState(mode)
+        setModeState(mode, current.copy(contextRemainingPercent = value))
+    }
+
+    private fun applyModeState(mode: WriterMode) {
+        val state = modeState(mode)
+        _messages.value = state.messages
+        _pendingDecision.value = state.pendingDecision
+        _contextRemainingPercent.value = state.contextRemainingPercent
+    }
+
+    private fun agentIdForMode(
+        sessionId: String,
+        mode: WriterMode,
+    ): String = when (mode) {
+        WriterMode.CHAT -> AIProvider.getChatAgentId(sessionId)
+        WriterMode.CHAT_STORY -> AIProvider.getStoryAgentId(sessionId)
     }
 
     private fun openEntityList(
@@ -364,11 +446,9 @@ class ChatViewModel(
             EntityOptionType.LOCATION_FEATURES -> navigator.navigate(LocationFeatureListRoute(storyId = storyId))
             EntityOptionType.ARTIFACTS -> navigator.navigate(ArtifactListRoute(storyId = storyId))
             EntityOptionType.TIMELINE -> navigator.navigate(TimelineListRoute(storyId = storyId))
-            EntityOptionType.VOLUMES,
-            EntityOptionType.CHAPTERS,
-            EntityOptionType.SCENES -> {
-                // Story mode lists not implemented yet.
-            }
+            EntityOptionType.VOLUMES -> navigator.navigate(VolumeListRoute(storyId = storyId))
+            EntityOptionType.CHAPTERS -> navigator.navigate(ChapterListRoute(storyId = storyId))
+            EntityOptionType.SCENES -> navigator.navigate(SceneListRoute(storyId = storyId))
         }
     }
 
@@ -389,13 +469,22 @@ class ChatViewModel(
         return session
     }
 
-    private suspend fun refreshContextStatus(sessionId: String) {
-        val latestCheckpoint = storageProvider.getLatestCheckpoint(AIProvider.getChatAgentId(sessionId))
-        _contextRemainingPercent.value = ContextCheckpointProperties.readRemainingPercent(latestCheckpoint?.properties)
+    private suspend fun refreshContextStatus(
+        sessionId: String,
+        mode: WriterMode,
+    ) {
+        val latestCheckpoint = storageProvider.getLatestCheckpoint(agentIdForMode(sessionId, mode))
+        setContextRemainingPercent(
+            mode = mode,
+            value = ContextCheckpointProperties.readRemainingPercent(latestCheckpoint?.properties),
+        )
     }
 
-    private suspend fun clearPersistedContext(sessionId: String) {
-        val agentId = AIProvider.getChatAgentId(sessionId)
+    private suspend fun clearPersistedContext(
+        sessionId: String,
+        mode: WriterMode,
+    ) {
+        val agentId = agentIdForMode(sessionId, mode)
         val latest = storageProvider.getLatestCheckpoint(agentId)
         val version = (latest?.version?.plus(1) ?: 0L).coerceAtLeast(0L)
         val tombstone = tombstoneCheckpoint(Clock.System.now(), version)

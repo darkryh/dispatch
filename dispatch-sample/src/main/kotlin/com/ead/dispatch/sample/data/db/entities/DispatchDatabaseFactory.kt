@@ -6,22 +6,23 @@ import com.ead.dispatch.sample.DispatchDatabase
 import net.harawata.appdirs.AppDirsFactory
 import java.nio.file.Files
 import java.nio.file.Paths
+import java.nio.file.Path
 import java.util.Properties
 
 class DispatchDatabaseFactory(
     private val appName: String = "dispatch",
     private val appAuthor: String = "ead",
     private val dbFileName: String = "dispatch.db",
+    private val dataDirectoryOverride: Path? = null,
 ) {
 
     fun create(): DispatchDatabase {
         val driver = createDriver()
-        driver.execute(null, "PRAGMA foreign_keys=ON", 0)
         return DispatchDatabase(driver)
     }
 
-    private fun createDriver(): SqlDriver {
-        val dataDir = Paths.get(
+    fun createDriver(): SqlDriver {
+        val dataDir = dataDirectoryOverride ?: Paths.get(
             AppDirsFactory.getInstance().getUserDataDir(appName, null, appAuthor)
         )
 

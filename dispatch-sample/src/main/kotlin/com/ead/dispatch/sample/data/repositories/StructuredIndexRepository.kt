@@ -2,7 +2,6 @@ package com.ead.dispatch.sample.data.repositories
 
 import app.cash.sqldelight.coroutines.asFlow
 import app.cash.sqldelight.coroutines.mapToList
-import com.ead.dispatch.sample.DispatchDatabase
 import com.ead.dispatch.sample.data.db.entities.*
 import com.ead.dispatch.sample.data.db.type.*
 import com.ead.dispatch.sample.domain.embedding.EmbeddingIndexService
@@ -16,11 +15,9 @@ import kotlinx.coroutines.asCoroutineDispatcher
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.withContext
-import java.util.concurrent.Executors
 
 class StructuredIndexRepository(
-    private val database: DispatchDatabase,
+    private val databaseRuntime: DatabaseRuntime,
     private val embeddingIndexService: EmbeddingIndexService,
 ) {
     data class RelationshipIntegrityResult(
@@ -71,13 +68,12 @@ class StructuredIndexRepository(
         )
     }
 
-    private val queries = database.dispatchDatabaseQueries
-    private val coroutineDispatcher: CoroutineDispatcher = Executors.newSingleThreadExecutor { runnable ->
-        Thread(runnable, "dispatch-db")
-    }.asCoroutineDispatcher()
+    private val database = databaseRuntime.database
+    private val queries = databaseRuntime.queries
+    private val coroutineDispatcher: CoroutineDispatcher = databaseRuntime.dispatcher
 
     private suspend inline fun <T> query(crossinline block: () -> T): T =
-        withContext(coroutineDispatcher) { block() }
+        databaseRuntime.query { block() }
 
     private fun normalizeRelationshipEntityType(rawType: String): String? =
         rawType.trim().uppercase().takeIf { it in RELATIONSHIP_ENTITY_TYPES }
@@ -550,6 +546,87 @@ class StructuredIndexRepository(
         sessions.map { session ->
             session.copy(metadata = getSessionMetadata(session.id))
         }
+    }
+
+    suspend fun getSessionById(sessionId: String): SessionRecord? = query {
+        val session = queries.selectSessionById(sessionId) { id, title, mode, createdAt, updatedAt, messageCount ->
+            SessionRecord(
+                id = id,
+                profile = SessionRecord.SessionProfile(
+                    title = title,
+                    mode = SessionMode.fromDb(mode),
+                ),
+                createdAt = createdAt,
+                updatedAt = updatedAt,
+                stats = SessionRecord.SessionStats(
+                    messageCount = messageCount,
+                ),
+                metadata = emptyMap(),
+            )
+        }.executeAsOneOrNull()
+
+        session?.copy(metadata = getSessionMetadata(session.id))
+    }
+
+    suspend fun getSessionMetadataValue(sessionId: String, key: String): String? =
+        getSessionById(sessionId)?.metadata?.get(key)
+
+    suspend fun putSessionMetadataValue(
+        sessionId: String,
+        key: String,
+        value: String,
+    ): Boolean {
+        val session = getSessionById(sessionId) ?: return false
+        val updatedMetadata = session.metadata.toMutableMap().apply {
+            put(key, value)
+        }
+        upsertSession(
+            session.copy(
+                updatedAt = System.currentTimeMillis(),
+                metadata = updatedMetadata,
+            )
+        )
+        return true
+    }
+
+    suspend fun removeSessionMetadataValue(
+        sessionId: String,
+        key: String,
+    ): Boolean {
+        val session = getSessionById(sessionId) ?: return false
+        if (!session.metadata.containsKey(key)) return true
+        val updatedMetadata = session.metadata.toMutableMap().apply {
+            remove(key)
+        }
+        upsertSession(
+            session.copy(
+                updatedAt = System.currentTimeMillis(),
+                metadata = updatedMetadata,
+            )
+        )
+        return true
+    }
+
+    suspend fun getStoryMetadataValue(storyId: String, key: String): String? {
+        val sessionId = getStoryById(storyId)?.sessionId ?: return null
+        return getSessionMetadataValue(sessionId, key)
+    }
+
+    suspend fun putStoryMetadataValue(
+        storyId: String,
+        key: String,
+        value: String,
+    ): Boolean {
+        val sessionId = getStoryById(storyId)?.sessionId ?: return false
+        return putSessionMetadataValue(sessionId, key, value)
+    }
+
+    suspend fun removeStoryMetadataValue(
+        storyId: String,
+        key: String,
+    ): Boolean {
+        val sessionId = getStoryById(storyId)?.sessionId ?: return false
+        return removeSessionMetadataValue(sessionId, key)
     }
 
     suspend fun deleteSession(sessionId: String) = query {
@@ -1073,6 +1150,32 @@ class StructuredIndexRepository(
         }
     }
 
+    suspend fun getVolumeById(volumeId: String): StoryVolumeRecord? = query {
+        val volume = queries.selectVolumeById(volumeId) { id, storyId, number, title, summary, targetWordCount, status, notes, createdAt, updatedAt ->
+            StoryVolumeRecord(
+                id = id,
+                storyId = storyId,
+                number = number,
+                title = title,
+                plan = toVolumePlan(
+                    summary = summary,
+                    targetWordCount = targetWordCount,
+                    status = status?.let(ContentStatus.Companion::fromDb),
+                    notes = notes,
+                ),
+                keyEvents = emptyList(),
+                createdAt = createdAt,
+                updatedAt = updatedAt,
+            )
+        }.executeAsOneOrNull()
+
+        volume?.copy(keyEvents = getVolumeKeyEvents(volume.id))
+    }
+
+    suspend fun deleteStoryVolume(volumeId: String) = query {
+        queries.deleteStoryVolume(volumeId)
+    }
+
     fun observeVolumesByStory(storyId: String): Flow<List<StoryVolumeRecord>> =
         queries.selectVolumesByStoryId(storyId) { id, storyId, number, title, summary, targetWordCount, status, notes, createdAt, updatedAt ->
             StoryVolumeRecord(
@@ -1177,6 +1280,37 @@ class StructuredIndexRepository(
         chapters.map { chapter ->
             chapter.copy(keyEvents = getChapterKeyEvents(chapter.id))
         }
+    }
+
+    suspend fun getChapterById(chapterId: String): StoryChapterRecord? = query {
+        val chapter = queries.selectChapterById(chapterId) { id, volumeId, number, title, summary, contentRef, contentType, contentChecksum, contentUpdatedAt, contentRange, wordCount, targetWordCount, status, createdAt, updatedAt ->
+            StoryChapterRecord(
+                id = id,
+                volumeId = volumeId,
+                number = number,
+                title = title,
+                summary = summary,
+                content = toChapterContent(
+                    contentRef = contentRef,
+                    contentType = contentType?.let(ContentType.Companion::fromDb),
+                    contentChecksum = contentChecksum,
+                    contentUpdatedAt = contentUpdatedAt,
+                    contentRange = contentRange,
+                    wordCount = wordCount,
+                ),
+                keyEvents = emptyList(),
+                targetWordCount = targetWordCount,
+                status = status?.let(ContentStatus.Companion::fromDb),
+                createdAt = createdAt,
+                updatedAt = updatedAt,
+            )
+        }.executeAsOneOrNull()
+
+        chapter?.copy(keyEvents = getChapterKeyEvents(chapter.id))
+    }
+
+    suspend fun deleteStoryChapter(chapterId: String) = query {
+        queries.deleteStoryChapter(chapterId)
     }
 
     fun observeChaptersByVolume(volumeId: String): Flow<List<StoryChapterRecord>> =
@@ -1497,7 +1631,7 @@ class StructuredIndexRepository(
     }
 
     suspend fun getScenesByChapter(chapterId: String): List<StorySceneRecord> = query {
-        queries.selectScenesByChapterId(chapterId) { id, chapterId, number, title, summary, contentRange, pov, emotionalBeat, locationId, timeSpan, status, createdAt, updatedAt ->
+        val scenes = queries.selectScenesByChapterId(chapterId) { id, chapterId, number, title, summary, contentRange, pov, emotionalBeat, locationId, timeSpan, status, createdAt, updatedAt ->
             StorySceneRecord(
                 id = id,
                 chapterId = chapterId,
@@ -1511,12 +1645,45 @@ class StructuredIndexRepository(
                     locationId = locationId,
                     timeSpan = timeSpan,
                 ),
-                keyEvents = getSceneKeyEvents(id),
+                keyEvents = emptyList(),
                 status = status?.let(ContentStatus.Companion::fromDb),
                 createdAt = createdAt,
                 updatedAt = updatedAt,
             )
         }.executeAsList()
+
+        scenes.map { scene ->
+            scene.copy(keyEvents = getSceneKeyEvents(scene.id))
+        }
+    }
+
+    suspend fun getSceneById(sceneId: String): StorySceneRecord? = query {
+        val scene = queries.selectSceneById(sceneId) { id, chapterId, number, title, summary, contentRange, pov, emotionalBeat, locationId, timeSpan, status, createdAt, updatedAt ->
+            StorySceneRecord(
+                id = id,
+                chapterId = chapterId,
+                number = number,
+                title = title,
+                summary = summary,
+                context = toSceneContext(
+                    contentRange = contentRange,
+                    pov = pov,
+                    emotionalBeat = emotionalBeat,
+                    locationId = locationId,
+                    timeSpan = timeSpan,
+                ),
+                keyEvents = emptyList(),
+                status = status?.let(ContentStatus.Companion::fromDb),
+                createdAt = createdAt,
+                updatedAt = updatedAt,
+            )
+        }.executeAsOneOrNull()
+
+        scene?.copy(keyEvents = getSceneKeyEvents(scene.id))
+    }
+
+    suspend fun deleteStoryScene(sceneId: String) = query {
+        queries.deleteStorySceneById(sceneId)
     }
 
     suspend fun replaceScenesByChapter(chapterId: String, scenes: List<StorySceneRecord>) = query {

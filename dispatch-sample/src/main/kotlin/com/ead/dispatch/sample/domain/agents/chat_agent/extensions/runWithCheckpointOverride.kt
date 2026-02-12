@@ -16,11 +16,12 @@ import kotlin.reflect.typeOf
 internal suspend inline fun <reified Input, Output> AIAgent<Input, Output>.runWithStartCheckpoint(
     agentId: String,
     input: Input,
+    startNodePath: String = "$agentId/chat-mode.planner/classify-intent",
 ): Output {
     overrideCheckpointInput(
         agentId = agentId,
         input = input,
-        startNodePath = "$agentId/chat-mode.planner/classify-intent",
+        startNodePath = startNodePath,
     )
     return run(input)
 }

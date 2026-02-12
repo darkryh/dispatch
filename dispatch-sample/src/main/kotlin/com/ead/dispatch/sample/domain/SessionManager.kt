@@ -42,18 +42,22 @@ class SessionManager(
     }
 
     private suspend fun refreshSessions() {
-        _sessionsFlow.value = repository.getSessions().map { record ->
-                    Session(
-                        id = record.id,
-                        title = record.profile.title,
-                        updatedAt = Instant.fromEpochMilliseconds(record.updatedAt),
-                        messageCount = record.stats.messageCount.toInt(),
-                    )
-                }
-            }
+        _sessionsFlow.value = repository.getSessions().map { record -> record.toSession() }
+    }
 
-    private suspend fun persistSession(session: Session, timestamp: Instant) {
-        val epochMillis = timestamp.toEpochMilliseconds()
+    private fun SessionRecord.toSession(): Session =
+        Session(
+            id = id,
+            title = profile.title,
+            updatedAt = Instant.fromEpochMilliseconds(updatedAt),
+            messageCount = stats.messageCount.toInt(),
+        )
+
+    private suspend fun persistSession(
+        session: Session,
+        createdAtMillis: Long,
+        updatedAtMillis: Long,
+    ) {
         repository.upsertSession(
             SessionRecord(
                 id = session.id,
@@ -61,8 +65,8 @@ class SessionManager(
                     title = session.title,
                     mode = DEFAULT_MODE,
                 ),
-                createdAt = epochMillis,
-                updatedAt = epochMillis,
+                createdAt = createdAtMillis,
+                updatedAt = updatedAtMillis,
                 stats = SessionRecord.SessionStats(
                     messageCount = session.messageCount.toLong(),
                 ),
@@ -79,6 +83,7 @@ class SessionManager(
      */
     suspend fun createSession(title: String = DEFAULT_TITLE): Session {
         val now = Clock.System.now()
+        val epochMillis = now.toEpochMilliseconds()
         val session = Session(
             id = UUID.randomUUID().toString(),
             title = title.take(100), // Limit title length
@@ -86,7 +91,11 @@ class SessionManager(
             messageCount = 0
         )
 
-        persistSession(session, now)
+        persistSession(
+            session = session,
+            createdAtMillis = epochMillis,
+            updatedAtMillis = epochMillis,
+        )
         ensureStoryForSession(session, now)
 
         setCurrentSession(session.id)
@@ -99,14 +108,17 @@ class SessionManager(
      * This is useful when restoring a session from persisted checkpoints.
      */
     suspend fun ensureSession(sessionId: String, title: String? = null): Session {
-        val existing = getSession(sessionId)
-        if (existing != null) {
+        val existingRecord = repository.getSessionById(sessionId)
+        if (existingRecord != null) {
+            val existing = existingRecord.toSession()
             ensureStoryForSession(existing, Clock.System.now())
             setCurrentSession(sessionId)
+            refreshSessions()
             return existing
         }
 
         val now = Clock.System.now()
+        val epochMillis = now.toEpochMilliseconds()
         val session = Session(
             id = sessionId,
             title = (title ?: DEFAULT_TITLE).take(100),
@@ -114,7 +126,11 @@ class SessionManager(
             messageCount = 0
         )
 
-        persistSession(session, now)
+        persistSession(
+            session = session,
+            createdAtMillis = epochMillis,
+            updatedAtMillis = epochMillis,
+        )
         ensureStoryForSession(session, now)
 
         setCurrentSession(sessionId)
@@ -129,8 +145,10 @@ class SessionManager(
         title: String? = null,
         incrementMessageCount: Boolean = false
     ) {
-        val existing = getSession(sessionId) ?: return
+        val existingRecord = repository.getSessionById(sessionId) ?: return
+        val existing = existingRecord.toSession()
         val now = Clock.System.now()
+        val nowMillis = now.toEpochMilliseconds()
 
         val updated = existing.copy(
             title = title ?: existing.title,
@@ -138,7 +156,11 @@ class SessionManager(
             messageCount = if (incrementMessageCount) existing.messageCount + 1 else existing.messageCount
         )
 
-        persistSession(updated, now)
+        persistSession(
+            session = updated,
+            createdAtMillis = existingRecord.createdAt,
+            updatedAtMillis = nowMillis,
+        )
     }
 
     /**
@@ -190,12 +212,12 @@ class SessionManager(
             .filter { it.stats.messageCount <= 0L }
             .forEach { session ->
                 repository.deleteSession(session.id)
-                repository.deleteStoryById(session.id)
             }
     }
 
     private suspend fun createDraftSession() {
         if (_currentSessionId.value != null) return
+        if (repository.getSessions().isNotEmpty()) return
         createSession(DEFAULT_TITLE)
     }
 

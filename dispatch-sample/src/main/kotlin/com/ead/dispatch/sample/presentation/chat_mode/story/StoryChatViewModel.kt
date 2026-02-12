@@ -58,6 +58,10 @@ class StoryChatViewModel(
                     val relationships = repository.getRelationshipsByStory(storyId)
                     val locationFeatures = repository.getLocationFeaturesByStory(storyId)
                     val artifacts = repository.getArtifactsByStory(storyId)
+                    val timelineEntries = repository.getTimelineEntriesByStory(storyId)
+                    val volumes = repository.getVolumesByStory(storyId)
+                    val chapters = volumes.flatMap { volume -> repository.getChaptersByVolume(volume.id) }
+                    val scenes = chapters.flatMap { chapter -> repository.getScenesByChapter(chapter.id) }
 
                     val counts = listOf(
                         StoryCountItem("Characters", characters.size),
@@ -70,6 +74,10 @@ class StoryChatViewModel(
                         StoryCountItem("Relationships", relationships.size),
                         StoryCountItem("Artifacts", artifacts.size),
                         StoryCountItem("Location Features", locationFeatures.size),
+                        StoryCountItem("Timeline Entries", timelineEntries.size),
+                        StoryCountItem("Volumes", volumes.size),
+                        StoryCountItem("Chapters", chapters.size),
+                        StoryCountItem("Scenes", scenes.size),
                     )
 
                     _state.update {

@@ -164,3 +164,23 @@ data class TimelineEditorRoute(
 data class StoryChatRoute(
     val storyId: String? = null,
 ) : NavKey
+
+@Serializable
+@SerialName("volumes-list")
+data class VolumeListRoute(
+    val storyId: String? = null,
+) : NavKey
+
+@Serializable
+@SerialName("chapters-list")
+data class ChapterListRoute(
+    val storyId: String? = null,
+    val volumeId: String? = null,
+) : NavKey
+
+@Serializable
+@SerialName("scenes-list")
+data class SceneListRoute(
+    val storyId: String? = null,
+    val chapterId: String? = null,
+) : NavKey

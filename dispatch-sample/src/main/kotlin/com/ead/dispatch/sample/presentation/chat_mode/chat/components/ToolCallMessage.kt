@@ -28,12 +28,19 @@ fun ToolCallMessage(
 ) {
     val display = parseToolDisplay(message)
     if (display == null) {
-        Row(modifier = modifier.fillMaxWidth()) {
-            Spacer(modifier = Modifier.width(2))
-            Text(text = "⚙ ", style = rgb("#FFA500"))
-            val toolLabel = message.toolName?.let { "Tool payload ($it)" } ?: "Tool payload"
-            Text(text = "$toolLabel (unparsed)", style = rgb("#FFA500"))
-            Spacer(modifier = Modifier.width(2))
+        val toolLabel = message.toolName?.let { "Tool payload ($it)" } ?: "Tool payload"
+        val preview = unparsedPayloadPreview(message.data)
+        Column(modifier = modifier.fillMaxWidth()) {
+            Row(modifier = Modifier.fillMaxWidth()) {
+                Spacer(modifier = Modifier.width(2))
+                Text(text = "⚙ ", style = rgb("#FFA500"))
+                Text(text = "$toolLabel (unparsed)", style = rgb("#FFA500"))
+                Spacer(modifier = Modifier.width(2))
+            }
+            Row(modifier = Modifier.fillMaxWidth()) {
+                Spacer(modifier = Modifier.width(4))
+                Text(text = preview, style = rgb("#C7CBD1"))
+            }
         }
         return
     }
@@ -288,3 +295,18 @@ private fun JsonPrimitive.asStringOrNull(): String? {
     if (value == "null") return null
     return value
 }
+
+private fun unparsedPayloadPreview(raw: String): String {
+    val trimmed = raw.trim()
+    if (trimmed.isEmpty()) return "(empty payload)"
+    if (trimmed.length <= MAX_UNPARSED_PREVIEW_LENGTH) return trimmed
+    val remaining = trimmed.length - MAX_UNPARSED_PREVIEW_LENGTH
+    return buildString {
+        append(trimmed.take(MAX_UNPARSED_PREVIEW_LENGTH))
+        append("\n… [truncated ")
+        append(remaining)
+        append(" chars]")
+    }
+}
+
+private const val MAX_UNPARSED_PREVIEW_LENGTH = 4000

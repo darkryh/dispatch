@@ -12,9 +12,12 @@ import com.ead.dispatch.runtime.LocalKeyboardInterceptor
 import com.ead.dispatch.runtime.LocalTheme
 import com.ead.dispatch.sample.domain.entity.EntityOptionType
 import com.ead.dispatch.sample.navigation.ArcListRoute
+import com.ead.dispatch.sample.navigation.ChapterListRoute
 import com.ead.dispatch.sample.navigation.CharacterListRoute
 import com.ead.dispatch.sample.navigation.LocationListRoute
+import com.ead.dispatch.sample.navigation.SceneListRoute
 import com.ead.dispatch.sample.navigation.StoryChatRoute
+import com.ead.dispatch.sample.navigation.VolumeListRoute
 import com.ead.dispatch.sample.navigation.WorldRuleListRoute
 import com.ead.dispatch.sample.data.db.entities.StoryRecord
 import com.ead.dispatch.state.getValue
@@ -66,6 +69,18 @@ fun StoryChatScreen(route: StoryChatRoute) {
             }
             "w" -> {
                 navigator.navigate(WorldRuleListRoute(storyId = route.storyId))
+                true
+            }
+            "v" -> {
+                navigator.navigate(VolumeListRoute(storyId = route.storyId))
+                true
+            }
+            "h" -> {
+                navigator.navigate(ChapterListRoute(storyId = route.storyId))
+                true
+            }
+            "s" -> {
+                navigator.navigate(SceneListRoute(storyId = route.storyId))
                 true
             }
             else -> false
@@ -162,6 +177,9 @@ fun StoryChatScreen(route: StoryChatRoute) {
                     KeyHint("L", EntityOptionType.LOCATIONS.title.lowercase()),
                     KeyHint("A", EntityOptionType.ARCS.title.lowercase()),
                     KeyHint("W", EntityOptionType.WORLD_RULES.title.lowercase()),
+                    KeyHint("V", EntityOptionType.VOLUMES.title.lowercase()),
+                    KeyHint("H", EntityOptionType.CHAPTERS.title.lowercase()),
+                    KeyHint("S", EntityOptionType.SCENES.title.lowercase()),
                     KeyHint("Esc", "back"),
                 ),
                 keyStyle = theme.muted,
