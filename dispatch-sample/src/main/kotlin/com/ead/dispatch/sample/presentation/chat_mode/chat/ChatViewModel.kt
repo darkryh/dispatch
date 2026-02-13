@@ -131,8 +131,6 @@ class ChatViewModel(
                     return
                 }
 
-
-                onEvent(ChatEvent.OnClearTextField)
                 submitMessage(text = text, fromDecisionPrompt = false)
             }
             is ChatEvent.OnChatModeChanged -> {
@@ -186,19 +184,19 @@ class ChatViewModel(
             return
         }
 
+        val mode = writerMode.value
+        appendMessage(
+            mode = mode,
+            message = CliMessage(
+                data = input,
+                role = CliMessageRole.USER
+            )
+        )
+        _inputText.value = ""
+        _isProcessing.value = true
+
         viewModelScope.launch {
             val session = activeSession(input)
-            val mode = writerMode.value
-
-            appendMessage(
-                mode = mode,
-                message = CliMessage(
-                    data = input,
-                    role = CliMessageRole.USER
-                )
-            )
-
-            _isProcessing.value = true
 
             val response = when (mode) {
                 WriterMode.CHAT -> chatAgent.run(
@@ -297,8 +295,6 @@ class ChatViewModel(
                 }
             }
             activeStreamJob = job
-
-            onEvent(ChatEvent.OnClearTextField)
         }
     }
 
