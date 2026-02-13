@@ -131,7 +131,7 @@ private fun parseToolResult(root: JsonObject, isError: Boolean, toolName: String
         ?.mapNotNull { (it as? JsonPrimitive)?.asStringOrNull() }
         ?: emptyList()
 
-    val properties = buildList<Pair<String, String>> {
+    val properties = buildList {
         val entityLabel = entityLabel(entity)
         if (entityLabel != null) {
             add("entity" to entityLabel)
