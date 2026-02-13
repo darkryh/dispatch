@@ -4,6 +4,7 @@ import com.ead.dispatch.runtime.SavedStateHandle
 import com.ead.dispatch.viewmodel.ViewModel
 import org.koin.core.definition.Definition
 import org.koin.core.module.Module
+import org.koin.dsl.onClose
 import org.koin.dsl.module
 import kotlin.reflect.KClass
 
@@ -63,7 +64,12 @@ class DispatchKoinModuleScope internal constructor(
     }
 
     inline fun <reified T> single(noinline definition: Definition<T>) {
-        module.single(definition = definition)
+        val koinDefinition = module.single(definition = definition)
+        if (AutoCloseable::class.java.isAssignableFrom(T::class.java)) {
+            koinDefinition.onClose { instance ->
+                (instance as? AutoCloseable)?.close()
+            }
+        }
     }
 
     fun includes(vararg modules: Module) {

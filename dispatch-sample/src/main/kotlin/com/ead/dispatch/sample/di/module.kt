@@ -55,16 +55,7 @@ import com.ead.dispatch.sample.presentation.chat_mode.story.VolumeListViewModel
 val module = dispatchModule {
 
     single { DispatchDatabaseFactory() }
-    single {
-        DatabaseRuntime(factory = get()).also { runtime ->
-            Runtime.getRuntime().addShutdownHook(
-                Thread(
-                    { runCatching { runtime.closeBlocking() } },
-                    "dispatch-db-shutdown",
-                )
-            )
-        }
-    }
+    single { DatabaseRuntime(factory = get()) }
     single { ChatAgentEmbedder() }
     single { EmbeddingIndexService(embedderProvider = get()) }
     single { EmbeddingReindexer(repository = get()) }

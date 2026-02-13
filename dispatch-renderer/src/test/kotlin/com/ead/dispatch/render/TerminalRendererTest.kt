@@ -264,11 +264,47 @@ class TerminalRendererTest {
         val (renderer, recorder) = createRenderer()
 
         renderer.updateActiveArea(listOf("Input", "Status", "Hint"))
+        renderer.markVisibleContentHeight(12)
         val before = recorder.output()
 
         renderer.handoffToShellPrompt()
         val delta = recorder.output().removePrefix(before)
 
+        assertTrue(delta.contains(AnsiCodes.moveTo(12, 1)))
+        assertTrue(delta.contains(AnsiCodes.CLEAR_LINE))
+        assertTrue(delta.endsWith("\n"))
+    }
+
+    @Test
+    fun `handoffToShellPrompt trims trailing blank active area rows`() {
+        val (renderer, recorder) = createRenderer()
+
+        renderer.updateActiveArea(listOf("Input", "Status", "", "", ""))
+        renderer.markVisibleContentHeight(18)
+        val before = recorder.output()
+
+        renderer.handoffToShellPrompt()
+        val delta = recorder.output().removePrefix(before)
+
+        assertTrue(delta.contains(AnsiCodes.moveTo(15, 1)))
+        assertTrue(delta.contains(AnsiCodes.CLEAR_LINE))
+        assertTrue(delta.endsWith("\n"))
+    }
+
+    @Test
+    fun `handoffToShellPrompt trims ANSI-styled blank trailing rows`() {
+        val (renderer, recorder) = createRenderer()
+        val esc = "\u001B"
+        val styledBlank = "${esc}[48;2;54;60;70m    ${esc}[49m${esc}[0m"
+
+        renderer.updateActiveArea(listOf("Input", styledBlank, styledBlank))
+        renderer.markVisibleContentHeight(10)
+        val before = recorder.output()
+
+        renderer.handoffToShellPrompt()
+        val delta = recorder.output().removePrefix(before)
+
+        assertTrue(delta.contains(AnsiCodes.moveTo(8, 1)))
         assertTrue(delta.contains(AnsiCodes.CLEAR_LINE))
         assertTrue(delta.endsWith("\n"))
     }

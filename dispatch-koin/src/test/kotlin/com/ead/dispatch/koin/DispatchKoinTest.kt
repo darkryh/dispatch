@@ -11,7 +11,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
-import org.koin.dsl.module
 
 class DispatchKoinTest {
     private class TestViewModel : ViewModel()
@@ -112,7 +111,7 @@ class DispatchKoinTest {
         val resource = TestResource()
         DispatchKoin.start {
             modules(
-                module {
+                dispatchModule {
                     single { resource }
                 },
             )

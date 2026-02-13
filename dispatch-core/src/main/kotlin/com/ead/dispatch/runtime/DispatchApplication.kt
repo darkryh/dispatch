@@ -114,6 +114,8 @@ internal class DispatchApplicationBuilder(
     private lateinit var dispatchScopeInstance: DispatchScope
     private val compositionScopeToken = Any()
     private var lastWindowTitleApplied: String? = null
+    private var lastWindowTitleAppliedAtNanos: Long = 0L
+    private var exitArmDeadlineNanos: Long = 0L
 
     suspend fun run(content: DispatchScope.() -> Unit): Int {
         initializeScopes()
@@ -259,7 +261,7 @@ internal class DispatchApplicationBuilder(
                 withContext(uiDispatcher) {
                     when (event) {
                         is KeyboardEvent -> {
-                            handleKeyboardEvent(event)
+                            handleKeyboardEvent(event, readResult.eventTimestampNanos)
                         }
                         is MouseEvent -> {
                             handleMouseEvent(event)
@@ -282,8 +284,10 @@ internal class DispatchApplicationBuilder(
         consecutiveErrors: Int,
     ): InputReadResult =
         try {
+            val event = readEvent()
             InputReadResult(
-                event = readEvent(),
+                event = event,
+                eventTimestampNanos = if (event != null) System.nanoTime() else 0L,
                 consecutiveErrors = 0,
             )
         } catch (e: CancellationException) {
@@ -292,7 +296,11 @@ internal class DispatchApplicationBuilder(
             val nextErrors = consecutiveErrors + 1
             val backoff = (10L * nextErrors).coerceAtMost(200L)
             delay(backoff)
-            InputReadResult(event = null, consecutiveErrors = nextErrors)
+            InputReadResult(
+                event = null,
+                eventTimestampNanos = 0L,
+                consecutiveErrors = nextErrors,
+            )
         }
 
     private fun reportError(error: Throwable) {
@@ -300,15 +308,18 @@ internal class DispatchApplicationBuilder(
         terminal?.println(error.stackTraceToString())
     }
 
-    private fun handleKeyboardEvent(event: KeyboardEvent): Boolean {
-        when (resolveExitAction(event)) {
+    private fun handleKeyboardEvent(
+        event: KeyboardEvent,
+        eventTimestampNanos: Long,
+    ): Boolean {
+        when (resolveExitAction(event, eventTimestampNanos)) {
             ExitAction.Exit -> {
                 disarmExitPrompt()
                 exitRequested = true
                 return true
             }
             ExitAction.Arm -> {
-                armExitPrompt()
+                armExitPrompt(eventTimestampNanos)
                 return false
             }
             ExitAction.None -> {
@@ -324,26 +335,44 @@ internal class DispatchApplicationBuilder(
         return false
     }
 
-    private fun resolveExitAction(event: KeyboardEvent): ExitAction {
+    private fun resolveExitAction(
+        event: KeyboardEvent,
+        eventTimestampNanos: Long,
+    ): ExitAction {
         if (!shouldHandleExit(event)) return ExitAction.None
-        if (!config.requireExitDoublePress || exitPromptState.isArmed) return ExitAction.Exit
+        if (shouldExitOnExitKey(
+                requireExitDoublePress = config.requireExitDoublePress,
+                exitPromptArmed = exitPromptState.isArmed,
+                armDeadlineNanos = exitArmDeadlineNanos,
+                eventTimestampNanos = eventTimestampNanos,
+            )
+        ) {
+            return ExitAction.Exit
+        }
         return ExitAction.Arm
     }
 
-    private fun armExitPrompt() {
+    private fun armExitPrompt(eventTimestampNanos: Long) {
         exitPromptState.isArmed = true
+        exitArmDeadlineNanos = computeExitArmDeadlineNanos(eventTimestampNanos, config.exitTimeoutOnDoublePress)
         exitResetJob?.cancel()
         exitResetJob =
-            uiScope.launch {
-                delay(config.exitTimeoutOnDoublePress)
-                exitPromptState.isArmed = false
-                recomposer.requestRecomposition()
+            if (config.exitTimeoutOnDoublePress.isPositive() && !config.exitTimeoutOnDoublePress.isInfinite()) {
+                uiScope.launch {
+                    delay(config.exitTimeoutOnDoublePress)
+                    exitPromptState.isArmed = false
+                    exitArmDeadlineNanos = 0L
+                    recomposer.requestRecomposition()
+                }
+            } else {
+                null
             }
         recomposer.requestRecomposition()
     }
 
     private fun disarmExitPrompt() {
         exitPromptState.isArmed = false
+        exitArmDeadlineNanos = 0L
         exitResetJob?.cancel()
         exitResetJob = null
     }
@@ -432,6 +461,9 @@ internal class DispatchApplicationBuilder(
                 } else {
                     scrollingContentTracker.consume(scrollingLines)
                 }
+
+            val visibleLineCount = viewportLineCount(scrollingLines, activeLines, terminalHeight)
+            renderer.markVisibleContentHeight(visibleLineCount)
 
             val rewriteRendered =
                 when (update.kind) {
@@ -529,12 +561,23 @@ internal class DispatchApplicationBuilder(
         val t = terminal ?: return
         val title = config.windowTitle ?: config.name
         if (title.isNullOrBlank()) return
-        if (!config.enforceWindowTitle && lastWindowTitleApplied == title) return
+        val now = System.nanoTime()
+        if (!shouldApplyWindowTitle(
+                enforceWindowTitle = config.enforceWindowTitle,
+                lastWindowTitleApplied = lastWindowTitleApplied,
+                requestedWindowTitle = title,
+                nowNanos = now,
+                lastAppliedAtNanos = lastWindowTitleAppliedAtNanos,
+            )
+        ) {
+            return
+        }
 
         val safeTitle = title.replace("\u001b", "").replace("\u0007", "")
         t.rawPrint("\u001b]0;$safeTitle\u0007")
         t.rawPrint("\u001b]2;$safeTitle\u0007")
         lastWindowTitleApplied = title
+        lastWindowTitleAppliedAtNanos = now
     }
 
     private inner class DispatchScopeImpl : DispatchScope {
@@ -628,6 +671,12 @@ internal fun viewportScrollingLines(
     if (availableRows == 0) return emptyList()
     return scrollingLines.takeLast(availableRows)
 }
+
+internal fun viewportLineCount(
+    scrollingLines: List<String>,
+    activeLines: List<String>,
+    terminalHeight: Int,
+): Int = viewportScrollingLines(scrollingLines, activeLines, terminalHeight).size + activeLines.size
 
 internal data class TerminalSizeUpdate(
     val width: Int,
@@ -735,6 +784,7 @@ private fun selectActiveSegmentWindow(
 
 private data class InputReadResult(
     val event: Any?,
+    val eventTimestampNanos: Long,
     val consecutiveErrors: Int,
 )
 
@@ -747,4 +797,44 @@ private enum class ExitAction {
     None,
     Arm,
     Exit,
+}
+
+private const val WINDOW_TITLE_REAPPLY_INTERVAL_NANOS: Long = 1_000_000_000L
+
+internal fun shouldApplyWindowTitle(
+    enforceWindowTitle: Boolean,
+    lastWindowTitleApplied: String?,
+    requestedWindowTitle: String,
+    nowNanos: Long,
+    lastAppliedAtNanos: Long,
+): Boolean {
+    if (lastWindowTitleApplied != requestedWindowTitle) return true
+    if (!enforceWindowTitle) return false
+    if (lastAppliedAtNanos <= 0L) return true
+    return nowNanos - lastAppliedAtNanos >= WINDOW_TITLE_REAPPLY_INTERVAL_NANOS
+}
+
+internal fun shouldExitOnExitKey(
+    requireExitDoublePress: Boolean,
+    exitPromptArmed: Boolean,
+    armDeadlineNanos: Long,
+    eventTimestampNanos: Long,
+): Boolean {
+    if (!requireExitDoublePress) return true
+    if (!exitPromptArmed) return false
+    if (armDeadlineNanos <= 0L || eventTimestampNanos <= 0L) return true
+    return eventTimestampNanos <= armDeadlineNanos
+}
+
+internal fun computeExitArmDeadlineNanos(
+    eventTimestampNanos: Long,
+    timeout: kotlin.time.Duration,
+): Long {
+    if (eventTimestampNanos <= 0L) return 0L
+    if (!timeout.isPositive()) return Long.MAX_VALUE
+    if (timeout.isInfinite()) return Long.MAX_VALUE
+    val timeoutNanos = timeout.inWholeNanoseconds
+    val maxBase = Long.MAX_VALUE - timeoutNanos
+    if (eventTimestampNanos >= maxBase) return Long.MAX_VALUE
+    return eventTimestampNanos + timeoutNanos
 }

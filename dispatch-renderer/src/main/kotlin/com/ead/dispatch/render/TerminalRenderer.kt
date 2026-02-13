@@ -32,6 +32,11 @@ class TerminalRenderer(
     private var activeAreaLines: List<String> = emptyList()
 
     /**
+     * Last known visible line count of the composed viewport.
+     */
+    private var visibleContentLineCount: Int = 0
+
+    /**
      * Whether the active area has been initially rendered.
      */
     private var activeAreaInitialized = false
@@ -158,13 +163,19 @@ class TerminalRenderer(
     fun handoffToShellPrompt() {
         renderLock.withLock {
             val buffer = StringBuilder()
-            buffer.append("\r")
+            val trailingBlankLines = activeAreaLines.trailingBlankLineCount()
+            val targetRow =
+                (visibleContentLineCount - trailingBlankLines)
+                    .coerceAtLeast(1)
+                    .coerceAtMost(terminalHeight)
+            buffer.append(AnsiCodes.moveTo(targetRow, 1))
             buffer.append(AnsiCodes.CLEAR_LINE)
             buffer.append("\n")
             flushBuffer(buffer)
 
             activeAreaLines = emptyList()
             activeAreaInitialized = false
+            visibleContentLineCount = 0
         }
     }
 
@@ -364,11 +375,44 @@ class TerminalRenderer(
     }
 
     /**
+     * Track how many lines are currently visible in the rendered viewport.
+     *
+     * Dispatch runtime updates this every frame so shell handoff can restore the
+     * prompt close to visible content instead of jumping to terminal bottom.
+     */
+    fun markVisibleContentHeight(lineCount: Int) {
+        renderLock.withLock {
+            visibleContentLineCount = lineCount.coerceAtLeast(0)
+        }
+    }
+
+    /**
      * Get current cursor position (if supported).
      *
      * Note: This requires terminal cooperation and may not work in all environments.
      */
     fun getCursorPosition(): Pair<Int, Int>? = unavailableCursorPosition
+}
+
+private fun List<String>.trailingBlankLineCount(): Int {
+    var count = 0
+    for (index in lastIndex downTo 0) {
+        if (this[index].isDisplayBlank()) {
+            count += 1
+            continue
+        }
+        break
+    }
+    return count
+}
+
+private val ansiCsiRegex = Regex("\u001B\\[[0-?]*[ -/]*[@-~]")
+private val ansiOscRegex = Regex("\u001B\\][^\\u0007\\u001B]*(\\u0007|\u001B\\\\)")
+
+private fun String.isDisplayBlank(): Boolean {
+    val withoutOsc = replace(ansiOscRegex, "")
+    val withoutAnsi = withoutOsc.replace(ansiCsiRegex, "")
+    return withoutAnsi.isBlank()
 }
 
 /**
