@@ -3,9 +3,9 @@ package com.ead.dispatch.runtime
 /**
  * Tracks which scrolling lines have already been appended to the terminal.
  *
- * Dispatch's scrollback rendering assumes the scrolling region is append-only: when scrolling content
- * changes, new lines are added at the end. This tracker returns only the lines that haven't been
- * appended yet.
+ * Dispatch supports two render paths:
+ * - Append-only updates for true history growth.
+ * - Viewport rewrite updates when the scrolling region changes in-place.
  */
 internal class ScrollingContentTracker {
     private val committedLines = mutableListOf<String>()
@@ -15,35 +15,29 @@ internal class ScrollingContentTracker {
 
     fun consume(scrollingLines: List<String>): ScrollUpdate {
         if (scrollingLines.isEmpty()) {
-            if (committedLines.isEmpty()) {
-                return ScrollUpdate(emptyList(), reset = false)
-            }
+            if (committedLines.isEmpty()) return ScrollUpdate.none()
             committedLines.clear()
-            return ScrollUpdate(emptyList(), reset = true)
-        }
-
-        if (scrollingLines == committedLines) {
-            return ScrollUpdate(emptyList(), reset = false)
+            return ScrollUpdate.rewrite(emptyList())
         }
 
         if (committedLines.isEmpty()) {
             committedLines.clear()
             committedLines.addAll(scrollingLines)
-            return ScrollUpdate(scrollingLines, reset = false)
+            return ScrollUpdate.append(scrollingLines)
         }
 
         if (startsWithCommitted(scrollingLines)) {
             val linesToAppend = scrollingLines.drop(committedLines.size)
             committedLines.clear()
             committedLines.addAll(scrollingLines)
-            return ScrollUpdate(linesToAppend, reset = false)
+            if (linesToAppend.isEmpty()) return ScrollUpdate.none()
+            return ScrollUpdate.append(linesToAppend)
         }
 
-        // Non-append rewrite: the visible scrolling region changed in-place.
-        // Request a reset so screens with selectable/filterable lists stay visually correct.
+        // Non-append rewrite: caller should repaint viewport without growing scrollback.
         committedLines.clear()
         committedLines.addAll(scrollingLines)
-        return ScrollUpdate(scrollingLines, reset = true)
+        return ScrollUpdate.rewrite(scrollingLines)
     }
 
     private fun startsWithCommitted(scrollingLines: List<String>): Boolean {
@@ -70,5 +64,18 @@ internal class ScrollingContentTracker {
 
 internal data class ScrollUpdate(
     val lines: List<String>,
-    val reset: Boolean,
-)
+    val kind: ScrollUpdateKind,
+) {
+
+    companion object {
+        fun none(): ScrollUpdate = ScrollUpdate(emptyList(), ScrollUpdateKind.NONE)
+        fun append(lines: List<String>): ScrollUpdate = ScrollUpdate(lines, ScrollUpdateKind.APPEND)
+        fun rewrite(lines: List<String>): ScrollUpdate = ScrollUpdate(lines, ScrollUpdateKind.REWRITE)
+    }
+}
+
+internal enum class ScrollUpdateKind {
+    NONE,
+    APPEND,
+    REWRITE,
+}

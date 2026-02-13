@@ -11,9 +11,17 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertTrue
+import org.koin.dsl.module
 
 class DispatchKoinTest {
     private class TestViewModel : ViewModel()
+    private class TestResource : AutoCloseable {
+        val closed = AtomicBoolean(false)
+
+        override fun close() {
+            closed.set(true)
+        }
+    }
 
     private class RouteViewModel(
         savedStateHandle: SavedStateHandle,
@@ -96,6 +104,41 @@ class DispatchKoinTest {
 
         assertFailsWith<IllegalStateException> {
             DispatchKoin.validateViewModels(TestViewModel::class)
+        }
+    }
+
+    @Test
+    fun `dispatch koin stop closes autocloseable singletons`() {
+        val resource = TestResource()
+        DispatchKoin.start {
+            modules(
+                module {
+                    single { resource }
+                },
+            )
+        }
+        val resolvedResource: TestResource = DispatchKoin.koin().get(clazz = TestResource::class)
+        assertTrue(resolvedResource === resource)
+
+        DispatchKoin.stop()
+
+        assertTrue(resource.closed.get())
+    }
+
+    @Test
+    fun `dispatch config exit actions stop koin`() {
+        val config = DispatchConfig()
+
+        config.koin(stopOnExit = true) {
+            modules(dispatchModule { viewModel { TestViewModel() } })
+        }
+        val viewModel: TestViewModel = DispatchKoin.koin().get(clazz = TestViewModel::class)
+        assertEquals(TestViewModel::class, viewModel::class)
+
+        config.runExitActions()
+
+        assertFailsWith<IllegalStateException> {
+            DispatchKoin.koin()
         }
     }
 }

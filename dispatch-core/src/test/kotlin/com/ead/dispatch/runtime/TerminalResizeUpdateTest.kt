@@ -63,4 +63,28 @@ class TerminalResizeUpdateTest {
                 dirty = false,
             )
     }
+
+    @Test
+    fun `viewport scrolling lines keeps only visible tail`() {
+        val visible =
+            viewportScrollingLines(
+                scrollingLines = listOf("s1", "s2", "s3", "s4", "s5"),
+                activeLines = listOf("a1", "a2"),
+                terminalHeight = 5,
+            )
+
+        visible shouldBe listOf("s3", "s4", "s5")
+    }
+
+    @Test
+    fun `viewport scrolling lines empty when active area fills terminal`() {
+        val visible =
+            viewportScrollingLines(
+                scrollingLines = listOf("s1", "s2"),
+                activeLines = listOf("a1", "a2", "a3"),
+                terminalHeight = 3,
+            )
+
+        visible shouldBe emptyList()
+    }
 }

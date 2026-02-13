@@ -20,6 +20,7 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
@@ -120,7 +121,8 @@ internal class DispatchApplicationBuilder(
             executeApplication(content)
         } finally {
             ViewModelStore.clear()
-            appJob.cancel()
+            appJob.cancelAndJoin()
+            config.runExitActions()
         }
         return exitCode
     }
@@ -204,15 +206,40 @@ internal class DispatchApplicationBuilder(
             composeAndRender()
             frameScheduler.markFrame()
             val recomposerJob = recomposer.start()
-            awaitExitRequest()
+            try {
+                awaitExitRequest()
+            } finally {
+                withContext(NonCancellable) {
+                    shutdownTerminalSession(
+                        inputJob = inputJob,
+                        recomposerJob = recomposerJob,
+                    )
+                }
+            }
+        }
+    }
 
-            renderer.clearActiveArea()
+    private suspend fun shutdownTerminalSession(
+        inputJob: Job,
+        recomposerJob: Job,
+    ) {
+        try {
+            cancelExitPromptReset()
             inputJob.cancelAndJoin()
             frameScheduler.stop()
             recomposer.stop()
             recomposerJob.cancelAndJoin()
+            renderer.handoffToShellPrompt()
+        } finally {
             renderer.showCursor()
         }
+    }
+
+    private suspend fun cancelExitPromptReset() {
+        val pendingJob = exitResetJob
+        exitResetJob = null
+        pendingJob?.cancelAndJoin()
+        exitPromptState.isArmed = false
     }
 
     private suspend fun awaitExitRequest() {
@@ -276,6 +303,7 @@ internal class DispatchApplicationBuilder(
     private fun handleKeyboardEvent(event: KeyboardEvent): Boolean {
         when (resolveExitAction(event)) {
             ExitAction.Exit -> {
+                disarmExitPrompt()
                 exitRequested = true
                 return true
             }
@@ -312,6 +340,12 @@ internal class DispatchApplicationBuilder(
                 recomposer.requestRecomposition()
             }
         recomposer.requestRecomposition()
+    }
+
+    private fun disarmExitPrompt() {
+        exitPromptState.isArmed = false
+        exitResetJob?.cancel()
+        exitResetJob = null
     }
 
     private fun handleMouseEvent(event: MouseEvent) {
@@ -369,6 +403,8 @@ internal class DispatchApplicationBuilder(
         try {
             val measurable = rootMeasurable.get() ?: return
             val width = lastTerminalWidth.coerceAtLeast(40)
+            val terminalHeight = lastTerminalHeight.coerceAtLeast(10)
+            val effectiveActiveAreaHeight = minOf(activeAreaHeight, terminalHeight)
 
             // UNCONSTRAINED height - let content be as tall as needed
             val constraints =
@@ -385,26 +421,48 @@ internal class DispatchApplicationBuilder(
             val (scrollingLines, activeLines) =
                 splitContentForRendering(
                     placeable,
-                    activeAreaHeight,
+                    effectiveActiveAreaHeight,
                     scrollingContentTracker.committedLineCount,
                 )
 
-            if (pendingResizeReset) {
-                renderer.clearScreen(clearScrollback = true)
-                scrollingContentTracker.reset()
-                pendingResizeReset = false
-            }
+            val update =
+                if (pendingResizeReset) {
+                    pendingResizeReset = false
+                    ScrollUpdate.rewrite(scrollingLines)
+                } else {
+                    scrollingContentTracker.consume(scrollingLines)
+                }
 
-            val update = scrollingContentTracker.consume(scrollingLines)
-            if (update.reset) {
-                renderer.clearScreen(clearScrollback = false)
-            }
-            if (update.lines.isNotEmpty()) {
-                renderer.appendScrollingContent(update.lines)
+            val rewriteRendered =
+                when (update.kind) {
+                ScrollUpdateKind.NONE -> false
+                ScrollUpdateKind.APPEND -> {
+                    if (update.lines.isNotEmpty()) {
+                        renderer.appendScrollingContent(update.lines)
+                    }
+                    false
+                }
+                ScrollUpdateKind.REWRITE -> {
+                    val viewportScrolling =
+                        viewportScrollingLines(
+                            scrollingLines = scrollingLines,
+                            activeLines = activeLines,
+                            terminalHeight = terminalHeight,
+                        )
+                    renderer.rewriteViewport(
+                        scrollingLines = viewportScrolling,
+                        activeLines = activeLines,
+                        clearScrollback = true,
+                    )
+                    scrollingContentTracker.sync(scrollingLines)
+                    true
+                }
             }
 
             // Update the active area (input/status at bottom)
-            renderer.updateActiveArea(activeLines)
+            if (!rewriteRendered) {
+                renderer.updateActiveArea(activeLines)
+            }
         } finally {
             renderLock.unlock()
         }
@@ -561,6 +619,16 @@ internal fun shouldResetForResize(
     currentHeight: Int,
 ): Boolean = previousWidth != currentWidth || previousHeight != currentHeight
 
+internal fun viewportScrollingLines(
+    scrollingLines: List<String>,
+    activeLines: List<String>,
+    terminalHeight: Int,
+): List<String> {
+    val availableRows = (terminalHeight - activeLines.size).coerceAtLeast(0)
+    if (availableRows == 0) return emptyList()
+    return scrollingLines.takeLast(availableRows)
+}
+
 internal data class TerminalSizeUpdate(
     val width: Int,
     val height: Int,
@@ -591,19 +659,6 @@ internal fun computeTerminalSizeUpdate(
         reset = reset,
         dirty = false,
     )
-}
-
-internal fun applyResizeSyncIfNeeded(
-    pendingResizeReset: Boolean,
-    scrollingLines: List<String>,
-    activeLines: List<String>,
-    tracker: ScrollingContentTracker,
-    updateActiveArea: (List<String>) -> Unit,
-): Boolean {
-    if (!pendingResizeReset) return false
-    tracker.sync(scrollingLines)
-    updateActiveArea(activeLines)
-    return true
 }
 
 private fun isValidSegmentHeights(

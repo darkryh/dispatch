@@ -6,9 +6,11 @@ import com.ead.dispatch.runtime.SavedStateHandle
 import com.ead.dispatch.viewmodel.ViewModel
 import org.koin.core.Koin
 import org.koin.core.KoinApplication
+import org.koin.core.annotation.KoinInternalApi
 import org.koin.core.context.GlobalContext
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
+import org.koin.core.instance.SingleInstanceFactory
 import org.koin.core.parameter.parametersOf
 import org.koin.dsl.KoinAppDeclaration
 import java.util.concurrent.atomic.AtomicBoolean
@@ -29,6 +31,7 @@ fun DispatchConfig.koin(
 ): KoinApplication {
     val application = DispatchKoin.start(appDeclaration)
     if (stopOnExit) {
+        onExit { DispatchKoin.stop() }
         DispatchKoin.installShutdownHook()
     }
     val viewModels =
@@ -56,6 +59,7 @@ object DispatchKoin {
     fun start(appDeclaration: KoinAppDeclaration): KoinApplication = startKoin(appDeclaration)
 
     fun stop() {
+        closeManagedInstances()
         stopKoin()
         DispatchKoinRegistry.clear()
     }
@@ -71,7 +75,35 @@ object DispatchKoin {
 
     fun installShutdownHook() {
         if (shutdownHookInstalled.compareAndSet(false, true)) {
-            Runtime.getRuntime().addShutdownHook(Thread { stopKoin() })
+            Runtime.getRuntime().addShutdownHook(Thread { stop() })
+        }
+    }
+
+    @OptIn(KoinInternalApi::class)
+    private fun closeManagedInstances() {
+        val koin = runCatching { GlobalContext.get() }.getOrNull() ?: return
+        val resources =
+            koin.instanceRegistry.instances
+                .values
+                .asSequence()
+                .mapNotNull { factory -> currentSingletonValue(factory) as? AutoCloseable }
+                .distinctBy { System.identityHashCode(it) }
+                .toList()
+        resources.forEach { resource ->
+            runCatching { resource.close() }
+        }
+    }
+
+    private fun currentSingletonValue(factory: Any): Any? {
+        val single = factory as? SingleInstanceFactory<*> ?: return null
+        return runCatching {
+            SINGLE_VALUE_FIELD.get(single)
+        }.getOrNull()
+    }
+
+    private val SINGLE_VALUE_FIELD by lazy(LazyThreadSafetyMode.NONE) {
+        SingleInstanceFactory::class.java.getDeclaredField("value").apply {
+            isAccessible = true
         }
     }
 

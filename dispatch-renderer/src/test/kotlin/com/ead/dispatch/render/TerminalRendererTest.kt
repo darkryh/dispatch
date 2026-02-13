@@ -45,19 +45,6 @@ class TerminalRendererTest {
         assertTrue(recorder.output().contains(AnsiCodes.CLEAR_SCROLLBACK))
     }
 
-    @Test
-    fun `render skips output when frame unchanged`() {
-        val (renderer, recorder) = createRenderer()
-
-        renderer.render(listOf("hi"))
-        val firstLength = recorder.output().length
-
-        renderer.render(listOf("hi"))
-        val secondLength = recorder.output().length
-
-        assertEquals(firstLength, secondLength)
-    }
-
     // ========== Atomic Rendering Tests ==========
 
     @Test
@@ -203,6 +190,39 @@ class TerminalRendererTest {
         assertEquals(before, after)
     }
 
+    @Test
+    fun `rewriteViewport rewrites visible frame without trailing newline`() {
+        val (renderer, recorder) = createRenderer()
+
+        renderer.rewriteViewport(
+            scrollingLines = listOf("History 1", "History 2"),
+            activeLines = listOf("> input", "status"),
+        )
+
+        val output = recorder.output()
+        assertTrue(output.contains(AnsiCodes.CLEAR_SCREEN))
+        assertTrue(output.contains(AnsiCodes.CLEAR_SCROLLBACK))
+        assertTrue(output.contains("History 1"))
+        assertTrue(output.contains("> input"))
+        assertFalse(output.endsWith("\n"))
+    }
+
+    @Test
+    fun `rewriteViewport seeds active area state for subsequent updates`() {
+        val (renderer, recorder) = createRenderer()
+
+        renderer.rewriteViewport(
+            scrollingLines = listOf("History"),
+            activeLines = listOf("> old"),
+        )
+        val before = recorder.output()
+
+        renderer.updateActiveArea(listOf("> new"))
+        val delta = recorder.output().removePrefix(before)
+
+        assertTrue(delta.contains("> new"))
+    }
+
     // ========== clearActiveArea Tests ==========
 
     @Test
@@ -237,6 +257,35 @@ class TerminalRendererTest {
 
         val output = recorder.output()
         assertTrue(output.contains("New content"))
+    }
+
+    @Test
+    fun `handoffToShellPrompt clears active area and ends on a new line`() {
+        val (renderer, recorder) = createRenderer()
+
+        renderer.updateActiveArea(listOf("Input", "Status", "Hint"))
+        val before = recorder.output()
+
+        renderer.handoffToShellPrompt()
+        val delta = recorder.output().removePrefix(before)
+
+        assertTrue(delta.contains(AnsiCodes.CLEAR_LINE))
+        assertTrue(delta.endsWith("\n"))
+    }
+
+    @Test
+    fun `handoffToShellPrompt resets active area state for next update`() {
+        val (renderer, recorder) = createRenderer()
+
+        renderer.updateActiveArea(listOf("Old input"))
+        renderer.handoffToShellPrompt()
+        val before = recorder.output()
+
+        renderer.updateActiveArea(listOf("New input"))
+        val delta = recorder.output().removePrefix(before)
+
+        assertTrue(delta.contains("New input"))
+        assertFalse(delta.contains(AnsiCodes.moveUp(1)))
     }
 
     // ========== Edge Cases ==========

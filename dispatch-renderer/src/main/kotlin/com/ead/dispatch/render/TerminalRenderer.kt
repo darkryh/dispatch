@@ -5,12 +5,7 @@ import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
 
 /**
- * Renders frames to the terminal with support for both scrolling content
- * and an in-place active area (input/status).
- *
- * New rendering approach:
- * - Scrolling content uses terminal.println() for natural terminal scrollback
- * - Active area (input/status) updates in-place using relative cursor moves
+ * Renders terminal output with append-only scrolling content and an in-place active area.
  */
 class TerminalRenderer(
     private val terminal: Terminal,
@@ -42,16 +37,6 @@ class TerminalRenderer(
     private var activeAreaInitialized = false
 
     /**
-     * The frame buffer for differential rendering (legacy).
-     */
-    private val frameBuffer = FrameBuffer()
-
-    /**
-     * Whether the initial frame has been rendered (legacy).
-     */
-    private var initialFrameRendered = false
-
-    /**
      * Placeholder until cursor queries are implemented.
      */
     private val unavailableCursorPosition: Pair<Int, Int>? = null
@@ -74,6 +59,34 @@ class TerminalRenderer(
             appendLines(buffer, lines)
             restoreActiveAreaInto(buffer)
             flushBuffer(buffer)
+        }
+    }
+
+    /**
+     * Rewrite the visible viewport in-place without appending to terminal scrollback.
+     *
+     * Use this for non-append content changes (mode/screen rewrites).
+     */
+    fun rewriteViewport(
+        scrollingLines: List<String>,
+        activeLines: List<String>,
+        clearScrollback: Boolean = true,
+    ) {
+        renderLock.withLock {
+            val buffer = StringBuilder()
+            if (clearScrollback) {
+                buffer.append(AnsiCodes.CLEAR_SCROLLBACK)
+            }
+            buffer.append(AnsiCodes.CURSOR_HOME)
+            buffer.append(AnsiCodes.CLEAR_SCREEN)
+            buffer.append(AnsiCodes.CURSOR_HOME)
+
+            val viewportLines = scrollingLines + activeLines
+            appendViewportLinesWithoutTrailingNewline(buffer, viewportLines)
+            flushBuffer(buffer)
+
+            activeAreaLines = activeLines
+            activeAreaInitialized = activeLines.isNotEmpty()
         }
     }
 
@@ -136,6 +149,25 @@ class TerminalRenderer(
         }
     }
 
+    /**
+     * Prepare terminal state for returning control to the shell prompt.
+     *
+     * This clears the active area and positions the cursor on a fresh line so
+     * the shell prompt doesn't appear in the middle of the UI frame.
+     */
+    fun handoffToShellPrompt() {
+        renderLock.withLock {
+            val buffer = StringBuilder()
+            buffer.append("\r")
+            buffer.append(AnsiCodes.CLEAR_LINE)
+            buffer.append("\n")
+            flushBuffer(buffer)
+
+            activeAreaLines = emptyList()
+            activeAreaInitialized = false
+        }
+    }
+
     private fun clearActiveAreaInto(buffer: StringBuilder) {
         if (!activeAreaInitialized || activeAreaLines.isEmpty()) return
         val lastIndex = activeAreaLines.lastIndex
@@ -155,6 +187,21 @@ class TerminalRenderer(
         for (line in lines) {
             buffer.append(line)
             buffer.append("\n")
+        }
+    }
+
+    private fun appendViewportLinesWithoutTrailingNewline(
+        buffer: StringBuilder,
+        lines: List<String>,
+    ) {
+        if (lines.isEmpty()) return
+        for (index in lines.indices) {
+            buffer.append("\r")
+            buffer.append(AnsiCodes.CLEAR_LINE)
+            buffer.append(lines[index])
+            if (index < lines.lastIndex) {
+                buffer.append("\n")
+            }
         }
     }
 
@@ -242,91 +289,6 @@ class TerminalRenderer(
         }
     }
 
-    // ========== Legacy render method (for backward compatibility during migration) ==========
-
-    /**
-     * Render a frame to the terminal (legacy method - full screen update).
-     *
-     * @param lines Lines to render (should not exceed terminal height).
-     * @param forceFullRedraw Force a complete redraw instead of differential.
-     */
-    fun render(
-        lines: List<String>,
-        forceFullRedraw: Boolean = false,
-    ) {
-        renderLock.withLock {
-            val width = terminalWidth
-            val height = terminalHeight
-
-            // Resize buffer if terminal size changed
-            if (frameBuffer.width != width || frameBuffer.height != height) {
-                frameBuffer.resize(width, height)
-                initialFrameRendered = false
-            }
-
-            // Clear and populate the next buffer
-            frameBuffer.clear()
-
-            for ((y, line) in lines.withIndex()) {
-                if (y >= height) break
-                frameBuffer.write(0, y, line.take(width))
-            }
-
-            if (!initialFrameRendered || forceFullRedraw) {
-                // Full redraw
-                renderFullFrame()
-                initialFrameRendered = true
-            } else {
-                // Differential update
-                renderDiff()
-            }
-
-            // Swap buffers
-            frameBuffer.swap()
-        }
-    }
-
-    /**
-     * Render the complete frame (legacy).
-     */
-    private fun renderFullFrame() {
-        val lines = frameBuffer.fullFrame()
-
-        // Move to home, clear, then print buffer using Mordant cursor so capability detection applies.
-        OutputCapture.suppress {
-            terminal.cursor.move {
-                setPosition(0, 0)
-                clearScreen()
-            }
-            terminal.print(lines.joinToString("\n"))
-            System.out.flush()
-        }
-    }
-
-    /**
-     * Render only the differences (legacy).
-     */
-    private fun renderDiff() {
-        val changes = frameBuffer.diff()
-        if (changes.isEmpty()) return
-
-        val output = StringBuilder()
-
-        for (change in changes) {
-            output.append(
-                terminal.cursor.getMoves {
-                    setPosition(change.x, change.y)
-                },
-            )
-            output.append(change.text)
-        }
-
-        OutputCapture.suppress {
-            terminal.rawPrint(output)
-            System.out.flush()
-        }
-    }
-
     /**
      * Show the cursor.
      */
@@ -388,10 +350,6 @@ class TerminalRenderer(
             }
             activeAreaLines = emptyList()
             activeAreaInitialized = false
-            frameBuffer.clear()
-            frameBuffer.swap()
-            frameBuffer.clear()
-            initialFrameRendered = false
         }
     }
 

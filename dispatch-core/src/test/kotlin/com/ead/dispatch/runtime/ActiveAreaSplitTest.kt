@@ -67,7 +67,7 @@ class ActiveAreaSplitTest {
             )
         assertEquals(history, scrollingInitial)
         assertEquals(listOf("i1", "i2", "s1"), activeInitial)
-        assertEquals(ScrollUpdate(history, reset = false), tracker.consume(scrollingInitial))
+        assertEquals(ScrollUpdate(history, ScrollUpdateKind.APPEND), tracker.consume(scrollingInitial))
 
         val grown =
             placeable(
@@ -82,7 +82,7 @@ class ActiveAreaSplitTest {
             )
         assertEquals(history, scrollingGrown)
         assertEquals(listOf("i2", "i3", "s1"), activeGrown)
-        assertEquals(ScrollUpdate(emptyList(), reset = false), tracker.consume(scrollingGrown))
+        assertEquals(ScrollUpdate(emptyList(), ScrollUpdateKind.NONE), tracker.consume(scrollingGrown))
     }
 
     @Test
@@ -103,7 +103,10 @@ class ActiveAreaSplitTest {
             )
         assertEquals(listOf("h1", "h2"), scrollingInitial)
         assertEquals(listOf("h3", "i1", "status"), activeInitial)
-        assertEquals(ScrollUpdate(listOf("h1", "h2"), reset = false), tracker.consume(scrollingInitial))
+        assertEquals(
+            ScrollUpdate(listOf("h1", "h2"), ScrollUpdateKind.APPEND),
+            tracker.consume(scrollingInitial),
+        )
 
         val withPalette =
             placeable(
@@ -118,7 +121,10 @@ class ActiveAreaSplitTest {
             )
         assertEquals(history, scrollingPalette)
         assertEquals(listOf("i1", "p1", "p2"), activePalette)
-        assertEquals(ScrollUpdate(listOf("h3"), reset = false), tracker.consume(scrollingPalette))
+        assertEquals(
+            ScrollUpdate(listOf("h3"), ScrollUpdateKind.APPEND),
+            tracker.consume(scrollingPalette),
+        )
     }
 
     @Test
@@ -157,16 +163,16 @@ class ActiveAreaSplitTest {
     }
 
     @Test
-    fun `selection rewrite in scrolling region requests reset`() {
+    fun `selection rewrite in scrolling region requests rewrite`() {
         val tracker = ScrollingContentTracker()
         val initial = listOf("> New", "  Dark", "  Silas", "status")
         val changed = listOf("  New", "> Dark", "  Silas", "status")
 
         tracker.consume(initial).let { update ->
-            assertEquals(ScrollUpdate(initial, reset = false), update)
+            assertEquals(ScrollUpdate(initial, ScrollUpdateKind.APPEND), update)
         }
         tracker.consume(changed).let { update ->
-            assertEquals(ScrollUpdate(changed, reset = true), update)
+            assertEquals(ScrollUpdate(changed, ScrollUpdateKind.REWRITE), update)
         }
     }
 }

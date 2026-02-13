@@ -62,6 +62,8 @@ class DispatchConfig {
     var exitKeyBindings: List<ExitKeyBinding> = listOf(ExitKeyBinding.ctrl("C"))
     var exitKeyPredicate: ((KeyboardEvent) -> Boolean)? = null
     var captureSystemOutput: Boolean = true
+    private val exitActions = mutableListOf<() -> Unit>()
+    private var exitActionsExecuted: Boolean = false
 
     val flags = mutableMapOf<String, FlagDefinition>()
     val arguments = mutableMapOf<String, ArgumentDefinition>()
@@ -86,6 +88,29 @@ class DispatchConfig {
 
     fun exitKeyPredicate(predicate: (KeyboardEvent) -> Boolean) {
         exitKeyPredicate = predicate
+    }
+
+    /**
+     * Register a callback to run when Dispatch finishes shutting down.
+     *
+     * Callbacks execute once in reverse registration order.
+     */
+    fun onExit(action: () -> Unit) {
+        exitActions += action
+    }
+
+    /**
+     * Executes registered exit callbacks exactly once.
+     *
+     * Intended for Dispatch runtime internals.
+     */
+    fun runExitActions() {
+        if (exitActionsExecuted) return
+        exitActionsExecuted = true
+        val snapshot = exitActions.toList().asReversed()
+        snapshot.forEach { action ->
+            runCatching { action() }
+        }
     }
 }
 
