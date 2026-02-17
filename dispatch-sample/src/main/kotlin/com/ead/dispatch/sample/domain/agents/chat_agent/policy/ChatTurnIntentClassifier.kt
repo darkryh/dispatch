@@ -86,7 +86,8 @@ suspend fun AIAgentContext.classifyTurnIntentWithAI(request: ChatRequest): ChatI
         llm.writeSession {
             val originalPrompt = prompt
             val originalModel = model
-            this.model = AIProvider.deepseekChatLlmModel
+
+            this.model = AIProvider.Chat.intent
 
             try {
                 rewritePrompt {
@@ -95,7 +96,7 @@ suspend fun AIAgentContext.classifyTurnIntentWithAI(request: ChatRequest): ChatI
 
                 requestLLMStructured<ChatIntentClassifierResponse>(
                     fixingParser = StructureFixingParser(
-                        model = AIProvider.deepseekChatLlmModel,
+                        model = AIProvider.Chat.fixer,
                         retries = 2,
                     )
                 ).getOrThrow().data

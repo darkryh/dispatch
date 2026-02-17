@@ -20,6 +20,7 @@
 /dispatch-workspace/build/
 /dispatch-viewmodel/build/
 /dispatch-widgets/build/
+/*/bin/
 /koog-context-orchestrator/build/
 /koog-agent-benchmark-core/build/
 /koog-agent-benchmark-koog/build/

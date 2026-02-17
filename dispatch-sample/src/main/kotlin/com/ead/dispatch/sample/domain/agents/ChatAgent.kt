@@ -61,8 +61,8 @@ class ChatAgent(
         val agentName = AIProvider.getChatAgentId(session.id)
 
         val agent = AIAgent<ChatRequest, ContextualResponse<Flow<StreamFrame>>>(
-            promptExecutor = AIProvider.deepseekPromptExecutor,
-            llmModel = AIProvider.deepseekChatLlmModel,
+            promptExecutor = AIProvider.Sync.chatExecutor,
+            llmModel = AIProvider.Chat.main,
             toolRegistry = toolRegistry,
             strategy = strategy<ChatRequest, ContextualResponse<Flow<StreamFrame>>>("chat-mode.planner") {
                 val classifyIntent by nodeClassifyIntent()

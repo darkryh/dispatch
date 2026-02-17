@@ -15,6 +15,7 @@ import ai.koog.prompt.message.RequestMetaInfo
 import ai.koog.prompt.message.ResponseMetaInfo
 import ai.koog.prompt.streaming.StreamFrame
 import com.ead.dispatch.sample.data.repositories.StructuredIndexRepository
+import com.ead.dispatch.sample.domain.AIProvider
 import com.ead.dispatch.sample.domain.agents.chat_agent.PreferencesMemory
 import com.ead.dispatch.sample.domain.agents.chat_agent.chatAgentPrompt
 import com.ead.dispatch.sample.domain.agents.chat_agent.policy.*
@@ -440,6 +441,7 @@ private suspend fun AIAgentGraphContextBase.fixToolCallJson(
             val originalPrompt = prompt
             val originalModel = model
             try {
+                this.model = AIProvider.Chat.fixer
                 rewritePrompt {
                     prompt("tool-args-fixing") {
                         system(

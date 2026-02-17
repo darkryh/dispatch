@@ -723,7 +723,13 @@ private fun splitSegmentedContent(
 ): Pair<List<String>, List<String>> {
     val selection = selectActiveSegmentWindow(segmentHeights, activeAreaHeight)
     val segmentStartLine = segmentHeights.take(selection.activeStartSegmentIndex).sum()
-    val activeStartLine = (segmentStartLine + selection.clipFromStartSegment).coerceIn(0, allLines.size)
+    val preferredActiveStartLine = (segmentStartLine + selection.clipFromStartSegment).coerceIn(0, allLines.size)
+    // Never pull already-committed scrolling lines back into the active area.
+    // If transient active rows (e.g. spinner) disappear, the active area may shrink,
+    // which is safer than rewriting chat history boundaries and duplicating lines.
+    val activeStartLine =
+        preferredActiveStartLine
+            .coerceAtLeast(committedLineCount.coerceAtMost(allLines.size))
     val maxScrollingLineCount = activeStartLine
 
     var scrollingLineCount = segmentStartLine

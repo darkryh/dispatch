@@ -1,6 +1,5 @@
 package com.ead.dispatch.sample.presentation.chat_mode.chat.components
 
-import ai.koog.prompt.structure.markdown.markdownStreamingParser
 import com.ead.dispatch.annotation.Dispatchable
 import com.ead.dispatch.layout.Column
 import com.ead.dispatch.layout.Row
@@ -26,18 +25,17 @@ import kotlinx.coroutines.delay
 fun ChatProgressAnimation(isProcessing: Boolean) {
     val animation = remember { mutableStateOf(0) }
 
-    LaunchedEffect(Unit) {
-        while (true) {
+    LaunchedEffect(isProcessing) {
+        if (!isProcessing) return@LaunchedEffect
+        while (isProcessing) {
             delay(100)
-            if(animation.value < SpinnerStyle.Dots.frames.size - 1) {
+            if (animation.value < SpinnerStyle.Dots.frames.size - 1) {
                 animation.value = animation.value.inc()
-            }
-            else {
+            } else {
                 animation.value = 0
             }
         }
     }
-
 
     if (isProcessing) {
         Column {

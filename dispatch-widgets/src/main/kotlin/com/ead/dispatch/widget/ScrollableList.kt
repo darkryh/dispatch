@@ -229,6 +229,9 @@ internal class ScrollableListMeasurable(
         // Update scroll state
         scrollState.contentHeight = totalContentHeight
         scrollState.viewportHeight = viewportHeight
+        // Clamp stale offsets when content shrinks (e.g. transient status rows disappear).
+        // Without this, rendering can start past the end and leave the viewport partially blank.
+        scrollState.offset = scrollState.offset.coerceIn(0, scrollState.maxOffset)
 
         // Determine visible range using offset and viewport height; avoid work outside viewport
         val scrollOffset = scrollState.offset
@@ -291,6 +294,7 @@ internal class ScrollableListMeasurable(
         // Update scroll state metadata
         scrollState.contentHeight = allLines.size
         scrollState.viewportHeight = allLines.size
+        scrollState.offset = scrollState.offset.coerceIn(0, scrollState.maxOffset)
 
         val width = constraints.maxWidth.takeIf { it != Int.MAX_VALUE }
             ?: allLines.maxOfOrNull { it.length }

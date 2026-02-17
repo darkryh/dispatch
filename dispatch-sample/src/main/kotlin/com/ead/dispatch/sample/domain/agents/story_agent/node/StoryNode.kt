@@ -15,14 +15,9 @@ import ai.koog.prompt.message.RequestMetaInfo
 import ai.koog.prompt.message.ResponseMetaInfo
 import ai.koog.prompt.streaming.StreamFrame
 import com.ead.dispatch.sample.data.repositories.StructuredIndexRepository
+import com.ead.dispatch.sample.domain.AIProvider
 import com.ead.dispatch.sample.domain.agents.chat_agent.PreferencesMemory
-import com.ead.dispatch.sample.domain.agents.story_agent.StoryRequest
-import com.ead.dispatch.sample.domain.agents.story_agent.policy.StoryTurnPolicy
-import com.ead.dispatch.sample.domain.agents.story_agent.policy.currentStoryTurnPolicy
-import com.ead.dispatch.sample.domain.agents.story_agent.policy.isStoryDecisionToolName
-import com.ead.dispatch.sample.domain.agents.story_agent.policy.isStoryToolAllowedForTurn
-import com.ead.dispatch.sample.domain.agents.story_agent.policy.isStoryWriteToolName
-import com.ead.dispatch.sample.domain.agents.story_agent.policy.updateStoryTurnMetrics
+import com.ead.dispatch.sample.domain.agents.story_agent.policy.*
 import com.ead.dispatch.sample.domain.agents.story_agent.storyAgentPrompt
 import com.ead.dispatch.sample.domain.agents.story_agent.util.saveStoryCheckpointForHistory
 import com.ead.dispatch.sample.domain.embedding.RagContextService
@@ -36,11 +31,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerializationException
-import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonObject
-import kotlinx.serialization.json.JsonPrimitive
-import kotlinx.serialization.json.buildJsonObject
-import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.*
 
 @AIAgentBuilderDslMarker
 fun AIAgentSubgraphBuilderBase<*, *>.nodeSetupAndStreamStoryMode(
@@ -443,6 +434,7 @@ private suspend fun AIAgentGraphContextBase.fixToolCallJson(
             val originalPrompt = prompt
             val originalModel = model
             try {
+                this.model = AIProvider.Story.fixer
                 rewritePrompt {
                     prompt("tool-args-fixing") {
                         system(
