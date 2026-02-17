@@ -1,7 +1,6 @@
 package com.ead.dispatch.runtime
 
 import com.ead.dispatch.annotation.Dispatchable
-import com.ead.dispatch.constraints.Constraints
 import com.ead.dispatch.layout.Measurable
 import com.ead.dispatch.layout.Placeable
 import com.ead.dispatch.layout.SegmentedPlaceable
@@ -20,7 +19,6 @@ import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
@@ -28,10 +26,8 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import sun.misc.Signal
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicReference
-import java.util.concurrent.locks.ReentrantLock
 import kotlin.collections.set
 import kotlin.coroutines.coroutineContext
 import kotlin.system.exitProcess
@@ -45,10 +41,10 @@ fun DispatchApplication(
     args: Array<String> = emptyArray(),
     content: DispatchScope.() -> Unit,
 ) {
-    val builder = DispatchApplicationBuilder(args)
+    val runtimeEngine = DispatchRuntimeEngine(args)
 
     runBlocking {
-        val exitCode = builder.run(content)
+        val exitCode = runtimeEngine.run(content)
         if (exitCode != 0) {
             exitProcess(exitCode)
         }
@@ -58,7 +54,7 @@ fun DispatchApplication(
 /**
  * Builder for DispatchApplication.
  */
-internal class DispatchApplicationBuilder(
+internal class DispatchRuntimeEngine(
     private val args: Array<String>,
 ) {
     private val config = DispatchConfig()
@@ -77,6 +73,8 @@ internal class DispatchApplicationBuilder(
     private lateinit var composer: Composer
     private lateinit var recomposer: Recomposer
     private lateinit var renderer: TerminalRenderer
+    private lateinit var resizeCoordinator: ResizeCoordinator
+    private lateinit var renderPipeline: RenderPipeline
     private lateinit var frameScheduler: FrameScheduler
 
     private val rootMeasurable = AtomicReference<Measurable?>(null)
@@ -89,28 +87,17 @@ internal class DispatchApplicationBuilder(
     @Volatile
     private var mouseEventHandler: ((MouseEvent) -> Unit)? = null
 
-    private val scrollingContentTracker = ScrollingContentTracker()
     private val keyboardInterceptor = KeyboardInterceptor()
     private val focusRegistry = FocusRegistry()
     private val exitPromptState = ExitPromptState()
-    private var lastRenderedFrame: RenderFrameSnapshot? = null
     private var exitResetJob: Job? = null
-    private var lastTerminalWidth: Int = 0
-    private var lastTerminalHeight: Int = 0
-    private var pendingResizeReset: Boolean = false
-    private var resizeHandlerRegistered: Boolean = false
 
     /**
      * Active area height hint (from config).
      */
     private var activeAreaHeight: Int = 4
 
-    private val renderLock = ReentrantLock()
-
     private var activeUIBlock: (@Dispatchable () -> Unit)? = null
-
-    @Volatile
-    private var sizeDirty: Boolean = true
 
     private lateinit var dispatchScopeInstance: DispatchScope
     private val compositionScopeToken = Any()
@@ -170,7 +157,9 @@ internal class DispatchApplicationBuilder(
         dispatchScopeInstance = scope
         composer = Composer()
         recomposer = Recomposer(uiScope)
-        registerResizeHandler()
+        resizeCoordinator = ResizeCoordinator(requestRecomposition = { recomposer.requestRecomposition() })
+        resizeCoordinator.registerSignalHandler()
+        renderPipeline = RenderPipeline(renderer)
 
         scope.content()
         parseArguments()
@@ -191,51 +180,24 @@ internal class DispatchApplicationBuilder(
     }
 
     private suspend fun runTerminalSession() {
-        terminal!!.enterRawMode(config.mouseTracking).use { rawMode ->
-            val initialSize = terminal!!.updateSize()
-            lastTerminalWidth = initialSize.width
-            lastTerminalHeight = initialSize.height
-            sizeDirty = false
-
-            val inputJob =
-                backgroundScope.launch(Dispatchers.IO) {
-                    runInputLoop {
-                        rawMode.readEventOrNull(50.milliseconds)
-                    }
-                }
-
-            frameScheduler.start()
-            recomposer.registerComposition(compositionScopeToken) { frameScheduler.requestFrame() }
-            composeAndRender()
-            frameScheduler.markFrame()
-            val recomposerJob = recomposer.start()
-            try {
-                awaitExitRequest()
-            } finally {
-                withContext(NonCancellable) {
-                    shutdownTerminalSession(
-                        inputJob = inputJob,
-                        recomposerJob = recomposerJob,
-                    )
-                }
-            }
-        }
-    }
-
-    private suspend fun shutdownTerminalSession(
-        inputJob: Job,
-        recomposerJob: Job,
-    ) {
-        try {
-            cancelExitPromptReset()
-            inputJob.cancelAndJoin()
-            frameScheduler.stop()
-            recomposer.stop()
-            recomposerJob.cancelAndJoin()
-            renderer.handoffToShellPrompt()
-        } finally {
-            renderer.showCursor()
-        }
+        val terminalInstance = terminal ?: return
+        TerminalSessionCoordinator(
+            terminal = terminalInstance,
+            config = config,
+            uiScope = uiScope,
+            backgroundScope = backgroundScope,
+            uiDispatcher = uiDispatcher,
+            frameScheduler = frameScheduler,
+            recomposer = recomposer,
+            compositionScopeToken = compositionScopeToken,
+            renderer = renderer,
+            resizeCoordinator = resizeCoordinator,
+        ).run(
+            onInputLoop = { readEvent -> runInputLoop(readEvent) },
+            onFrameComposeAndRender = { composeAndRender() },
+            shouldExit = { exitRequested },
+            onBeforeShutdown = { cancelExitPromptReset() },
+        )
     }
 
     private suspend fun cancelExitPromptReset() {
@@ -243,12 +205,6 @@ internal class DispatchApplicationBuilder(
         exitResetJob = null
         pendingJob?.cancelAndJoin()
         exitPromptState.isArmed = false
-    }
-
-    private suspend fun awaitExitRequest() {
-        while (!exitRequested && uiScope.isActive) {
-            delay(50)
-        }
     }
 
     private suspend fun runInputLoop(readEvent: suspend () -> Any?) {
@@ -385,9 +341,15 @@ internal class DispatchApplicationBuilder(
 
     private fun composeAndRender() {
         applyWindowTitleIfNeeded()
-        updateTerminalSizeIfNeeded()
+        resizeCoordinator.updateIfNeeded(terminal)
         composeActiveUI()
-        renderActiveArea()
+        renderPipeline.render(
+            measurable = rootMeasurable.get(),
+            terminalWidth = resizeCoordinator.width,
+            terminalHeight = resizeCoordinator.height,
+            activeAreaHeight = activeAreaHeight,
+            forceRewrite = resizeCoordinator.consumePendingReset(),
+        )
     }
 
     private fun composeActiveUI() {
@@ -406,8 +368,8 @@ internal class DispatchApplicationBuilder(
                             LocalDispatchConfig provides config,
                             LocalDispatchContext provides DispatchContext(dispatchScopeInstance, dispatchArgs, config),
                             LocalTerminal provides t,
-                            LocalTerminalWidth provides lastTerminalWidth.coerceAtLeast(40),
-                            LocalTerminalHeight provides lastTerminalHeight.coerceAtLeast(10),
+                            LocalTerminalWidth provides resizeCoordinator.width.coerceAtLeast(40),
+                            LocalTerminalHeight provides resizeCoordinator.height.coerceAtLeast(10),
                             LocalTheme provides config.theme,
                             LocalKeyboardInterceptor provides keyboardInterceptor,
                             LocalFocusRegistry provides focusRegistry,
@@ -425,86 +387,6 @@ internal class DispatchApplicationBuilder(
                     }
                 }
             }
-        }
-    }
-
-    private fun renderActiveArea() {
-        renderLock.lock()
-        try {
-            val measurable = rootMeasurable.get() ?: return
-            val width = lastTerminalWidth.coerceAtLeast(40)
-            val terminalHeight = lastTerminalHeight.coerceAtLeast(10)
-            val effectiveActiveAreaHeight = minOf(activeAreaHeight, terminalHeight)
-
-            // UNCONSTRAINED height - let content be as tall as needed
-            val constraints =
-                Constraints(
-                    minWidth = width,
-                    maxWidth = width,
-                    minHeight = 0,
-                    maxHeight = Int.MAX_VALUE, // Unconstrained!
-                )
-
-            val placeable = measurable.measure(constraints)
-
-            // Split content into scrolling (history) and active (input) portions
-            val (scrollingLines, activeLines) =
-                splitContentForRendering(
-                    placeable,
-                    effectiveActiveAreaHeight,
-                    scrollingContentTracker.committedLineCount,
-                )
-
-            val frameSnapshot = RenderFrameSnapshot(scrollingLines = scrollingLines, activeLines = activeLines)
-            val previousFrameSnapshot = lastRenderedFrame
-            val update =
-                if (pendingResizeReset) {
-                    pendingResizeReset = false
-                    RenderDecision(
-                        kind = RenderKind.FULL_REWRITE,
-                        scrollUpdate = ScrollUpdate.rewrite(scrollingLines),
-                        confidencePercent = 100,
-                        reason = "terminal_resize",
-                    )
-                } else {
-                    classifyRenderDecision(
-                        previous = previousFrameSnapshot,
-                        current = frameSnapshot,
-                        scrollUpdate = scrollingContentTracker.consume(scrollingLines),
-                    )
-                }
-
-            val visibleLineCount = viewportLineCount(scrollingLines, activeLines, terminalHeight)
-            renderer.markVisibleContentHeight(visibleLineCount)
-
-            val rewriteRendered =
-                when (update.kind) {
-                RenderKind.NOOP -> false
-                RenderKind.ACTIVE_ONLY -> false
-                RenderKind.APPEND_ONLY -> {
-                    if (update.scrollUpdate.lines.isNotEmpty()) {
-                        renderer.appendScrollingContent(update.scrollUpdate.lines)
-                    }
-                    false
-                }
-                RenderKind.FULL_REWRITE -> {
-                    renderer.rewriteViewport(
-                        scrollingLines = scrollingLines,
-                        activeLines = activeLines,
-                        clearScrollback = true,
-                    )
-                    scrollingContentTracker.sync(scrollingLines)
-                    true
-                }
-            }
-
-            // Update the active area (input/status at bottom)
-            if (!rewriteRendered) {
-                renderer.updateActiveArea(activeLines)
-            }
-            lastRenderedFrame = frameSnapshot
-        } finally {
-            renderLock.unlock()
         }
     }
 
@@ -532,39 +414,6 @@ internal class DispatchApplicationBuilder(
         return bindings.any { it.matches(event) }
     }
 
-    private fun updateTerminalSizeIfNeeded() {
-        val t = terminal ?: return
-        if (!sizeDirty) return
-        val size = t.updateSize()
-        val update =
-            computeTerminalSizeUpdate(
-                sizeDirty = sizeDirty,
-                previousWidth = lastTerminalWidth,
-                previousHeight = lastTerminalHeight,
-                currentWidth = size.width,
-                currentHeight = size.height,
-            )
-        lastTerminalWidth = update.width
-        lastTerminalHeight = update.height
-        if (update.reset) {
-            pendingResizeReset = true
-        }
-        sizeDirty = update.dirty
-    }
-
-    private fun registerResizeHandler() {
-        if (resizeHandlerRegistered) return
-        try {
-            Signal.handle(Signal("WINCH")) {
-                sizeDirty = true
-                recomposer.requestRecomposition()
-            }
-            resizeHandlerRegistered = true
-        } catch (_: Throwable) {
-            // No-op when signals aren't supported.
-        }
-    }
-
     private fun applyWindowTitleIfNeeded() {
         val t = terminal ?: return
         val title = config.windowTitle ?: config.name
@@ -589,11 +438,11 @@ internal class DispatchApplicationBuilder(
     }
 
     private inner class DispatchScopeImpl : DispatchScope {
-        override val terminal: Terminal get() = this@DispatchApplicationBuilder.terminal!!
+        override val terminal: Terminal get() = this@DispatchRuntimeEngine.terminal!!
         override val theme: DispatchTheme get() = config.theme
-        override val args: Array<String> get() = this@DispatchApplicationBuilder.args
-        override val terminalWidth: Int get() = lastTerminalWidth.coerceAtLeast(40)
-        override val terminalHeight: Int get() = lastTerminalHeight.coerceAtLeast(10)
+        override val args: Array<String> get() = this@DispatchRuntimeEngine.args
+        override val terminalWidth: Int get() = resizeCoordinator.width.coerceAtLeast(40)
+        override val terminalHeight: Int get() = resizeCoordinator.height.coerceAtLeast(10)
 
         override fun config(block: DispatchConfig.() -> Unit) = config.block()
 
@@ -610,8 +459,7 @@ internal class DispatchApplicationBuilder(
 
         override fun clearScreen(clearScrollback: Boolean) {
             renderer.clearScreen(clearScrollback)
-            scrollingContentTracker.reset()
-            lastRenderedFrame = null
+            renderPipeline.reset()
             recomposer.requestRecomposition()
         }
 
@@ -624,7 +472,7 @@ internal class DispatchApplicationBuilder(
             mouseEventHandler = handler
         }
 
-        override fun renderer(block: @Dispatchable () -> Unit) {
+        override fun content(block: @Dispatchable () -> Unit) {
             activeUIBlock = block
         }
     }
@@ -785,74 +633,6 @@ private data class InputReadResult(
     val eventTimestampNanos: Long,
     val consecutiveErrors: Int,
 )
-
-private data class RenderFrameSnapshot(
-    val scrollingLines: List<String>,
-    val activeLines: List<String>,
-)
-
-private enum class RenderKind {
-    NOOP,
-    ACTIVE_ONLY,
-    APPEND_ONLY,
-    FULL_REWRITE,
-}
-
-private data class RenderDecision(
-    val kind: RenderKind,
-    val scrollUpdate: ScrollUpdate,
-    val confidencePercent: Int,
-    val reason: String,
-)
-
-private fun classifyRenderDecision(
-    previous: RenderFrameSnapshot?,
-    current: RenderFrameSnapshot,
-    scrollUpdate: ScrollUpdate,
-): RenderDecision {
-    if (previous != null && previous == current) {
-        return RenderDecision(
-            kind = RenderKind.NOOP,
-            scrollUpdate = ScrollUpdate.none(),
-            confidencePercent = 100,
-            reason = "unchanged_frame",
-        )
-    }
-
-    if (scrollUpdate.kind == ScrollUpdateKind.REWRITE) {
-        return RenderDecision(
-            kind = RenderKind.FULL_REWRITE,
-            scrollUpdate = scrollUpdate,
-            confidencePercent = 100,
-            reason = "non_prefix_scrolling_change",
-        )
-    }
-
-    if (scrollUpdate.kind == ScrollUpdateKind.APPEND) {
-        return RenderDecision(
-            kind = RenderKind.APPEND_ONLY,
-            scrollUpdate = scrollUpdate,
-            confidencePercent = 95,
-            reason = "append_only_scrolling_change",
-        )
-    }
-
-    return if (previous == null || previous.activeLines != current.activeLines) {
-        RenderDecision(
-            kind = RenderKind.ACTIVE_ONLY,
-            scrollUpdate = ScrollUpdate.none(),
-            confidencePercent = 95,
-            reason = "active_area_only_change",
-        )
-    } else {
-        RenderDecision(
-            kind = RenderKind.NOOP,
-            scrollUpdate = ScrollUpdate.none(),
-            confidencePercent = 100,
-            reason = "no_effective_change",
-        )
-    }
-}
 
 private data class ActiveSegmentSelection(
     val activeStartSegmentIndex: Int,

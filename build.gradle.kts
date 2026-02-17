@@ -41,5 +41,48 @@ tasks.register("formatAll") {
 tasks.register("validateAll") {
     group = "verification"
     description = "Runs all checks including build, test, and quality"
-    dependsOn("check", "qualityCheck", "koverHtmlReport")
+    dependsOn("check", "qualityCheck", "koverHtmlReport", "verifyModuleBoundaries")
+}
+
+tasks.register("verifyModuleBoundaries") {
+    group = "verification"
+    description = "Validates forbidden project dependency edges between Dispatch modules"
+
+    doLast {
+        val forbiddenEdges =
+            mapOf(
+                ":dispatch-navigation" to setOf(":dispatch-renderer", ":dispatch-core"),
+                ":dispatch-widgets" to setOf(":dispatch-core"),
+                ":dispatch-renderer" to setOf(":dispatch-core"),
+            )
+
+        val violations = mutableListOf<String>()
+        forbiddenEdges.forEach { (projectPath, forbiddenTargets) ->
+            val project = project(projectPath)
+            val directProjectDeps = mutableSetOf<String>()
+            project.configurations
+                .matching { it.name in setOf("api", "implementation") }
+                .forEach { config ->
+                    config.dependencies.forEach { dependency ->
+                        if (dependency is org.gradle.api.artifacts.ProjectDependency) {
+                            directProjectDeps += dependency.path
+                        }
+                    }
+                }
+
+            val invalid = directProjectDeps.intersect(forbiddenTargets)
+            if (invalid.isNotEmpty()) {
+                violations += "$projectPath has forbidden deps: ${invalid.sorted().joinToString()}"
+            }
+        }
+
+        if (violations.isNotEmpty()) {
+            error(
+                buildString {
+                    appendLine("Module boundary violations detected:")
+                    violations.sorted().forEach { appendLine("- $it") }
+                }
+            )
+        }
+    }
 }

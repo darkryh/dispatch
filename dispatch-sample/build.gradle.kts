@@ -13,6 +13,11 @@ application {
 
 dependencies {
     implementation(projects.dispatchCore)
+    implementation(projects.dispatchRuntime)
+    implementation(projects.dispatchLayout)
+    implementation(projects.dispatchWidgets)
+    implementation(projects.dispatchViewmodel)
+    implementation(projects.dispatchLifecycle)
     implementation(projects.dispatchNavigation)
     implementation(projects.dispatchKoin)
     implementation(projects.koogContextOrchestrator)

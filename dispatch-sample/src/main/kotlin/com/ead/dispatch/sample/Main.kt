@@ -32,7 +32,7 @@ fun main(args: Array<String>) = DispatchApplication(args) {
     }
 
     // renderer section where to insert composables / dispatch widgets
-    renderer {
+    content {
         DispatchSampleApp()
     }
 }

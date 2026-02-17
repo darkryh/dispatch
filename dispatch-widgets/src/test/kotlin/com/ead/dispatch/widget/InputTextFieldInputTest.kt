@@ -61,7 +61,7 @@ class InputTextFieldInputTest {
         }
 
         override fun onMouseEvent(handler: (MouseEvent) -> Unit) = Unit
-        override fun renderer(block: @Dispatchable () -> Unit) = Unit
+        override fun content(block: @Dispatchable () -> Unit) = Unit
 
         fun sendKey(event: KeyboardEvent) {
             if (keyboardInterceptor.tryIntercept(event)) return

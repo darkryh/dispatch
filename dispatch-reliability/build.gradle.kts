@@ -6,6 +6,7 @@ plugins {
 dependencies {
     api(projects.dispatchCore)
 
+    testImplementation(projects.dispatchRuntime)
     testImplementation(projects.dispatchLayout)
     testImplementation(projects.dispatchWidgets)
     testImplementation(projects.dispatchRenderer)

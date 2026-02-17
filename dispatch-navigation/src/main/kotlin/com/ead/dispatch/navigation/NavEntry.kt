@@ -11,13 +11,13 @@ import com.ead.dispatch.viewmodel.ViewModelProvider
  */
 data class NavEntry<T : NavKey>(
     val key: T,
-    val contentKey: Any = defaultContentKey(key),
+    val contentKey: Any = stableContentKey(key),
     val metadata: Map<String, Any> = emptyMap(),
     val content: @Dispatchable (T) -> Unit,
 )
 
 @PublishedApi
-internal fun defaultContentKey(key: Any): Any = key.toString()
+internal fun stableContentKey(key: NavKey): Any = encodeNavKeyForSave(key, DefaultRouteJson)
 
 /**
  * A stateful back stack entry used during rendering.

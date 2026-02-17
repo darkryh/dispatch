@@ -54,7 +54,7 @@ class StructuralStabilityTest {
         override fun launch(block: suspend CoroutineScope.() -> Unit): Job = Job()
         override fun clearScreen(clearScrollback: Boolean) = Unit
         override fun onMouseEvent(handler: (MouseEvent) -> Unit) = Unit
-        override fun renderer(block: @Dispatchable () -> Unit) = Unit
+        override fun content(block: @Dispatchable () -> Unit) = Unit
 
         override fun onKeyEvent(handler: (KeyboardEvent) -> Unit) {
             keyHandler = handler

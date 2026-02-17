@@ -26,7 +26,7 @@ class EntryProviderScope<T : NavKey>(
 
     fun <K : T> addEntryProvider(
         key: K,
-        contentKey: Any = defaultContentKey(key),
+        contentKey: Any = stableContentKey(key),
         metadata: Map<String, Any> = emptyMap(),
         content: @Dispatchable (K) -> Unit,
     ) {
@@ -38,7 +38,7 @@ class EntryProviderScope<T : NavKey>(
 
     fun <K : T> addEntryProvider(
         key: K,
-        @Suppress("KotlinDefaultParameterOrder") contentKey: Any = defaultContentKey(key),
+        @Suppress("KotlinDefaultParameterOrder") contentKey: Any = stableContentKey(key),
         metadata: (K) -> Map<String, Any>,
         content: @Dispatchable (K) -> Unit,
     ) {
@@ -50,7 +50,7 @@ class EntryProviderScope<T : NavKey>(
 
     fun <K : T> entry(
         key: K,
-        contentKey: Any = defaultContentKey(key),
+        contentKey: Any = stableContentKey(key),
         metadata: Map<String, Any> = emptyMap(),
         content: @Dispatchable (K) -> Unit,
     ) {
@@ -59,7 +59,7 @@ class EntryProviderScope<T : NavKey>(
 
     fun <K : T> entry(
         key: K,
-        @Suppress("KotlinDefaultParameterOrder") contentKey: Any = defaultContentKey(key),
+        @Suppress("KotlinDefaultParameterOrder") contentKey: Any = stableContentKey(key),
         metadata: (K) -> Map<String, Any>,
         content: @Dispatchable (K) -> Unit,
     ) {
@@ -68,7 +68,7 @@ class EntryProviderScope<T : NavKey>(
 
     fun <K : T> addEntryProvider(
         clazz: KClass<out K>,
-        clazzContentKey: (key: @JvmSuppressWildcards K) -> Any = { defaultContentKey(it) },
+        clazzContentKey: (key: @JvmSuppressWildcards K) -> Any = { stableContentKey(it) },
         metadata: Map<String, Any> = emptyMap(),
         content: @Dispatchable (K) -> Unit,
     ) {
@@ -81,7 +81,7 @@ class EntryProviderScope<T : NavKey>(
     fun <K : T> addEntryProvider(
         clazz: KClass<out K>,
         @Suppress("KotlinDefaultParameterOrder")
-        clazzContentKey: (key: @JvmSuppressWildcards K) -> Any = { defaultContentKey(it) },
+        clazzContentKey: (key: @JvmSuppressWildcards K) -> Any = { stableContentKey(it) },
         metadata: (K) -> Map<String, Any>,
         content: @Dispatchable (K) -> Unit,
     ) {
@@ -92,7 +92,7 @@ class EntryProviderScope<T : NavKey>(
     }
 
     inline fun <reified K : T> entry(
-        noinline clazzContentKey: (key: @JvmSuppressWildcards K) -> Any = { defaultContentKey(it) },
+        noinline clazzContentKey: (key: @JvmSuppressWildcards K) -> Any = { stableContentKey(it) },
         metadata: Map<String, Any> = emptyMap(),
         noinline content: @Dispatchable (K) -> Unit,
     ) {
@@ -101,7 +101,7 @@ class EntryProviderScope<T : NavKey>(
 
     inline fun <reified K : T> entry(
         @Suppress("KotlinDefaultParameterOrder")
-        noinline clazzContentKey: (key: @JvmSuppressWildcards K) -> Any = { defaultContentKey(it) },
+        noinline clazzContentKey: (key: @JvmSuppressWildcards K) -> Any = { stableContentKey(it) },
         noinline metadata: (K) -> Map<String, Any>,
         noinline content: @Dispatchable (K) -> Unit,
     ) {

@@ -3,12 +3,12 @@ plugins {
 }
 
 dependencies {
-    api(projects.dispatchRuntime)
-    api(projects.dispatchLayout)
-    api(projects.dispatchRenderer)
-    api(projects.dispatchNavigation)
-    api(projects.dispatchViewmodel)
-    api(projects.dispatchWidgets)
-    api(projects.dispatchLifecycle)
-    api(libs.mordant.jvm.jna)
+    implementation(projects.dispatchRuntime)
+    implementation(projects.dispatchLayout)
+    implementation(projects.dispatchRenderer)
+    implementation(projects.dispatchNavigation)
+    implementation(projects.dispatchViewmodel)
+    implementation(projects.dispatchWidgets)
+    implementation(projects.dispatchLifecycle)
+    implementation(libs.mordant.jvm.jna)
 }
