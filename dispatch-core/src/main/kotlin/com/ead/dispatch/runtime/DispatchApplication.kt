@@ -93,6 +93,7 @@ internal class DispatchApplicationBuilder(
     private val keyboardInterceptor = KeyboardInterceptor()
     private val focusRegistry = FocusRegistry()
     private val exitPromptState = ExitPromptState()
+    private var lastRenderedFrame: RenderFrameSnapshot? = null
     private var exitResetJob: Job? = null
     private var lastTerminalWidth: Int = 0
     private var lastTerminalHeight: Int = 0
@@ -454,12 +455,23 @@ internal class DispatchApplicationBuilder(
                     scrollingContentTracker.committedLineCount,
                 )
 
+            val frameSnapshot = RenderFrameSnapshot(scrollingLines = scrollingLines, activeLines = activeLines)
+            val previousFrameSnapshot = lastRenderedFrame
             val update =
                 if (pendingResizeReset) {
                     pendingResizeReset = false
-                    ScrollUpdate.rewrite(scrollingLines)
+                    RenderDecision(
+                        kind = RenderKind.FULL_REWRITE,
+                        scrollUpdate = ScrollUpdate.rewrite(scrollingLines),
+                        confidencePercent = 100,
+                        reason = "terminal_resize",
+                    )
                 } else {
-                    scrollingContentTracker.consume(scrollingLines)
+                    classifyRenderDecision(
+                        previous = previousFrameSnapshot,
+                        current = frameSnapshot,
+                        scrollUpdate = scrollingContentTracker.consume(scrollingLines),
+                    )
                 }
 
             val visibleLineCount = viewportLineCount(scrollingLines, activeLines, terminalHeight)
@@ -467,22 +479,17 @@ internal class DispatchApplicationBuilder(
 
             val rewriteRendered =
                 when (update.kind) {
-                ScrollUpdateKind.NONE -> false
-                ScrollUpdateKind.APPEND -> {
-                    if (update.lines.isNotEmpty()) {
-                        renderer.appendScrollingContent(update.lines)
+                RenderKind.NOOP -> false
+                RenderKind.ACTIVE_ONLY -> false
+                RenderKind.APPEND_ONLY -> {
+                    if (update.scrollUpdate.lines.isNotEmpty()) {
+                        renderer.appendScrollingContent(update.scrollUpdate.lines)
                     }
                     false
                 }
-                ScrollUpdateKind.REWRITE -> {
-                    val viewportScrolling =
-                        viewportScrollingLines(
-                            scrollingLines = scrollingLines,
-                            activeLines = activeLines,
-                            terminalHeight = terminalHeight,
-                        )
+                RenderKind.FULL_REWRITE -> {
                     renderer.rewriteViewport(
-                        scrollingLines = viewportScrolling,
+                        scrollingLines = scrollingLines,
                         activeLines = activeLines,
                         clearScrollback = true,
                     )
@@ -495,6 +502,7 @@ internal class DispatchApplicationBuilder(
             if (!rewriteRendered) {
                 renderer.updateActiveArea(activeLines)
             }
+            lastRenderedFrame = frameSnapshot
         } finally {
             renderLock.unlock()
         }
@@ -603,6 +611,7 @@ internal class DispatchApplicationBuilder(
         override fun clearScreen(clearScrollback: Boolean) {
             renderer.clearScreen(clearScrollback)
             scrollingContentTracker.reset()
+            lastRenderedFrame = null
             recomposer.requestRecomposition()
         }
 
@@ -719,46 +728,29 @@ private fun splitSegmentedContent(
     allLines: List<String>,
     segmentHeights: List<Int>,
     activeAreaHeight: Int,
-    committedLineCount: Int,
+    @Suppress("UNUSED_PARAMETER") committedLineCount: Int,
 ): Pair<List<String>, List<String>> {
     val selection = selectActiveSegmentWindow(segmentHeights, activeAreaHeight)
     val segmentStartLine = segmentHeights.take(selection.activeStartSegmentIndex).sum()
     val preferredActiveStartLine = (segmentStartLine + selection.clipFromStartSegment).coerceIn(0, allLines.size)
-    // Never pull already-committed scrolling lines back into the active area.
-    // If transient active rows (e.g. spinner) disappear, the active area may shrink,
-    // which is safer than rewriting chat history boundaries and duplicating lines.
-    val activeStartLine =
-        preferredActiveStartLine
-            .coerceAtLeast(committedLineCount.coerceAtMost(allLines.size))
-    val maxScrollingLineCount = activeStartLine
+    val activeStartLine = preferredActiveStartLine
 
     var scrollingLineCount = segmentStartLine
-    if (selection.clipFromStartSegment > 0 && committedLineCount == 0) {
+    if (selection.clipFromStartSegment > 0) {
         scrollingLineCount = activeStartLine
     }
-    val committedFloor = committedLineCount.coerceAtMost(maxScrollingLineCount)
-    scrollingLineCount =
-        scrollingLineCount
-            .coerceAtLeast(committedFloor)
-            .coerceAtMost(maxScrollingLineCount)
 
-    return allLines.take(scrollingLineCount) to allLines.drop(activeStartLine)
+    return allLines.take(scrollingLineCount.coerceIn(0, activeStartLine)) to allLines.drop(activeStartLine)
 }
 
 private fun splitUnsegmentedContent(
     allLines: List<String>,
     activeAreaHeight: Int,
-    committedLineCount: Int,
+    @Suppress("UNUSED_PARAMETER") committedLineCount: Int,
 ): Pair<List<String>, List<String>> {
     val activeLineCount = minOf(activeAreaHeight, allLines.size)
     val activeStartLine = allLines.size - activeLineCount
-    val maxScrollingLineCount = activeStartLine
-    val committedFloor = committedLineCount.coerceAtMost(maxScrollingLineCount)
-    val scrollingLineCount =
-        activeStartLine
-            .coerceAtLeast(committedFloor)
-            .coerceAtMost(maxScrollingLineCount)
-    return allLines.take(scrollingLineCount) to allLines.drop(activeStartLine)
+    return allLines.take(activeStartLine) to allLines.drop(activeStartLine)
 }
 
 private fun selectActiveSegmentWindow(
@@ -793,6 +785,74 @@ private data class InputReadResult(
     val eventTimestampNanos: Long,
     val consecutiveErrors: Int,
 )
+
+private data class RenderFrameSnapshot(
+    val scrollingLines: List<String>,
+    val activeLines: List<String>,
+)
+
+private enum class RenderKind {
+    NOOP,
+    ACTIVE_ONLY,
+    APPEND_ONLY,
+    FULL_REWRITE,
+}
+
+private data class RenderDecision(
+    val kind: RenderKind,
+    val scrollUpdate: ScrollUpdate,
+    val confidencePercent: Int,
+    val reason: String,
+)
+
+private fun classifyRenderDecision(
+    previous: RenderFrameSnapshot?,
+    current: RenderFrameSnapshot,
+    scrollUpdate: ScrollUpdate,
+): RenderDecision {
+    if (previous != null && previous == current) {
+        return RenderDecision(
+            kind = RenderKind.NOOP,
+            scrollUpdate = ScrollUpdate.none(),
+            confidencePercent = 100,
+            reason = "unchanged_frame",
+        )
+    }
+
+    if (scrollUpdate.kind == ScrollUpdateKind.REWRITE) {
+        return RenderDecision(
+            kind = RenderKind.FULL_REWRITE,
+            scrollUpdate = scrollUpdate,
+            confidencePercent = 100,
+            reason = "non_prefix_scrolling_change",
+        )
+    }
+
+    if (scrollUpdate.kind == ScrollUpdateKind.APPEND) {
+        return RenderDecision(
+            kind = RenderKind.APPEND_ONLY,
+            scrollUpdate = scrollUpdate,
+            confidencePercent = 95,
+            reason = "append_only_scrolling_change",
+        )
+    }
+
+    return if (previous == null || previous.activeLines != current.activeLines) {
+        RenderDecision(
+            kind = RenderKind.ACTIVE_ONLY,
+            scrollUpdate = ScrollUpdate.none(),
+            confidencePercent = 95,
+            reason = "active_area_only_change",
+        )
+    } else {
+        RenderDecision(
+            kind = RenderKind.NOOP,
+            scrollUpdate = ScrollUpdate.none(),
+            confidencePercent = 100,
+            reason = "no_effective_change",
+        )
+    }
+}
 
 private data class ActiveSegmentSelection(
     val activeStartSegmentIndex: Int,

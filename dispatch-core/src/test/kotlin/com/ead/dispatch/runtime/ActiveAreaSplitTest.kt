@@ -80,9 +80,9 @@ class ActiveAreaSplitTest {
                 activeAreaHeight = 3,
                 committedLineCount = scrollingInitial.size,
             )
-        assertEquals(history, scrollingGrown)
+        assertEquals(listOf("h1", "h2", "i1"), scrollingGrown)
         assertEquals(listOf("i2", "i3", "s1"), activeGrown)
-        assertEquals(ScrollUpdate(emptyList(), ScrollUpdateKind.NONE), tracker.consume(scrollingGrown))
+        assertEquals(ScrollUpdate(listOf("i1"), ScrollUpdateKind.APPEND), tracker.consume(scrollingGrown))
     }
 
     @Test
