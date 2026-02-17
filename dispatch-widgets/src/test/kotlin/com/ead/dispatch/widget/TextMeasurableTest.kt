@@ -88,4 +88,38 @@ class TextMeasurableTest {
         assertTrue(!rendered.contains("**bold**"))
         assertTrue(!rendered.contains("*italic*"))
     }
+
+    @Test
+    fun `markdown flag controls parsing behavior`() {
+        val source = "**bold**"
+        val constraints = Constraints(maxWidth = 30, maxHeight = 10)
+
+        val plain =
+            TextMeasurable(
+                text = source,
+                modifier = Modifier,
+                style = null,
+                align = TextAlign.LEFT,
+                maxLines = null,
+                overflow = TextOverflow.Clip,
+                markdown = false,
+                terminal = terminal(),
+            ).measure(constraints).lines.joinToString("\n")
+
+        val markdown =
+            TextMeasurable(
+                text = source,
+                modifier = Modifier,
+                style = null,
+                align = TextAlign.LEFT,
+                maxLines = null,
+                overflow = TextOverflow.Clip,
+                markdown = true,
+                terminal = terminal(),
+            ).measure(constraints).lines.joinToString("\n")
+
+        assertTrue(plain.contains("**bold**"))
+        assertTrue(markdown.contains("bold"))
+        assertTrue(!markdown.contains("**bold**"))
+    }
 }

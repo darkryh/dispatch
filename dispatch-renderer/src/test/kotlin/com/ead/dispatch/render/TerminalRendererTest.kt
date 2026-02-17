@@ -208,6 +208,21 @@ class TerminalRendererTest {
     }
 
     @Test
+    fun `rewriteViewport clears entire terminal viewport before drawing`() {
+        val (renderer, recorder) = createRenderer()
+
+        renderer.rewriteViewport(
+            scrollingLines = listOf("only line"),
+            activeLines = listOf("> prompt"),
+        )
+
+        val output = recorder.output()
+        assertTrue(output.contains(AnsiCodes.moveTo(1, 1)))
+        assertTrue(output.contains(AnsiCodes.moveTo(24, 1)))
+        assertTrue(output.contains(AnsiCodes.CLEAR_LINE))
+    }
+
+    @Test
     fun `rewriteViewport seeds active area state for subsequent updates`() {
         val (renderer, recorder) = createRenderer()
 

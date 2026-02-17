@@ -66,6 +66,7 @@ internal class RenderPipeline(
                         scrollUpdate = scrollingContentTracker.consume(scrollingLines),
                     )
                 }
+            RenderDecisionTelemetry.record(update)
 
             renderer.markVisibleContentHeight(
                 viewportLineCount(
@@ -86,6 +87,8 @@ internal class RenderPipeline(
                         false
                     }
                     RenderKind.FULL_REWRITE -> {
+                        // Hard rewrite is reserved for explicit reset flows (resize/clear).
+                        // Transition rewrites still use the same path today for deterministic cleanup.
                         renderer.rewriteViewport(
                             scrollingLines = scrollingLines,
                             activeLines = activeLines,
@@ -104,26 +107,26 @@ internal class RenderPipeline(
     }
 }
 
-private data class RenderFrameSnapshot(
+internal data class RenderFrameSnapshot(
     val scrollingLines: List<String>,
     val activeLines: List<String>,
 )
 
-private enum class RenderKind {
+internal enum class RenderKind {
     NOOP,
     ACTIVE_ONLY,
     APPEND_ONLY,
     FULL_REWRITE,
 }
 
-private data class RenderDecision(
+internal data class RenderDecision(
     val kind: RenderKind,
     val scrollUpdate: ScrollUpdate,
     val confidencePercent: Int,
     val reason: String,
 )
 
-private fun classifyRenderDecision(
+internal fun classifyRenderDecision(
     previous: RenderFrameSnapshot?,
     current: RenderFrameSnapshot,
     scrollUpdate: ScrollUpdate,
@@ -147,6 +150,14 @@ private fun classifyRenderDecision(
     }
 
     if (scrollUpdate.kind == ScrollUpdateKind.APPEND) {
+        if (RenderTransitionPolicy.shouldPromoteAppendToRewrite(previous, current, scrollUpdate)) {
+            return RenderDecision(
+                kind = RenderKind.FULL_REWRITE,
+                scrollUpdate = ScrollUpdate.rewrite(current.scrollingLines),
+                confidencePercent = 100,
+                reason = "active_to_scrolling_boundary_shift",
+            )
+        }
         return RenderDecision(
             kind = RenderKind.APPEND_ONLY,
             scrollUpdate = scrollUpdate,
@@ -171,4 +182,3 @@ private fun classifyRenderDecision(
         )
     }
 }
-

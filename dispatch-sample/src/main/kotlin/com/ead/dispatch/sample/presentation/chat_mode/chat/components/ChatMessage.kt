@@ -58,7 +58,7 @@ fun ChatMessage(
                 Text(
                     text = message.data,
                     style = rgb("#FFFFFF"),
-                    markdown = true,
+                    markdown = true
                 )
                 Spacer(modifier = Modifier.width(2))
             }

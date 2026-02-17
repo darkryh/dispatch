@@ -80,10 +80,14 @@ class TerminalRenderer(
         renderLock.withLock {
             val buffer = StringBuilder()
             if (clearScrollback) {
+                // Use a conservative clear sequence because some terminals only fully honor
+                // scrollback clearing when combined with screen clear + home repositioning.
+                buffer.append(AnsiCodes.CURSOR_HOME)
+                buffer.append(AnsiCodes.CLEAR_SCREEN)
                 buffer.append(AnsiCodes.CLEAR_SCROLLBACK)
             }
             buffer.append(AnsiCodes.CURSOR_HOME)
-            buffer.append(AnsiCodes.CLEAR_SCREEN)
+            clearEntireViewportInto(buffer)
             buffer.append(AnsiCodes.CURSOR_HOME)
 
             val viewportLines = scrollingLines + activeLines
@@ -92,6 +96,14 @@ class TerminalRenderer(
 
             activeAreaLines = activeLines
             activeAreaInitialized = activeLines.isNotEmpty()
+        }
+    }
+
+    private fun clearEntireViewportInto(buffer: StringBuilder) {
+        val rows = terminalHeight.coerceAtLeast(1)
+        for (row in 1..rows) {
+            buffer.append(AnsiCodes.moveTo(row, 1))
+            buffer.append(AnsiCodes.CLEAR_LINE)
         }
     }
 
