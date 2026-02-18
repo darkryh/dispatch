@@ -2,6 +2,7 @@ package com.ead.dispatch.sample.presentation.chat_mode.chat
 
 import com.ead.dispatch.annotation.Dispatchable
 import com.ead.dispatch.koin.inject
+import com.ead.dispatch.layout.Column
 import com.ead.dispatch.layout.Row
 import com.ead.dispatch.layout.Spacer
 import com.ead.dispatch.modifier.Modifier
@@ -11,9 +12,13 @@ import com.ead.dispatch.modifier.width
 import com.ead.dispatch.navigation.LocalNavigator
 import com.ead.dispatch.runtime.DisposableEffect
 import com.ead.dispatch.runtime.LocalKeyboardInterceptor
+import com.ead.dispatch.runtime.LocalTerminalHeight
+import com.ead.dispatch.runtime.LocalTerminalWidth
 import com.ead.dispatch.runtime.LocalTheme
-import com.ead.dispatch.sample.domain.entity.EntityOptionType
 import com.ead.dispatch.sample.domain.CommandManager
+import com.ead.dispatch.sample.domain.agents.tools.model.StoryDraftPreviewStatus
+import com.ead.dispatch.sample.domain.entity.EntityOptionType
+import com.ead.dispatch.sample.domain.model.message.CliMessage
 import com.ead.dispatch.sample.domain.model.message.CliMessageRole
 import com.ead.dispatch.sample.domain.model.story.WriterMode
 import com.ead.dispatch.sample.presentation.chat_mode.chat.components.ChatCommandPalette
@@ -28,42 +33,49 @@ import com.ead.dispatch.state.remember
 import com.ead.dispatch.theme.DispatchTheme
 import com.ead.dispatch.viewmodel.collectAsState
 import com.ead.dispatch.viewmodel.viewModel
-import com.ead.dispatch.widget.*
+import com.ead.dispatch.widget.CommandOption
+import com.ead.dispatch.widget.ChangeFocusMode
+import com.ead.dispatch.widget.CommandPaletteTextStyles
+import com.ead.dispatch.widget.DiffReviewAction
+import com.ead.dispatch.widget.DiffReviewPanel
+import com.ead.dispatch.widget.DiffReviewPanelState
+import com.ead.dispatch.widget.DecisionPrompt
+import com.ead.dispatch.widget.DecisionPromptTextStyles
+import com.ead.dispatch.widget.FileChangeApprovalConfig
+import com.ead.dispatch.widget.FileChangePreviewState
+import com.ead.dispatch.widget.KeyHint
+import com.ead.dispatch.widget.LazyColumn
+import com.ead.dispatch.widget.PendingLineRange
+import com.ead.dispatch.widget.PreviewFileType
 import com.ead.dispatch.widget.Text
+import com.ead.dispatch.widget.rememberCommandPaletteState
+import com.ead.dispatch.widget.rememberInputHistoryIndexState
 import com.github.ajalt.mordant.rendering.TextColors.Companion.rgb
 import com.github.ajalt.mordant.rendering.TextStyle
+import kotlinx.datetime.Clock
 
-/**
- * Main chat screen composable.
- *
- * Demonstrates proper usage patterns:
- * - Uses [viewModel] for state management
- * - Uses [collectAsState] for reactive state observation
- * - Uses [InputTextField] for automatic keyboard handling
- * - Uses extracted components for better organization
- */
 @Dispatchable
 fun ChatScreen() {
-    // ViewModel provides state management
     val viewModel = viewModel<ChatViewModel>()
     val commandManager by inject<CommandManager>()
 
-    // Collect state reactively using property delegation
     val inputText by viewModel.inputText.collectAsState()
     val isProcessing by viewModel.isProcessing.collectAsState()
-
     val messages by viewModel.messages.collectAsState()
     val pendingDecision by viewModel.pendingDecision.collectAsState()
     val contextRemainingPercent by viewModel.contextRemainingPercent.collectAsState()
-
     val writerMode by viewModel.writerMode.collectAsState()
+    val storyPreview by viewModel.storyPreview.collectAsState()
+
     val theme = LocalTheme.current
     val navigator = LocalNavigator.current
+    val terminalWidth = LocalTerminalWidth.current
+    val terminalHeight = LocalTerminalHeight.current
 
-    // Register Shift+Tab handler for mode switching without replacing InputTextField handlers.
     val keyboardInterceptor = LocalKeyboardInterceptor.current
+    val previewFocused = storyPreview?.focused == true
 
-    DisposableEffect(Unit) {
+    DisposableEffect("${writerMode.name}|$previewFocused|$isProcessing") {
         val dispose = keyboardInterceptor.register { event ->
             when {
                 event.key == "Tab" && event.shift -> {
@@ -74,13 +86,48 @@ fun ChatScreen() {
                     viewModel.onEvent(ChatEvent.OnCancelProcessing)
                     true
                 }
+                writerMode == WriterMode.CHAT_STORY && event.ctrl && event.key.equals("p", ignoreCase = true) -> {
+                    viewModel.onEvent(ChatEvent.OnToggleStoryPreviewFocus)
+                    true
+                }
+                writerMode == WriterMode.CHAT_STORY && previewFocused && (event.key == "ArrowLeft" || event.key == "Left") -> {
+                    viewModel.onEvent(ChatEvent.OnStoryPreviewMoveLeft)
+                    true
+                }
+                writerMode == WriterMode.CHAT_STORY && previewFocused && (event.key == "ArrowRight" || event.key == "Right") -> {
+                    viewModel.onEvent(ChatEvent.OnStoryPreviewMoveRight)
+                    true
+                }
+                writerMode == WriterMode.CHAT_STORY && previewFocused && (event.key == "ArrowDown" || event.key == "Down") -> {
+                    viewModel.onEvent(ChatEvent.OnStoryPreviewMoveDown)
+                    true
+                }
+                writerMode == WriterMode.CHAT_STORY && previewFocused && (event.key == "ArrowUp" || event.key == "Up") -> {
+                    viewModel.onEvent(ChatEvent.OnStoryPreviewMoveUp)
+                    true
+                }
+                writerMode == WriterMode.CHAT_STORY && previewFocused && event.key == "Enter" -> {
+                    viewModel.onEvent(ChatEvent.OnStoryPreviewExecuteSelection)
+                    true
+                }
+                writerMode == WriterMode.CHAT_STORY && previewFocused && event.key.equals("a", ignoreCase = true) && !event.ctrl && !event.alt -> {
+                    viewModel.onEvent(ChatEvent.OnStoryPreviewApproveShortcut)
+                    true
+                }
+                writerMode == WriterMode.CHAT_STORY && previewFocused && event.key.equals("r", ignoreCase = true) && !event.ctrl && !event.alt -> {
+                    viewModel.onEvent(ChatEvent.OnStoryPreviewRejectShortcut)
+                    true
+                }
+                writerMode == WriterMode.CHAT_STORY && previewFocused && (event.key == "Escape" || event.key == "Esc") -> {
+                    viewModel.onEvent(ChatEvent.OnToggleStoryPreviewFocus)
+                    true
+                }
                 else -> false
             }
         }
         onDispose { dispose() }
     }
 
-    // Define available commands for the command palette
     val commands = remember(writerMode) {
         commandManager.commandsFor(writerMode).map { command ->
             CommandOption(
@@ -96,7 +143,6 @@ fun ChatScreen() {
     }
     val historyIndexState = rememberInputHistoryIndexState()
 
-    // Mode-specific placeholder and icon
     val (placeholder, icon) = when (writerMode) {
         WriterMode.CHAT -> "Describe your story (characters, genre, setting, plot)..." to "> "
         WriterMode.CHAT_STORY -> "What happens next in your story?" to "✦ "
@@ -107,13 +153,63 @@ fun ChatScreen() {
         buildDecisionPromptStyles(theme)
     }
 
-    LazyColumn(modifier = Modifier.fillMaxWidth()) {
-        item {
-            ChatHeader()
-        }
-        item {
-            Spacer(Modifier.height(1))
-        }
+    val inlineStoryPreviewRows = when {
+        terminalWidth >= 170 -> (terminalHeight / 3).coerceIn(10, 18)
+        terminalWidth >= 140 -> (terminalHeight / 3).coerceIn(10, 16)
+        terminalWidth >= 110 -> (terminalHeight / 4).coerceIn(9, 14)
+        else -> 9
+    }
+
+    ChatConversationColumn(
+        modifier = Modifier.fillMaxWidth(),
+        writerMode = writerMode,
+        messages = messages,
+        pendingDecision = pendingDecision,
+        isProcessing = isProcessing,
+        inputText = inputText,
+        placeholder = placeholder,
+        icon = icon,
+        navigator = navigator,
+        historyItems = historyItems,
+        historyIndexState = historyIndexState,
+        commands = commands,
+        commandPaletteState = commandPaletteState,
+        decisionPromptStyles = decisionPromptStyles,
+        theme = theme,
+        contextRemainingPercent = contextRemainingPercent,
+        onEvent = viewModel::onEvent,
+        onDecisionSelected = viewModel::onDecisionSelected,
+        inlineStoryPreview = storyPreview,
+        inlineStoryPreviewRows = inlineStoryPreviewRows,
+    )
+}
+
+@Dispatchable
+private fun ChatConversationColumn(
+    modifier: Modifier,
+    writerMode: WriterMode,
+    messages: List<CliMessage>,
+    pendingDecision: DecisionPromptPayload?,
+    isProcessing: Boolean,
+    inputText: String,
+    placeholder: String,
+    icon: String,
+    navigator: com.ead.dispatch.navigation.Navigator,
+    historyItems: List<String>,
+    historyIndexState: com.ead.dispatch.widget.InputHistoryIndexState,
+    commands: List<CommandOption<String>>,
+    commandPaletteState: com.ead.dispatch.widget.CommandPaletteState<String>,
+    decisionPromptStyles: DecisionPromptTextStyles,
+    theme: DispatchTheme,
+    contextRemainingPercent: Int?,
+    onEvent: (ChatEvent) -> Unit,
+    onDecisionSelected: (com.ead.dispatch.widget.DecisionSelection) -> Unit,
+    inlineStoryPreview: StoryPreviewUiState?,
+    inlineStoryPreviewRows: Int,
+) {
+    LazyColumn(modifier = modifier.fillMaxWidth()) {
+        item { ChatHeader() }
+        item { Spacer(Modifier.height(1)) }
         item {
             Row(modifier = Modifier.fillMaxWidth()) {
                 Spacer(Modifier.width(2))
@@ -122,6 +218,7 @@ fun ChatScreen() {
                         includeStoryChat = true,
                         types = EntityOptionType.chatQuickJumpTypes,
                     )
+
                     WriterMode.CHAT_STORY -> buildQuickJump(
                         includeStoryChat = false,
                         types = listOf(
@@ -137,12 +234,24 @@ fun ChatScreen() {
                 )
             }
         }
-        item {
-            Spacer(Modifier.height(1))
-        }
+        item { Spacer(Modifier.height(1)) }
+
         items(messages) { message ->
             ChatMessage(message = message)
         }
+
+        if (inlineStoryPreview != null) {
+            item { Spacer(Modifier.height(1)) }
+            item {
+                StoryPreviewPanel(
+                    preview = inlineStoryPreview,
+                    maxVisibleRows = inlineStoryPreviewRows,
+                    compact = true,
+                    onEvent = onEvent,
+                )
+            }
+        }
+
         pendingDecision?.let { decision ->
             item {
                 Row(modifier = Modifier.fillMaxWidth()) {
@@ -152,36 +261,31 @@ fun ChatScreen() {
                         options = decision.options,
                         placeholder = decision.placeholder,
                         textStyles = decisionPromptStyles,
-                        onSubmit = { selection -> viewModel.onDecisionSelected(selection) },
+                        onSubmit = onDecisionSelected,
                     )
                     Spacer(modifier = Modifier.width(2))
                 }
             }
         }
-        item {
-            Spacer(Modifier.height(1))
-        }
-        item {
-            ChatProgressAnimation(isProcessing)
-        }
+
+        item { Spacer(Modifier.height(1)) }
+        item { ChatProgressAnimation(isProcessing) }
         item {
             ChatInputTextField(
                 modifier = Modifier.fillMaxWidth(),
                 value = inputText,
-                onValueChange = { text -> viewModel.onEvent(event = ChatEvent.OnTextChanged(text)) },
+                onValueChange = { text -> onEvent(ChatEvent.OnTextChanged(text)) },
                 icon = icon,
                 placeholder = placeholder,
                 textStyle = rgb("#FFFFFF"),
                 placeholderStyle = rgb("#82858A"),
                 enabled = !isProcessing && pendingDecision == null,
                 showCursor = !isProcessing && pendingDecision == null,
-                onSubmit = { text -> viewModel.onEvent(event = ChatEvent.OnSubmitMessage(navigator, text)) },
+                onSubmit = { text -> onEvent(ChatEvent.OnSubmitMessage(navigator, text)) },
                 historyItems = historyItems,
                 historyIndexState = historyIndexState,
             )
         }
-
-        // Command Palette - shown below InputTextField when triggered by '/'
         item {
             ChatCommandPalette(
                 modifier = Modifier.fillMaxWidth(),
@@ -189,14 +293,9 @@ fun ChatScreen() {
                 options = commands,
                 inputValue = inputText,
                 onOptionSelected = { option ->
-                    viewModel.onEvent(
-                        ChatEvent.OnSubmitMessage(
-                            navigator,
-                            "/${option.data}"
-                        )
-                    )
+                    onEvent(ChatEvent.OnSubmitMessage(navigator, "/${option.data}"))
                 },
-                onInputTransform = { newInput -> viewModel.onEvent(ChatEvent.OnTextChanged(newInput)) },
+                onInputTransform = { newInput -> onEvent(ChatEvent.OnTextChanged(newInput)) },
                 textStyles = CommandPaletteTextStyles(
                     prefix = theme.muted,
                     selectedPrefix = theme.accent + TextStyle(bold = false),
@@ -207,7 +306,6 @@ fun ChatScreen() {
                 )
             )
         }
-
         item {
             ChatStatusBar(
                 isCommandPaletteVisible = commandPaletteState.isVisible,
@@ -216,6 +314,109 @@ fun ChatScreen() {
             )
         }
     }
+}
+
+@Dispatchable
+private fun StoryPreviewPanel(
+    preview: StoryPreviewUiState?,
+    maxVisibleRows: Int,
+    compact: Boolean,
+    onEvent: (ChatEvent) -> Unit,
+) {
+    if (preview == null) return
+    val snapshot = preview.snapshot
+    val now = Clock.System.now().toEpochMilliseconds()
+
+    val pendingRanges = snapshot.pendingRanges.map { range ->
+        PendingLineRange(
+            startLine = range.startLine,
+            endLine = range.endLine,
+            changedAtEpochMillis = range.changedAtEpochMillis,
+        )
+    }
+
+    val approval = if (pendingRanges.isEmpty()) null else FileChangeApprovalConfig(
+        pendingRanges = pendingRanges,
+        expiryMillis = FileChangeApprovalConfig.DEFAULT_EXPIRY_MILLIS,
+    )
+
+    val selectedLabel = if (pendingRanges.isEmpty()) {
+        "range: none"
+    } else {
+        val safeIndex = preview.selectedPendingRangeIndex.coerceIn(0, pendingRanges.lastIndex)
+        "range ${safeIndex + 1}/${pendingRanges.size}"
+    }
+    val scopeLabel = buildString {
+        if (snapshot.volumeNumber != null) {
+            append("Volume ")
+            append(snapshot.volumeNumber)
+            snapshot.volumeTitle?.takeIf { it.isNotBlank() }?.let {
+                append(" — ")
+                append(it)
+            }
+        }
+        if (snapshot.chapterNumber != null) {
+            if (isNotEmpty()) append(" · ")
+            append("Chapter ")
+            append(snapshot.chapterNumber)
+            if (snapshot.chapterTitle.isNotBlank()) {
+                append(" — ")
+                append(snapshot.chapterTitle)
+            }
+        } else if (snapshot.chapterTitle.isNotBlank()) {
+            if (isNotEmpty()) append(" · ")
+            append(snapshot.chapterTitle)
+        }
+    }
+    val zoneLabel = preview.activeZone.name.lowercase()
+    val actions = listOf(
+        DiffReviewAction("Approve Proposal"),
+        DiffReviewAction("Reject Proposal"),
+    )
+    val showActions = snapshot.status == StoryDraftPreviewStatus.PENDING && !snapshot.proposalId.isNullOrBlank()
+    val previewState = FileChangePreviewState(
+        filePath = "chapter:${snapshot.chapterTitle}",
+        fileType = PreviewFileType.MARKDOWN,
+        beforeText = snapshot.beforeText,
+        afterText = snapshot.afterText,
+        approval = approval,
+        nowEpochMillis = now,
+        focusMode = ChangeFocusMode.FULL,
+        contextLines = 3,
+        showCollapsedUnchanged = true,
+        selectedHunkIndex = preview.selectedPendingRangeIndex,
+        pageIndex = preview.selectedPageIndex,
+        pageSizeRows = maxVisibleRows.coerceAtLeast(1),
+    )
+    val panelState = DiffReviewPanelState(
+        title = if (preview.focused) "Preview (focused)" else "Preview",
+        subtitle = scopeLabel.takeIf { it.isNotBlank() },
+        statusLine = "status: ${snapshot.status.name.lowercase()} · zone: $zoneLabel · $selectedLabel · ctrl+p focus",
+        previewState = previewState,
+        pagesFocused = preview.focused && preview.activeZone == StoryPreviewFocusZone.PAGES,
+        actions = if (showActions) actions else emptyList(),
+        selectedActionIndex = preview.selectedActionIndex,
+        actionsFocused = preview.focused && preview.activeZone == StoryPreviewFocusZone.ACTIONS,
+    )
+    DiffReviewPanel(
+        state = panelState,
+        maxVisibleRows = maxVisibleRows,
+        compact = compact,
+        onPageCountResolved = { count -> onEvent(ChatEvent.OnStoryPreviewPageCountUpdated(count)) },
+        actionsKeyHints = listOf(
+            KeyHint("Ctrl+P", "focus"),
+            KeyHint("←/→", "page or zone"),
+            KeyHint("↑/↓", "range/action zone"),
+            KeyHint("Enter", "select"),
+            KeyHint("Esc", "input"),
+        ),
+        defaultKeyHints = listOf(
+            KeyHint("Ctrl+P", "focus"),
+            KeyHint("←/→", "page or zone"),
+            KeyHint("↑/↓", "range zone"),
+            KeyHint("Esc", "input"),
+        ),
+    )
 }
 
 private fun buildQuickJump(

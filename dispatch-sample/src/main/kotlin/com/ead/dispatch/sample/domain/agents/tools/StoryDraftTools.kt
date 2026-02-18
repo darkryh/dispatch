@@ -18,9 +18,13 @@ import com.ead.dispatch.sample.domain.agents.tools.model.DraftValidationSeverity
 import com.ead.dispatch.sample.domain.agents.tools.model.OperationEntity
 import com.ead.dispatch.sample.domain.agents.tools.model.ProposeChapterDraftEditRequest
 import com.ead.dispatch.sample.domain.agents.tools.model.QueryOutcome
+import com.ead.dispatch.sample.domain.agents.tools.model.StoryDraftPreviewPendingRange
+import com.ead.dispatch.sample.domain.agents.tools.model.StoryDraftPreviewSnapshot
+import com.ead.dispatch.sample.domain.agents.tools.model.StoryDraftPreviewStatus
 import com.ead.dispatch.sample.domain.agents.tools.model.ToolResult
 import kotlinx.datetime.Clock
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.Json
 import java.security.MessageDigest
 import java.util.UUID
@@ -83,6 +87,20 @@ class StoryDraftTools(
             previous = current,
             note = note,
         )
+        saveLatestPreview(
+            storyId = storyId,
+            snapshot = buildPreviewSnapshot(
+                storyId = storyId,
+                chapter = chapter,
+                beforeText = current.text,
+                afterText = updated.text,
+                status = StoryDraftPreviewStatus.APPLIED,
+                proposalId = null,
+                pendingRanges = emptyList(),
+                createdAtEpochMillis = updated.updatedAt,
+                updatedAtEpochMillis = updated.updatedAt,
+            ),
+        )
         return querySuccess(
             entity = OperationEntity.CHAPTER,
             storyId = storyId,
@@ -130,9 +148,9 @@ class StoryDraftTools(
         val now = Clock.System.now().toEpochMilliseconds()
         val proposal = StoredDraftProposal(
             proposalId = UUID.randomUUID().toString(),
-            storyId = storyId,
             chapterId = chapter.id,
             baseChecksum = current.checksum,
+            baseText = current.text,
             candidateText = candidate,
             candidateChecksum = checksum(candidate),
             operationCount = request.operations.size,
@@ -140,22 +158,51 @@ class StoryDraftTools(
             note = request.note?.trim()?.takeIf { it.isNotEmpty() },
         )
 
-        val saved = repository.putStoryMetadataValue(
-            storyId = storyId,
-            key = proposalKey(proposal.proposalId),
-            value = json.encodeToString(StoredDraftProposal.serializer(), proposal),
+        repository.insertStoryDraftProposal(
+            StructuredIndexRepository.StoryDraftProposalState(
+                id = proposal.proposalId,
+                chapterId = proposal.chapterId,
+                baseChecksum = proposal.baseChecksum,
+                baseText = proposal.baseText,
+                candidateText = proposal.candidateText,
+                candidateChecksum = proposal.candidateChecksum,
+                operationCount = proposal.operationCount.toLong(),
+                status = StoryDraftProposalStatus.PENDING.name,
+                createdAt = proposal.createdAt,
+                decidedAt = null,
+                note = proposal.note,
+            )
         )
-        if (!saved) return failure("NOT_FOUND", "Story record not found for session.")
 
         val payload = ChapterDraftProposalPayload(
             proposalId = proposal.proposalId,
             chapterId = proposal.chapterId,
             baseChecksum = proposal.baseChecksum,
             candidateChecksum = proposal.candidateChecksum,
+            baseText = proposal.baseText,
+            candidateText = proposal.candidateText,
             operationCount = proposal.operationCount,
             preview = compactPreview(proposal.candidateText),
             createdAt = proposal.createdAt,
             note = proposal.note,
+        )
+        saveLatestPreview(
+            storyId = storyId,
+            snapshot = buildPreviewSnapshot(
+                storyId = storyId,
+                chapter = chapter,
+                beforeText = proposal.baseText,
+                afterText = proposal.candidateText,
+                status = StoryDraftPreviewStatus.PENDING,
+                proposalId = proposal.proposalId,
+                pendingRanges = pendingRangesForDiff(
+                    beforeText = proposal.baseText,
+                    afterText = proposal.candidateText,
+                    changedAtEpochMillis = proposal.createdAt,
+                ),
+                createdAtEpochMillis = proposal.createdAt,
+                updatedAtEpochMillis = proposal.createdAt,
+            ),
         )
         return querySuccess(
             entity = OperationEntity.CHAPTER,
@@ -178,10 +225,6 @@ class StoryDraftTools(
     ): ToolResult<QueryOutcome<ChapterDraftPayload>> {
         val proposal = loadProposal(storyId, proposalId)
             ?: return failure("NOT_FOUND", "Draft proposal '$proposalId' was not found.")
-        if (proposal.storyId != storyId) {
-            return failure("CONFLICT", "Proposal does not belong to this story.")
-        }
-
         val chapter = chapterInStory(storyId, proposal.chapterId)
             ?: return failure("NOT_FOUND", "Chapter with id '${proposal.chapterId}' not found.")
         val current = ensureCurrentDraft(storyId, chapter)
@@ -201,13 +244,85 @@ class StoryDraftTools(
             note = proposal.note ?: "Applied proposal ${proposal.proposalId}",
         )
 
-        repository.removeStoryMetadataValue(storyId, proposalKey(proposal.proposalId))
+        repository.updateStoryDraftProposalStatus(
+            proposalId = proposal.proposalId,
+            status = StoryDraftProposalStatus.APPLIED.name,
+            decidedAt = Clock.System.now().toEpochMilliseconds(),
+        )
+        saveLatestPreview(
+            storyId = storyId,
+            snapshot = buildPreviewSnapshot(
+                storyId = storyId,
+                chapter = chapter,
+                beforeText = current.text,
+                afterText = applied.text,
+                status = StoryDraftPreviewStatus.APPLIED,
+                proposalId = proposal.proposalId,
+                pendingRanges = emptyList(),
+                createdAtEpochMillis = proposal.createdAt,
+                updatedAtEpochMillis = applied.updatedAt,
+            ),
+        )
         return querySuccess(
             entity = OperationEntity.CHAPTER,
             storyId = storyId,
             entityId = chapter.id,
             summary = "Applied chapter draft proposal.",
             payload = applied.toPayload(chapter.id),
+        )
+    }
+
+    @Tool
+    @LLMDescription("Discard a previously proposed chapter draft edit by proposal id without applying it.")
+    suspend fun deleteChapterDraftProposal(
+        @LLMDescription("Story/session id for scoping")
+        storyId: String,
+        @LLMDescription("Proposal id from proposeChapterDraftEdit")
+        proposalId: String,
+    ): ToolResult<QueryOutcome<ChapterDraftProposalPayload>> {
+        val proposal = loadProposal(storyId, proposalId)
+            ?: return failure("NOT_FOUND", "Draft proposal '$proposalId' was not found.")
+        val chapter = chapterInStory(storyId, proposal.chapterId)
+            ?: return failure("NOT_FOUND", "Chapter with id '${proposal.chapterId}' not found.")
+        repository.updateStoryDraftProposalStatus(
+            proposalId = proposal.proposalId,
+            status = StoryDraftProposalStatus.REJECTED.name,
+            decidedAt = Clock.System.now().toEpochMilliseconds(),
+        )
+
+        val now = Clock.System.now().toEpochMilliseconds()
+        saveLatestPreview(
+            storyId = storyId,
+            snapshot = buildPreviewSnapshot(
+                storyId = storyId,
+                chapter = chapter,
+                beforeText = proposal.baseText,
+                afterText = proposal.candidateText,
+                status = StoryDraftPreviewStatus.REJECTED,
+                proposalId = proposal.proposalId,
+                pendingRanges = emptyList(),
+                createdAtEpochMillis = proposal.createdAt,
+                updatedAtEpochMillis = now,
+            ),
+        )
+
+        return querySuccess(
+            entity = OperationEntity.CHAPTER,
+            storyId = storyId,
+            entityId = chapter.id,
+            summary = "Discarded chapter draft proposal.",
+            payload = ChapterDraftProposalPayload(
+                proposalId = proposal.proposalId,
+                chapterId = proposal.chapterId,
+                baseChecksum = proposal.baseChecksum,
+                candidateChecksum = proposal.candidateChecksum,
+                baseText = proposal.baseText,
+                candidateText = proposal.candidateText,
+                operationCount = proposal.operationCount,
+                preview = compactPreview(proposal.candidateText),
+                createdAt = proposal.createdAt,
+                note = proposal.note,
+            ),
         )
     }
 
@@ -242,6 +357,20 @@ class StoryDraftTools(
             text = selected.text,
             previous = current,
             note = "Rollback to ${selected.versionId}",
+        )
+        saveLatestPreview(
+            storyId = storyId,
+            snapshot = buildPreviewSnapshot(
+                storyId = storyId,
+                chapter = chapter,
+                beforeText = current.text,
+                afterText = rolledBack.text,
+                status = StoryDraftPreviewStatus.APPLIED,
+                proposalId = null,
+                pendingRanges = emptyList(),
+                createdAtEpochMillis = rolledBack.updatedAt,
+                updatedAtEpochMillis = rolledBack.updatedAt,
+            ),
         )
         return querySuccess(
             entity = OperationEntity.CHAPTER,
@@ -355,6 +484,35 @@ class StoryDraftTools(
         return if (volume.storyId == storyId) chapter else null
     }
 
+    private suspend fun buildPreviewSnapshot(
+        storyId: String,
+        chapter: StoryChapterRecord,
+        beforeText: String,
+        afterText: String,
+        status: StoryDraftPreviewStatus,
+        proposalId: String?,
+        pendingRanges: List<StoryDraftPreviewPendingRange>,
+        createdAtEpochMillis: Long,
+        updatedAtEpochMillis: Long,
+    ): StoryDraftPreviewSnapshot {
+        val volume = repository.getVolumeById(chapter.volumeId)
+        return StoryDraftPreviewSnapshot(
+            storyId = storyId,
+            chapterId = chapter.id,
+            volumeNumber = volume?.number,
+            volumeTitle = volume?.title,
+            chapterNumber = chapter.number,
+            chapterTitle = chapter.title,
+            beforeText = beforeText,
+            afterText = afterText,
+            status = status,
+            proposalId = proposalId,
+            pendingRanges = pendingRanges,
+            createdAtEpochMillis = createdAtEpochMillis,
+            updatedAtEpochMillis = updatedAtEpochMillis,
+        )
+    }
+
     private suspend fun ensureCurrentDraft(
         storyId: String,
         chapter: StoryChapterRecord,
@@ -376,15 +534,20 @@ class StoryDraftTools(
         note: String?,
     ): StoredDraftVersion {
         val next = newVersion(text, note)
-        val history = loadHistory(storyId, chapter.id)
-        val updatedHistory = StoredDraftHistory(
-            versions = listOf(previous) +
-                history.versions
-                    .filterNot { it.versionId == previous.versionId }
-                    .take(historyLimit - 1)
+        repository.insertStoryDraftVersion(
+            StructuredIndexRepository.StoryDraftVersionState(
+                id = previous.versionId,
+                chapterId = chapter.id,
+                text = previous.text,
+                checksum = previous.checksum,
+                wordCount = previous.wordCount,
+                createdAt = previous.updatedAt,
+                note = previous.note,
+                source = "HISTORY",
+            )
         )
-        saveHistory(storyId, chapter.id, updatedHistory)
         saveCurrentDraft(storyId, chapter.id, next)
+        repository.trimStoryDraftVersions(chapter.id, historyLimit.toLong())
         syncChapterContentRecord(chapter, next)
         return next
     }
@@ -395,7 +558,7 @@ class StoryDraftTools(
     ) {
         val updatedChapter = chapter.copy(
             content = StoryChapterRecord.ChapterContent(
-                ref = chapterDraftKey(chapter.id),
+                ref = "story_draft_current:${chapter.id}",
                 type = ContentType.TEXT,
                 checksum = version.checksum,
                 updatedAt = version.updatedAt,
@@ -408,58 +571,72 @@ class StoryDraftTools(
     }
 
     private suspend fun loadCurrentDraft(
-        storyId: String,
+        @Suppress("UNUSED_PARAMETER") storyId: String,
         chapterId: String,
     ): StoredDraftVersion? {
-        val raw = repository.getStoryMetadataValue(storyId, chapterDraftKey(chapterId)) ?: return null
-        return runCatching {
-            json.decodeFromString(StoredDraftVersion.serializer(), raw)
-        }.getOrNull()
+        val current = repository.getStoryDraftCurrentByChapterId(chapterId) ?: return null
+        return StoredDraftVersion(
+            versionId = "current:$chapterId:${current.updatedAt}",
+            text = current.text,
+            checksum = current.checksum,
+            wordCount = current.wordCount,
+            updatedAt = current.updatedAt,
+            note = null,
+        )
     }
 
     private suspend fun saveCurrentDraft(
-        storyId: String,
+        @Suppress("UNUSED_PARAMETER") storyId: String,
         chapterId: String,
         value: StoredDraftVersion,
     ) {
-        repository.putStoryMetadataValue(
-            storyId = storyId,
-            key = chapterDraftKey(chapterId),
-            value = json.encodeToString(StoredDraftVersion.serializer(), value),
+        repository.upsertStoryDraftCurrent(
+            StructuredIndexRepository.StoryDraftCurrentState(
+                chapterId = chapterId,
+                text = value.text,
+                checksum = value.checksum,
+                wordCount = value.wordCount,
+                updatedAt = value.updatedAt,
+                updatedBy = "story-agent",
+            )
         )
     }
 
     private suspend fun loadHistory(
-        storyId: String,
+        @Suppress("UNUSED_PARAMETER") storyId: String,
         chapterId: String,
     ): StoredDraftHistory {
-        val raw = repository.getStoryMetadataValue(storyId, chapterHistoryKey(chapterId)) ?: return StoredDraftHistory()
-        return runCatching {
-            json.decodeFromString(StoredDraftHistory.serializer(), raw)
-        }.getOrDefault(StoredDraftHistory())
-    }
-
-    private suspend fun saveHistory(
-        storyId: String,
-        chapterId: String,
-        history: StoredDraftHistory,
-    ) {
-        repository.putStoryMetadataValue(
-            storyId = storyId,
-            key = chapterHistoryKey(chapterId),
-            value = json.encodeToString(StoredDraftHistory.serializer(), history),
-        )
+        val versions = repository.getStoryDraftVersionsByChapterId(chapterId).map { item ->
+            StoredDraftVersion(
+                versionId = item.id,
+                text = item.text,
+                checksum = item.checksum,
+                wordCount = item.wordCount,
+                updatedAt = item.createdAt,
+                note = item.note,
+            )
+        }
+        return StoredDraftHistory(versions = versions)
     }
 
     private suspend fun loadProposal(
         storyId: String,
         proposalId: String,
     ): StoredDraftProposal? {
-        val key = proposalKey(proposalId)
-        val raw = repository.getStoryMetadataValue(storyId, key) ?: return null
-        return runCatching {
-            json.decodeFromString(StoredDraftProposal.serializer(), raw)
-        }.getOrNull()
+        val proposal = repository.getStoryDraftProposalById(proposalId) ?: return null
+        val chapter = chapterInStory(storyId, proposal.chapterId) ?: return null
+        if (proposal.status != StoryDraftProposalStatus.PENDING.name) return null
+        return StoredDraftProposal(
+            proposalId = proposal.id,
+            chapterId = chapter.id,
+            baseChecksum = proposal.baseChecksum,
+            baseText = proposal.baseText,
+            candidateText = proposal.candidateText,
+            candidateChecksum = proposal.candidateChecksum,
+            operationCount = proposal.operationCount.toInt(),
+            createdAt = proposal.createdAt,
+            note = proposal.note,
+        )
     }
 
     private fun applyOperations(
@@ -611,11 +788,119 @@ class StoryDraftTools(
             versionId = versionId,
         )
 
-    private fun chapterDraftKey(chapterId: String): String = "story:draft:chapter:$chapterId"
+    private suspend fun saveLatestPreview(
+        storyId: String,
+        snapshot: StoryDraftPreviewSnapshot,
+    ) {
+        repository.upsertStoryDraftPreviewState(
+            StructuredIndexRepository.StoryDraftPreviewState(
+                chapterId = snapshot.chapterId,
+                status = snapshot.status.name,
+                proposalId = snapshot.proposalId,
+                beforeText = snapshot.beforeText,
+                afterText = snapshot.afterText,
+                pendingRangesJson = json.encodeToString(
+                    ListSerializer(StoryDraftPreviewPendingRange.serializer()),
+                    snapshot.pendingRanges,
+                ),
+                createdAt = snapshot.createdAtEpochMillis,
+                updatedAt = snapshot.updatedAtEpochMillis,
+            )
+        )
+    }
 
-    private fun chapterHistoryKey(chapterId: String): String = "story:draft:history:$chapterId"
+    private fun pendingRangesForDiff(
+        beforeText: String,
+        afterText: String,
+        changedAtEpochMillis: Long,
+    ): List<StoryDraftPreviewPendingRange> {
+        val beforeLines = splitFileLines(beforeText)
+        val afterLines = splitFileLines(afterText)
+        val lcs = lcsTable(beforeLines, afterLines)
 
-    private fun proposalKey(proposalId: String): String = "story:draft:proposal:$proposalId"
+        val ranges = mutableListOf<StoryDraftPreviewPendingRange>()
+        var i = 0
+        var j = 0
+        var newLine = 1
+
+        while (i < beforeLines.size && j < afterLines.size) {
+            if (beforeLines[i] == afterLines[j]) {
+                i++
+                j++
+                newLine++
+                continue
+            }
+            if (lcs[i + 1][j] >= lcs[i][j + 1]) {
+                i++
+            } else {
+                val start = newLine
+                while (j < afterLines.size && (i >= beforeLines.size || lcs[i + 1][j] < lcs[i][j + 1])) {
+                    j++
+                    newLine++
+                    if (i < beforeLines.size && j < afterLines.size && beforeLines[i] == afterLines[j]) break
+                }
+                val end = (newLine - 1).coerceAtLeast(start)
+                ranges += StoryDraftPreviewPendingRange(
+                    startLine = start,
+                    endLine = end,
+                    changedAtEpochMillis = changedAtEpochMillis,
+                )
+            }
+        }
+
+        while (j < afterLines.size) {
+            val start = newLine
+            j++
+            newLine++
+            ranges += StoryDraftPreviewPendingRange(
+                startLine = start,
+                endLine = start,
+                changedAtEpochMillis = changedAtEpochMillis,
+            )
+        }
+
+        if (ranges.isEmpty()) return emptyList()
+        return mergeRanges(ranges)
+    }
+
+    private fun splitFileLines(text: String): List<String> {
+        if (text.isEmpty()) return emptyList()
+        val normalized = text.replace("\r\n", "\n").replace('\r', '\n')
+        return normalized.split('\n')
+    }
+
+    private fun lcsTable(before: List<String>, after: List<String>): Array<IntArray> {
+        val rows = before.size
+        val cols = after.size
+        val table = Array(rows + 1) { IntArray(cols + 1) }
+        for (row in rows - 1 downTo 0) {
+            for (col in cols - 1 downTo 0) {
+                table[row][col] = if (before[row] == after[col]) {
+                    table[row + 1][col + 1] + 1
+                } else {
+                    maxOf(table[row + 1][col], table[row][col + 1])
+                }
+            }
+        }
+        return table
+    }
+
+    private fun mergeRanges(
+        ranges: List<StoryDraftPreviewPendingRange>,
+    ): List<StoryDraftPreviewPendingRange> {
+        if (ranges.isEmpty()) return emptyList()
+        val sorted = ranges.sortedBy { it.startLine }
+        val merged = mutableListOf(sorted.first())
+        for (range in sorted.drop(1)) {
+            val last = merged.last()
+            if (range.startLine <= last.endLine + 1) {
+                merged[merged.lastIndex] = last.copy(endLine = maxOf(last.endLine, range.endLine))
+            } else {
+                merged += range
+            }
+        }
+        return merged
+    }
 
     private companion object {
         val json = Json {
@@ -644,12 +929,19 @@ private data class StoredDraftHistory(
 @Serializable
 private data class StoredDraftProposal(
     val proposalId: String,
-    val storyId: String,
     val chapterId: String,
     val baseChecksum: String,
+    val baseText: String = "",
     val candidateText: String,
     val candidateChecksum: String,
     val operationCount: Int,
     val createdAt: Long,
     val note: String? = null,
 )
+
+private enum class StoryDraftProposalStatus {
+    PENDING,
+    APPLIED,
+    REJECTED,
+    EXPIRED,
+}

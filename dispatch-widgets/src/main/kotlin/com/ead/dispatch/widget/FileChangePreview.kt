@@ -17,6 +17,12 @@ enum class PreviewFileType {
     MARKDOWN,
 }
 
+enum class ChangeFocusMode {
+    ADDED_FIRST,
+    DELETED_ONLY,
+    FULL,
+}
+
 /**
  * Story/workflow overlay configuration for line approvals.
  *
@@ -59,6 +65,17 @@ data class FileChangePreviewState(
     val afterText: String,
     val approval: FileChangeApprovalConfig? = null,
     val nowEpochMillis: Long,
+    val focusMode: ChangeFocusMode = ChangeFocusMode.ADDED_FIRST,
+    val contextLines: Int = 3,
+    val showCollapsedUnchanged: Boolean = true,
+    val selectedHunkIndex: Int = 0,
+    val pageIndex: Int? = null,
+    val pageSizeRows: Int? = null,
+)
+
+data class FileChangePageInfo(
+    val pageCount: Int,
+    val selectedPageIndex: Int,
 )
 
 /**
@@ -111,11 +128,24 @@ fun FileChangePreview(
     scrollState: ScrollState = rememberScrollState(),
 ) {
     require(maxVisibleRows == null || maxVisibleRows > 0) { "maxVisibleRows must be > 0 when specified" }
+    require(state.contextLines >= 0) { "contextLines must be >= 0" }
+    require(state.pageIndex == null || state.pageIndex >= 0) { "pageIndex must be >= 0 when specified" }
+    require(state.pageSizeRows == null || state.pageSizeRows > 0) { "pageSizeRows must be > 0 when specified" }
 
-    val rows = resolveRows(state)
-    val stats = calculateStats(rows, state.afterText)
-    val oldDigits = rows.maxOfOrNull { (it.line.oldLineNumber ?: 0).toString().length }?.coerceAtLeast(1) ?: 1
-    val newDigits = rows.maxOfOrNull { (it.line.newLineNumber ?: 0).toString().length }?.coerceAtLeast(1) ?: 1
+    val allRows = resolveRows(state)
+    val focusedRows = resolveFocusedRows(state, allRows)
+    val rows = resolveDisplayRows(state, focusedRows)
+    val stats = calculateStats(allRows, state.afterText)
+    val oldDigits = rows
+        .mapNotNull { it.line?.oldLineNumber }
+        .maxOfOrNull { it.toString().length }
+        ?.coerceAtLeast(1)
+        ?: 1
+    val newDigits = rows
+        .mapNotNull { it.line?.newLineNumber }
+        .maxOfOrNull { it.toString().length }
+        ?.coerceAtLeast(1)
+        ?: 1
 
     Column(modifier = modifier.fillMaxWidth()) {
         if (showHeader) {
@@ -163,37 +193,69 @@ fun FileChangePreview(
             modifier = bodyModifier,
             scrollState = scrollState,
         ) { row ->
-            val rowText = formatDataRow(row.line, maxOf(oldDigits, newDigits), styles)
-            val rowBackground = resolveRowBackground(row, state.approval != null, styles)
-            if (rowBackground != null) {
-                Background(
-                    modifier = Modifier.fillMaxWidth(),
-                    style = BackgroundStyle.Fill(
-                        fill = rowBackground,
-                        paddingHorizontal = 0,
-                        paddingVertical = 0,
-                    )
-                ) {
-                    Row(modifier = Modifier.fillMaxWidth()) {
-                        Text(
-                            text = rowText,
-                            style = null,
-                            maxLines = 1,
-                            overflow = TextOverflow.Clip,
-                        )
-                    }
-                }
-            } else {
+            if (row.isCollapsed) {
                 Row(modifier = Modifier.fillMaxWidth()) {
                     Text(
-                        text = rowText,
+                        text = applyStyle("…", styles.metaStyle),
+                        modifier = Modifier.fillMaxWidth(),
                         style = null,
-                        maxLines = 1,
-                        overflow = TextOverflow.Clip,
                     )
                 }
+                return@ScrollableList
             }
+            val line = row.line ?: return@ScrollableList
+            val rowBackground = resolveRowBackground(row, state.approval != null, styles)
+            DiffPreviewRow(
+                line = line,
+                lineDigits = maxOf(oldDigits, newDigits),
+                styles = styles,
+                markerStyle = resolveMarkerStyle(line, styles),
+                rowBackground = if (line.kind == LineChangeKind.UNCHANGED) null else rowBackground,
+                modifier = Modifier.fillMaxWidth(),
+            )
         }
+    }
+}
+
+fun computeFileChangePageInfo(state: FileChangePreviewState): FileChangePageInfo {
+    val focusedRows = resolveFocusedRows(state, resolveRows(state))
+    val pageSize = state.pageSizeRows
+    if (pageSize == null) {
+        return FileChangePageInfo(pageCount = 1, selectedPageIndex = 0)
+    }
+    val totalPages = ((focusedRows.size + pageSize - 1) / pageSize).coerceAtLeast(1)
+    val selected = state.pageIndex?.coerceIn(0, totalPages - 1) ?: 0
+    return FileChangePageInfo(pageCount = totalPages, selectedPageIndex = selected)
+}
+
+@Dispatchable
+private fun DiffPreviewRow(
+    line: FileChangeLine,
+    lineDigits: Int,
+    styles: FileChangePreviewStyles,
+    markerStyle: TextStyle?,
+    rowBackground: TextStyle?,
+    modifier: Modifier = Modifier,
+) {
+    val visibleLineNumber = line.newLineNumber ?: line.oldLineNumber
+    val numberPart = visibleLineNumber?.toString()?.padStart(lineDigits) ?: " ".repeat(lineDigits)
+    val marker = when (line.kind) {
+        LineChangeKind.ADDED -> "+"
+        LineChangeKind.DELETED -> "-"
+        LineChangeKind.UNCHANGED -> " "
+    }
+    val contentStyle = mergeStyles(styles.contentStyle, normalizeRowFill(rowBackground))
+
+    Row(modifier = modifier) {
+        Text(text = numberPart, style = styles.gutterNumberStyle)
+        Text(text = " ", style = null)
+        Text(text = marker, style = markerStyle)
+        Text(text = " ", style = null)
+        Text(
+            text = line.text,
+            modifier = Modifier.fillMaxWidth(),
+            style = contentStyle,
+        )
     }
 }
 
@@ -223,8 +285,9 @@ internal enum class RowApprovalState {
 }
 
 internal data class ResolvedFileChangeRow(
-    val line: FileChangeLine,
+    val line: FileChangeLine?,
     val approvalState: RowApprovalState,
+    val isCollapsed: Boolean = false,
 )
 
 internal fun resolveRows(state: FileChangePreviewState): List<ResolvedFileChangeRow> {
@@ -247,6 +310,128 @@ internal fun resolveRows(state: FileChangePreviewState): List<ResolvedFileChange
             ResolvedFileChangeRow(line, RowApprovalState.PENDING)
         }
     }
+}
+
+private data class DiffHunk(
+    val startIndex: Int,
+    val endIndex: Int,
+    val hasAdded: Boolean,
+    val hasDeleted: Boolean,
+    val firstAddedIndex: Int?,
+    val firstDeletedIndex: Int?,
+)
+
+internal fun resolveFocusedRows(
+    state: FileChangePreviewState,
+    allRows: List<ResolvedFileChangeRow>,
+): List<ResolvedFileChangeRow> {
+    if (state.focusMode == ChangeFocusMode.FULL) return allRows
+    val hunks = extractHunks(allRows)
+    if (hunks.isEmpty()) return allRows
+
+    val targetHunks = when (state.focusMode) {
+        ChangeFocusMode.ADDED_FIRST -> {
+            val preferred = hunks.filter { it.hasAdded }
+            if (preferred.isNotEmpty()) preferred else hunks
+        }
+        ChangeFocusMode.DELETED_ONLY -> {
+            val preferred = hunks.filter { it.hasDeleted && !it.hasAdded }
+            if (preferred.isNotEmpty()) preferred else hunks
+        }
+        ChangeFocusMode.FULL -> hunks
+    }
+
+    val mergedSegments = mutableListOf<IntRange>()
+    targetHunks.sortedBy { it.startIndex }.forEach { hunk ->
+        val anchorIndex = when (state.focusMode) {
+            ChangeFocusMode.ADDED_FIRST -> hunk.firstAddedIndex ?: hunk.startIndex
+            ChangeFocusMode.DELETED_ONLY -> hunk.firstDeletedIndex ?: hunk.startIndex
+            ChangeFocusMode.FULL -> hunk.startIndex
+        }
+        val start = (anchorIndex - state.contextLines).coerceAtLeast(0)
+        val end = (hunk.endIndex + state.contextLines).coerceAtMost(allRows.lastIndex)
+        val candidate = start..end
+        val last = mergedSegments.lastOrNull()
+        if (last == null) {
+            mergedSegments += candidate
+        } else if (candidate.first <= last.last + 1) {
+            mergedSegments[mergedSegments.lastIndex] = last.first..maxOf(last.last, candidate.last)
+        } else {
+            mergedSegments += candidate
+        }
+    }
+
+    if (mergedSegments.isEmpty()) return allRows
+    if (!state.showCollapsedUnchanged) {
+        return mergedSegments.flatMap { allRows.subList(it.first, it.last + 1) }
+    }
+
+    val result = mutableListOf<ResolvedFileChangeRow>()
+    mergedSegments.forEachIndexed { index, segment ->
+        if (index == 0) {
+            if (segment.first > 0) {
+                result += ResolvedFileChangeRow(line = null, approvalState = RowApprovalState.NONE, isCollapsed = true)
+            }
+        } else {
+            result += ResolvedFileChangeRow(line = null, approvalState = RowApprovalState.NONE, isCollapsed = true)
+        }
+        result += allRows.subList(segment.first, segment.last + 1)
+    }
+    if (mergedSegments.last().last < allRows.lastIndex) {
+        result += ResolvedFileChangeRow(line = null, approvalState = RowApprovalState.NONE, isCollapsed = true)
+    }
+    return result
+}
+
+internal fun resolveDisplayRows(
+    state: FileChangePreviewState,
+    focusedRows: List<ResolvedFileChangeRow>,
+): List<ResolvedFileChangeRow> {
+    val pageSize = state.pageSizeRows ?: return focusedRows
+    val pageCount = ((focusedRows.size + pageSize - 1) / pageSize).coerceAtLeast(1)
+    val page = (state.pageIndex ?: 0).coerceIn(0, pageCount - 1)
+    val start = (page * pageSize).coerceAtMost(focusedRows.size)
+    val end = (start + pageSize).coerceAtMost(focusedRows.size)
+    return focusedRows.subList(start, end)
+}
+
+private fun extractHunks(rows: List<ResolvedFileChangeRow>): List<DiffHunk> {
+    val hunks = mutableListOf<DiffHunk>()
+    var index = 0
+    while (index < rows.size) {
+        val kind = rows[index].line?.kind
+        if (kind == null || kind == LineChangeKind.UNCHANGED) {
+            index++
+            continue
+        }
+        val start = index
+        var hasAdded = false
+        var hasDeleted = false
+        var firstAddedIndex: Int? = null
+        var firstDeletedIndex: Int? = null
+        while (index < rows.size) {
+            val currentKind = rows[index].line?.kind
+            if (currentKind == null || currentKind == LineChangeKind.UNCHANGED) break
+            if (currentKind == LineChangeKind.ADDED) {
+                hasAdded = true
+                if (firstAddedIndex == null) firstAddedIndex = index
+            }
+            if (currentKind == LineChangeKind.DELETED) {
+                hasDeleted = true
+                if (firstDeletedIndex == null) firstDeletedIndex = index
+            }
+            index++
+        }
+        hunks += DiffHunk(
+            startIndex = start,
+            endIndex = index - 1,
+            hasAdded = hasAdded,
+            hasDeleted = hasDeleted,
+            firstAddedIndex = firstAddedIndex,
+            firstDeletedIndex = firstDeletedIndex,
+        )
+    }
+    return hunks
 }
 
 internal fun diffLines(beforeText: String, afterText: String): List<FileChangeLine> {
@@ -357,10 +542,10 @@ internal fun calculateStats(
     rows: List<ResolvedFileChangeRow>,
     afterText: String,
 ): FileChangeStats {
-    val added = rows.count { it.line.kind == LineChangeKind.ADDED }
-    val deleted = rows.count { it.line.kind == LineChangeKind.DELETED }
+    val added = rows.count { it.line?.kind == LineChangeKind.ADDED }
+    val deleted = rows.count { it.line?.kind == LineChangeKind.DELETED }
     val pending = rows.count { it.approvalState == RowApprovalState.PENDING }
-    val modified = countModifiedLines(rows.map { it.line.kind })
+    val modified = countModifiedLines(rows.mapNotNull { it.line?.kind })
     return FileChangeStats(
         totalLines = splitFileLines(afterText).size,
         addedLines = added,
@@ -399,17 +584,46 @@ internal fun resolveRowBackground(
     hasApprovalConfig: Boolean,
     styles: FileChangePreviewStyles,
 ): TextStyle? {
-    if (row.line.kind == LineChangeKind.DELETED) return styles.deletedBackground
+    val kind = row.line?.kind ?: return null
+    if (kind == LineChangeKind.DELETED) return styles.deletedBackground
     if (hasApprovalConfig) {
         return if (row.approvalState == RowApprovalState.PENDING) styles.pendingBackground else null
     }
-    return if (row.line.kind == LineChangeKind.ADDED) styles.addedBackground else null
+    return if (kind == LineChangeKind.ADDED) styles.addedBackground else null
+}
+
+internal fun normalizeRowFill(style: TextStyle?): TextStyle? {
+    val current = style ?: return null
+    return when {
+        current.bgColor != null -> current
+        current.color != null -> current.bg
+        else -> current
+    }
+}
+
+internal fun mergeStyles(base: TextStyle?, extra: TextStyle?): TextStyle? {
+    return when {
+        base == null -> extra
+        extra == null -> base
+        else -> base + extra
+    }
+}
+
+internal fun resolveMarkerStyle(
+    line: FileChangeLine,
+    styles: FileChangePreviewStyles,
+): TextStyle? {
+    return when (line.kind) {
+        LineChangeKind.ADDED -> rgb("#699862") + TextStyle(bold = true)
+        LineChangeKind.DELETED -> rgb("#6E3D37") + TextStyle(bold = true)
+        LineChangeKind.UNCHANGED -> styles.gutterMarkerStyle
+    }
 }
 
 internal fun formatDataRow(
     line: FileChangeLine,
     lineDigits: Int,
-    styles: FileChangePreviewStyles,
+    @Suppress("UNUSED_PARAMETER") styles: FileChangePreviewStyles,
 ): String {
     val visibleLineNumber = line.newLineNumber ?: line.oldLineNumber
     val numberPart = visibleLineNumber?.toString()?.padStart(lineDigits) ?: " ".repeat(lineDigits)
@@ -418,10 +632,7 @@ internal fun formatDataRow(
         LineChangeKind.DELETED -> "-"
         LineChangeKind.UNCHANGED -> " "
     }
-    val numberStyled = applyStyle(numberPart, styles.gutterNumberStyle)
-    val markerStyled = applyStyle(marker, styles.gutterMarkerStyle)
-    val contentStyled = applyStyle(line.text, styles.contentStyle)
-    return numberStyled + " " + markerStyled + " " + contentStyled
+    return "$numberPart $marker ${line.text}"
 }
 
 internal fun formatStats(stats: FileChangeStats): String =

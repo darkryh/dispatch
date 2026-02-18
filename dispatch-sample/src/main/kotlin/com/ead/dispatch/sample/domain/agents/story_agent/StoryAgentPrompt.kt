@@ -45,6 +45,8 @@ fun storyAgentPrompt(
             br()
             +"For chapter text revisions, prefer proposeChapterDraftEdit then applyChapterDraftProposal after confirmation."
             br()
+            +"If user rejects a pending chapter proposal, call deleteChapterDraftProposal."
+            br()
             +"Run validateChapterDraft after major draft updates and report any warnings clearly."
             br()
             +"For destructive operations (delete volume/chapter with children), require explicit user confirmation before force=true."

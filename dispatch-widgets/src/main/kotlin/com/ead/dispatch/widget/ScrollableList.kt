@@ -200,7 +200,9 @@ internal class ScrollableListMeasurable(
             minWidth = 0,
             maxWidth = modifiedConstraints.maxWidth,
             minHeight = 0,
-            maxHeight = viewportHeight,
+            // Do not clamp item height to viewport: variable-height rows (like wrapped diff lines)
+            // must report their intrinsic height so virtualization can include subsequent items.
+            maxHeight = Int.MAX_VALUE,
         )
 
         val itemHeights = mutableListOf<Int>()

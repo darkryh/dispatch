@@ -146,6 +146,55 @@ CREATE TABLE story_chapters (
   UNIQUE(volume_id, number)
 );
 
+CREATE TABLE story_draft_current (
+  chapter_id TEXT NOT NULL PRIMARY KEY REFERENCES story_chapters(id) ON DELETE CASCADE,
+  text TEXT NOT NULL,
+  checksum TEXT NOT NULL,
+  word_count INTEGER NOT NULL CHECK (word_count >= 0),
+  updated_at INTEGER NOT NULL,
+  updated_by TEXT
+);
+
+CREATE TABLE story_draft_versions (
+  id TEXT NOT NULL PRIMARY KEY,
+  chapter_id TEXT NOT NULL REFERENCES story_chapters(id) ON DELETE CASCADE,
+  text TEXT NOT NULL,
+  checksum TEXT NOT NULL,
+  word_count INTEGER NOT NULL CHECK (word_count >= 0),
+  created_at INTEGER NOT NULL,
+  note TEXT,
+  source TEXT
+);
+
+CREATE TABLE story_draft_proposals (
+  id TEXT NOT NULL PRIMARY KEY,
+  chapter_id TEXT NOT NULL REFERENCES story_chapters(id) ON DELETE CASCADE,
+  base_checksum TEXT NOT NULL,
+  base_text TEXT NOT NULL,
+  candidate_text TEXT NOT NULL,
+  candidate_checksum TEXT NOT NULL,
+  operation_count INTEGER NOT NULL CHECK (operation_count >= 0),
+  status TEXT NOT NULL CHECK (
+    status IN ('PENDING', 'APPLIED', 'REJECTED', 'EXPIRED')
+  ),
+  created_at INTEGER NOT NULL,
+  decided_at INTEGER,
+  note TEXT
+);
+
+CREATE TABLE story_draft_preview_state (
+  chapter_id TEXT NOT NULL PRIMARY KEY REFERENCES story_chapters(id) ON DELETE CASCADE,
+  status TEXT NOT NULL CHECK (
+    status IN ('PENDING', 'APPLIED', 'REJECTED')
+  ),
+  proposal_id TEXT,
+  before_text TEXT NOT NULL,
+  after_text TEXT NOT NULL,
+  pending_ranges_json TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+
 CREATE TABLE story_chapter_key_events (
   chapter_id TEXT NOT NULL REFERENCES story_chapters(id) ON DELETE CASCADE,
   position INTEGER NOT NULL,
@@ -343,6 +392,10 @@ CREATE INDEX sessions_updated_at_idx ON sessions(updated_at);
 CREATE INDEX stories_session_id_idx ON stories(session_id);
 CREATE INDEX story_volumes_story_id_idx ON story_volumes(story_id);
 CREATE INDEX story_chapters_volume_id_idx ON story_chapters(volume_id);
+CREATE INDEX story_draft_current_updated_idx ON story_draft_current(updated_at DESC);
+CREATE INDEX story_draft_versions_chapter_created_idx ON story_draft_versions(chapter_id, created_at DESC);
+CREATE INDEX story_draft_proposals_chapter_status_created_idx ON story_draft_proposals(chapter_id, status, created_at DESC);
+CREATE INDEX story_draft_preview_state_updated_idx ON story_draft_preview_state(updated_at DESC);
 CREATE INDEX story_locations_story_id_idx ON story_locations(story_id);
 CREATE INDEX story_arcs_story_id_idx ON story_arcs(story_id);
 CREATE INDEX story_arcs_scope_idx ON story_arcs(scope_type, scope_id);
@@ -1520,3 +1573,158 @@ WHERE story_id = :story_id
 deleteRagDocumentsByChapterId:
 DELETE FROM rag_documents
 WHERE chapter_id = :chapter_id;
+
+insertOrReplaceStoryDraftCurrent:
+INSERT OR REPLACE INTO story_draft_current(
+  chapter_id,
+  text,
+  checksum,
+  word_count,
+  updated_at,
+  updated_by
+) VALUES (
+  :chapter_id,
+  :text,
+  :checksum,
+  :word_count,
+  :updated_at,
+  :updated_by
+);
+
+selectStoryDraftCurrentByChapterId:
+SELECT * FROM story_draft_current
+WHERE chapter_id = :chapter_id;
+
+deleteStoryDraftCurrentByChapterId:
+DELETE FROM story_draft_current
+WHERE chapter_id = :chapter_id;
+
+insertStoryDraftVersion:
+INSERT INTO story_draft_versions(
+  id,
+  chapter_id,
+  text,
+  checksum,
+  word_count,
+  created_at,
+  note,
+  source
+) VALUES (
+  :id,
+  :chapter_id,
+  :text,
+  :checksum,
+  :word_count,
+  :created_at,
+  :note,
+  :source
+);
+
+selectStoryDraftVersionsByChapterId:
+SELECT * FROM story_draft_versions
+WHERE chapter_id = :chapter_id
+ORDER BY created_at DESC;
+
+selectStoryDraftVersionById:
+SELECT * FROM story_draft_versions
+WHERE id = :id
+  AND chapter_id = :chapter_id;
+
+deleteStoryDraftVersionsOutsideLimit:
+DELETE FROM story_draft_versions
+WHERE chapter_id = :chapter_id
+  AND id NOT IN (
+    SELECT id
+    FROM story_draft_versions
+    WHERE chapter_id = :chapter_id
+    ORDER BY created_at DESC
+    LIMIT :keep_limit
+  );
+
+insertStoryDraftProposal:
+INSERT INTO story_draft_proposals(
+  id,
+  chapter_id,
+  base_checksum,
+  base_text,
+  candidate_text,
+  candidate_checksum,
+  operation_count,
+  status,
+  created_at,
+  decided_at,
+  note
+) VALUES (
+  :id,
+  :chapter_id,
+  :base_checksum,
+  :base_text,
+  :candidate_text,
+  :candidate_checksum,
+  :operation_count,
+  :status,
+  :created_at,
+  :decided_at,
+  :note
+);
+
+selectStoryDraftProposalById:
+SELECT * FROM story_draft_proposals
+WHERE id = :id;
+
+deleteStoryDraftProposalById:
+DELETE FROM story_draft_proposals
+WHERE id = :id;
+
+updateStoryDraftProposalStatus:
+UPDATE story_draft_proposals
+SET status = :status,
+    decided_at = :decided_at
+WHERE id = :id;
+
+insertOrReplaceStoryDraftPreviewState:
+INSERT OR REPLACE INTO story_draft_preview_state(
+  chapter_id,
+  status,
+  proposal_id,
+  before_text,
+  after_text,
+  pending_ranges_json,
+  created_at,
+  updated_at
+) VALUES (
+  :chapter_id,
+  :status,
+  :proposal_id,
+  :before_text,
+  :after_text,
+  :pending_ranges_json,
+  :created_at,
+  :updated_at
+);
+
+selectStoryDraftPreviewStateByChapterId:
+SELECT * FROM story_draft_preview_state
+WHERE chapter_id = :chapter_id;
+
+selectLatestStoryDraftPreviewByStoryId:
+SELECT p.*
+FROM story_draft_preview_state p
+JOIN story_chapters c ON c.id = p.chapter_id
+JOIN story_volumes v ON v.id = c.volume_id
+WHERE v.story_id = :story_id
+ORDER BY p.updated_at DESC
+LIMIT 1;
+
+deleteStoryDraftPreviewStateByChapterId:
+DELETE FROM story_draft_preview_state
+WHERE chapter_id = :chapter_id;
+
+deleteStoryDraftPreviewStateByStoryId:
+DELETE FROM story_draft_preview_state
+WHERE chapter_id IN (
+  SELECT c.id
+  FROM story_chapters c
+  JOIN story_volumes v ON v.id = c.volume_id
+  WHERE v.story_id = :story_id
+);

@@ -6,11 +6,18 @@ import com.ead.dispatch.layout.Row
 import com.ead.dispatch.layout.Spacer
 import com.ead.dispatch.modifier.Modifier
 import com.ead.dispatch.modifier.fillMaxWidth
+import com.ead.dispatch.modifier.height
 import com.ead.dispatch.modifier.width
 import com.ead.dispatch.sample.domain.model.message.CliMessage
+import com.ead.dispatch.widget.ChangeFocusMode
+import com.ead.dispatch.widget.FileChangePreview
+import com.ead.dispatch.widget.FileChangePreviewState
+import com.ead.dispatch.widget.FileChangePreviewStyles
+import com.ead.dispatch.widget.PreviewFileType
 import com.ead.dispatch.widget.Text
 import com.github.ajalt.mordant.rendering.TextColors.Companion.rgb
 import com.github.ajalt.mordant.rendering.TextStyle
+import kotlinx.datetime.Clock
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
@@ -27,6 +34,7 @@ fun ToolCallMessage(
     modifier: Modifier = Modifier,
 ) {
     val display = parseToolDisplay(message)
+    val inlineDiff = parseInlineDiffPreview(message)
     if (display == null) {
         val toolLabel = message.toolName?.let { "Tool payload ($it)" } ?: "Tool payload"
         val preview = unparsedPayloadPreview(message.data)
@@ -40,6 +48,10 @@ fun ToolCallMessage(
             Row(modifier = Modifier.fillMaxWidth()) {
                 Spacer(modifier = Modifier.width(4))
                 Text(text = preview, style = rgb("#C7CBD1"))
+            }
+            if (inlineDiff != null) {
+                Spacer(modifier = Modifier.height(1))
+                InlineToolDiffPreview(preview = inlineDiff)
             }
         }
         return
@@ -68,6 +80,10 @@ fun ToolCallMessage(
                 Spacer(modifier = Modifier.width(4))
                 Text(text = "Warnings: ${display.warnings.joinToString(", ")}", style = rgb("#FFA500"))
             }
+        }
+        if (inlineDiff != null) {
+            Spacer(modifier = Modifier.height(1))
+            InlineToolDiffPreview(preview = inlineDiff)
         }
     }
 }
@@ -310,3 +326,129 @@ private fun unparsedPayloadPreview(raw: String): String {
 }
 
 private const val MAX_UNPARSED_PREVIEW_LENGTH = 4000
+
+internal data class InlineDiffPreview(
+    val beforeText: String,
+    val afterText: String,
+    val fileLabel: String,
+    val title: String,
+)
+
+@Dispatchable
+private fun InlineToolDiffPreview(
+    preview: InlineDiffPreview,
+) {
+    val now = Clock.System.now().toEpochMilliseconds()
+    Row(modifier = Modifier.fillMaxWidth()) {
+        Spacer(modifier = Modifier.width(4))
+        Column(modifier = Modifier.fillMaxWidth()) {
+            Text(
+                text = preview.title,
+                style = rgb("#A3D9E5") + TextStyle(bold = true),
+            )
+            FileChangePreview(
+                state = FileChangePreviewState(
+                    filePath = preview.fileLabel,
+                    fileType = PreviewFileType.MARKDOWN,
+                    beforeText = preview.beforeText,
+                    afterText = preview.afterText,
+                    nowEpochMillis = now,
+                    focusMode = ChangeFocusMode.ADDED_FIRST,
+                    contextLines = 2,
+                    showCollapsedUnchanged = true,
+                ),
+                styles = FileChangePreviewStyles(),
+                showHeader = false,
+                showStats = false,
+                showLegend = false,
+                maxVisibleRows = 10,
+            )
+        }
+    }
+}
+
+internal fun parseInlineDiffPreview(message: CliMessage): InlineDiffPreview? {
+    val raw = extractJsonObject(message.data) ?: message.data
+    val root = runCatching { ToolJson.parseToJsonElement(normalizeToolJson(raw)).jsonObject }.getOrNull()
+        ?: return null
+    val data = root["data"] as? JsonObject
+    val payload = when (root["type"]?.jsonPrimitive?.asStringOrNull()) {
+        "success", "failure" -> (data?.get("payload") as? JsonObject) ?: data ?: root
+        else -> root
+    }
+    val request = (root["request"] as? JsonObject)
+        ?: (payload["request"] as? JsonObject)
+        ?: (data?.get("request") as? JsonObject)
+
+    val before = payload.string("baseText")
+        ?: payload.string("beforeText")
+        ?: data?.string("baseText")
+        ?: data?.string("beforeText")
+    val after = payload.string("candidateText")
+        ?: payload.string("afterText")
+        ?: payload.string("text")
+        ?: payload.string("preview")
+        ?: data?.string("candidateText")
+        ?: data?.string("afterText")
+        ?: data?.string("text")
+        ?: extractRequestAfterText(request)
+        ?: extractRequestAfterText(payload["operations"])
+        ?: return null
+    if (before == after) return null
+
+    val chapterId = payload.string("chapterId")
+        ?: data?.string("chapterId")
+        ?: request?.string("chapterId")
+    val fileLabel = chapterId?.let { "chapter:$it" } ?: "chapter:draft"
+    val title = inlinePreviewTitle(message.toolName, payload, request)
+    return InlineDiffPreview(
+        beforeText = before ?: "",
+        afterText = after,
+        fileLabel = fileLabel,
+        title = title,
+    )
+}
+
+private fun inlinePreviewTitle(
+    toolName: String?,
+    payload: JsonObject,
+    request: JsonObject?,
+): String {
+    val name = toolName?.lowercase().orEmpty()
+    return when {
+        name.contains("propose") -> "Change proposal"
+        name.contains("setchapterdraft") || name.startsWith("set") -> "Draft update preview"
+        request?.get("operations") != null || payload["operations"] != null -> "Draft operations preview"
+        else -> "Draft preview"
+    }
+}
+
+private fun extractRequestAfterText(element: JsonElement?): String? {
+    when (element) {
+        null -> return null
+        is JsonPrimitive -> {
+            val raw = element.asStringOrNull()?.trim().orEmpty()
+            if (raw.isEmpty()) return null
+            val parsed = runCatching { ToolJson.parseToJsonElement(normalizeToolJson(raw)) }.getOrNull()
+            if (parsed != null) return extractRequestAfterText(parsed)
+            return raw
+        }
+        is JsonObject -> {
+            element.string("text")?.let { return it }
+            return extractRequestAfterText(element["operations"])
+        }
+        is JsonArray -> Unit
+    }
+    return element
+        .mapNotNull { operation ->
+            when (operation) {
+                is JsonObject -> operation.string("text")
+                is JsonPrimitive -> operation.asStringOrNull()?.takeIf { it.isNotBlank() }
+                else -> null
+            }
+        }
+        .firstOrNull { it.isNotBlank() }
+}
+
+private fun JsonObject.string(key: String): String? =
+    this[key]?.jsonPrimitive?.asStringOrNull()?.takeIf { it.isNotBlank() }

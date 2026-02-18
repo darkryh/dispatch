@@ -20,6 +20,51 @@ class StructuredIndexRepository(
     private val databaseRuntime: DatabaseRuntime,
     private val embeddingIndexService: EmbeddingIndexService,
 ) {
+    data class StoryDraftCurrentState(
+        val chapterId: String,
+        val text: String,
+        val checksum: String,
+        val wordCount: Long,
+        val updatedAt: Long,
+        val updatedBy: String? = null,
+    )
+
+    data class StoryDraftVersionState(
+        val id: String,
+        val chapterId: String,
+        val text: String,
+        val checksum: String,
+        val wordCount: Long,
+        val createdAt: Long,
+        val note: String? = null,
+        val source: String? = null,
+    )
+
+    data class StoryDraftProposalState(
+        val id: String,
+        val chapterId: String,
+        val baseChecksum: String,
+        val baseText: String,
+        val candidateText: String,
+        val candidateChecksum: String,
+        val operationCount: Long,
+        val status: String,
+        val createdAt: Long,
+        val decidedAt: Long? = null,
+        val note: String? = null,
+    )
+
+    data class StoryDraftPreviewState(
+        val chapterId: String,
+        val status: String,
+        val proposalId: String? = null,
+        val beforeText: String,
+        val afterText: String,
+        val pendingRangesJson: String,
+        val createdAt: Long,
+        val updatedAt: Long,
+    )
+
     data class RelationshipIntegrityResult(
         val isValid: Boolean,
         val normalizedSubjectType: String? = null,
@@ -607,26 +652,181 @@ class StructuredIndexRepository(
         return true
     }
 
-    suspend fun getStoryMetadataValue(storyId: String, key: String): String? {
-        val sessionId = getStoryById(storyId)?.sessionId ?: return null
-        return getSessionMetadataValue(sessionId, key)
+    suspend fun getStoryDraftCurrentByChapterId(chapterId: String): StoryDraftCurrentState? = query {
+        queries.selectStoryDraftCurrentByChapterId(chapter_id = chapterId) { chapterIdValue, text, checksum, wordCount, updatedAt, updatedBy ->
+            StoryDraftCurrentState(
+                chapterId = chapterIdValue,
+                text = text,
+                checksum = checksum,
+                wordCount = wordCount,
+                updatedAt = updatedAt,
+                updatedBy = updatedBy,
+            )
+        }.executeAsOneOrNull()
     }
 
-    suspend fun putStoryMetadataValue(
-        storyId: String,
-        key: String,
-        value: String,
-    ): Boolean {
-        val sessionId = getStoryById(storyId)?.sessionId ?: return false
-        return putSessionMetadataValue(sessionId, key, value)
+    suspend fun upsertStoryDraftCurrent(record: StoryDraftCurrentState) = query {
+        queries.insertOrReplaceStoryDraftCurrent(
+            chapter_id = record.chapterId,
+            text = record.text,
+            checksum = record.checksum,
+            word_count = record.wordCount,
+            updated_at = record.updatedAt,
+            updated_by = record.updatedBy,
+        )
     }
 
-    suspend fun removeStoryMetadataValue(
-        storyId: String,
-        key: String,
-    ): Boolean {
-        val sessionId = getStoryById(storyId)?.sessionId ?: return false
-        return removeSessionMetadataValue(sessionId, key)
+    suspend fun insertStoryDraftVersion(record: StoryDraftVersionState) = query {
+        queries.insertStoryDraftVersion(
+            id = record.id,
+            chapter_id = record.chapterId,
+            text = record.text,
+            checksum = record.checksum,
+            word_count = record.wordCount,
+            created_at = record.createdAt,
+            note = record.note,
+            source = record.source,
+        )
+    }
+
+    suspend fun getStoryDraftVersionsByChapterId(chapterId: String): List<StoryDraftVersionState> = query {
+        queries.selectStoryDraftVersionsByChapterId(chapter_id = chapterId) { id, chapterIdValue, text, checksum, wordCount, createdAt, note, source ->
+            StoryDraftVersionState(
+                id = id,
+                chapterId = chapterIdValue,
+                text = text,
+                checksum = checksum,
+                wordCount = wordCount,
+                createdAt = createdAt,
+                note = note,
+                source = source,
+            )
+        }.executeAsList()
+    }
+
+    suspend fun getStoryDraftVersionById(
+        chapterId: String,
+        versionId: String,
+    ): StoryDraftVersionState? = query {
+        queries.selectStoryDraftVersionById(id = versionId, chapter_id = chapterId) { id, chapterIdValue, text, checksum, wordCount, createdAt, note, source ->
+            StoryDraftVersionState(
+                id = id,
+                chapterId = chapterIdValue,
+                text = text,
+                checksum = checksum,
+                wordCount = wordCount,
+                createdAt = createdAt,
+                note = note,
+                source = source,
+            )
+        }.executeAsOneOrNull()
+    }
+
+    suspend fun trimStoryDraftVersions(
+        chapterId: String,
+        keepLimit: Long,
+    ) = query {
+        queries.deleteStoryDraftVersionsOutsideLimit(
+            chapter_id = chapterId,
+            keep_limit = keepLimit,
+        )
+    }
+
+    suspend fun insertStoryDraftProposal(record: StoryDraftProposalState) = query {
+        queries.insertStoryDraftProposal(
+            id = record.id,
+            chapter_id = record.chapterId,
+            base_checksum = record.baseChecksum,
+            base_text = record.baseText,
+            candidate_text = record.candidateText,
+            candidate_checksum = record.candidateChecksum,
+            operation_count = record.operationCount,
+            status = record.status,
+            created_at = record.createdAt,
+            decided_at = record.decidedAt,
+            note = record.note,
+        )
+    }
+
+    suspend fun getStoryDraftProposalById(proposalId: String): StoryDraftProposalState? = query {
+        queries.selectStoryDraftProposalById(id = proposalId) { id, chapterId, baseChecksum, baseText, candidateText, candidateChecksum, operationCount, status, createdAt, decidedAt, note ->
+            StoryDraftProposalState(
+                id = id,
+                chapterId = chapterId,
+                baseChecksum = baseChecksum,
+                baseText = baseText,
+                candidateText = candidateText,
+                candidateChecksum = candidateChecksum,
+                operationCount = operationCount,
+                status = status,
+                createdAt = createdAt,
+                decidedAt = decidedAt,
+                note = note,
+            )
+        }.executeAsOneOrNull()
+    }
+
+    suspend fun updateStoryDraftProposalStatus(
+        proposalId: String,
+        status: String,
+        decidedAt: Long?,
+    ) = query {
+        queries.updateStoryDraftProposalStatus(
+            id = proposalId,
+            status = status,
+            decided_at = decidedAt,
+        )
+    }
+
+    suspend fun deleteStoryDraftProposalById(proposalId: String) = query {
+        queries.deleteStoryDraftProposalById(id = proposalId)
+    }
+
+    suspend fun upsertStoryDraftPreviewState(record: StoryDraftPreviewState) = query {
+        queries.insertOrReplaceStoryDraftPreviewState(
+            chapter_id = record.chapterId,
+            status = record.status,
+            proposal_id = record.proposalId,
+            before_text = record.beforeText,
+            after_text = record.afterText,
+            pending_ranges_json = record.pendingRangesJson,
+            created_at = record.createdAt,
+            updated_at = record.updatedAt,
+        )
+    }
+
+    suspend fun getStoryDraftPreviewStateByChapterId(chapterId: String): StoryDraftPreviewState? = query {
+        queries.selectStoryDraftPreviewStateByChapterId(chapter_id = chapterId) { chapterIdValue, status, proposalId, beforeText, afterText, pendingRangesJson, createdAt, updatedAt ->
+            StoryDraftPreviewState(
+                chapterId = chapterIdValue,
+                status = status,
+                proposalId = proposalId,
+                beforeText = beforeText,
+                afterText = afterText,
+                pendingRangesJson = pendingRangesJson,
+                createdAt = createdAt,
+                updatedAt = updatedAt,
+            )
+        }.executeAsOneOrNull()
+    }
+
+    suspend fun getLatestStoryDraftPreviewByStoryId(storyId: String): StoryDraftPreviewState? = query {
+        queries.selectLatestStoryDraftPreviewByStoryId(story_id = storyId) { chapterId, status, proposalId, beforeText, afterText, pendingRangesJson, createdAt, updatedAt ->
+            StoryDraftPreviewState(
+                chapterId = chapterId,
+                status = status,
+                proposalId = proposalId,
+                beforeText = beforeText,
+                afterText = afterText,
+                pendingRangesJson = pendingRangesJson,
+                createdAt = createdAt,
+                updatedAt = updatedAt,
+            )
+        }.executeAsOneOrNull()
+    }
+
+    suspend fun deleteStoryDraftPreviewStateByStoryId(storyId: String) = query {
+        queries.deleteStoryDraftPreviewStateByStoryId(story_id = storyId)
     }
 
     suspend fun deleteSession(sessionId: String) = query {

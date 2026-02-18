@@ -8,6 +8,7 @@ import ai.koog.prompt.streaming.StreamFrame
 import com.ead.dispatch.navigation.Navigator
 import com.ead.dispatch.navigation.toRoute
 import com.ead.dispatch.runtime.SavedStateHandle
+import com.ead.dispatch.sample.data.repositories.StructuredIndexRepository
 import com.ead.dispatch.sample.domain.AIProvider
 import com.ead.dispatch.sample.domain.CommandManager
 import com.ead.dispatch.sample.domain.SessionManager
@@ -16,6 +17,9 @@ import com.ead.dispatch.sample.domain.agents.ChatAgent
 import com.ead.dispatch.sample.domain.agents.StoryAgent
 import com.ead.dispatch.sample.domain.agents.chat_agent.ChatRequest
 import com.ead.dispatch.sample.domain.agents.story_agent.StoryRequest
+import com.ead.dispatch.sample.domain.agents.tools.model.StoryDraftPreviewPendingRange
+import com.ead.dispatch.sample.domain.agents.tools.model.StoryDraftPreviewSnapshot
+import com.ead.dispatch.sample.domain.agents.tools.model.StoryDraftPreviewStatus
 import com.ead.dispatch.sample.domain.entity.EntityOptionType
 import com.ead.dispatch.sample.domain.model.message.CliMessage
 import com.ead.dispatch.sample.domain.model.message.CliMessageRole
@@ -39,11 +43,20 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
+import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.json.Json
 
 private data class ModeHistoryState(
     val messages: List<CliMessage> = emptyList(),
     val pendingDecision: DecisionPromptPayload? = null,
     val contextRemainingPercent: Int? = null,
+    val storyPreviewSnapshot: StoryDraftPreviewSnapshot? = null,
+    val storyPreviewFocused: Boolean = false,
+    val selectedPageIndex: Int = 0,
+    val storyPreviewPageCount: Int = 1,
+    val selectedPendingRangeIndex: Int = 0,
+    val selectedActionIndex: Int = 0,
+    val storyPreviewActiveZone: StoryPreviewFocusZone = StoryPreviewFocusZone.PAGES,
 )
 
 /**
@@ -52,6 +65,7 @@ private data class ModeHistoryState(
 class ChatViewModel(
     private val commandManager: CommandManager,
     private val sessionManager: SessionManager,
+    private val repository: StructuredIndexRepository,
     private val chatAgent: ChatAgent,
     private val storyAgent: StoryAgent,
     savedStateHandle: SavedStateHandle,
@@ -74,6 +88,8 @@ class ChatViewModel(
     internal val pendingDecision: StateFlow<DecisionPromptPayload?> = _pendingDecision.asStateFlow()
     private val _contextRemainingPercent = MutableStateFlow<Int?>(null)
     val contextRemainingPercent: StateFlow<Int?> = _contextRemainingPercent.asStateFlow()
+    private val _storyPreview = MutableStateFlow<StoryPreviewUiState?>(null)
+    val storyPreview: StateFlow<StoryPreviewUiState?> = _storyPreview.asStateFlow()
 
     // Writer Assistant mode state
     private val _writerMode = MutableStateFlow(WriterMode.CHAT)
@@ -107,6 +123,7 @@ class ChatViewModel(
         )
         setModeState(WriterMode.CHAT, chatState)
         setModeState(WriterMode.CHAT_STORY, storyState)
+        refreshStoryPreview(sessionId)
         applyModeState(_writerMode.value)
     }
 
@@ -140,6 +157,14 @@ class ChatViewModel(
                     WriterMode.CHAT_STORY -> WriterMode.CHAT
                 }
                 _writerMode.value = nextMode
+                if (nextMode == WriterMode.CHAT_STORY) {
+                    val activeSessionId = _session.value?.id ?: route.conversationId
+                    if (!activeSessionId.isNullOrBlank()) {
+                        viewModelScope.launch(Dispatchers.IO) {
+                            refreshStoryPreview(activeSessionId)
+                        }
+                    }
+                }
                 applyModeState(nextMode)
             }
             is ChatEvent.OnCancelProcessing -> {
@@ -148,6 +173,26 @@ class ChatViewModel(
                 activeStreamJob = null
                 _isProcessing.value = false
             }
+            ChatEvent.OnToggleStoryPreviewFocus -> {
+                if (_writerMode.value != WriterMode.CHAT_STORY) return
+                val current = modeState(WriterMode.CHAT_STORY)
+                if (current.storyPreviewSnapshot == null) return
+                setModeState(
+                    WriterMode.CHAT_STORY,
+                    current.copy(
+                        storyPreviewFocused = !current.storyPreviewFocused,
+                        storyPreviewActiveZone = StoryPreviewFocusZone.PAGES,
+                    ),
+                )
+            }
+            ChatEvent.OnStoryPreviewMoveLeft -> moveStoryPreviewHorizontal(-1)
+            ChatEvent.OnStoryPreviewMoveRight -> moveStoryPreviewHorizontal(1)
+            ChatEvent.OnStoryPreviewMoveUp -> moveStoryPreviewVertical(-1)
+            ChatEvent.OnStoryPreviewMoveDown -> moveStoryPreviewVertical(1)
+            is ChatEvent.OnStoryPreviewPageCountUpdated -> updateStoryPreviewPageCount(event.pageCount)
+            ChatEvent.OnStoryPreviewExecuteSelection -> executeStoryPreviewSelection()
+            ChatEvent.OnStoryPreviewApproveShortcut -> executeStoryPreviewAction(actionIndex = 0)
+            ChatEvent.OnStoryPreviewRejectShortcut -> executeStoryPreviewAction(actionIndex = 1)
         }
     }
 
@@ -272,6 +317,9 @@ class ChatViewModel(
                                 title = modeState(mode).messages.lastOrNull { it.role == CliMessageRole.USER }?.data,
                                 incrementMessageCount = true
                             )
+                            if (mode == WriterMode.CHAT_STORY) {
+                                refreshStoryPreview(session.id)
+                            }
                             _isProcessing.value = false
                             if (activeStreamJob === currentJob) {
                                 activeStreamJob = null
@@ -415,6 +463,221 @@ class ChatViewModel(
         _messages.value = state.messages
         _pendingDecision.value = state.pendingDecision
         _contextRemainingPercent.value = state.contextRemainingPercent
+        _storyPreview.value = if (mode == WriterMode.CHAT_STORY && state.storyPreviewSnapshot != null) {
+            StoryPreviewUiState(
+                snapshot = state.storyPreviewSnapshot,
+                focused = state.storyPreviewFocused,
+                selectedPageIndex = state.selectedPageIndex,
+                pageCount = state.storyPreviewPageCount,
+                selectedPendingRangeIndex = state.selectedPendingRangeIndex,
+                selectedActionIndex = state.selectedActionIndex,
+                activeZone = state.storyPreviewActiveZone,
+            )
+        } else {
+            null
+        }
+    }
+
+    private fun canUseStoryPreviewShortcut(): Boolean {
+        if (_writerMode.value != WriterMode.CHAT_STORY) return false
+        if (_isProcessing.value || _pendingDecision.value != null) return false
+        val modeState = modeState(WriterMode.CHAT_STORY)
+        val preview = modeState.storyPreviewSnapshot ?: return false
+        if (preview.status != StoryDraftPreviewStatus.PENDING) return false
+        if (!modeState.storyPreviewFocused) return false
+        return !preview.proposalId.isNullOrBlank()
+    }
+
+    private fun moveStoryPreviewHorizontal(delta: Int) {
+        if (_writerMode.value != WriterMode.CHAT_STORY) return
+        val current = modeState(WriterMode.CHAT_STORY)
+        val snapshot = current.storyPreviewSnapshot ?: return
+        if (!current.storyPreviewFocused) return
+        val canUseActions = snapshot.status == StoryDraftPreviewStatus.PENDING && !snapshot.proposalId.isNullOrBlank()
+        when (current.storyPreviewActiveZone) {
+            StoryPreviewFocusZone.PAGES -> {
+                val pageCount = current.storyPreviewPageCount.coerceAtLeast(1)
+                val next = (current.selectedPageIndex + delta).coerceIn(0, pageCount - 1)
+                if (next != current.selectedPageIndex) {
+                    setModeState(
+                        WriterMode.CHAT_STORY,
+                        current.copy(selectedPageIndex = next),
+                    )
+                }
+            }
+            StoryPreviewFocusZone.HUNKS -> {
+                val nextZone = if (delta < 0) {
+                    StoryPreviewFocusZone.PAGES
+                } else if (canUseActions) {
+                    StoryPreviewFocusZone.ACTIONS
+                } else {
+                    StoryPreviewFocusZone.HUNKS
+                }
+                if (nextZone != current.storyPreviewActiveZone) {
+                    setModeState(WriterMode.CHAT_STORY, current.copy(storyPreviewActiveZone = nextZone))
+                }
+            }
+            StoryPreviewFocusZone.ACTIONS -> {
+                val nextZone = if (delta < 0) StoryPreviewFocusZone.HUNKS else StoryPreviewFocusZone.ACTIONS
+                if (nextZone != current.storyPreviewActiveZone) {
+                    setModeState(WriterMode.CHAT_STORY, current.copy(storyPreviewActiveZone = nextZone))
+                }
+            }
+        }
+    }
+
+    private fun moveStoryPreviewVertical(delta: Int) {
+        if (_writerMode.value != WriterMode.CHAT_STORY) return
+        val current = modeState(WriterMode.CHAT_STORY)
+        val snapshot = current.storyPreviewSnapshot ?: return
+        if (!current.storyPreviewFocused) return
+        val canUseActions = snapshot.status == StoryDraftPreviewStatus.PENDING && !snapshot.proposalId.isNullOrBlank()
+
+        when (current.storyPreviewActiveZone) {
+            StoryPreviewFocusZone.PAGES -> {
+                val targetZone = if (delta > 0) {
+                    StoryPreviewFocusZone.HUNKS
+                } else if (canUseActions) {
+                    StoryPreviewFocusZone.ACTIONS
+                } else {
+                    StoryPreviewFocusZone.PAGES
+                }
+                if (targetZone != current.storyPreviewActiveZone) {
+                    setModeState(WriterMode.CHAT_STORY, current.copy(storyPreviewActiveZone = targetZone))
+                }
+            }
+            StoryPreviewFocusZone.HUNKS -> {
+                if (snapshot.pendingRanges.isEmpty()) return
+                val next = (current.selectedPendingRangeIndex + delta)
+                    .mod(snapshot.pendingRanges.size)
+                setModeState(
+                    WriterMode.CHAT_STORY,
+                    current.copy(selectedPendingRangeIndex = next),
+                )
+            }
+            StoryPreviewFocusZone.ACTIONS -> {
+                if (!canUseStoryPreviewShortcut()) return
+                val actionCount = 2
+                val next = (current.selectedActionIndex + delta).mod(actionCount)
+                setModeState(
+                    WriterMode.CHAT_STORY,
+                    current.copy(selectedActionIndex = next),
+                )
+            }
+        }
+    }
+
+    private fun executeStoryPreviewSelection() {
+        if (!canUseStoryPreviewShortcut()) return
+        val current = modeState(WriterMode.CHAT_STORY)
+        if (current.storyPreviewActiveZone != StoryPreviewFocusZone.ACTIONS) return
+        executeStoryPreviewAction(current.selectedActionIndex)
+    }
+
+    private fun updateStoryPreviewPageCount(pageCount: Int) {
+        if (_writerMode.value != WriterMode.CHAT_STORY) return
+        val current = modeState(WriterMode.CHAT_STORY)
+        if (current.storyPreviewSnapshot == null) return
+        val normalized = pageCount.coerceAtLeast(1)
+        if (normalized == current.storyPreviewPageCount &&
+            current.selectedPageIndex in 0 until normalized
+        ) {
+            return
+        }
+        setModeState(
+            WriterMode.CHAT_STORY,
+            current.copy(
+                storyPreviewPageCount = normalized,
+                selectedPageIndex = current.selectedPageIndex.coerceIn(0, normalized - 1),
+            ),
+        )
+    }
+
+    private fun executeStoryPreviewAction(actionIndex: Int) {
+        if (!canUseStoryPreviewShortcut()) return
+        val proposalId = modeState(WriterMode.CHAT_STORY).storyPreviewSnapshot?.proposalId ?: return
+        val commandText = if (actionIndex == 0) {
+            "Apply chapter draft proposal '$proposalId' now."
+        } else {
+            "Discard chapter draft proposal '$proposalId' without applying changes."
+        }
+        submitMessage(
+            text = commandText,
+            fromDecisionPrompt = false,
+        )
+    }
+
+    private suspend fun refreshStoryPreview(sessionId: String) {
+        val snapshot = loadStoryPreviewSnapshot(sessionId)
+        val current = modeState(WriterMode.CHAT_STORY)
+        val clampedIndex = if (snapshot == null) {
+            0
+        } else {
+            current.selectedPendingRangeIndex.coerceIn(0, (snapshot.pendingRanges.size - 1).coerceAtLeast(0))
+        }
+        setModeState(
+            WriterMode.CHAT_STORY,
+            current.copy(
+                storyPreviewSnapshot = snapshot,
+                selectedPageIndex = suggestedPageIndexForSnapshot(snapshot),
+                storyPreviewPageCount = estimatedPageCountForSnapshot(snapshot),
+                selectedPendingRangeIndex = clampedIndex,
+                selectedActionIndex = current.selectedActionIndex.coerceIn(0, 1),
+                storyPreviewActiveZone = if (snapshot?.status == StoryDraftPreviewStatus.PENDING) {
+                    current.storyPreviewActiveZone
+                } else {
+                    StoryPreviewFocusZone.PAGES
+                },
+                storyPreviewFocused = if (snapshot == null) false else current.storyPreviewFocused,
+            ),
+        )
+    }
+
+    private fun suggestedPageIndexForSnapshot(snapshot: StoryDraftPreviewSnapshot?): Int {
+        snapshot ?: return 0
+        val latestRangeStart = snapshot.pendingRanges.maxByOrNull { it.changedAtEpochMillis }?.startLine
+        if (latestRangeStart != null) {
+            return ((latestRangeStart - 1) / DEFAULT_STORY_PREVIEW_PAGE_ROWS).coerceAtLeast(0)
+        }
+        val afterLineCount = snapshot.afterText.lineSequence().count().coerceAtLeast(1)
+        return ((afterLineCount - 1) / DEFAULT_STORY_PREVIEW_PAGE_ROWS).coerceAtLeast(0)
+    }
+
+    private fun estimatedPageCountForSnapshot(snapshot: StoryDraftPreviewSnapshot?): Int {
+        snapshot ?: return 1
+        val afterLineCount = snapshot.afterText.lineSequence().count().coerceAtLeast(1)
+        return ((afterLineCount + DEFAULT_STORY_PREVIEW_PAGE_ROWS - 1) / DEFAULT_STORY_PREVIEW_PAGE_ROWS).coerceAtLeast(1)
+    }
+
+    private suspend fun loadStoryPreviewSnapshot(sessionId: String): StoryDraftPreviewSnapshot? {
+        val storyId = repository.getStoriesBySession(sessionId).firstOrNull()?.id ?: return null
+        val latest = repository.getLatestStoryDraftPreviewByStoryId(storyId) ?: return null
+        val chapter = repository.getChapterById(latest.chapterId) ?: return null
+        val volume = repository.getVolumeById(chapter.volumeId)
+        val pendingRanges = runCatching {
+            json.decodeFromString(
+                ListSerializer(StoryDraftPreviewPendingRange.serializer()),
+                latest.pendingRangesJson,
+            )
+        }.getOrElse { emptyList() }
+        val status = runCatching {
+            StoryDraftPreviewStatus.valueOf(latest.status)
+        }.getOrDefault(StoryDraftPreviewStatus.APPLIED)
+        return StoryDraftPreviewSnapshot(
+            storyId = storyId,
+            chapterId = latest.chapterId,
+            volumeNumber = volume?.number,
+            volumeTitle = volume?.title,
+            chapterNumber = chapter.number,
+            chapterTitle = chapter.title,
+            beforeText = latest.beforeText,
+            afterText = latest.afterText,
+            status = status,
+            proposalId = latest.proposalId,
+            pendingRanges = pendingRanges,
+            createdAtEpochMillis = latest.createdAt,
+            updatedAtEpochMillis = latest.updatedAt,
+        )
     }
 
     private fun agentIdForMode(
@@ -485,5 +748,21 @@ class ChatViewModel(
         val version = (latest?.version?.plus(1) ?: 0L).coerceAtLeast(0L)
         val tombstone = tombstoneCheckpoint(Clock.System.now(), version)
         storageProvider.saveCheckpoint(agentId, tombstone)
+        if (mode == WriterMode.CHAT_STORY) {
+            val storyId = repository.getStoriesBySession(sessionId).firstOrNull()?.id
+            if (storyId != null) {
+                repository.deleteStoryDraftPreviewStateByStoryId(storyId)
+            }
+            refreshStoryPreview(sessionId)
+        }
+    }
+
+    private companion object {
+        const val DEFAULT_STORY_PREVIEW_PAGE_ROWS = 22
+        val json = Json {
+            ignoreUnknownKeys = true
+            isLenient = true
+        }
+
     }
 }

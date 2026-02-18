@@ -2,6 +2,8 @@ package com.ead.dispatch.widget
 
 import com.ead.dispatch.annotation.Dispatchable
 import com.ead.dispatch.constraints.Constraints
+import com.ead.dispatch.modifier.Modifier
+import com.ead.dispatch.modifier.height
 import com.ead.dispatch.runtime.Composer
 import com.ead.dispatch.runtime.CompositionLocalProvider
 import com.ead.dispatch.runtime.FocusRegistry
@@ -93,5 +95,56 @@ class ScrollableListTest {
 
         assertEquals(1, scrollState.offset)
         assertTrue(linesAfterShrink.none { it.isBlank() })
+    }
+
+    @Test
+    fun `bounded list with wrapped first item still renders following items`() {
+        val longLine = "This is a long line that wraps across several visual rows in narrow width."
+        val lines = renderLines(width = 38, height = 20) {
+            ScrollableList(
+                items = listOf(longLine, "Second row", "Third row"),
+                modifier = Modifier.height(6),
+            ) { item ->
+                Text(item)
+            }
+        }
+
+        assertEquals(6, lines.size)
+        assertTrue(lines.any { it.contains("Second row") })
+        assertTrue(lines.any { it.contains("Third row") })
+    }
+
+    @Test
+    fun `bounded list updates content height using intrinsic item heights`() {
+        val scrollState = ScrollState()
+        val longLine = "One very long line that wraps and should contribute full intrinsic height."
+        renderLines(width = 34, height = 20) {
+            ScrollableList(
+                items = listOf(longLine, longLine, "tail"),
+                modifier = Modifier.height(5),
+                scrollState = scrollState,
+            ) { item ->
+                Text(item)
+            }
+        }
+
+        assertEquals(5, scrollState.viewportHeight)
+        assertTrue(scrollState.contentHeight > scrollState.viewportHeight)
+        assertTrue(scrollState.maxOffset > 0)
+    }
+
+    @Test
+    fun `bounded list pads viewport when content is shorter than viewport`() {
+        val lines = renderLines(width = 30, height = 20) {
+            ScrollableList(
+                items = listOf("One"),
+                modifier = Modifier.height(4),
+            ) { item ->
+                Text(item)
+            }
+        }
+
+        assertEquals(4, lines.size)
+        assertTrue(lines.first().contains("One"))
     }
 }

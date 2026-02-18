@@ -47,6 +47,8 @@ data class ChapterDraftProposalPayload(
     val chapterId: String,
     val baseChecksum: String,
     val candidateChecksum: String,
+    val baseText: String,
+    val candidateText: String,
     val operationCount: Int,
     val preview: String,
     val createdAt: Long,

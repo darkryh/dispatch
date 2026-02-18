@@ -90,6 +90,7 @@ val module = dispatchModule {
         ChatViewModel(
             commandManager = get(),
             sessionManager = get(),
+            repository = get(),
             chatAgent = get(),
             storyAgent = get(),
             savedStateHandle = savedStateHandle,

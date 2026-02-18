@@ -173,7 +173,9 @@ private fun AIAgentGraphContextBase.setupAndStreamStoryMode(
                 runtimeOrchestrator.afterLlmCall(agentContext)
                 publishSnapshot()
 
-                if (toolCalls.isEmpty()) break
+                if (toolCalls.isEmpty()) {
+                    break
+                }
                 val decisionToolCall = toolCalls.firstOrNull { isStoryDecisionToolName(it.tool) }
                 val effectiveToolCalls = decisionToolCall?.let { listOf(it) } ?: toolCalls
 
