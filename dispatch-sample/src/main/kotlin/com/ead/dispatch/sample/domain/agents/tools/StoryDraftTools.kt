@@ -8,6 +8,8 @@ import ai.koog.agents.core.tools.reflect.ToolSet
 import com.ead.dispatch.sample.data.db.entities.StoryChapterRecord
 import com.ead.dispatch.sample.data.db.type.ContentType
 import com.ead.dispatch.sample.data.repositories.StructuredIndexRepository
+import com.ead.dispatch.sample.domain.agents.story_agent.memory.service.StoryContinuityMemoryService
+import com.ead.dispatch.sample.domain.content.ChapterContentStore
 import com.ead.dispatch.sample.domain.agents.tools.model.ChapterDraftEditOperationRequest
 import com.ead.dispatch.sample.domain.agents.tools.model.ChapterDraftEditType
 import com.ead.dispatch.sample.domain.agents.tools.model.ChapterDraftPayload
@@ -31,6 +33,8 @@ import java.util.UUID
 
 class StoryDraftTools(
     private val repository: StructuredIndexRepository,
+    private val contentStore: ChapterContentStore = ChapterContentStore(),
+    private val continuityMemoryService: StoryContinuityMemoryService? = null,
 ) : ToolSet {
 
     @Tool
@@ -101,6 +105,7 @@ class StoryDraftTools(
                 updatedAtEpochMillis = updated.updatedAt,
             ),
         )
+        refreshContinuityMemory(storyId, chapter, updated)
         return querySuccess(
             entity = OperationEntity.CHAPTER,
             storyId = storyId,
@@ -150,7 +155,14 @@ class StoryDraftTools(
             proposalId = UUID.randomUUID().toString(),
             chapterId = chapter.id,
             baseChecksum = current.checksum,
+            baseContentRef = current.contentRef,
             baseText = current.text,
+            candidateContentRef = contentStore.write(
+                storyId = storyId,
+                chapterId = chapter.id,
+                text = candidate,
+                tag = "proposal-candidate",
+            ),
             candidateText = candidate,
             candidateChecksum = checksum(candidate),
             operationCount = request.operations.size,
@@ -163,8 +175,8 @@ class StoryDraftTools(
                 id = proposal.proposalId,
                 chapterId = proposal.chapterId,
                 baseChecksum = proposal.baseChecksum,
-                baseText = proposal.baseText,
-                candidateText = proposal.candidateText,
+                baseContentRef = proposal.baseContentRef,
+                candidateContentRef = proposal.candidateContentRef,
                 candidateChecksum = proposal.candidateChecksum,
                 operationCount = proposal.operationCount.toLong(),
                 status = StoryDraftProposalStatus.PENDING.name,
@@ -263,6 +275,7 @@ class StoryDraftTools(
                 updatedAtEpochMillis = applied.updatedAt,
             ),
         )
+        refreshContinuityMemory(storyId, chapter, applied)
         return querySuccess(
             entity = OperationEntity.CHAPTER,
             storyId = storyId,
@@ -372,6 +385,7 @@ class StoryDraftTools(
                 updatedAtEpochMillis = rolledBack.updatedAt,
             ),
         )
+        refreshContinuityMemory(storyId, chapter, rolledBack)
         return querySuccess(
             entity = OperationEntity.CHAPTER,
             storyId = storyId,
@@ -520,7 +534,13 @@ class StoryDraftTools(
         loadCurrentDraft(storyId, chapter.id)?.let { return it }
 
         val initialText = chapter.summary?.trim().orEmpty()
-        val created = newVersion(initialText, note = "Initialize draft")
+        val created = newVersion(
+            storyId = storyId,
+            chapterId = chapter.id,
+            text = initialText,
+            note = "Initialize draft",
+            tag = "init",
+        )
         saveCurrentDraft(storyId, chapter.id, created)
         syncChapterContentRecord(chapter, created)
         return created
@@ -533,12 +553,18 @@ class StoryDraftTools(
         previous: StoredDraftVersion,
         note: String?,
     ): StoredDraftVersion {
-        val next = newVersion(text, note)
+        val next = newVersion(
+            storyId = storyId,
+            chapterId = chapter.id,
+            text = text,
+            note = note,
+            tag = "draft",
+        )
         repository.insertStoryDraftVersion(
             StructuredIndexRepository.StoryDraftVersionState(
                 id = previous.versionId,
                 chapterId = chapter.id,
-                text = previous.text,
+                contentRef = previous.contentRef,
                 checksum = previous.checksum,
                 wordCount = previous.wordCount,
                 createdAt = previous.updatedAt,
@@ -558,7 +584,7 @@ class StoryDraftTools(
     ) {
         val updatedChapter = chapter.copy(
             content = StoryChapterRecord.ChapterContent(
-                ref = "story_draft_current:${chapter.id}",
+                ref = version.contentRef,
                 type = ContentType.TEXT,
                 checksum = version.checksum,
                 updatedAt = version.updatedAt,
@@ -575,9 +601,11 @@ class StoryDraftTools(
         chapterId: String,
     ): StoredDraftVersion? {
         val current = repository.getStoryDraftCurrentByChapterId(chapterId) ?: return null
+        val text = contentStore.read(current.contentRef)
         return StoredDraftVersion(
             versionId = "current:$chapterId:${current.updatedAt}",
-            text = current.text,
+            text = text,
+            contentRef = current.contentRef,
             checksum = current.checksum,
             wordCount = current.wordCount,
             updatedAt = current.updatedAt,
@@ -593,7 +621,7 @@ class StoryDraftTools(
         repository.upsertStoryDraftCurrent(
             StructuredIndexRepository.StoryDraftCurrentState(
                 chapterId = chapterId,
-                text = value.text,
+                contentRef = value.contentRef,
                 checksum = value.checksum,
                 wordCount = value.wordCount,
                 updatedAt = value.updatedAt,
@@ -607,9 +635,11 @@ class StoryDraftTools(
         chapterId: String,
     ): StoredDraftHistory {
         val versions = repository.getStoryDraftVersionsByChapterId(chapterId).map { item ->
+            val text = contentStore.read(item.contentRef)
             StoredDraftVersion(
                 versionId = item.id,
-                text = item.text,
+                text = text,
+                contentRef = item.contentRef,
                 checksum = item.checksum,
                 wordCount = item.wordCount,
                 updatedAt = item.createdAt,
@@ -630,8 +660,10 @@ class StoryDraftTools(
             proposalId = proposal.id,
             chapterId = chapter.id,
             baseChecksum = proposal.baseChecksum,
-            baseText = proposal.baseText,
-            candidateText = proposal.candidateText,
+            baseContentRef = proposal.baseContentRef,
+            baseText = contentStore.read(proposal.baseContentRef),
+            candidateContentRef = proposal.candidateContentRef,
+            candidateText = contentStore.read(proposal.candidateContentRef),
             candidateChecksum = proposal.candidateChecksum,
             operationCount = proposal.operationCount.toInt(),
             createdAt = proposal.createdAt,
@@ -765,12 +797,25 @@ class StoryDraftTools(
             .count()
             .toLong()
 
-    private fun newVersion(text: String, note: String?): StoredDraftVersion {
+    private fun newVersion(
+        storyId: String,
+        chapterId: String,
+        text: String,
+        note: String?,
+        tag: String,
+    ): StoredDraftVersion {
         val now = Clock.System.now().toEpochMilliseconds()
         val normalizedText = text.trimEnd()
+        val contentRef = contentStore.write(
+            storyId = storyId,
+            chapterId = chapterId,
+            text = normalizedText,
+            tag = tag,
+        )
         return StoredDraftVersion(
             versionId = UUID.randomUUID().toString(),
             text = normalizedText,
+            contentRef = contentRef,
             checksum = checksum(normalizedText),
             wordCount = wordCount(normalizedText),
             updatedAt = now,
@@ -797,8 +842,18 @@ class StoryDraftTools(
                 chapterId = snapshot.chapterId,
                 status = snapshot.status.name,
                 proposalId = snapshot.proposalId,
-                beforeText = snapshot.beforeText,
-                afterText = snapshot.afterText,
+                beforeContentRef = contentStore.write(
+                    storyId = storyId,
+                    chapterId = snapshot.chapterId,
+                    text = snapshot.beforeText,
+                    tag = "preview-before",
+                ),
+                afterContentRef = contentStore.write(
+                    storyId = storyId,
+                    chapterId = snapshot.chapterId,
+                    text = snapshot.afterText,
+                    tag = "preview-after",
+                ),
                 pendingRangesJson = json.encodeToString(
                     ListSerializer(StoryDraftPreviewPendingRange.serializer()),
                     snapshot.pendingRanges,
@@ -806,6 +861,20 @@ class StoryDraftTools(
                 createdAt = snapshot.createdAtEpochMillis,
                 updatedAt = snapshot.updatedAtEpochMillis,
             )
+        )
+    }
+
+    private suspend fun refreshContinuityMemory(
+        storyId: String,
+        chapter: StoryChapterRecord,
+        version: StoredDraftVersion,
+    ) {
+        val service = continuityMemoryService ?: return
+        service.refreshFromApprovedChapter(
+            storyId = storyId,
+            chapter = chapter,
+            approvedText = version.text,
+            approvedChecksum = version.checksum,
         )
     }
 
@@ -915,6 +984,7 @@ class StoryDraftTools(
 private data class StoredDraftVersion(
     val versionId: String,
     val text: String,
+    val contentRef: String,
     val checksum: String,
     val wordCount: Long,
     val updatedAt: Long,
@@ -931,7 +1001,9 @@ private data class StoredDraftProposal(
     val proposalId: String,
     val chapterId: String,
     val baseChecksum: String,
+    val baseContentRef: String,
     val baseText: String = "",
+    val candidateContentRef: String,
     val candidateText: String,
     val candidateChecksum: String,
     val operationCount: Int,

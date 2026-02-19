@@ -22,7 +22,7 @@ class StructuredIndexRepository(
 ) {
     data class StoryDraftCurrentState(
         val chapterId: String,
-        val text: String,
+        val contentRef: String,
         val checksum: String,
         val wordCount: Long,
         val updatedAt: Long,
@@ -32,7 +32,7 @@ class StructuredIndexRepository(
     data class StoryDraftVersionState(
         val id: String,
         val chapterId: String,
-        val text: String,
+        val contentRef: String,
         val checksum: String,
         val wordCount: Long,
         val createdAt: Long,
@@ -44,8 +44,8 @@ class StructuredIndexRepository(
         val id: String,
         val chapterId: String,
         val baseChecksum: String,
-        val baseText: String,
-        val candidateText: String,
+        val baseContentRef: String,
+        val candidateContentRef: String,
         val candidateChecksum: String,
         val operationCount: Long,
         val status: String,
@@ -58,10 +58,32 @@ class StructuredIndexRepository(
         val chapterId: String,
         val status: String,
         val proposalId: String? = null,
-        val beforeText: String,
-        val afterText: String,
+        val beforeContentRef: String,
+        val afterContentRef: String,
         val pendingRangesJson: String,
         val createdAt: Long,
+        val updatedAt: Long,
+    )
+
+    data class StoryChapterMemoryState(
+        val chapterId: String,
+        val storyId: String,
+        val approvedChecksum: String,
+        val summaryShort: String,
+        val keyBeatsJson: String,
+        val entitiesJson: String,
+        val unresolvedThreadsJson: String,
+        val pov: String? = null,
+        val tense: String? = null,
+        val updatedAt: Long,
+    )
+
+    data class StoryContinuityMemoryState(
+        val storyId: String,
+        val rollingSummary: String,
+        val activeThreadsJson: String,
+        val continuityWarningsJson: String,
+        val lastChapterIdsJson: String,
         val updatedAt: Long,
     )
 
@@ -653,10 +675,10 @@ class StructuredIndexRepository(
     }
 
     suspend fun getStoryDraftCurrentByChapterId(chapterId: String): StoryDraftCurrentState? = query {
-        queries.selectStoryDraftCurrentByChapterId(chapter_id = chapterId) { chapterIdValue, text, checksum, wordCount, updatedAt, updatedBy ->
+        queries.selectStoryDraftCurrentByChapterId(chapter_id = chapterId) { chapterIdValue, contentRef, checksum, wordCount, updatedAt, updatedBy ->
             StoryDraftCurrentState(
                 chapterId = chapterIdValue,
-                text = text,
+                contentRef = contentRef,
                 checksum = checksum,
                 wordCount = wordCount,
                 updatedAt = updatedAt,
@@ -668,7 +690,7 @@ class StructuredIndexRepository(
     suspend fun upsertStoryDraftCurrent(record: StoryDraftCurrentState) = query {
         queries.insertOrReplaceStoryDraftCurrent(
             chapter_id = record.chapterId,
-            text = record.text,
+            content_ref = record.contentRef,
             checksum = record.checksum,
             word_count = record.wordCount,
             updated_at = record.updatedAt,
@@ -680,7 +702,7 @@ class StructuredIndexRepository(
         queries.insertStoryDraftVersion(
             id = record.id,
             chapter_id = record.chapterId,
-            text = record.text,
+            content_ref = record.contentRef,
             checksum = record.checksum,
             word_count = record.wordCount,
             created_at = record.createdAt,
@@ -690,11 +712,11 @@ class StructuredIndexRepository(
     }
 
     suspend fun getStoryDraftVersionsByChapterId(chapterId: String): List<StoryDraftVersionState> = query {
-        queries.selectStoryDraftVersionsByChapterId(chapter_id = chapterId) { id, chapterIdValue, text, checksum, wordCount, createdAt, note, source ->
+        queries.selectStoryDraftVersionsByChapterId(chapter_id = chapterId) { id, chapterIdValue, contentRef, checksum, wordCount, createdAt, note, source ->
             StoryDraftVersionState(
                 id = id,
                 chapterId = chapterIdValue,
-                text = text,
+                contentRef = contentRef,
                 checksum = checksum,
                 wordCount = wordCount,
                 createdAt = createdAt,
@@ -708,11 +730,11 @@ class StructuredIndexRepository(
         chapterId: String,
         versionId: String,
     ): StoryDraftVersionState? = query {
-        queries.selectStoryDraftVersionById(id = versionId, chapter_id = chapterId) { id, chapterIdValue, text, checksum, wordCount, createdAt, note, source ->
+        queries.selectStoryDraftVersionById(id = versionId, chapter_id = chapterId) { id, chapterIdValue, contentRef, checksum, wordCount, createdAt, note, source ->
             StoryDraftVersionState(
                 id = id,
                 chapterId = chapterIdValue,
-                text = text,
+                contentRef = contentRef,
                 checksum = checksum,
                 wordCount = wordCount,
                 createdAt = createdAt,
@@ -737,8 +759,8 @@ class StructuredIndexRepository(
             id = record.id,
             chapter_id = record.chapterId,
             base_checksum = record.baseChecksum,
-            base_text = record.baseText,
-            candidate_text = record.candidateText,
+            base_content_ref = record.baseContentRef,
+            candidate_content_ref = record.candidateContentRef,
             candidate_checksum = record.candidateChecksum,
             operation_count = record.operationCount,
             status = record.status,
@@ -749,13 +771,13 @@ class StructuredIndexRepository(
     }
 
     suspend fun getStoryDraftProposalById(proposalId: String): StoryDraftProposalState? = query {
-        queries.selectStoryDraftProposalById(id = proposalId) { id, chapterId, baseChecksum, baseText, candidateText, candidateChecksum, operationCount, status, createdAt, decidedAt, note ->
+        queries.selectStoryDraftProposalById(id = proposalId) { id, chapterId, baseChecksum, baseContentRef, candidateContentRef, candidateChecksum, operationCount, status, createdAt, decidedAt, note ->
             StoryDraftProposalState(
                 id = id,
                 chapterId = chapterId,
                 baseChecksum = baseChecksum,
-                baseText = baseText,
-                candidateText = candidateText,
+                baseContentRef = baseContentRef,
+                candidateContentRef = candidateContentRef,
                 candidateChecksum = candidateChecksum,
                 operationCount = operationCount,
                 status = status,
@@ -787,8 +809,8 @@ class StructuredIndexRepository(
             chapter_id = record.chapterId,
             status = record.status,
             proposal_id = record.proposalId,
-            before_text = record.beforeText,
-            after_text = record.afterText,
+            before_content_ref = record.beforeContentRef,
+            after_content_ref = record.afterContentRef,
             pending_ranges_json = record.pendingRangesJson,
             created_at = record.createdAt,
             updated_at = record.updatedAt,
@@ -796,13 +818,13 @@ class StructuredIndexRepository(
     }
 
     suspend fun getStoryDraftPreviewStateByChapterId(chapterId: String): StoryDraftPreviewState? = query {
-        queries.selectStoryDraftPreviewStateByChapterId(chapter_id = chapterId) { chapterIdValue, status, proposalId, beforeText, afterText, pendingRangesJson, createdAt, updatedAt ->
+        queries.selectStoryDraftPreviewStateByChapterId(chapter_id = chapterId) { chapterIdValue, status, proposalId, beforeContentRef, afterContentRef, pendingRangesJson, createdAt, updatedAt ->
             StoryDraftPreviewState(
                 chapterId = chapterIdValue,
                 status = status,
                 proposalId = proposalId,
-                beforeText = beforeText,
-                afterText = afterText,
+                beforeContentRef = beforeContentRef,
+                afterContentRef = afterContentRef,
                 pendingRangesJson = pendingRangesJson,
                 createdAt = createdAt,
                 updatedAt = updatedAt,
@@ -811,15 +833,94 @@ class StructuredIndexRepository(
     }
 
     suspend fun getLatestStoryDraftPreviewByStoryId(storyId: String): StoryDraftPreviewState? = query {
-        queries.selectLatestStoryDraftPreviewByStoryId(story_id = storyId) { chapterId, status, proposalId, beforeText, afterText, pendingRangesJson, createdAt, updatedAt ->
+        queries.selectLatestStoryDraftPreviewByStoryId(story_id = storyId) { chapterId, status, proposalId, beforeContentRef, afterContentRef, pendingRangesJson, createdAt, updatedAt ->
             StoryDraftPreviewState(
                 chapterId = chapterId,
                 status = status,
                 proposalId = proposalId,
-                beforeText = beforeText,
-                afterText = afterText,
+                beforeContentRef = beforeContentRef,
+                afterContentRef = afterContentRef,
                 pendingRangesJson = pendingRangesJson,
                 createdAt = createdAt,
+                updatedAt = updatedAt,
+            )
+        }.executeAsOneOrNull()
+    }
+
+    suspend fun upsertStoryChapterMemory(record: StoryChapterMemoryState) = query {
+        queries.insertOrReplaceStoryChapterMemory(
+            chapter_id = record.chapterId,
+            story_id = record.storyId,
+            approved_checksum = record.approvedChecksum,
+            summary_short = record.summaryShort,
+            key_beats_json = record.keyBeatsJson,
+            entities_json = record.entitiesJson,
+            unresolved_threads_json = record.unresolvedThreadsJson,
+            pov = record.pov,
+            tense = record.tense,
+            updated_at = record.updatedAt,
+        )
+    }
+
+    suspend fun getStoryChapterMemoryByChapterId(chapterId: String): StoryChapterMemoryState? = query {
+        queries.selectStoryChapterMemoryByChapterId(chapter_id = chapterId) { chapterIdValue, storyId, approvedChecksum, summaryShort, keyBeatsJson, entitiesJson, unresolvedThreadsJson, pov, tense, updatedAt ->
+            StoryChapterMemoryState(
+                chapterId = chapterIdValue,
+                storyId = storyId,
+                approvedChecksum = approvedChecksum,
+                summaryShort = summaryShort,
+                keyBeatsJson = keyBeatsJson,
+                entitiesJson = entitiesJson,
+                unresolvedThreadsJson = unresolvedThreadsJson,
+                pov = pov,
+                tense = tense,
+                updatedAt = updatedAt,
+            )
+        }.executeAsOneOrNull()
+    }
+
+    suspend fun listStoryChapterMemoryByStoryId(
+        storyId: String,
+        limit: Long,
+    ): List<StoryChapterMemoryState> = query {
+        queries.selectStoryChapterMemoryByStoryId(
+            story_id = storyId,
+            limit_value = limit,
+        ) { chapterId, storyIdValue, approvedChecksum, summaryShort, keyBeatsJson, entitiesJson, unresolvedThreadsJson, pov, tense, updatedAt ->
+            StoryChapterMemoryState(
+                chapterId = chapterId,
+                storyId = storyIdValue,
+                approvedChecksum = approvedChecksum,
+                summaryShort = summaryShort,
+                keyBeatsJson = keyBeatsJson,
+                entitiesJson = entitiesJson,
+                unresolvedThreadsJson = unresolvedThreadsJson,
+                pov = pov,
+                tense = tense,
+                updatedAt = updatedAt,
+            )
+        }.executeAsList()
+    }
+
+    suspend fun upsertStoryContinuityMemory(record: StoryContinuityMemoryState) = query {
+        queries.insertOrReplaceStoryContinuityMemory(
+            story_id = record.storyId,
+            rolling_summary = record.rollingSummary,
+            active_threads_json = record.activeThreadsJson,
+            continuity_warnings_json = record.continuityWarningsJson,
+            last_chapter_ids_json = record.lastChapterIdsJson,
+            updated_at = record.updatedAt,
+        )
+    }
+
+    suspend fun getStoryContinuityMemoryByStoryId(storyId: String): StoryContinuityMemoryState? = query {
+        queries.selectStoryContinuityMemoryByStoryId(story_id = storyId) { storyIdValue, rollingSummary, activeThreadsJson, continuityWarningsJson, lastChapterIdsJson, updatedAt ->
+            StoryContinuityMemoryState(
+                storyId = storyIdValue,
+                rollingSummary = rollingSummary,
+                activeThreadsJson = activeThreadsJson,
+                continuityWarningsJson = continuityWarningsJson,
+                lastChapterIdsJson = lastChapterIdsJson,
                 updatedAt = updatedAt,
             )
         }.executeAsOneOrNull()

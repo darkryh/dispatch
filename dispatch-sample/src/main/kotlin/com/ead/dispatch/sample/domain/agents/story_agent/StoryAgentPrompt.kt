@@ -6,6 +6,7 @@ import ai.koog.prompt.markdown.markdown
 import com.ead.dispatch.sample.data.db.entities.StoryChapterRecord
 import com.ead.dispatch.sample.data.db.entities.StorySceneRecord
 import com.ead.dispatch.sample.data.db.entities.StoryVolumeRecord
+import com.ead.dispatch.sample.domain.agents.story_agent.memory.model.StoryContinuitySnapshot
 import com.ead.dispatch.sample.domain.agents.story_agent.policy.StoryDecisionPath
 import com.ead.dispatch.sample.domain.agents.story_agent.policy.StoryTurnPolicy
 import com.ead.dispatch.sample.domain.embedding.RagContextChunk
@@ -24,6 +25,7 @@ fun storyAgentPrompt(
     inputRequest: StoryRequest,
     ragContext: List<RagContextChunk>,
     turnPolicy: StoryTurnPolicy,
+    continuityMemory: StoryContinuitySnapshot? = null,
 ): Prompt = prompt("story-agent") {
     val volumes = storyModeContext.volumes.sortedBy { it.number }
     val chaptersByVolume = storyModeContext.chapters.groupBy { it.volumeId }
@@ -140,6 +142,42 @@ fun storyAgentPrompt(
                     val label = chunk.label?.takeIf { it.isNotBlank() } ?: "unknown"
                     +"[${chunk.type}: $label] ${chunk.content.compact(maxRagCharsPerChunk)}"
                     br()
+                }
+            }
+
+            h3("Continuity Memory")
+            if (continuityMemory == null) {
+                +"(none)"
+                br()
+            } else {
+                +"Rolling: ${continuityMemory.rollingSummary.ifBlank { "none" }}"
+                br()
+                if (continuityMemory.activeThreads.isEmpty()) {
+                    +"Active threads: (none)"
+                    br()
+                } else {
+                    +"Active threads:"
+                    br()
+                    continuityMemory.activeThreads.take(3).forEach { thread ->
+                        +"  - ${thread.compact(90)}"
+                        br()
+                    }
+                }
+                if (continuityMemory.recentChapters.isNotEmpty()) {
+                    +"Recent approved chapters:"
+                    br()
+                    continuityMemory.recentChapters.forEachIndexed { index, chapterMemory ->
+                        +"  ${index + 1}. ${chapterMemory.summaryShort.compact(120)}"
+                        br()
+                    }
+                }
+                if (continuityMemory.continuityWarnings.isNotEmpty()) {
+                    +"Warnings:"
+                    br()
+                    continuityMemory.continuityWarnings.take(2).forEach { warning ->
+                        +"  - ${warning.compact(90)}"
+                        br()
+                    }
                 }
             }
 

@@ -148,7 +148,7 @@ CREATE TABLE story_chapters (
 
 CREATE TABLE story_draft_current (
   chapter_id TEXT NOT NULL PRIMARY KEY REFERENCES story_chapters(id) ON DELETE CASCADE,
-  text TEXT NOT NULL,
+  content_ref TEXT NOT NULL,
   checksum TEXT NOT NULL,
   word_count INTEGER NOT NULL CHECK (word_count >= 0),
   updated_at INTEGER NOT NULL,
@@ -158,7 +158,7 @@ CREATE TABLE story_draft_current (
 CREATE TABLE story_draft_versions (
   id TEXT NOT NULL PRIMARY KEY,
   chapter_id TEXT NOT NULL REFERENCES story_chapters(id) ON DELETE CASCADE,
-  text TEXT NOT NULL,
+  content_ref TEXT NOT NULL,
   checksum TEXT NOT NULL,
   word_count INTEGER NOT NULL CHECK (word_count >= 0),
   created_at INTEGER NOT NULL,
@@ -170,8 +170,8 @@ CREATE TABLE story_draft_proposals (
   id TEXT NOT NULL PRIMARY KEY,
   chapter_id TEXT NOT NULL REFERENCES story_chapters(id) ON DELETE CASCADE,
   base_checksum TEXT NOT NULL,
-  base_text TEXT NOT NULL,
-  candidate_text TEXT NOT NULL,
+  base_content_ref TEXT NOT NULL,
+  candidate_content_ref TEXT NOT NULL,
   candidate_checksum TEXT NOT NULL,
   operation_count INTEGER NOT NULL CHECK (operation_count >= 0),
   status TEXT NOT NULL CHECK (
@@ -188,10 +188,32 @@ CREATE TABLE story_draft_preview_state (
     status IN ('PENDING', 'APPLIED', 'REJECTED')
   ),
   proposal_id TEXT,
-  before_text TEXT NOT NULL,
-  after_text TEXT NOT NULL,
+  before_content_ref TEXT NOT NULL,
+  after_content_ref TEXT NOT NULL,
   pending_ranges_json TEXT NOT NULL,
   created_at INTEGER NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+
+CREATE TABLE story_chapter_memory (
+  chapter_id TEXT NOT NULL PRIMARY KEY REFERENCES story_chapters(id) ON DELETE CASCADE,
+  story_id TEXT NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
+  approved_checksum TEXT NOT NULL,
+  summary_short TEXT NOT NULL,
+  key_beats_json TEXT NOT NULL,
+  entities_json TEXT NOT NULL,
+  unresolved_threads_json TEXT NOT NULL,
+  pov TEXT,
+  tense TEXT,
+  updated_at INTEGER NOT NULL
+);
+
+CREATE TABLE story_continuity_memory (
+  story_id TEXT NOT NULL PRIMARY KEY REFERENCES stories(id) ON DELETE CASCADE,
+  rolling_summary TEXT NOT NULL,
+  active_threads_json TEXT NOT NULL,
+  continuity_warnings_json TEXT NOT NULL,
+  last_chapter_ids_json TEXT NOT NULL,
   updated_at INTEGER NOT NULL
 );
 
@@ -396,6 +418,8 @@ CREATE INDEX story_draft_current_updated_idx ON story_draft_current(updated_at D
 CREATE INDEX story_draft_versions_chapter_created_idx ON story_draft_versions(chapter_id, created_at DESC);
 CREATE INDEX story_draft_proposals_chapter_status_created_idx ON story_draft_proposals(chapter_id, status, created_at DESC);
 CREATE INDEX story_draft_preview_state_updated_idx ON story_draft_preview_state(updated_at DESC);
+CREATE INDEX story_chapter_memory_story_updated_idx ON story_chapter_memory(story_id, updated_at DESC);
+CREATE INDEX story_chapter_memory_chapter_updated_idx ON story_chapter_memory(chapter_id, updated_at DESC);
 CREATE INDEX story_locations_story_id_idx ON story_locations(story_id);
 CREATE INDEX story_arcs_story_id_idx ON story_arcs(story_id);
 CREATE INDEX story_arcs_scope_idx ON story_arcs(scope_type, scope_id);
@@ -1577,14 +1601,14 @@ WHERE chapter_id = :chapter_id;
 insertOrReplaceStoryDraftCurrent:
 INSERT OR REPLACE INTO story_draft_current(
   chapter_id,
-  text,
+  content_ref,
   checksum,
   word_count,
   updated_at,
   updated_by
 ) VALUES (
   :chapter_id,
-  :text,
+  :content_ref,
   :checksum,
   :word_count,
   :updated_at,
@@ -1603,7 +1627,7 @@ insertStoryDraftVersion:
 INSERT INTO story_draft_versions(
   id,
   chapter_id,
-  text,
+  content_ref,
   checksum,
   word_count,
   created_at,
@@ -1612,7 +1636,7 @@ INSERT INTO story_draft_versions(
 ) VALUES (
   :id,
   :chapter_id,
-  :text,
+  :content_ref,
   :checksum,
   :word_count,
   :created_at,
@@ -1646,8 +1670,8 @@ INSERT INTO story_draft_proposals(
   id,
   chapter_id,
   base_checksum,
-  base_text,
-  candidate_text,
+  base_content_ref,
+  candidate_content_ref,
   candidate_checksum,
   operation_count,
   status,
@@ -1658,8 +1682,8 @@ INSERT INTO story_draft_proposals(
   :id,
   :chapter_id,
   :base_checksum,
-  :base_text,
-  :candidate_text,
+  :base_content_ref,
+  :candidate_content_ref,
   :candidate_checksum,
   :operation_count,
   :status,
@@ -1687,8 +1711,8 @@ INSERT OR REPLACE INTO story_draft_preview_state(
   chapter_id,
   status,
   proposal_id,
-  before_text,
-  after_text,
+  before_content_ref,
+  after_content_ref,
   pending_ranges_json,
   created_at,
   updated_at
@@ -1696,8 +1720,8 @@ INSERT OR REPLACE INTO story_draft_preview_state(
   :chapter_id,
   :status,
   :proposal_id,
-  :before_text,
-  :after_text,
+  :before_content_ref,
+  :after_content_ref,
   :pending_ranges_json,
   :created_at,
   :updated_at
@@ -1728,3 +1752,59 @@ WHERE chapter_id IN (
   JOIN story_volumes v ON v.id = c.volume_id
   WHERE v.story_id = :story_id
 );
+
+insertOrReplaceStoryChapterMemory:
+INSERT OR REPLACE INTO story_chapter_memory(
+  chapter_id,
+  story_id,
+  approved_checksum,
+  summary_short,
+  key_beats_json,
+  entities_json,
+  unresolved_threads_json,
+  pov,
+  tense,
+  updated_at
+) VALUES (
+  :chapter_id,
+  :story_id,
+  :approved_checksum,
+  :summary_short,
+  :key_beats_json,
+  :entities_json,
+  :unresolved_threads_json,
+  :pov,
+  :tense,
+  :updated_at
+);
+
+selectStoryChapterMemoryByChapterId:
+SELECT * FROM story_chapter_memory
+WHERE chapter_id = :chapter_id;
+
+selectStoryChapterMemoryByStoryId:
+SELECT * FROM story_chapter_memory
+WHERE story_id = :story_id
+ORDER BY updated_at DESC
+LIMIT :limit_value;
+
+insertOrReplaceStoryContinuityMemory:
+INSERT OR REPLACE INTO story_continuity_memory(
+  story_id,
+  rolling_summary,
+  active_threads_json,
+  continuity_warnings_json,
+  last_chapter_ids_json,
+  updated_at
+) VALUES (
+  :story_id,
+  :rolling_summary,
+  :active_threads_json,
+  :continuity_warnings_json,
+  :last_chapter_ids_json,
+  :updated_at
+);
+
+selectStoryContinuityMemoryByStoryId:
+SELECT * FROM story_continuity_memory
+WHERE story_id = :story_id;

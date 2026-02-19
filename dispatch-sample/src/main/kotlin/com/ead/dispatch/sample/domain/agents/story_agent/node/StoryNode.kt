@@ -19,6 +19,7 @@ import com.ead.dispatch.sample.domain.AIProvider
 import com.ead.dispatch.sample.domain.agents.chat_agent.PreferencesMemory
 import com.ead.dispatch.sample.domain.agents.story_agent.policy.*
 import com.ead.dispatch.sample.domain.agents.story_agent.storyAgentPrompt
+import com.ead.dispatch.sample.domain.agents.story_agent.memory.service.StoryContinuityMemoryService
 import com.ead.dispatch.sample.domain.agents.story_agent.util.saveStoryCheckpointForHistory
 import com.ead.dispatch.sample.domain.embedding.RagContextService
 import com.ead.koog.context.orchestrator.api.*
@@ -38,6 +39,7 @@ fun AIAgentSubgraphBuilderBase<*, *>.nodeSetupAndStreamStoryMode(
     name: String? = null,
     repository: StructuredIndexRepository,
     ragContextService: RagContextService,
+    continuityMemoryService: StoryContinuityMemoryService,
     contextOrchestrator: KoogContextOrchestrator? = null,
 ): AIAgentNodeDelegate<StoryTurnInput, ContextualResponse<Flow<StreamFrame>>> =
     node(name ?: "story-setup-and-stream") { turnInput ->
@@ -46,6 +48,7 @@ fun AIAgentSubgraphBuilderBase<*, *>.nodeSetupAndStreamStoryMode(
         val response = setupAndStreamStoryMode(
             repository = repository,
             ragContextService = ragContextService,
+            continuityMemoryService = continuityMemoryService,
             contextOrchestrator = contextOrchestrator,
             turnInput = turnInput,
             onContextSnapshot = { snapshot -> snapshots.value = snapshot },
@@ -62,6 +65,7 @@ fun AIAgentSubgraphBuilderBase<*, *>.nodeSetupAndStreamStoryMode(
 private fun AIAgentGraphContextBase.setupAndStreamStoryMode(
     repository: StructuredIndexRepository,
     ragContextService: RagContextService,
+    continuityMemoryService: StoryContinuityMemoryService,
     contextOrchestrator: KoogContextOrchestrator?,
     turnInput: StoryTurnInput,
     onContextSnapshot: (ContextSnapshot) -> Unit,
@@ -91,6 +95,9 @@ private fun AIAgentGraphContextBase.setupAndStreamStoryMode(
                     query = ragQuery,
                 )
             }
+            val continuityMemory = withContext(Dispatchers.IO) {
+                continuityMemoryService.loadForPrompt(request.storyId)
+            }
 
             llm.writeSession {
                 rewritePrompt { existing ->
@@ -106,6 +113,7 @@ private fun AIAgentGraphContextBase.setupAndStreamStoryMode(
                         inputRequest = request,
                         ragContext = ragContext,
                         turnPolicy = turnInput.policy,
+                        continuityMemory = continuityMemory,
                     )
 
                     basePrompt.withMessages { baseMessages ->

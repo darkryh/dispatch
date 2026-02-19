@@ -17,9 +17,12 @@ import com.ead.dispatch.sample.domain.agents.ChatAgent
 import com.ead.dispatch.sample.domain.agents.StoryAgent
 import com.ead.dispatch.sample.domain.agents.chat_agent.ChatRequest
 import com.ead.dispatch.sample.domain.agents.story_agent.StoryRequest
+import com.ead.dispatch.sample.domain.agents.tools.StoryDraftTools
+import com.ead.dispatch.sample.domain.agents.tools.model.ToolResult
 import com.ead.dispatch.sample.domain.agents.tools.model.StoryDraftPreviewPendingRange
 import com.ead.dispatch.sample.domain.agents.tools.model.StoryDraftPreviewSnapshot
 import com.ead.dispatch.sample.domain.agents.tools.model.StoryDraftPreviewStatus
+import com.ead.dispatch.sample.domain.content.ChapterContentStore
 import com.ead.dispatch.sample.domain.entity.EntityOptionType
 import com.ead.dispatch.sample.domain.model.message.CliMessage
 import com.ead.dispatch.sample.domain.model.message.CliMessageRole
@@ -68,8 +71,10 @@ class ChatViewModel(
     private val repository: StructuredIndexRepository,
     private val chatAgent: ChatAgent,
     private val storyAgent: StoryAgent,
+    private val storyDraftTools: StoryDraftTools,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
+    private val chapterContentStore = ChapterContentStore()
 
     private val route = savedStateHandle.toRoute<ChatRoute>()
     private val storageProvider = Storage.provider
@@ -595,16 +600,43 @@ class ChatViewModel(
 
     private fun executeStoryPreviewAction(actionIndex: Int) {
         if (!canUseStoryPreviewShortcut()) return
-        val proposalId = modeState(WriterMode.CHAT_STORY).storyPreviewSnapshot?.proposalId ?: return
-        val commandText = if (actionIndex == 0) {
-            "Apply chapter draft proposal '$proposalId' now."
-        } else {
-            "Discard chapter draft proposal '$proposalId' without applying changes."
+        val snapshot = modeState(WriterMode.CHAT_STORY).storyPreviewSnapshot ?: return
+        val proposalId = snapshot.proposalId ?: return
+        _isProcessing.value = true
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val result = if (actionIndex == 0) {
+                    storyDraftTools.applyChapterDraftProposal(
+                        storyId = snapshot.storyId,
+                        proposalId = proposalId,
+                    )
+                } else {
+                    storyDraftTools.deleteChapterDraftProposal(
+                        storyId = snapshot.storyId,
+                        proposalId = proposalId,
+                    )
+                }
+                when (result) {
+                    is ToolResult.Success<*> -> {
+                        val activeSessionId = _session.value?.id ?: route.conversationId
+                        if (!activeSessionId.isNullOrBlank()) {
+                            refreshStoryPreview(activeSessionId)
+                        }
+                    }
+                    is ToolResult.Failure -> {
+                        appendMessage(
+                            mode = WriterMode.CHAT_STORY,
+                            message = CliMessage(
+                                role = CliMessageRole.ASSISTANT,
+                                data = "Local preview action failed: ${result.message}",
+                            ),
+                        )
+                    }
+                }
+            } finally {
+                _isProcessing.value = false
+            }
         }
-        submitMessage(
-            text = commandText,
-            fromDecisionPrompt = false,
-        )
     }
 
     private suspend fun refreshStoryPreview(sessionId: String) {
@@ -670,8 +702,8 @@ class ChatViewModel(
             volumeTitle = volume?.title,
             chapterNumber = chapter.number,
             chapterTitle = chapter.title,
-            beforeText = latest.beforeText,
-            afterText = latest.afterText,
+            beforeText = chapterContentStore.read(latest.beforeContentRef),
+            afterText = chapterContentStore.read(latest.afterContentRef),
             status = status,
             proposalId = latest.proposalId,
             pendingRanges = pendingRanges,

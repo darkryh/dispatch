@@ -8,7 +8,12 @@ import com.ead.dispatch.sample.data.repositories.StructuredIndexRepository
 import com.ead.dispatch.sample.domain.CommandManager
 import com.ead.dispatch.sample.domain.SessionManager
 import com.ead.dispatch.sample.domain.agents.ChatAgent
+import com.ead.dispatch.sample.domain.agents.chat_agent.KoogChatAgent
+import com.ead.dispatch.sample.domain.agents.story_agent.KoogStoryAgent
 import com.ead.dispatch.sample.domain.agents.StoryAgent
+import com.ead.dispatch.sample.domain.agents.story_agent.memory.model.StoryChapterMemorySummarizer
+import com.ead.dispatch.sample.domain.agents.story_agent.memory.service.StoryContinuityMemoryService
+import com.ead.dispatch.sample.domain.agents.story_agent.memory.summarizer.StoryChapterMemoryKoogSummarizer
 import com.ead.dispatch.sample.domain.agents.character_agent.CharacterAgent
 import com.ead.dispatch.sample.domain.agents.chat_agent.ChatAgentEmbedder
 import com.ead.dispatch.sample.domain.agents.artifact_agent.ArtifactAgent
@@ -20,6 +25,7 @@ import com.ead.dispatch.sample.domain.agents.organization_agent.OrganizationAgen
 import com.ead.dispatch.sample.domain.agents.relationship_agent.RelationshipAgent
 import com.ead.dispatch.sample.domain.agents.timeline_agent.TimelineAgent
 import com.ead.dispatch.sample.domain.agents.world_rule_agent.WorldRuleAgent
+import com.ead.dispatch.sample.domain.agents.tools.StoryDraftTools
 import com.ead.dispatch.sample.domain.embedding.EmbeddingIndexService
 import com.ead.dispatch.sample.domain.embedding.EmbeddingReindexer
 import com.ead.dispatch.sample.domain.embedding.RagContextService
@@ -61,18 +67,23 @@ val module = dispatchModule {
     single { EmbeddingReindexer(repository = get()) }
     single { StructuredIndexRepository(databaseRuntime = get(), embeddingIndexService = get()) }
     single { RagContextService(repository = get(), embeddingIndexService = get()) }
+    single<StoryChapterMemorySummarizer> { StoryChapterMemoryKoogSummarizer() }
+    single { StoryContinuityMemoryService(repository = get(), summarizer = get()) }
+    single { StoryDraftTools(repository = get(), continuityMemoryService = get()) }
     single { CommandManager() }
     single { SessionManager(repository = get()) }
-    single {
-        ChatAgent(
+    single<ChatAgent> {
+        KoogChatAgent(
             repository = get(),
             ragContextService = get(),
         )
     }
-    single {
-        StoryAgent(
+    single<StoryAgent> {
+        KoogStoryAgent(
             repository = get(),
             ragContextService = get(),
+            continuityMemoryService = get(),
+            storyDraftTools = get(),
         )
     }
     single { CharacterAgent() }
@@ -93,6 +104,7 @@ val module = dispatchModule {
             repository = get(),
             chatAgent = get(),
             storyAgent = get(),
+            storyDraftTools = get(),
             savedStateHandle = savedStateHandle,
         )
     }
