@@ -6,6 +6,7 @@ import ai.koog.prompt.markdown.markdown
 import com.ead.dispatch.sample.data.db.entities.StoryChapterRecord
 import com.ead.dispatch.sample.data.db.entities.StorySceneRecord
 import com.ead.dispatch.sample.data.db.entities.StoryVolumeRecord
+import com.ead.dispatch.sample.domain.agents.intent.IntentExecutionIntent
 import com.ead.dispatch.sample.domain.agents.story_agent.memory.model.StoryContinuitySnapshot
 import com.ead.dispatch.sample.domain.agents.story_agent.policy.StoryDecisionPath
 import com.ead.dispatch.sample.domain.agents.story_agent.policy.StoryTurnPolicy
@@ -15,9 +16,8 @@ import com.ead.dispatch.sample.domain.model.story.StoryModeContext
 
 private const val maxRagChunks = 4
 private const val maxRagCharsPerChunk = 360
-private const val maxVolumes = 4
-private const val maxChapters = 8
-private const val maxScenes = 12
+private const val maxFocusChapters = 3
+private const val maxFocusScenes = 3
 
 fun storyAgentPrompt(
     storyModeContext: StoryModeContext,
@@ -30,6 +30,7 @@ fun storyAgentPrompt(
     val volumes = storyModeContext.volumes.sortedBy { it.number }
     val chaptersByVolume = storyModeContext.chapters.groupBy { it.volumeId }
     val scenesByChapter = storyModeContext.scenes.groupBy { it.chapterId }
+    val structureSlice = buildStructureSlice(volumes, chaptersByVolume, scenesByChapter, turnPolicy.anchorHint)
     val story = storyModeContext.story ?: chatContext.story
 
     system {
@@ -38,8 +39,6 @@ fun storyAgentPrompt(
             +"You are the STORY mode agent for long-form writing."
             br()
             +"Focus on progressive structure and prose flow across volumes, chapters, and scenes."
-            br()
-            +"CHAT mode handles worldbuilding elements; STORY mode handles story execution."
             br()
 
             h2("Operational Rules")
@@ -55,13 +54,17 @@ fun storyAgentPrompt(
             br()
             +"When request is ambiguous, ask one short clarifying question."
             br()
+            +"A question about whether something can be done is inquiry by default; do not execute write tools unless user asks to apply now."
+            br()
             +"Never fabricate tool outputs or ids."
             br()
 
             h2("Turn Policy")
-            +"Intent class: ${turnPolicy.intentClass.name}"
-            br()
             +"Decision path: ${turnPolicy.decisionPath.name}"
+            br()
+            +"Anchor hint: ${turnPolicy.anchorHint.ifBlank { "none" }}"
+            br()
+            +"Execution intent: ${turnPolicy.executionIntent.name}"
             br()
             +"Write tools allowed: ${turnPolicy.allowWriteTools}"
             br()
@@ -92,43 +95,45 @@ fun storyAgentPrompt(
             }
             br()
 
-            h3("Current Structure")
-            if (volumes.isEmpty()) {
+            h3("Current Structure Focus")
+            if (structureSlice == null) {
                 +"(no volumes yet)"
                 br()
             } else {
-                volumes.take(maxVolumes).forEach { volume ->
-                    +volume.summaryLine()
+                +structureSlice.volume.summaryLine()
+                br()
+                if (structureSlice.chapters.isEmpty()) {
+                    +"  - no chapters"
                     br()
-                    val chapters = chaptersByVolume[volume.id].orEmpty().sortedBy { it.number }
-                    if (chapters.isEmpty()) {
-                        +"  - no chapters"
+                } else {
+                    structureSlice.chapters.forEach { chapter ->
+                        +chapter.summaryLine()
                         br()
-                    } else {
-                        chapters.take(maxChapters).forEach { chapter ->
-                            +chapter.summaryLine()
-                            br()
-                            val scenes = scenesByChapter[chapter.id].orEmpty().sortedBy { it.number }
-                            if (scenes.isNotEmpty()) {
-                                scenes.take(maxScenes).forEach { scene ->
-                                    +scene.summaryLine()
-                                    br()
-                                }
-                                if (scenes.size > maxScenes) {
-                                    +"    - (+${scenes.size - maxScenes} more scenes)"
-                                    br()
-                                }
+                        val scenes = structureSlice.scenesByChapter[chapter.id].orEmpty()
+                        if (scenes.isNotEmpty()) {
+                            scenes.forEach { scene ->
+                                +scene.summaryLine()
+                                br()
+                            }
+                            val totalScenesForChapter = scenesByChapter[chapter.id].orEmpty().size
+                            if (totalScenesForChapter > scenes.size) {
+                                +"    - (+${totalScenesForChapter - scenes.size} more scenes)"
+                                br()
                             }
                         }
-                        if (chapters.size > maxChapters) {
-                            +"  - (+${chapters.size - maxChapters} more chapters)"
+                    }
+                    val totalChaptersForVolume = chaptersByVolume[structureSlice.volume.id].orEmpty().size
+                    if (totalChaptersForVolume > structureSlice.chapters.size) {
+                        +"  - (+${totalChaptersForVolume - structureSlice.chapters.size} more chapters)"
+                        br()
+                    }
+                    if (volumes.size > 1) {
+                        val hiddenVolumes = volumes.size - 1
+                        if (hiddenVolumes > 0) {
+                            +"(+$hiddenVolumes more volumes)"
                             br()
                         }
                     }
-                }
-                if (volumes.size > maxVolumes) {
-                    +"(+${volumes.size - maxVolumes} more volumes)"
-                    br()
                 }
             }
 
@@ -184,8 +189,29 @@ fun storyAgentPrompt(
             h2("Response Style")
             +"Be concise and production-oriented."
             br()
-            +"After tool execution, report what changed and one optional next step."
+            +"Use reader-facing language; avoid developer/internal formatting."
             br()
+            +"Do not expose internal IDs, UUIDs, database keys, or raw tool payload fields unless the user explicitly asks for technical/debug details."
+            br()
+            +"After create/update operations, summarize outcomes naturally (title + role + key story impact), not raw field dumps."
+            br()
+            if (turnPolicy.executionIntent == IntentExecutionIntent.INQUIRE) {
+                +"This is an inquiry turn: answer in one short sentence only."
+                br()
+                +"Do not generate draft/content artifacts yet. Confirm capability or ask one clarification only if needed."
+                br()
+                +"Do not provide variants, scene drafts, outlines, or multi-step suggestions unless explicitly requested."
+                br()
+            } else {
+                +"For simple capability questions (yes/no intent), answer in one short sentence only."
+                br()
+                +"Do not provide extended alternatives or elaboration unless explicitly requested."
+                br()
+                +"After tool execution, report what changed and one optional next step."
+                br()
+                +"When creating multiple items, provide a compact creative summary with clear distinctions; avoid full repeated templates."
+                br()
+            }
         }
     }
 }
@@ -213,3 +239,103 @@ private fun String.compact(maxChars: Int): String {
     val normalized = replace('\n', ' ').replace(Regex("\\s+"), " ").trim()
     return if (normalized.length <= maxChars) normalized else normalized.take(maxChars) + "..."
 }
+
+private data class StructureSlice(
+    val volume: StoryVolumeRecord,
+    val chapters: List<StoryChapterRecord>,
+    val scenesByChapter: Map<String, List<StorySceneRecord>>,
+)
+
+private fun buildStructureSlice(
+    volumes: List<StoryVolumeRecord>,
+    chaptersByVolume: Map<String, List<StoryChapterRecord>>,
+    scenesByChapter: Map<String, List<StorySceneRecord>>,
+    anchorHint: String,
+): StructureSlice? {
+    val normalizedAnchor = anchorHint.trim().lowercase()
+    val selectedVolume = selectFocusVolume(volumes, chaptersByVolume, scenesByChapter, normalizedAnchor)
+        ?: return null
+    val volumeChapters = chaptersByVolume[selectedVolume.id].orEmpty().sortedBy { it.number }
+    val selectedChapters = selectFocusChapters(volumeChapters, scenesByChapter, normalizedAnchor)
+    val selectedScenes = selectedChapters.associate { chapter ->
+        chapter.id to selectFocusScenes(
+            scenes = scenesByChapter[chapter.id].orEmpty().sortedBy { it.number },
+            anchor = normalizedAnchor,
+        )
+    }
+    return StructureSlice(
+        volume = selectedVolume,
+        chapters = selectedChapters,
+        scenesByChapter = selectedScenes,
+    )
+}
+
+private fun selectFocusVolume(
+    volumes: List<StoryVolumeRecord>,
+    chaptersByVolume: Map<String, List<StoryChapterRecord>>,
+    scenesByChapter: Map<String, List<StorySceneRecord>>,
+    anchor: String,
+): StoryVolumeRecord? {
+    if (volumes.isEmpty()) return null
+    if (anchor.isBlank()) return volumes.first()
+
+    val volumeById = volumes.associateBy { it.id }
+    val matchByVolume = volumes.firstOrNull { volume ->
+        volume.title.matchesAnchor(anchor) || volume.plan?.summary.orEmpty().matchesAnchor(anchor)
+    }
+    if (matchByVolume != null) return matchByVolume
+
+    val chapterMatch = chaptersByVolume.values.flatten().firstOrNull { chapter ->
+        chapter.title.matchesAnchor(anchor) || chapter.summary.orEmpty().matchesAnchor(anchor)
+    }
+    if (chapterMatch != null) return volumeById[chapterMatch.volumeId]
+
+    val chaptersById = chaptersByVolume.values.flatten().associateBy { it.id }
+    val sceneMatch = scenesByChapter.values.flatten().firstOrNull { scene ->
+        scene.title.orEmpty().matchesAnchor(anchor) || scene.summary.orEmpty().matchesAnchor(anchor)
+    }
+    if (sceneMatch != null) {
+        val chapter = chaptersById[sceneMatch.chapterId]
+        if (chapter != null) return volumeById[chapter.volumeId]
+    }
+
+    return volumes.first()
+}
+
+private fun selectFocusChapters(
+    chapters: List<StoryChapterRecord>,
+    scenesByChapter: Map<String, List<StorySceneRecord>>,
+    anchor: String,
+): List<StoryChapterRecord> {
+    if (chapters.isEmpty()) return emptyList()
+    if (anchor.isBlank()) return chapters.take(maxFocusChapters)
+
+    val sceneAnchoredChapterIds = scenesByChapter
+        .filterValues { scenes ->
+            scenes.any { scene ->
+                scene.title.orEmpty().matchesAnchor(anchor) || scene.summary.orEmpty().matchesAnchor(anchor)
+            }
+        }
+        .keys
+
+    val anchored = chapters.filter { chapter ->
+        chapter.id in sceneAnchoredChapterIds ||
+            chapter.title.matchesAnchor(anchor) ||
+            chapter.summary.orEmpty().matchesAnchor(anchor)
+    }
+    return if (anchored.isEmpty()) chapters.take(maxFocusChapters) else anchored.take(maxFocusChapters)
+}
+
+private fun selectFocusScenes(
+    scenes: List<StorySceneRecord>,
+    anchor: String,
+): List<StorySceneRecord> {
+    if (scenes.isEmpty()) return emptyList()
+    if (anchor.isBlank()) return scenes.take(maxFocusScenes)
+    val anchored = scenes.filter { scene ->
+        scene.title.orEmpty().matchesAnchor(anchor) || scene.summary.orEmpty().matchesAnchor(anchor)
+    }
+    return if (anchored.isEmpty()) scenes.take(maxFocusScenes) else anchored.take(maxFocusScenes)
+}
+
+private fun String.matchesAnchor(anchor: String): Boolean = anchor.isNotBlank() && lowercase().contains(anchor)

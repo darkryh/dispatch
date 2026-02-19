@@ -1,5 +1,9 @@
 package com.ead.dispatch.sample.domain.agents.chat_agent.policy
 
+import com.ead.dispatch.sample.domain.agents.intent.IntentConfidenceBand
+import com.ead.dispatch.sample.domain.agents.intent.IntentExecutionIntent
+import com.ead.dispatch.sample.domain.agents.intent.IntentResolvedAction
+import com.ead.dispatch.sample.domain.agents.intent.IntentRiskClass
 import com.ead.dispatch.sample.domain.agents.chat_agent.ChatRequest
 import kotlinx.serialization.Serializable
 
@@ -31,6 +35,12 @@ data class ChatIntentSignal(
     val preferenceConfidence: Double = 0.0,
     val preferenceEvidenceSpan: String = "",
     val preferenceReasoning: String = "",
+    val resolvedAction: IntentResolvedAction = IntentResolvedAction.FOLLOW_UP,
+    val confidenceBand: IntentConfidenceBand = IntentConfidenceBand.LOW,
+    val riskClass: IntentRiskClass = IntentRiskClass.SAFE,
+    val anchorHint: String = "",
+    val requiresConfirmation: Boolean = false,
+    val executionIntent: IntentExecutionIntent = IntentExecutionIntent.EXECUTE,
 )
 
 @Serializable
@@ -46,6 +56,12 @@ data class ClassifiedChatTurn(
     val preferenceConfidence: Double = 0.0,
     val preferenceEvidenceSpan: String = "",
     val preferenceReasoning: String = "",
+    val resolvedAction: IntentResolvedAction = IntentResolvedAction.FOLLOW_UP,
+    val confidenceBand: IntentConfidenceBand = IntentConfidenceBand.LOW,
+    val riskClass: IntentRiskClass = IntentRiskClass.SAFE,
+    val anchorHint: String = "",
+    val requiresConfirmation: Boolean = false,
+    val executionIntent: IntentExecutionIntent = IntentExecutionIntent.EXECUTE,
 )
 
 @Serializable
@@ -63,6 +79,12 @@ data class ChatTurnPolicy(
     val preferenceConfidence: Double = 0.0,
     val preferenceEvidenceSpan: String = "",
     val preferenceReasoning: String = "",
+    val resolvedAction: IntentResolvedAction = IntentResolvedAction.FOLLOW_UP,
+    val confidenceBand: IntentConfidenceBand = IntentConfidenceBand.LOW,
+    val riskClass: IntentRiskClass = IntentRiskClass.SAFE,
+    val anchorHint: String = "",
+    val requiresConfirmation: Boolean = false,
+    val executionIntent: IntentExecutionIntent = IntentExecutionIntent.EXECUTE,
 )
 
 @Serializable

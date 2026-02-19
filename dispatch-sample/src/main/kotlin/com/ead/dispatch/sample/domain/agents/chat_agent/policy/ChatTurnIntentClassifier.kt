@@ -4,10 +4,15 @@ import ai.koog.agents.core.agent.context.AIAgentContext
 import ai.koog.prompt.dsl.Prompt
 import ai.koog.prompt.dsl.prompt
 import ai.koog.prompt.markdown.markdown
+import ai.koog.prompt.message.Message
 import ai.koog.prompt.structure.StructureFixingParser
 import com.ead.dispatch.sample.domain.AIProvider
 import com.ead.dispatch.sample.domain.agents.chat_agent.ChatRequest
 import com.ead.dispatch.sample.domain.agents.chat_agent.PreferencesMemory
+import com.ead.dispatch.sample.domain.agents.intent.IntentConfidenceBand
+import com.ead.dispatch.sample.domain.agents.intent.IntentExecutionIntent
+import com.ead.dispatch.sample.domain.agents.intent.IntentResolvedAction
+import com.ead.dispatch.sample.domain.agents.intent.IntentRiskClass
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -24,6 +29,54 @@ private enum class ChatIntentClassifierLabel {
 
     @SerialName("DESTRUCTIVE")
     DESTRUCTIVE,
+}
+
+@Serializable
+private enum class ResolvedActionLabel {
+    @SerialName("ADVISE")
+    ADVISE,
+
+    @SerialName("WRITE_CREATE")
+    WRITE_CREATE,
+
+    @SerialName("WRITE_UPDATE")
+    WRITE_UPDATE,
+
+    @SerialName("WRITE_DELETE")
+    WRITE_DELETE,
+
+    @SerialName("FOLLOW_UP")
+    FOLLOW_UP,
+}
+
+@Serializable
+private enum class ConfidenceBandLabel {
+    @SerialName("HIGH")
+    HIGH,
+
+    @SerialName("MEDIUM")
+    MEDIUM,
+
+    @SerialName("LOW")
+    LOW,
+}
+
+@Serializable
+private enum class RiskClassLabel {
+    @SerialName("SAFE")
+    SAFE,
+
+    @SerialName("DESTRUCTIVE")
+    DESTRUCTIVE,
+}
+
+@Serializable
+private enum class ExecutionIntentLabel {
+    @SerialName("EXECUTE")
+    EXECUTE,
+
+    @SerialName("INQUIRE")
+    INQUIRE,
 }
 
 @Serializable
@@ -48,6 +101,18 @@ private data class ChatIntentClassifierResponse(
     val preferenceEvidenceSpan: String = "",
     @SerialName("preference_reasoning")
     val preferenceReasoning: String = "",
+    @SerialName("resolved_action")
+    val resolvedAction: ResolvedActionLabel = ResolvedActionLabel.FOLLOW_UP,
+    @SerialName("confidence_band")
+    val confidenceBand: ConfidenceBandLabel = ConfidenceBandLabel.LOW,
+    @SerialName("risk_class")
+    val riskClass: RiskClassLabel = RiskClassLabel.SAFE,
+    @SerialName("anchor_hint")
+    val anchorHint: String = "",
+    @SerialName("requires_confirmation")
+    val requiresConfirmation: Boolean = false,
+    @SerialName("execution_intent")
+    val executionIntent: ExecutionIntentLabel = ExecutionIntentLabel.INQUIRE,
 )
 
 suspend fun AIAgentContext.classifyTurnIntentWithAI(request: ChatRequest): ChatIntentSignal {
@@ -63,6 +128,11 @@ suspend fun AIAgentContext.classifyTurnIntentWithAI(request: ChatRequest): ChatI
             preferenceConfidence = 0.0,
             preferenceEvidenceSpan = "",
             preferenceReasoning = "Decision prompt response should not trigger preference save.",
+            resolvedAction = IntentResolvedAction.WRITE_UPDATE,
+            confidenceBand = IntentConfidenceBand.HIGH,
+            riskClass = IntentRiskClass.SAFE,
+            requiresConfirmation = false,
+            executionIntent = IntentExecutionIntent.EXECUTE,
         )
     }
 
@@ -79,7 +149,27 @@ suspend fun AIAgentContext.classifyTurnIntentWithAI(request: ChatRequest): ChatI
             preferenceConfidence = 0.0,
             preferenceEvidenceSpan = "",
             preferenceReasoning = "",
+            resolvedAction = IntentResolvedAction.FOLLOW_UP,
+            confidenceBand = IntentConfidenceBand.LOW,
+            riskClass = IntentRiskClass.SAFE,
+            requiresConfirmation = false,
+            executionIntent = IntentExecutionIntent.INQUIRE,
         )
+    }
+
+    val recentContext = llm.readSession {
+        prompt.messages
+            .filterNot { it is Message.System }
+            .takeLast(8)
+            .joinToString("\n") { message ->
+                when (message) {
+                    is Message.User -> "USER: ${message.content}".take(220)
+                    is Message.Assistant -> "ASSISTANT: ${message.content}".take(220)
+                    is Message.Tool.Call -> "TOOL_CALL: ${message.tool} ${message.content}".take(220)
+                    is Message.Tool.Result -> "TOOL_RESULT: ${message.tool} ${message.content}".take(220)
+                    else -> ""
+                }
+            }
     }
 
     val classified = runCatching<ChatIntentClassifierResponse> {
@@ -91,7 +181,7 @@ suspend fun AIAgentContext.classifyTurnIntentWithAI(request: ChatRequest): ChatI
 
             try {
                 rewritePrompt {
-                    chatTurnIntentClassifierPrompt(userText)
+                    chatTurnIntentClassifierPrompt(userText, recentContext)
                 }
 
                 requestLLMStructured<ChatIntentClassifierResponse>(
@@ -119,6 +209,11 @@ suspend fun AIAgentContext.classifyTurnIntentWithAI(request: ChatRequest): ChatI
             preferenceConfidence = 0.0,
             preferenceEvidenceSpan = "",
             preferenceReasoning = "Classifier failed; skip preference save.",
+            resolvedAction = IntentResolvedAction.FOLLOW_UP,
+            confidenceBand = IntentConfidenceBand.LOW,
+            riskClass = IntentRiskClass.SAFE,
+            requiresConfirmation = false,
+            executionIntent = IntentExecutionIntent.INQUIRE,
         )
     }
 
@@ -151,134 +246,106 @@ suspend fun AIAgentContext.classifyTurnIntentWithAI(request: ChatRequest): ChatI
         preferenceConfidence = classified.preferenceConfidence.coerceIn(0.0, 1.0),
         preferenceEvidenceSpan = classified.preferenceEvidenceSpan.trim(),
         preferenceReasoning = classified.preferenceReasoning.trim(),
+        resolvedAction = classified.resolvedAction.toResolvedAction(),
+        confidenceBand = classified.confidenceBand.toConfidenceBand(),
+        riskClass = classified.riskClass.toRiskClass(),
+        anchorHint = classified.anchorHint.trim(),
+        requiresConfirmation = classified.requiresConfirmation,
+        executionIntent = classified.executionIntent.toExecutionIntent(),
     )
 }
 
-private fun chatTurnIntentClassifierPrompt(userText: String): Prompt = prompt("chat-turn-intent-classifier") {
+private fun chatTurnIntentClassifierPrompt(userText: String, recentContext: String): Prompt = prompt("chat-turn-intent-classifier") {
     system {
         markdown {
             h2("Role")
-            +"Classify the user's latest message into exactly one chat intent class."
-            br()
-            +"Return only structured output with intent and preference-save signals."
-            br()
-
-            h2("Intent Classes")
-            numbered {
-                item("CREATIVE: User asks for ideas, feedback, brainstorming, explanation, or advice without asking to save/update/delete data.")
-                item("WRITE: User explicitly asks to create, update, save, edit, or otherwise mutate story data in a non-destructive way.")
-                item("AMBIGUOUS: Intent is unclear or non-committal (questioning/exploring) and no explicit execute-now mutation request is present.")
-                item("DESTRUCTIVE: User explicitly asks to delete, remove, wipe, overwrite, or replace existing data.")
-            }
-            br()
-
-            h2("Classifier Scope")
-            bulleted {
-                item("Classify intent only; do not decide final executability.")
-                item("Do not require entity IDs or full target resolution to classify WRITE.")
-                item("If mutation intent is explicit, classify WRITE even if downstream follow-up may still be needed.")
-            }
-            br()
-
-            h2("Decision Rules")
-            numbered {
-                item("If uncertain between classes, choose AMBIGUOUS.")
-                item("If message asks for delete/remove/overwrite/replace existing records, choose DESTRUCTIVE.")
-                item("If message asks for creation/update with clear explicit write intent and no destructive operation, choose WRITE.")
-                item("If user gives corrective mutation instructions (rename/change/set to X) after prior drafts, classify WRITE.")
-                item("If message is brainstorming/feedback/creative support without explicit persistence, choose CREATIVE.")
-            }
-            br()
-
-            h2("Signals to Read")
-            bulleted {
-                item("Action verbs: create/add/update/edit/save/delete/remove/replace/insert.")
-                item("Correction verbs: rename/change/set/switch to.")
-                item("Execution-now confirmations: go ahead, do it, create it, proceed, as specified.")
-                item("Ideation-only cues: ideas, brainstorm, suggest, options, feedback, explain.")
-                item("Ambiguity cues: it/that/this without a clear target, missing required identifiers.")
-            }
-            br()
-
-            h2("Continuation and Conflict Handling")
-            numbered {
-                item("If user confirms execution of a previously specified draft (e.g., 'ok create it', 'create it as I specified'), classify as WRITE with explicit_write_intent=true.")
-                item("If message contains both style guidance and execution intent (e.g., 'be creative and create one now'), prefer WRITE.")
-                item("If wording is noisy/informal/non-native but action+target are clear, still set explicit_write_intent=true.")
-                item("If message asks capability only ('can you...?') without clear execute-now intent, choose AMBIGUOUS unless action request is explicit.")
-                item("If user uses 'creative' as an adjective for style while requesting creation/update now, classify as WRITE, not CREATIVE.")
-                item("If user references earlier output with pronouns ('change it', 'rename him to X', 'set it to Y') and requests mutation now, classify as WRITE.")
-            }
-            br()
-
-            h2("Write Signal Guidance")
-            +"Set explicit_write_intent=true only when user clearly asks to perform a data mutation now."
-            br()
-            +"Confidence is 0.0 to 1.0:"
-            br()
-            +"0.85+ very clear, 0.60-0.84 likely, 0.40-0.59 uncertain, below 0.40 unclear."
-            br()
-            +"For direct execute-now mutation commands (create/update/rename/change/set to X), prefer confidence >= 0.85 unless wording is contradictory."
-            br()
-            +"evidence_span should quote the short phrase that proves the decision."
+            +"Classify the latest chat turn using language-agnostic, context-aware intent reasoning."
             br()
 
             h2("Preference Save Signal")
-            +"Set should_save_preference=true only when the user states durable writing preferences."
-            br()
-            +"Durable preferences include likes/dislikes or constraints about POV, tense, tone, prose style, and content boundaries."
-            br()
-            +"Do not save for greetings, task-only execution commands, acknowledgements, or selector answers."
+            +"Set should_save_preference=true only for durable writing preferences."
             br()
             +"Allowed preference_concepts values:"
             br()
             +"writer_pov_preference, writer_tense_preference, writer_tone_like_preference, writer_prose_style_preference, writer_content_boundary_preference"
             br()
-            +"preference_confidence is 0.0..1.0 and should be high only when wording is explicit."
+            +"Interpret intent semantically (not by keywords), resolve continuation using context, and set requires_confirmation=true for destructive/high-risk actions."
             br()
-
-            h2("Examples")
+            +"Classify execution intent by speech act."
+            br()
+            +"Set execution_intent=INQUIRE for capability checks, hypotheticals, comparisons, option-seeking, and mixed ask-first phrasing."
+            br()
+            +"Set execution_intent=EXECUTE only when user clearly requests to apply/save/create/update/delete now."
+            br()
+            +"Decision continuation messages after a selector prompt should be EXECUTE."
+            br()
+            +"If uncertain between INQUIRE and EXECUTE, default to INQUIRE."
+            br()
+            +"Context-first intent detection rules:"
+            br()
             numbered {
-                item("`create five new entities` -> WRITE, explicit_write_intent=true")
-                item("`create one like this but with a different name, be creative` -> WRITE, explicit_write_intent=true")
-                item("`ok create it` -> WRITE, explicit_write_intent=true")
-                item("`create it as I specified` -> WRITE, explicit_write_intent=true")
-                item("`go ahead and do it now` -> WRITE, explicit_write_intent=true")
-                item("`let's change it to the new name` -> WRITE, explicit_write_intent=true")
-                item("`rename it to the new title` -> WRITE, explicit_write_intent=true")
-                item("`change the name to the updated one` -> WRITE, explicit_write_intent=true")
-                item("`update that entry to be shorter` -> WRITE, explicit_write_intent=true")
-                item("`update entity id 42 title to Night Route` -> WRITE, explicit_write_intent=true")
-                item("`delete the old record` -> DESTRUCTIVE, explicit_write_intent=true")
-                item("`replace existing record with this one` -> DESTRUCTIVE, explicit_write_intent=true")
-                item("`give me five ideas first` -> CREATIVE, explicit_write_intent=false")
-                item("`brainstorm options but don't save anything` -> CREATIVE, explicit_write_intent=false")
-                item("`can you create a new one?` -> WRITE, explicit_write_intent=true")
-                item("`can you help me decide what to create?` -> CREATIVE, explicit_write_intent=false")
-                item("`create a random one` -> WRITE, explicit_write_intent=true")
-                item("`should we maybe update this later?` -> AMBIGUOUS, explicit_write_intent=false")
-                item("`I prefer first-person present tense` -> CREATIVE, should_save_preference=true, preference_concepts=[writer_pov_preference, writer_tense_preference]")
-                item("`please avoid graphic violence` -> CREATIVE, should_save_preference=true, preference_concepts=[writer_content_boundary_preference]")
-                item("`thanks, go ahead` -> AMBIGUOUS, should_save_preference=false")
+                item("Infer intent from the current turn plus recent workflow state, not lexical triggers.")
+                item("If the turn continues an already prepared mutation target, classify as EXECUTE.")
+                item("If the user refers to an existing target contextually, prefer WRITE_UPDATE unless delete/overwrite is clear.")
+                item("If the action target is unclear, keep execution_intent=INQUIRE and resolved_action=FOLLOW_UP.")
+                item("Do not require exact wording to infer continuation intent.")
             }
             br()
-
-            h2("Output")
-            +"Use this schema:"
+            +"Question-type examples (all should be INQUIRE unless user explicitly asks to apply now):"
             br()
+            bulleted {
+                item("Ability/capability: \"can you create a character like X?\", \"are you able to update chapter 3?\" -> INQUIRE")
+                item("Hypothetical: \"what if we changed POV to first person?\" -> INQUIRE")
+                item("Comparison/evaluation: \"is this better than before?\" -> INQUIRE")
+                item("Option-seeking: \"which option should we pick?\" -> INQUIRE")
+                item("Mixed ask-first: \"can you create it, or just tell me first?\" -> INQUIRE")
+                item("Shorthand confirmation questions: \"ready?\", \"looks good?\" -> INQUIRE")
+                item("Non-English ability forms with same meaning are also INQUIRE (e.g., ES/PT/FR).")
+            }
+            br()
+            +"Additional boundary examples:"
+            br()
+            bulleted {
+                item("Permission + implied action: \"can you update chapter 3 now?\" -> INQUIRE")
+                item("Destructive question: \"should we delete this character?\" -> INQUIRE")
+                item("Ambiguous shorthand: \"and this one?\", \"same here?\", \"do it?\" -> INQUIRE or FOLLOW_UP if target unclear")
+                item("Mixed conflict: \"can you create it? don't apply yet\" -> INQUIRE")
+                item("Phased request: \"explain first, then apply\" -> INQUIRE for this turn")
+                item("Non-English shorthand inquiry with same meaning (ES/PT/FR) -> INQUIRE")
+            }
+            br()
+            +"Execute examples:"
+            br()
+            bulleted {
+                item("\"create this character now\", \"save this update\", \"delete this entry now\" -> EXECUTE")
+                item("Short continuation acknowledgements after a prepared write plan/decision -> EXECUTE")
+                item("\"proceed\", \"yes apply\" after selector/decision prompt -> EXECUTE")
+                item("Destructive explicit command: \"delete this entry now\" -> EXECUTE with destructive risk/confirmation")
+            }
+            br()
+            +"Return JSON only."
+            br()
+
+            h2("Output Schema")
             codeblock(
                 """
                 {
                   "intent_class": "CREATIVE | WRITE | AMBIGUOUS | DESTRUCTIVE",
                   "explicit_write_intent": true,
                   "confidence": 0.0,
-                  "evidence_span": "short quote from user message",
+                  "evidence_span": "short quote",
                   "reasoning": "short explanation",
                   "should_save_preference": false,
                   "preference_concepts": ["writer_tone_like_preference"],
                   "preference_confidence": 0.0,
-                  "preference_evidence_span": "short quote from user message",
-                  "preference_reasoning": "short explanation"
+                  "preference_evidence_span": "short quote",
+                  "preference_reasoning": "short explanation",
+                  "resolved_action": "ADVISE | WRITE_CREATE | WRITE_UPDATE | WRITE_DELETE | FOLLOW_UP",
+                  "confidence_band": "HIGH | MEDIUM | LOW",
+                  "risk_class": "SAFE | DESTRUCTIVE",
+                  "anchor_hint": "short target reference",
+                  "requires_confirmation": false,
+                  "execution_intent": "EXECUTE | INQUIRE"
                 }
                 """.trimIndent(),
                 "json",
@@ -288,8 +355,34 @@ private fun chatTurnIntentClassifierPrompt(userText: String): Prompt = prompt("c
 
     user {
         markdown {
+            h3("Recent Context")
+            +(recentContext.ifBlank { "(none)" })
             h3("User Message")
             +userText
         }
     }
+}
+
+private fun ResolvedActionLabel.toResolvedAction(): IntentResolvedAction = when (this) {
+    ResolvedActionLabel.ADVISE -> IntentResolvedAction.ADVISE
+    ResolvedActionLabel.WRITE_CREATE -> IntentResolvedAction.WRITE_CREATE
+    ResolvedActionLabel.WRITE_UPDATE -> IntentResolvedAction.WRITE_UPDATE
+    ResolvedActionLabel.WRITE_DELETE -> IntentResolvedAction.WRITE_DELETE
+    ResolvedActionLabel.FOLLOW_UP -> IntentResolvedAction.FOLLOW_UP
+}
+
+private fun ConfidenceBandLabel.toConfidenceBand(): IntentConfidenceBand = when (this) {
+    ConfidenceBandLabel.HIGH -> IntentConfidenceBand.HIGH
+    ConfidenceBandLabel.MEDIUM -> IntentConfidenceBand.MEDIUM
+    ConfidenceBandLabel.LOW -> IntentConfidenceBand.LOW
+}
+
+private fun RiskClassLabel.toRiskClass(): IntentRiskClass = when (this) {
+    RiskClassLabel.SAFE -> IntentRiskClass.SAFE
+    RiskClassLabel.DESTRUCTIVE -> IntentRiskClass.DESTRUCTIVE
+}
+
+private fun ExecutionIntentLabel.toExecutionIntent(): IntentExecutionIntent = when (this) {
+    ExecutionIntentLabel.EXECUTE -> IntentExecutionIntent.EXECUTE
+    ExecutionIntentLabel.INQUIRE -> IntentExecutionIntent.INQUIRE
 }

@@ -10,6 +10,11 @@ object ChatTurnCheckpointProperties {
     const val ALLOW_WRITE_TOOLS = "dispatch.chat.allow_write_tools"
     const val REQUIRE_SELECTOR_FOR_DESTRUCTIVE = "dispatch.chat.require_selector_for_destructive"
     const val POLICY_RATIONALE = "dispatch.chat.policy_rationale"
+    const val RESOLVED_ACTION = "dispatch.chat.resolved_action"
+    const val CONFIDENCE_BAND = "dispatch.chat.confidence_band"
+    const val RISK_CLASS = "dispatch.chat.risk_class"
+    const val ANCHOR_HINT = "dispatch.chat.anchor_hint"
+    const val REQUIRES_CONFIRMATION = "dispatch.chat.requires_confirmation"
     const val SHOULD_SAVE_PREFERENCE = "dispatch.chat.should_save_preference"
     const val PREFERENCE_CONCEPTS = "dispatch.chat.preference_concepts"
     const val PREFERENCE_CONFIDENCE = "dispatch.chat.preference_confidence"
@@ -46,6 +51,11 @@ object ChatTurnCheckpointProperties {
             merged[ALLOW_WRITE_TOOLS] = JsonPrimitive(policy.allowWriteTools)
             merged[REQUIRE_SELECTOR_FOR_DESTRUCTIVE] = JsonPrimitive(policy.requireSelectorForDestructive)
             merged[POLICY_RATIONALE] = JsonPrimitive(policy.rationale)
+            merged[RESOLVED_ACTION] = JsonPrimitive(policy.resolvedAction.name)
+            merged[CONFIDENCE_BAND] = JsonPrimitive(policy.confidenceBand.name)
+            merged[RISK_CLASS] = JsonPrimitive(policy.riskClass.name)
+            merged[ANCHOR_HINT] = JsonPrimitive(policy.anchorHint)
+            merged[REQUIRES_CONFIRMATION] = JsonPrimitive(policy.requiresConfirmation)
             merged[SHOULD_SAVE_PREFERENCE] = JsonPrimitive(policy.shouldSavePreference)
             merged[PREFERENCE_CONCEPTS] = JsonPrimitive(policy.preferenceConceptKeywords.joinToString(","))
             merged[PREFERENCE_CONFIDENCE] = JsonPrimitive(policy.preferenceConfidence)

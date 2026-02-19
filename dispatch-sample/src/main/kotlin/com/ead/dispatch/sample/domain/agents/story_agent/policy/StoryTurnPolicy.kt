@@ -1,5 +1,9 @@
 package com.ead.dispatch.sample.domain.agents.story_agent.policy
 
+import com.ead.dispatch.sample.domain.agents.intent.IntentConfidenceBand
+import com.ead.dispatch.sample.domain.agents.intent.IntentExecutionIntent
+import com.ead.dispatch.sample.domain.agents.intent.IntentResolvedAction
+import com.ead.dispatch.sample.domain.agents.intent.IntentRiskClass
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -25,6 +29,12 @@ data class StoryIntentSignal(
     val confidence: Double = 0.0,
     val evidenceSpan: String = "",
     val reasoning: String = "",
+    val resolvedAction: IntentResolvedAction = IntentResolvedAction.FOLLOW_UP,
+    val confidenceBand: IntentConfidenceBand = IntentConfidenceBand.LOW,
+    val riskClass: IntentRiskClass = IntentRiskClass.SAFE,
+    val anchorHint: String = "",
+    val requiresConfirmation: Boolean = false,
+    val executionIntent: IntentExecutionIntent = IntentExecutionIntent.EXECUTE,
 )
 
 @Serializable
@@ -37,6 +47,12 @@ data class StoryTurnPolicy(
     val rationale: String,
     val fromDecisionPrompt: Boolean,
     val requestTextHash: String = "",
+    val resolvedAction: IntentResolvedAction = IntentResolvedAction.FOLLOW_UP,
+    val confidenceBand: IntentConfidenceBand = IntentConfidenceBand.LOW,
+    val riskClass: IntentRiskClass = IntentRiskClass.SAFE,
+    val anchorHint: String = "",
+    val requiresConfirmation: Boolean = false,
+    val executionIntent: IntentExecutionIntent = IntentExecutionIntent.EXECUTE,
 )
 
 @Serializable

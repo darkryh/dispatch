@@ -242,11 +242,13 @@ private fun baseHints(
     val request = turnInput.request
     val policy = turnInput.policy
     val continuity = ContinuityPacket(
-        objective = "Follow decision path ${policy.decisionPath.name} for this turn.",
+        objective = "Follow decision path ${policy.decisionPath.name}/${policy.resolvedAction.name} for this turn.",
         constraints = listOf(
             "Story scope must remain within storyId=${request.storyId}",
             "write_tools_allowed=${policy.allowWriteTools}",
             "require_selector_for_destructive=${policy.requireSelectorForDestructive}",
+            "confidence_band=${policy.confidenceBand.name}",
+            "risk_class=${policy.riskClass.name}",
             "Do not fabricate tool outputs or IDs.",
         ),
         pendingActions = listOf("Process latest user input: ${request.text.take(140)}"),

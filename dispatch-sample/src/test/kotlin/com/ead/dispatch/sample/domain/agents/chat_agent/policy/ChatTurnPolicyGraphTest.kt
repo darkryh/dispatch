@@ -36,7 +36,8 @@ class ChatTurnPolicyGraphTest {
                       "preference_concepts": [],
                       "preference_confidence": 0.0,
                       "preference_evidence_span": "",
-                      "preference_reasoning": ""
+                      "preference_reasoning": "",
+                      "execution_intent": "EXECUTE"
                     }
                     """.trimIndent(),
                 ).asDefaultResponse
@@ -231,6 +232,7 @@ class ChatTurnPolicyGraphTest {
         preferenceConfidence: Double = 0.0,
         preferenceEvidenceSpan: String = "",
         preferenceReasoning: String = "",
+        executionIntent: String = "EXECUTE",
     ): ai.koog.prompt.executor.model.PromptExecutor =
         getMockExecutor(
             toolRegistry = ToolRegistry {},
@@ -252,7 +254,8 @@ class ChatTurnPolicyGraphTest {
                   "preference_concepts": $conceptsJson,
                   "preference_confidence": $preferenceConfidence,
                   "preference_evidence_span": "$preferenceEvidenceSpan",
-                  "preference_reasoning": "$preferenceReasoning"
+                  "preference_reasoning": "$preferenceReasoning",
+                  "execution_intent": "$executionIntent"
                 }
                 """.trimIndent(),
             ).asDefaultResponse

@@ -1,6 +1,7 @@
 package com.ead.dispatch.sample.domain.agents.chat_agent.policy
 
 import com.ead.dispatch.sample.domain.agents.chat_agent.ChatRequest
+import com.ead.dispatch.sample.domain.agents.intent.IntentExecutionIntent
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -121,6 +122,30 @@ class ChatTurnPolicyClassifierTest {
 
         assertEquals(ChatDecisionPath.FOLLOW_UP, policy.decisionPath)
         assertFalse(policy.allowWriteTools)
+    }
+
+    @Test
+    fun `inquiry intent does not execute writes even if write signal is high confidence`() {
+        val request = ChatRequest(
+            text = "Can you create a character like this archetype?",
+            storyId = "s1",
+        )
+
+        val policy = buildTurnPolicy(
+            request = request,
+            intentSignal = ChatIntentSignal(
+                intentClass = ChatIntentClass.WRITE,
+                explicitWriteIntent = true,
+                confidence = 0.95,
+                evidenceSpan = "create a character",
+                reasoning = "Write-capable action identified, but user asks capability question.",
+                executionIntent = IntentExecutionIntent.INQUIRE,
+            ),
+        )
+
+        assertEquals(ChatDecisionPath.DIRECT_RESPONSE, policy.decisionPath)
+        assertFalse(policy.allowWriteTools)
+        assertFalse(policy.explicitWriteIntent)
     }
 
     @Test

@@ -1,15 +1,18 @@
-package com.ead.dispatch.sample.domain.agents.chat_agent.policy
+package com.ead.dispatch.sample.domain.agents.story_agent.policy
 
-import com.ead.dispatch.sample.domain.agents.chat_agent.ChatRequest
+import com.ead.dispatch.sample.domain.agents.intent.IntentConfidenceBand
 import com.ead.dispatch.sample.domain.agents.intent.IntentExecutionIntent
+import com.ead.dispatch.sample.domain.agents.intent.IntentResolvedAction
+import com.ead.dispatch.sample.domain.agents.intent.IntentRiskClass
+import com.ead.dispatch.sample.domain.agents.story_agent.StoryRequest
 import kotlin.math.roundToInt
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
-class ChatModeReplayValidationTest {
+class StoryModeReplayValidationTest {
 
     @Test
-    fun `chat mode replay suite meets release KPI gates`() {
+    fun `story mode replay suite meets release KPI gates`() {
         val dataset = replayDataset()
         assertTrue(
             dataset.size == REQUIRED_REPLAY_CASE_COUNT,
@@ -52,12 +55,12 @@ class ChatModeReplayValidationTest {
         val mismatches = mutableListOf<String>()
 
         cases.forEach { replayCase ->
-            val request = ChatRequest(
+            val request = StoryRequest(
                 text = replayCase.text,
                 storyId = "validation-story",
                 fromDecisionPrompt = replayCase.fromDecisionPrompt,
             )
-            val policy = buildTurnPolicy(
+            val policy = buildStoryTurnPolicy(
                 request = request,
                 intentSignal = replayCase.signal,
             )
@@ -111,11 +114,11 @@ class ChatModeReplayValidationTest {
         )
     }
 
-    private fun observedOutcomeFor(policy: ChatTurnPolicy): ExpectedOutcome {
+    private fun observedOutcomeFor(policy: StoryTurnPolicy): ExpectedOutcome {
         return when {
-            policy.decisionPath == ChatDecisionPath.SELECTOR -> ExpectedOutcome.SELECTOR
-            isToolAllowedForTurn(policy, "createCharacter") -> ExpectedOutcome.WRITE
-            policy.decisionPath == ChatDecisionPath.FOLLOW_UP -> ExpectedOutcome.FOLLOW_UP
+            policy.decisionPath == StoryDecisionPath.SELECTOR -> ExpectedOutcome.SELECTOR
+            isStoryToolAllowedForTurn(policy, "setChapterDraft") -> ExpectedOutcome.WRITE
+            policy.decisionPath == StoryDecisionPath.FOLLOW_UP -> ExpectedOutcome.FOLLOW_UP
             else -> ExpectedOutcome.NO_WRITE
         }
     }
@@ -138,10 +141,10 @@ class ChatModeReplayValidationTest {
 
     private fun estimatedOutputTokens(outcome: ExpectedOutcome): Int =
         when (outcome) {
-            ExpectedOutcome.NO_WRITE -> 42
-            ExpectedOutcome.WRITE -> 34
+            ExpectedOutcome.NO_WRITE -> 40
+            ExpectedOutcome.WRITE -> 36
             ExpectedOutcome.SELECTOR -> 26
-            ExpectedOutcome.FOLLOW_UP -> 22
+            ExpectedOutcome.FOLLOW_UP -> 20
         }
 
     private fun precision(tp: Int, fp: Int): Double = if (tp + fp == 0) 1.0 else tp.toDouble() / (tp + fp)
@@ -163,26 +166,16 @@ class ChatModeReplayValidationTest {
 
     private fun MutableList<ReplayCase>.addCreativeCases() {
         val prompts = listOf(
-            "give me 5 character ideas",
-            "brainstorm two possible endings",
-            "what genre fits this premise",
-            "help me improve this dialogue tone",
-            "suggest location vibes for a lonely city",
-            "i want options before deciding",
-            "can you review this arc for pacing",
-            "what themes can we explore here",
-            "give me feedback, do not save",
-            "explain why this scene feels flat",
-            "propose names but don't create yet",
-            "quiero ideas para un personaje triste",
-            "dame opciones de tono narrativo",
-            "quais ideias para um anti-heroi espacial",
-            "could you suggest but not persist anything",
-            "help me decide what to create first",
-            "what do you think about this concept",
-            "i prefer first person present tense",
-            "please avoid graphic violence",
-            "i like melancholic and sparse prose",
+            "give me three scene ideas",
+            "brainstorm chapter pacing options",
+            "help me review this chapter draft",
+            "explain why this scene feels weak",
+            "suggest alternative opening paragraphs",
+            "quiero ideas para el siguiente capitulo",
+            "me de ideias para a cena final",
+            "donne moi des options de narration",
+            "help me plan, do not apply changes",
+            "what direction should volume two take",
         )
 
         prompts.forEachIndexed { index, text ->
@@ -192,22 +185,15 @@ class ChatModeReplayValidationTest {
                     category = "creative",
                     text = text,
                     expectedOutcome = ExpectedOutcome.NO_WRITE,
-                    signal = ChatIntentSignal(
-                        intentClass = ChatIntentClass.CREATIVE,
+                    signal = StoryIntentSignal(
+                        intentClass = StoryIntentClass.CREATIVE,
                         explicitWriteIntent = false,
-                        confidence = 0.88,
-                        evidenceSpan = text.take(40),
-                        reasoning = "Ideation/advice request.",
-                        shouldSavePreference = text.contains("prefer") || text.contains("avoid") || text.contains("like"),
-                        preferenceConceptKeywords = when {
-                            text.contains("first person") -> listOf("writer_pov_preference", "writer_tense_preference")
-                            text.contains("avoid graphic violence") -> listOf("writer_content_boundary_preference")
-                            text.contains("melancholic") -> listOf("writer_tone_like_preference", "writer_prose_style_preference")
-                            else -> emptyList()
-                        },
-                        preferenceConfidence = 0.82,
-                        preferenceEvidenceSpan = text.take(40),
-                        preferenceReasoning = "Durable preference signal when present.",
+                        confidence = 0.86,
+                        evidenceSpan = text.take(42),
+                        reasoning = "Advisory storycraft request.",
+                        resolvedAction = IntentResolvedAction.ADVISE,
+                        confidenceBand = IntentConfidenceBand.MEDIUM,
+                        riskClass = IntentRiskClass.SAFE,
                     ),
                 )
             )
@@ -216,66 +202,35 @@ class ChatModeReplayValidationTest {
 
     private fun MutableList<ReplayCase>.addWriteCases() {
         val directWritePrompts = listOf(
-            "create a random character",
-            "create five new characters",
-            "add a location called rust harbor",
-            "update character id 42 with a shorter description",
-            "set story genre to space noir",
-            "insert a timeline entry called first contact",
-            "upsert organization called eclipse union",
-            "create one like this with a different name",
-            "create it as i specified",
-            "ok create it",
-            "go ahead and create now",
-            "please save this character as kaito ren",
-            "add two world rules about memory loss",
-            "create an arc titled falling orbit",
-            "update location neon bazaar tags to black market",
-            "cria um personagem novo agora",
-            "crea un personaje ahora",
-            "ajoute un nouveau personnage maintenant",
+            "create chapter 3 in volume 1",
+            "update scene 2 summary",
+            "continue writing this chapter draft",
+            "set chapter draft with this content",
+            "apply the pending chapter proposal",
+            "add a new volume outline",
+            "actualiza el capitulo actual",
+            "continua a escrita desta cena",
+            "mise a jour du chapitre maintenant",
+            "proceed with the approved draft",
         )
 
         directWritePrompts.forEachIndexed { index, text ->
             add(
                 replayCase(
-                    id = "write-direct-${index + 1}",
+                    id = "write-${index + 1}",
                     category = "write",
                     text = text,
                     expectedOutcome = ExpectedOutcome.WRITE,
-                    signal = ChatIntentSignal(
-                        intentClass = ChatIntentClass.WRITE,
+                    signal = StoryIntentSignal(
+                        intentClass = StoryIntentClass.WRITE,
                         explicitWriteIntent = true,
-                        confidence = 0.91,
+                        confidence = 0.9,
                         evidenceSpan = text.take(48),
-                        reasoning = "Explicit mutate-now request.",
-                    ),
-                )
-            )
-        }
-
-        val noisyButClearWritePrompts = listOf(
-            "you can do whatever you want create them now",
-            "be creative and create one now",
-            "like spike spiegel vibe but create on your own now",
-            "make 3 random chars and save",
-            "i said create it please do it now",
-            "can u create one rn",
-        )
-
-        noisyButClearWritePrompts.forEachIndexed { index, text ->
-            add(
-                replayCase(
-                    id = "write-noisy-${index + 1}",
-                    category = "write",
-                    text = text,
-                    expectedOutcome = ExpectedOutcome.WRITE,
-                    signal = ChatIntentSignal(
-                        intentClass = ChatIntentClass.AMBIGUOUS,
-                        explicitWriteIntent = true,
-                        confidence = 0.79,
-                        evidenceSpan = text.take(48),
-                        reasoning = "Noisy wording, but execute-now action is clear.",
+                        reasoning = "Direct story mutation request.",
+                        resolvedAction = IntentResolvedAction.WRITE_UPDATE,
+                        confidenceBand = IntentConfidenceBand.HIGH,
+                        riskClass = IntentRiskClass.SAFE,
+                        anchorHint = "chapter",
                     ),
                 )
             )
@@ -284,22 +239,16 @@ class ChatModeReplayValidationTest {
 
     private fun MutableList<ReplayCase>.addFollowUpCases() {
         val prompts = listOf(
-            "maybe update this",
-            "change it",
-            "do something with that character",
-            "can you create one?",
-            "what should we edit first",
-            "update that entry",
-            "im not sure maybe save maybe not",
-            "do it if needed",
-            "could be better somehow",
-            "set this one to that style",
-            "make it like before",
-            "tweak the old one",
-            "can you maybe handle this",
-            "maybe remove something maybe not",
-            "idk do what you think",
-            "help with this quickly",
+            "maybe change something",
+            "do something with this",
+            "can you handle this chapter",
+            "not sure yet",
+            "improve it",
+            "haz algo con eso",
+            "faz alguma coisa com isso",
+            "peut etre modifier",
+            "i am undecided",
+            "later maybe",
         )
 
         prompts.forEachIndexed { index, text ->
@@ -309,12 +258,15 @@ class ChatModeReplayValidationTest {
                     category = "ambiguous",
                     text = text,
                     expectedOutcome = ExpectedOutcome.FOLLOW_UP,
-                    signal = ChatIntentSignal(
-                        intentClass = ChatIntentClass.AMBIGUOUS,
-                        explicitWriteIntent = index % 4 == 0,
-                        confidence = 0.31,
+                    signal = StoryIntentSignal(
+                        intentClass = StoryIntentClass.AMBIGUOUS,
+                        explicitWriteIntent = false,
+                        confidence = 0.28,
                         evidenceSpan = text.take(36),
-                        reasoning = "Target or action is unclear.",
+                        reasoning = "Insufficiently anchored request.",
+                        resolvedAction = IntentResolvedAction.FOLLOW_UP,
+                        confidenceBand = IntentConfidenceBand.LOW,
+                        riskClass = IntentRiskClass.SAFE,
                     ),
                 )
             )
@@ -323,20 +275,16 @@ class ChatModeReplayValidationTest {
 
     private fun MutableList<ReplayCase>.addSelectorCases() {
         val prompts = listOf(
-            "delete the old location",
-            "remove character id 12",
-            "wipe all timeline entries",
-            "replace existing rule with this one",
-            "overwrite current arc with new text",
-            "clear all cultures",
-            "drop previous story settings",
-            "delete duplicate character",
-            "remove the relationship record",
-            "replace the saved version",
-            "delete this and recreate",
-            "clear world rules list",
-            "remove old draft permanently",
-            "overwrite current title and discard history",
+            "delete chapter 4",
+            "remove this volume",
+            "overwrite the current draft",
+            "replace chapter draft entirely",
+            "wipe the previous scene",
+            "elimina el capitulo anterior",
+            "apaga o volume antigo",
+            "supprime cette scene",
+            "clear current chapter draft",
+            "discard and replace existing text",
         )
 
         prompts.forEachIndexed { index, text ->
@@ -346,12 +294,16 @@ class ChatModeReplayValidationTest {
                     category = "destructive",
                     text = text,
                     expectedOutcome = ExpectedOutcome.SELECTOR,
-                    signal = ChatIntentSignal(
-                        intentClass = ChatIntentClass.DESTRUCTIVE,
+                    signal = StoryIntentSignal(
+                        intentClass = StoryIntentClass.DESTRUCTIVE,
                         explicitWriteIntent = true,
-                        confidence = 0.96,
+                        confidence = 0.94,
                         evidenceSpan = text.take(40),
-                        reasoning = "Destructive request must confirm first.",
+                        reasoning = "Destructive story operation.",
+                        resolvedAction = IntentResolvedAction.WRITE_DELETE,
+                        confidenceBand = IntentConfidenceBand.HIGH,
+                        riskClass = IntentRiskClass.DESTRUCTIVE,
+                        requiresConfirmation = true,
                     ),
                 )
             )
@@ -360,12 +312,12 @@ class ChatModeReplayValidationTest {
 
     private fun MutableList<ReplayCase>.addDecisionContinuationCases() {
         val prompts = listOf(
-            "yes proceed",
-            "ok do it",
-            "confirm replace existing",
-            "continue with option 2",
-            "approved, execute now",
-            "go ahead with selected option",
+            "yes continue",
+            "approved",
+            "proceed",
+            "ok apply",
+            "confirm selection",
+            "continue with chosen option",
         )
 
         prompts.forEachIndexed { index, text ->
@@ -376,12 +328,12 @@ class ChatModeReplayValidationTest {
                     text = text,
                     expectedOutcome = ExpectedOutcome.WRITE,
                     fromDecisionPrompt = true,
-                    signal = ChatIntentSignal(
-                        intentClass = ChatIntentClass.CREATIVE,
+                    signal = StoryIntentSignal(
+                        intentClass = StoryIntentClass.CREATIVE,
                         explicitWriteIntent = false,
-                        confidence = 0.12,
+                        confidence = 0.1,
                         evidenceSpan = text.take(30),
-                        reasoning = "Ignored because fromDecisionPrompt=true path bypasses classifier intent.",
+                        reasoning = "Bypassed due to decision continuation.",
                     ),
                 )
             )
@@ -390,17 +342,16 @@ class ChatModeReplayValidationTest {
 
     private fun MutableList<ReplayCase>.addInquirySafetyCases() {
         val prompts = listOf(
-            "can you create a character similar to this archetype?",
-            "could you update chapter 3 now?",
-            "is this better than before?",
-            "should we delete this character?",
-            "and this one?",
-            "what if we changed pov to first person?",
-            "can you create it, or just tell me first?",
-            "looks good?",
-            "puedes crear uno asi?",
-            "voce consegue criar isso?",
-            "est-ce que tu peux le creer?",
+            "can you create a chapter like this style?",
+            "could you update this scene now?",
+            "is this chapter draft better?",
+            "should we delete this volume?",
+            "what if we rewrite this scene in first person?",
+            "can you do it or just explain first?",
+            "and this chapter?",
+            "looks ready?",
+            "puedes crear un capitulo asi?",
+            "voce consegue atualizar essa cena?",
         )
 
         prompts.forEachIndexed { index, text ->
@@ -410,16 +361,19 @@ class ChatModeReplayValidationTest {
                     category = "inquiry-safety",
                     text = text,
                     expectedOutcome = ExpectedOutcome.NO_WRITE,
-                    signal = ChatIntentSignal(
+                    signal = StoryIntentSignal(
                         intentClass = when (index) {
-                            2, 3, 5, 7 -> ChatIntentClass.CREATIVE
-                            4 -> ChatIntentClass.AMBIGUOUS
-                            else -> ChatIntentClass.WRITE
+                            2, 4, 7 -> StoryIntentClass.CREATIVE
+                            6 -> StoryIntentClass.AMBIGUOUS
+                            else -> StoryIntentClass.WRITE
                         },
-                        explicitWriteIntent = index !in listOf(2, 3, 5, 7),
-                        confidence = 0.86,
+                        explicitWriteIntent = index !in listOf(2, 4, 7),
+                        confidence = 0.84,
                         evidenceSpan = text.take(48),
-                        reasoning = "Inquiry/capability question should not execute writes in this turn.",
+                        reasoning = "Inquiry turn should answer only and avoid write execution.",
+                        resolvedAction = IntentResolvedAction.WRITE_UPDATE,
+                        confidenceBand = IntentConfidenceBand.MEDIUM,
+                        riskClass = IntentRiskClass.SAFE,
                         executionIntent = IntentExecutionIntent.INQUIRE,
                     ),
                 )
@@ -432,7 +386,7 @@ class ChatModeReplayValidationTest {
         category: String,
         text: String,
         expectedOutcome: ExpectedOutcome,
-        signal: ChatIntentSignal,
+        signal: StoryIntentSignal,
         fromDecisionPrompt: Boolean = false,
     ): ReplayCase = ReplayCase(
         id = id,
@@ -448,7 +402,7 @@ class ChatModeReplayValidationTest {
         val category: String,
         val text: String,
         val expectedOutcome: ExpectedOutcome,
-        val signal: ChatIntentSignal,
+        val signal: StoryIntentSignal,
         val fromDecisionPrompt: Boolean = false,
     )
 
@@ -478,7 +432,7 @@ class ChatModeReplayValidationTest {
             }
 
             return buildString {
-                appendLine("Chat Mode Replay Validation")
+                appendLine("Story Mode Replay Validation")
                 appendLine("- cases: $totalCases")
                 appendLine("- write_intent_precision: ${format(writeIntentPrecision)} (gate >= ${format(WRITE_INTENT_PRECISION_MIN)})")
                 appendLine("- selector_precision: ${format(selectorPrecision)} (gate >= ${format(SELECTOR_PRECISION_MIN)})")
@@ -496,16 +450,14 @@ class ChatModeReplayValidationTest {
     }
 
     companion object {
+        private const val REQUIRED_REPLAY_CASE_COUNT = 56
         private const val WRITE_INTENT_PRECISION_MIN = 0.95
         private const val SELECTOR_PRECISION_MIN = 0.90
         private const val SELECTOR_RECALL_MIN = 0.95
-        private const val WRONG_WRITE_RATE_MAX = 0.01
-        private const val REQUIRED_REPLAY_CASE_COUNT = 91
+        private const val WRONG_WRITE_RATE_MAX = 0.06
 
-        private const val CLASSIFIER_INPUT_OVERHEAD_TOKENS = 64
-
-        // Cost units are deterministic proxies used for trend comparison between revisions.
+        private const val CLASSIFIER_INPUT_OVERHEAD_TOKENS = 70
         private const val COST_WEIGHT_INPUT = 1.0
-        private const val COST_WEIGHT_OUTPUT = 3.0
+        private const val COST_WEIGHT_OUTPUT = 2.0
     }
 }

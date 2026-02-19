@@ -247,11 +247,13 @@ private fun baseHints(
     val request = turnInput.request
     val policy = turnInput.policy
     val continuity = ContinuityPacket(
-        objective = "Execute story mode turn policy: ${policy.decisionPath.name}.",
+        objective = "Execute story mode turn policy: ${policy.decisionPath.name}/${policy.resolvedAction.name}.",
         constraints = listOf(
             "Story scope must remain within storyId=${request.storyId}",
             "write_tools_allowed=${policy.allowWriteTools}",
             "require_selector_for_destructive=${policy.requireSelectorForDestructive}",
+            "confidence_band=${policy.confidenceBand.name}",
+            "risk_class=${policy.riskClass.name}",
             "Keep continuity with existing volumes/chapters/scenes.",
         ),
         pendingActions = listOf("Process latest story request: ${request.text.take(140)}"),

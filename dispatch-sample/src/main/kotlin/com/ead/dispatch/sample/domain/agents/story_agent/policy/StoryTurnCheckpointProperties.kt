@@ -10,6 +10,11 @@ object StoryTurnCheckpointProperties {
     const val ALLOW_WRITE_TOOLS = "dispatch.story.allow_write_tools"
     const val REQUIRE_SELECTOR_FOR_DESTRUCTIVE = "dispatch.story.require_selector_for_destructive"
     const val POLICY_RATIONALE = "dispatch.story.policy_rationale"
+    const val RESOLVED_ACTION = "dispatch.story.resolved_action"
+    const val CONFIDENCE_BAND = "dispatch.story.confidence_band"
+    const val RISK_CLASS = "dispatch.story.risk_class"
+    const val ANCHOR_HINT = "dispatch.story.anchor_hint"
+    const val REQUIRES_CONFIRMATION = "dispatch.story.requires_confirmation"
 
     const val REQUESTED_TOOL_CALLS = "dispatch.story.requested_tool_calls"
     const val EXECUTED_TOOL_CALLS = "dispatch.story.executed_tool_calls"
@@ -38,6 +43,11 @@ object StoryTurnCheckpointProperties {
             merged[ALLOW_WRITE_TOOLS] = JsonPrimitive(policy.allowWriteTools)
             merged[REQUIRE_SELECTOR_FOR_DESTRUCTIVE] = JsonPrimitive(policy.requireSelectorForDestructive)
             merged[POLICY_RATIONALE] = JsonPrimitive(policy.rationale)
+            merged[RESOLVED_ACTION] = JsonPrimitive(policy.resolvedAction.name)
+            merged[CONFIDENCE_BAND] = JsonPrimitive(policy.confidenceBand.name)
+            merged[RISK_CLASS] = JsonPrimitive(policy.riskClass.name)
+            merged[ANCHOR_HINT] = JsonPrimitive(policy.anchorHint)
+            merged[REQUIRES_CONFIRMATION] = JsonPrimitive(policy.requiresConfirmation)
         }
 
         if (metrics != null) {

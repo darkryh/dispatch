@@ -33,6 +33,12 @@ fun AIAgentSubgraphBuilderBase<*, *>.nodeClassifyIntent(
             preferenceConfidence = intentSignal.preferenceConfidence,
             preferenceEvidenceSpan = intentSignal.preferenceEvidenceSpan,
             preferenceReasoning = intentSignal.preferenceReasoning,
+            resolvedAction = intentSignal.resolvedAction,
+            confidenceBand = intentSignal.confidenceBand,
+            riskClass = intentSignal.riskClass,
+            anchorHint = intentSignal.anchorHint,
+            requiresConfirmation = intentSignal.requiresConfirmation,
+            executionIntent = intentSignal.executionIntent,
         )
     }
 
@@ -54,6 +60,12 @@ fun AIAgentSubgraphBuilderBase<*, *>.nodeApplyTurnPolicy(
                 preferenceConfidence = classified.preferenceConfidence,
                 preferenceEvidenceSpan = classified.preferenceEvidenceSpan,
                 preferenceReasoning = classified.preferenceReasoning,
+                resolvedAction = classified.resolvedAction,
+                confidenceBand = classified.confidenceBand,
+                riskClass = classified.riskClass,
+                anchorHint = classified.anchorHint,
+                requiresConfirmation = classified.requiresConfirmation,
+                executionIntent = classified.executionIntent,
             ),
         )
         storeChatTurnPolicy(policy)

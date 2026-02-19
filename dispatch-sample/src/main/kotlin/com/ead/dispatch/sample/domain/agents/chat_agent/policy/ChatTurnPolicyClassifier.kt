@@ -1,5 +1,9 @@
 package com.ead.dispatch.sample.domain.agents.chat_agent.policy
 
+import com.ead.dispatch.sample.domain.agents.intent.IntentConfidenceBand
+import com.ead.dispatch.sample.domain.agents.intent.IntentExecutionIntent
+import com.ead.dispatch.sample.domain.agents.intent.IntentResolvedAction
+import com.ead.dispatch.sample.domain.agents.intent.IntentRiskClass
 import com.ead.dispatch.sample.domain.agents.chat_agent.ChatRequest
 
 private const val explicitWriteConfidenceThreshold = 0.55
@@ -21,14 +25,39 @@ fun buildTurnPolicy(
             rationale = "User answered a selector prompt; continue execution with writes enabled.",
             fromDecisionPrompt = true,
             requestTextHash = requestTextHash,
+            resolvedAction = IntentResolvedAction.WRITE_UPDATE,
+            confidenceBand = IntentConfidenceBand.HIGH,
+            riskClass = IntentRiskClass.SAFE,
+            executionIntent = IntentExecutionIntent.EXECUTE,
         )
     }
 
     val intentClass = intentSignal.intentClass
     val confidence = intentSignal.confidence.coerceIn(0.0, 1.0)
     val explicitWriteIntent = intentSignal.explicitWriteIntent
+    val resolvedAction = intentSignal.resolvedAction
+    val confidenceBand = intentSignal.confidenceBand
+    val riskClass = intentSignal.riskClass
+    val requiresConfirmation = intentSignal.requiresConfirmation
+    val executionIntent = intentSignal.executionIntent
     val writeAllowedBySignal = (explicitWriteIntent && confidence >= explicitWriteConfidenceThreshold) ||
         (intentClass == ChatIntentClass.WRITE && confidence >= writeClassConfidenceThreshold)
+    val writeAllowedByResolution =
+        resolvedAction == IntentResolvedAction.WRITE_CREATE || resolvedAction == IntentResolvedAction.WRITE_UPDATE
+    val writeLikeByResolution =
+        resolvedAction == IntentResolvedAction.WRITE_CREATE ||
+            resolvedAction == IntentResolvedAction.WRITE_UPDATE ||
+            resolvedAction == IntentResolvedAction.WRITE_DELETE
+    val resolutionConfident = confidenceBand != IntentConfidenceBand.LOW
+    val destructiveByResolution =
+        resolvedAction == IntentResolvedAction.WRITE_DELETE ||
+            riskClass == IntentRiskClass.DESTRUCTIVE ||
+            requiresConfirmation
+    val inquiryWriteLike = executionIntent == IntentExecutionIntent.INQUIRE &&
+        (intentClass == ChatIntentClass.WRITE ||
+            intentClass == ChatIntentClass.DESTRUCTIVE ||
+            explicitWriteIntent ||
+            writeLikeByResolution)
 
     val evidence = intentSignal.evidenceSpan
         .trim()
@@ -36,7 +65,29 @@ fun buildTurnPolicy(
         .ifBlank { "none" }
 
     return when {
-        intentClass == ChatIntentClass.DESTRUCTIVE -> ChatTurnPolicy(
+        inquiryWriteLike -> ChatTurnPolicy(
+            intentClass = intentClass,
+            decisionPath = ChatDecisionPath.DIRECT_RESPONSE,
+            explicitWriteIntent = false,
+            allowWriteTools = false,
+            requireSelectorForDestructive = false,
+            rationale = "Inquiry/question turn: answer without executing write tools.",
+            fromDecisionPrompt = false,
+            requestTextHash = requestTextHash,
+            shouldSavePreference = intentSignal.shouldSavePreference,
+            preferenceConceptKeywords = intentSignal.preferenceConceptKeywords,
+            preferenceConfidence = intentSignal.preferenceConfidence,
+            preferenceEvidenceSpan = intentSignal.preferenceEvidenceSpan,
+            preferenceReasoning = intentSignal.preferenceReasoning,
+            resolvedAction = IntentResolvedAction.ADVISE,
+            confidenceBand = confidenceBand,
+            riskClass = riskClass,
+            anchorHint = intentSignal.anchorHint,
+            requiresConfirmation = false,
+            executionIntent = IntentExecutionIntent.INQUIRE,
+        )
+
+        intentClass == ChatIntentClass.DESTRUCTIVE || destructiveByResolution -> ChatTurnPolicy(
             intentClass = intentClass,
             decisionPath = ChatDecisionPath.SELECTOR,
             explicitWriteIntent = true,
@@ -50,9 +101,15 @@ fun buildTurnPolicy(
             preferenceConfidence = intentSignal.preferenceConfidence,
             preferenceEvidenceSpan = intentSignal.preferenceEvidenceSpan,
             preferenceReasoning = intentSignal.preferenceReasoning,
+            resolvedAction = IntentResolvedAction.WRITE_DELETE,
+            confidenceBand = confidenceBand,
+            riskClass = IntentRiskClass.DESTRUCTIVE,
+            anchorHint = intentSignal.anchorHint,
+            requiresConfirmation = true,
+            executionIntent = IntentExecutionIntent.EXECUTE,
         )
 
-        writeAllowedBySignal -> ChatTurnPolicy(
+        writeAllowedBySignal || (writeAllowedByResolution && resolutionConfident) -> ChatTurnPolicy(
             intentClass = if (intentClass == ChatIntentClass.AMBIGUOUS) ChatIntentClass.WRITE else intentClass,
             decisionPath = ChatDecisionPath.DIRECT_WRITE,
             explicitWriteIntent = true,
@@ -66,9 +123,21 @@ fun buildTurnPolicy(
             preferenceConfidence = intentSignal.preferenceConfidence,
             preferenceEvidenceSpan = intentSignal.preferenceEvidenceSpan,
             preferenceReasoning = intentSignal.preferenceReasoning,
+            resolvedAction = when (resolvedAction) {
+                IntentResolvedAction.WRITE_DELETE -> IntentResolvedAction.WRITE_UPDATE
+                IntentResolvedAction.FOLLOW_UP,
+                IntentResolvedAction.ADVISE,
+                -> IntentResolvedAction.WRITE_UPDATE
+                else -> resolvedAction
+            },
+            confidenceBand = confidenceBand,
+            riskClass = IntentRiskClass.SAFE,
+            anchorHint = intentSignal.anchorHint,
+            requiresConfirmation = false,
+            executionIntent = IntentExecutionIntent.EXECUTE,
         )
 
-        intentClass == ChatIntentClass.CREATIVE -> ChatTurnPolicy(
+        intentClass == ChatIntentClass.CREATIVE || resolvedAction == IntentResolvedAction.ADVISE -> ChatTurnPolicy(
             intentClass = intentClass,
             decisionPath = ChatDecisionPath.DIRECT_RESPONSE,
             explicitWriteIntent = false,
@@ -82,6 +151,12 @@ fun buildTurnPolicy(
             preferenceConfidence = intentSignal.preferenceConfidence,
             preferenceEvidenceSpan = intentSignal.preferenceEvidenceSpan,
             preferenceReasoning = intentSignal.preferenceReasoning,
+            resolvedAction = IntentResolvedAction.ADVISE,
+            confidenceBand = confidenceBand,
+            riskClass = IntentRiskClass.SAFE,
+            anchorHint = intentSignal.anchorHint,
+            requiresConfirmation = false,
+            executionIntent = IntentExecutionIntent.INQUIRE,
         )
 
         else -> ChatTurnPolicy(
@@ -98,6 +173,12 @@ fun buildTurnPolicy(
             preferenceConfidence = intentSignal.preferenceConfidence,
             preferenceEvidenceSpan = intentSignal.preferenceEvidenceSpan,
             preferenceReasoning = intentSignal.preferenceReasoning,
+            resolvedAction = IntentResolvedAction.FOLLOW_UP,
+            confidenceBand = confidenceBand,
+            riskClass = riskClass,
+            anchorHint = intentSignal.anchorHint,
+            requiresConfirmation = false,
+            executionIntent = IntentExecutionIntent.INQUIRE,
         )
     }
 }
