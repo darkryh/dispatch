@@ -111,6 +111,8 @@ private data class ChatIntentClassifierResponse(
     val anchorHint: String = "",
     @SerialName("requires_confirmation")
     val requiresConfirmation: Boolean = false,
+    @SerialName("requires_creative_choice")
+    val requiresCreativeChoice: Boolean = false,
     @SerialName("execution_intent")
     val executionIntent: ExecutionIntentLabel = ExecutionIntentLabel.INQUIRE,
 )
@@ -132,6 +134,7 @@ suspend fun AIAgentContext.classifyTurnIntentWithAI(request: ChatRequest): ChatI
             confidenceBand = IntentConfidenceBand.HIGH,
             riskClass = IntentRiskClass.SAFE,
             requiresConfirmation = false,
+            requiresCreativeChoice = false,
             executionIntent = IntentExecutionIntent.EXECUTE,
         )
     }
@@ -153,6 +156,7 @@ suspend fun AIAgentContext.classifyTurnIntentWithAI(request: ChatRequest): ChatI
             confidenceBand = IntentConfidenceBand.LOW,
             riskClass = IntentRiskClass.SAFE,
             requiresConfirmation = false,
+            requiresCreativeChoice = false,
             executionIntent = IntentExecutionIntent.INQUIRE,
         )
     }
@@ -213,6 +217,7 @@ suspend fun AIAgentContext.classifyTurnIntentWithAI(request: ChatRequest): ChatI
             confidenceBand = IntentConfidenceBand.LOW,
             riskClass = IntentRiskClass.SAFE,
             requiresConfirmation = false,
+            requiresCreativeChoice = false,
             executionIntent = IntentExecutionIntent.INQUIRE,
         )
     }
@@ -251,6 +256,7 @@ suspend fun AIAgentContext.classifyTurnIntentWithAI(request: ChatRequest): ChatI
         riskClass = classified.riskClass.toRiskClass(),
         anchorHint = classified.anchorHint.trim(),
         requiresConfirmation = classified.requiresConfirmation,
+        requiresCreativeChoice = classified.requiresCreativeChoice,
         executionIntent = classified.executionIntent.toExecutionIntent(),
     )
 }
@@ -270,6 +276,59 @@ private fun chatTurnIntentClassifierPrompt(userText: String, recentContext: Stri
             +"writer_pov_preference, writer_tense_preference, writer_tone_like_preference, writer_prose_style_preference, writer_content_boundary_preference"
             br()
             +"Interpret intent semantically (not by keywords), resolve continuation using context, and set requires_confirmation=true for destructive/high-risk actions."
+            br()
+            +"Speech-act precedence: classify by communicative act first, then action semantics."
+            br()
+            +"If the latest turn is primarily a question, capability check, permission check, hypothetical, comparison, or option-seeking request, set execution_intent=INQUIRE."
+            br()
+            +"Only set execution_intent=EXECUTE when the user is committing to apply changes now in this turn."
+            br()
+            +"Set requires_creative_choice=true when execution intent is clear but creative direction selection should remain with the user before persisting changes."
+            br()
+            +"Do not set requires_creative_choice for simple bounded creates."
+            br()
+            +"Creative selector decision framework (semantic, not lexical):"
+            br()
+            numbered {
+                item("Direction openness: multiple distinct creative branches are valid and not uniquely implied by constraints.")
+                item("Constraint density: role/style/tone/canon-fit requirements are partial, conflicting, or underspecified.")
+                item("Canon impact: the decision can materially influence future entities, arcs, voice, or continuity.")
+                item("Reversibility risk: choosing one branch now would be costly to undo or likely to trigger rework.")
+                item("Delegated choice intent: user is explicitly or implicitly asking the assistant to decide among directions.")
+            }
+            br()
+            +"Trigger requires_creative_choice=true when this framework indicates meaningful branch choice risk and user-direction preference should be preserved."
+            br()
+            +"If uncertain between direct creative write and creative selector on EXECUTE turns, prefer requires_creative_choice=true."
+            br()
+            +"Compound-turn precedence:"
+            br()
+            +"When a single turn both requests create/apply now and also expresses branch-fit uncertainty (style/role/tone/canon compatibility not decided), keep execution_intent=EXECUTE and set requires_creative_choice=true."
+            br()
+            +"In this compound case, selector comes before persistence; do not collapse into direct write."
+            br()
+            +"Examples are illustrative, not exhaustive."
+            br()
+            +"Do not infer creative selector from specific words alone."
+            br()
+            +"Use recent context to determine whether branch direction is already stabilized."
+            br()
+            +"Generic request families that may require creative selector:"
+            br()
+            bulleted {
+                item("Foundational entity creation with open fit (protagonists, major antagonists, core factions, governing rules).")
+                item("Multi-option generative asks where one persisted direction must be selected.")
+                item("Style/voice-alignment asks where current canon could support multiple conflicting directions.")
+            }
+            br()
+            +"Do not trigger creative selector when:"
+            br()
+            bulleted {
+                item("The create/update request is bounded and specific with clear constraints.")
+                item("The user already selected direction/path explicitly.")
+                item("The turn is inquiry-only (execution_intent=INQUIRE).")
+                item("The turn is exploratory ideation with no persistence requested.")
+            }
             br()
             +"Classify execution intent by speech act."
             br()
@@ -321,6 +380,29 @@ private fun chatTurnIntentClassifierPrompt(userText: String, recentContext: Stri
                 item("Short continuation acknowledgements after a prepared write plan/decision -> EXECUTE")
                 item("\"proceed\", \"yes apply\" after selector/decision prompt -> EXECUTE")
                 item("Destructive explicit command: \"delete this entry now\" -> EXECUTE with destructive risk/confirmation")
+                item("Continuation commit after prepared target: \"let's go ahead\", \"apply it\", \"continue\" -> EXECUTE")
+            }
+            br()
+            +"Creative selector examples:"
+            br()
+            bulleted {
+                item("Execute + under-constrained direction: \"create a new lead now; decide which role/style best fits the current cast\" -> EXECUTE + requires_creative_choice=true")
+                item("Execute + open branching: \"add 2-3 antagonist options and pick the best tone for our current arc\" -> EXECUTE + requires_creative_choice=true")
+                item("Execute + compatibility uncertainty: \"create a major character now; uncertain which voice and function should align with current canon\" -> EXECUTE + requires_creative_choice=true")
+                item("Execute + delegated fit decision: \"add a core ally and decide the best role fit for current arcs\" -> EXECUTE + requires_creative_choice=true")
+                item("Bounded create: \"create three random side characters\" -> EXECUTE + requires_creative_choice=false")
+                item("Precise create: \"create a 19-year-old medic ally named Lina, optimistic tone\" -> EXECUTE + requires_creative_choice=false")
+            }
+            br()
+            +"Additional contrastive examples:"
+            br()
+            bulleted {
+                item("Early context bootstrap: \"create one random character for a fresh story\" -> EXECUTE + requires_creative_choice=false")
+                item("Mature canon with open fit: \"add a new protagonist and decide how they should integrate with existing arcs\" -> EXECUTE + requires_creative_choice=true")
+                item("Bounded profile despite create-now: \"create a strategist mentor, age 40s, reserved tone, supports arc B\" -> EXECUTE + requires_creative_choice=false")
+                item("Compound mixed signal: \"create now, but I'm not sure which direction best fits\" -> EXECUTE + requires_creative_choice=true")
+                item("Multi-entity coupling: \"create a character and matching faction direction; choose what best fits current world rules\" -> EXECUTE + requires_creative_choice=true")
+                item("Post-selector continuation: \"apply option 2\" after prior selector -> EXECUTE + requires_creative_choice=false")
             }
             br()
             +"Return JSON only."
@@ -345,6 +427,7 @@ private fun chatTurnIntentClassifierPrompt(userText: String, recentContext: Stri
                   "risk_class": "SAFE | DESTRUCTIVE",
                   "anchor_hint": "short target reference",
                   "requires_confirmation": false,
+                  "requires_creative_choice": false,
                   "execution_intent": "EXECUTE | INQUIRE"
                 }
                 """.trimIndent(),

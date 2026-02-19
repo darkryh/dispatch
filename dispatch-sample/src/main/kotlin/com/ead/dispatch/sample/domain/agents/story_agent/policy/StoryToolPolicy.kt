@@ -31,7 +31,7 @@ fun isStoryToolAllowedForTurn(policy: StoryTurnPolicy, toolName: String?): Boole
     val writeTool = isStoryWriteToolName(toolName)
     if (writeTool && !policy.allowWriteTools) return false
 
-    if (policy.requireSelectorForDestructive && writeTool) return false
+    if ((policy.requireSelectorForDestructive || policy.requireSelectorForCreative) && writeTool) return false
 
     return true
 }

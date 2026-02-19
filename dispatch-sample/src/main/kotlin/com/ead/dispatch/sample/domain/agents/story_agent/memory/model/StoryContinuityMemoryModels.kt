@@ -7,9 +7,13 @@ import kotlinx.serialization.Serializable
 data class StoryChapterMemorySnapshot(
     val chapterId: String,
     val summaryShort: String,
+    val summaryDelta: String = "",
     val keyBeats: List<String>,
     val entities: List<String>,
+    val newFacts: List<String> = emptyList(),
+    val resolvedThreads: List<String> = emptyList(),
     val unresolvedThreads: List<String>,
+    val continuityRisks: List<String> = emptyList(),
     val pov: String? = null,
     val tense: String? = null,
     val updatedAt: Long,
@@ -17,15 +21,22 @@ data class StoryChapterMemorySnapshot(
 
 @Serializable
 data class StoryContinuitySnapshot(
+    val rollingDelta: String = "",
     val rollingSummary: String,
     val activeThreads: List<String>,
+    val recentNewFacts: List<String> = emptyList(),
+    val resolvedThreads: List<String> = emptyList(),
     val continuityWarnings: List<String>,
     val recentChapters: List<StoryChapterMemorySnapshot>,
 )
 
 data class StoryChapterMemorySummary(
     val summaryShort: String,
+    val summaryDelta: String = "",
+    val newFacts: List<String> = emptyList(),
+    val resolvedThreads: List<String> = emptyList(),
     val unresolvedThreads: List<String> = emptyList(),
+    val continuityRisks: List<String> = emptyList(),
 )
 
 fun interface StoryChapterMemorySummarizer {

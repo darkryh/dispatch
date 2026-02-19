@@ -9,6 +9,7 @@ object StoryTurnCheckpointProperties {
     const val EXPLICIT_WRITE_INTENT = "dispatch.story.explicit_write_intent"
     const val ALLOW_WRITE_TOOLS = "dispatch.story.allow_write_tools"
     const val REQUIRE_SELECTOR_FOR_DESTRUCTIVE = "dispatch.story.require_selector_for_destructive"
+    const val REQUIRE_SELECTOR_FOR_CREATIVE = "dispatch.story.require_selector_for_creative"
     const val POLICY_RATIONALE = "dispatch.story.policy_rationale"
     const val RESOLVED_ACTION = "dispatch.story.resolved_action"
     const val CONFIDENCE_BAND = "dispatch.story.confidence_band"
@@ -42,6 +43,7 @@ object StoryTurnCheckpointProperties {
             merged[EXPLICIT_WRITE_INTENT] = JsonPrimitive(policy.explicitWriteIntent)
             merged[ALLOW_WRITE_TOOLS] = JsonPrimitive(policy.allowWriteTools)
             merged[REQUIRE_SELECTOR_FOR_DESTRUCTIVE] = JsonPrimitive(policy.requireSelectorForDestructive)
+            merged[REQUIRE_SELECTOR_FOR_CREATIVE] = JsonPrimitive(policy.requireSelectorForCreative)
             merged[POLICY_RATIONALE] = JsonPrimitive(policy.rationale)
             merged[RESOLVED_ACTION] = JsonPrimitive(policy.resolvedAction.name)
             merged[CONFIDENCE_BAND] = JsonPrimitive(policy.confidenceBand.name)

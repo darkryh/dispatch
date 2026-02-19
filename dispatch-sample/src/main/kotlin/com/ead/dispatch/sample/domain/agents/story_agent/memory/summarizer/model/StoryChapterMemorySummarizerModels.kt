@@ -12,6 +12,9 @@ data class StoryChapterMemorySummarizeRequest(
 
 @Serializable
 data class StoryChapterMemorySummaryDraft(
-    val summaryShort: String = "",
-    val unresolvedThreads: List<String> = emptyList(),
+    val summaryDelta: String = "",
+    val newFacts: List<String> = emptyList(),
+    val resolvedThreads: List<String> = emptyList(),
+    val openThreads: List<String> = emptyList(),
+    val continuityRisks: List<String> = emptyList(),
 )

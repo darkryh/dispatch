@@ -97,6 +97,7 @@ class KoogChatAgent(
                                 constraints = listOf(
                                     "write_tools_allowed=${turnInput.policy.allowWriteTools}",
                                     "require_selector_for_destructive=${turnInput.policy.requireSelectorForDestructive}",
+                                    "require_selector_for_creative=${turnInput.policy.requireSelectorForCreative}",
                                     "confidence_band=${turnInput.policy.confidenceBand.name}",
                                     "risk_class=${turnInput.policy.riskClass.name}",
                                 ),

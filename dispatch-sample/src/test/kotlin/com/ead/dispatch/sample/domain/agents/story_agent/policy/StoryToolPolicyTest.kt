@@ -58,4 +58,48 @@ class StoryToolPolicyTest {
         assertFalse(policy.explicitWriteIntent)
     }
 
+    @Test
+    fun `creative selector-gated turns block story write tools but allow decision tool`() {
+        val policy = StoryTurnPolicy(
+            intentClass = StoryIntentClass.CREATIVE,
+            decisionPath = StoryDecisionPath.SELECTOR,
+            explicitWriteIntent = true,
+            allowWriteTools = true,
+            requireSelectorForDestructive = false,
+            requireSelectorForCreative = true,
+            rationale = "creative branching turn",
+            fromDecisionPrompt = false,
+            requestTextHash = "x",
+        )
+
+        assertTrue(isStoryToolAllowedForTurn(policy, "requestUserChoice"))
+        assertFalse(isStoryToolAllowedForTurn(policy, "createChapter"))
+        assertFalse(isStoryToolAllowedForTurn(policy, "applyChapterDraftProposal"))
+    }
+
+    @Test
+    fun `execute creative write with required creative choice uses selector path`() {
+        val policy = buildStoryTurnPolicy(
+            request = StoryRequest(
+                text = "Create several chapter direction options and apply one.",
+                storyId = "s1",
+            ),
+            intentSignal = StoryIntentSignal(
+                intentClass = StoryIntentClass.CREATIVE,
+                explicitWriteIntent = true,
+                confidence = 0.88,
+                evidenceSpan = "several chapter direction options",
+                reasoning = "High-impact branching request.",
+                resolvedAction = com.ead.dispatch.sample.domain.agents.intent.IntentResolvedAction.WRITE_CREATE,
+                requiresCreativeChoice = true,
+                executionIntent = IntentExecutionIntent.EXECUTE,
+            ),
+        )
+
+        assertEquals(StoryDecisionPath.SELECTOR, policy.decisionPath)
+        assertTrue(policy.allowWriteTools)
+        assertTrue(policy.requireSelectorForCreative)
+        assertFalse(policy.requireSelectorForDestructive)
+    }
+
 }

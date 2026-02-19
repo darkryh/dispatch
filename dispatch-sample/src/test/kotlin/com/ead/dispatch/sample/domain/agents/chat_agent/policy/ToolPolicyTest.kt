@@ -61,4 +61,22 @@ class ToolPolicyTest {
         assertFalse(isToolAllowedForTurn(policy, "deleteCharacter"))
         assertFalse(isToolAllowedForTurn(policy, "updateCharacter"))
     }
+
+    @Test
+    fun `selector-gated creative turns allow decision tool but block write tools`() {
+        val policy = ChatTurnPolicy(
+            intentClass = ChatIntentClass.CREATIVE,
+            decisionPath = ChatDecisionPath.SELECTOR,
+            explicitWriteIntent = true,
+            allowWriteTools = true,
+            requireSelectorForDestructive = false,
+            requireSelectorForCreative = true,
+            rationale = "creative branching turn",
+            fromDecisionPrompt = false,
+        )
+
+        assertTrue(isToolAllowedForTurn(policy, "requestUserChoice"))
+        assertFalse(isToolAllowedForTurn(policy, "createCharacter"))
+        assertFalse(isToolAllowedForTurn(policy, "updateCharacter"))
+    }
 }

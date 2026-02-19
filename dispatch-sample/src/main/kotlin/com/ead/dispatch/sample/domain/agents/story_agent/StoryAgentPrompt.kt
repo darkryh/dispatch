@@ -52,6 +52,8 @@ fun storyAgentPrompt(
             br()
             +"For destructive operations (delete volume/chapter with children), require explicit user confirmation before force=true."
             br()
+            +"For high-impact under-constrained creative branching turns, use requestUserChoice before write execution."
+            br()
             +"When request is ambiguous, ask one short clarifying question."
             br()
             +"A question about whether something can be done is inquiry by default; do not execute write tools unless user asks to apply now."
@@ -70,8 +72,16 @@ fun storyAgentPrompt(
             br()
             +"Selector required for destructive write: ${turnPolicy.requireSelectorForDestructive}"
             br()
+            +"Selector required for creative branching write: ${turnPolicy.requireSelectorForCreative}"
+            br()
             if (turnPolicy.decisionPath == StoryDecisionPath.FOLLOW_UP) {
                 +"Ask one focused follow-up and stop."
+                br()
+            }
+            if (turnPolicy.requireSelectorForCreative) {
+                +"Use requestUserChoice with 2-3 narrative directions plus one auto-pick option, then stop."
+                br()
+                +"Do not ask a plain-text follow-up question in this state; the selector tool call is required."
                 br()
             }
 
@@ -155,6 +165,8 @@ fun storyAgentPrompt(
                 +"(none)"
                 br()
             } else {
+                +"Delta rolling: ${continuityMemory.rollingDelta.ifBlank { "none" }}"
+                br()
                 +"Rolling: ${continuityMemory.rollingSummary.ifBlank { "none" }}"
                 br()
                 if (continuityMemory.activeThreads.isEmpty()) {
@@ -168,11 +180,27 @@ fun storyAgentPrompt(
                         br()
                     }
                 }
+                if (continuityMemory.recentNewFacts.isNotEmpty()) {
+                    +"Recent new facts:"
+                    br()
+                    continuityMemory.recentNewFacts.take(3).forEach { fact ->
+                        +"  - ${fact.compact(90)}"
+                        br()
+                    }
+                }
+                if (continuityMemory.resolvedThreads.isNotEmpty()) {
+                    +"Recently resolved threads:"
+                    br()
+                    continuityMemory.resolvedThreads.take(2).forEach { thread ->
+                        +"  - ${thread.compact(90)}"
+                        br()
+                    }
+                }
                 if (continuityMemory.recentChapters.isNotEmpty()) {
-                    +"Recent approved chapters:"
+                    +"Recent approved chapter deltas:"
                     br()
                     continuityMemory.recentChapters.forEachIndexed { index, chapterMemory ->
-                        +"  ${index + 1}. ${chapterMemory.summaryShort.compact(120)}"
+                        +"  ${index + 1}. ${chapterMemory.summaryDelta.ifBlank { chapterMemory.summaryShort }.compact(120)}"
                         br()
                     }
                 }
@@ -189,6 +217,8 @@ fun storyAgentPrompt(
             h2("Response Style")
             +"Be concise and production-oriented."
             br()
+            +"Response budget policy: default to minimal output tokens."
+            br()
             +"Use reader-facing language; avoid developer/internal formatting."
             br()
             +"Do not expose internal IDs, UUIDs, database keys, or raw tool payload fields unless the user explicitly asks for technical/debug details."
@@ -196,18 +226,22 @@ fun storyAgentPrompt(
             +"After create/update operations, summarize outcomes naturally (title + role + key story impact), not raw field dumps."
             br()
             if (turnPolicy.executionIntent == IntentExecutionIntent.INQUIRE) {
-                +"This is an inquiry turn: answer in one short sentence only."
+                +"This is an inquiry turn: answer in exactly one short sentence."
                 br()
                 +"Do not generate draft/content artifacts yet. Confirm capability or ask one clarification only if needed."
                 br()
                 +"Do not provide variants, scene drafts, outlines, or multi-step suggestions unless explicitly requested."
                 br()
             } else {
-                +"For simple capability questions (yes/no intent), answer in one short sentence only."
+                +"For simple capability questions (yes/no intent), answer in exactly one short sentence."
                 br()
                 +"Do not provide extended alternatives or elaboration unless explicitly requested."
                 br()
-                +"After tool execution, report what changed and one optional next step."
+                +"After tool execution, use at most 2-4 short lines: what changed plus one optional next step."
+                br()
+                +"When context suggests useful progress, include one context-aware optional next step to expand narrative creativity."
+                br()
+                +"Keep that next step concrete, brief, and anchored to current volume/chapter/scene context."
                 br()
                 +"When creating multiple items, provide a compact creative summary with clear distinctions; avoid full repeated templates."
                 br()

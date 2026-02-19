@@ -247,6 +247,7 @@ private fun baseHints(
             "Story scope must remain within storyId=${request.storyId}",
             "write_tools_allowed=${policy.allowWriteTools}",
             "require_selector_for_destructive=${policy.requireSelectorForDestructive}",
+            "require_selector_for_creative=${policy.requireSelectorForCreative}",
             "confidence_band=${policy.confidenceBand.name}",
             "risk_class=${policy.riskClass.name}",
             "Do not fabricate tool outputs or IDs.",
@@ -334,6 +335,9 @@ private suspend fun AIAgentGraphContextBase.policyBlockReason(toolName: String?)
         }
         if (policy.requireSelectorForDestructive && isWriteToolName(toolName)) {
             return "Write tool call blocked: call requestUserChoice first for this destructive turn."
+        }
+        if (policy.requireSelectorForCreative && isWriteToolName(toolName)) {
+            return "Write tool call blocked: call requestUserChoice first to pick a creative direction."
         }
         return "Tool call blocked by chat turn policy."
     }

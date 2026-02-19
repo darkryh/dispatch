@@ -22,6 +22,7 @@ fun buildStoryTurnPolicy(
             explicitWriteIntent = true,
             allowWriteTools = true,
             requireSelectorForDestructive = false,
+            requireSelectorForCreative = false,
             rationale = "User answered a selector prompt; continue execution with writes enabled.",
             fromDecisionPrompt = true,
             requestTextHash = requestTextHash,
@@ -39,6 +40,7 @@ fun buildStoryTurnPolicy(
     val confidenceBand = intentSignal.confidenceBand
     val riskClass = intentSignal.riskClass
     val requiresConfirmation = intentSignal.requiresConfirmation
+    val requiresCreativeChoice = intentSignal.requiresCreativeChoice
     val executionIntent = intentSignal.executionIntent
     val writeAllowedBySignal = (explicitWriteIntent && confidence >= explicitWriteConfidenceThreshold) ||
         (intentClass == StoryIntentClass.WRITE && confidence >= writeClassConfidenceThreshold)
@@ -49,10 +51,20 @@ fun buildStoryTurnPolicy(
             resolvedAction == IntentResolvedAction.WRITE_UPDATE ||
             resolvedAction == IntentResolvedAction.WRITE_DELETE
     val resolutionConfident = confidenceBand != IntentConfidenceBand.LOW
+    val executeWriteReady =
+        executionIntent == IntentExecutionIntent.EXECUTE &&
+            explicitWriteIntent &&
+            confidence >= explicitWriteConfidenceThreshold
     val destructiveByResolution =
         resolvedAction == IntentResolvedAction.WRITE_DELETE ||
             riskClass == IntentRiskClass.DESTRUCTIVE ||
             requiresConfirmation
+    val creativeSelectorNeeded =
+        executionIntent == IntentExecutionIntent.EXECUTE &&
+            !destructiveByResolution &&
+            requiresCreativeChoice &&
+            resolvedAction == IntentResolvedAction.WRITE_CREATE &&
+            (intentClass == StoryIntentClass.CREATIVE || intentClass == StoryIntentClass.WRITE)
     val inquiryWriteLike = executionIntent == IntentExecutionIntent.INQUIRE &&
         (intentClass == StoryIntentClass.WRITE ||
             intentClass == StoryIntentClass.DESTRUCTIVE ||
@@ -71,6 +83,7 @@ fun buildStoryTurnPolicy(
             explicitWriteIntent = false,
             allowWriteTools = false,
             requireSelectorForDestructive = false,
+            requireSelectorForCreative = false,
             rationale = "Inquiry/question turn: answer without executing write tools.",
             fromDecisionPrompt = false,
             requestTextHash = requestTextHash,
@@ -82,12 +95,31 @@ fun buildStoryTurnPolicy(
             executionIntent = IntentExecutionIntent.INQUIRE,
         )
 
+        creativeSelectorNeeded -> StoryTurnPolicy(
+            intentClass = intentClass,
+            decisionPath = StoryDecisionPath.SELECTOR,
+            explicitWriteIntent = true,
+            allowWriteTools = true,
+            requireSelectorForDestructive = false,
+            requireSelectorForCreative = true,
+            rationale = "High-impact creative branching requires selector choice before write execution.",
+            fromDecisionPrompt = false,
+            requestTextHash = requestTextHash,
+            resolvedAction = IntentResolvedAction.WRITE_CREATE,
+            confidenceBand = confidenceBand,
+            riskClass = IntentRiskClass.SAFE,
+            anchorHint = intentSignal.anchorHint,
+            requiresConfirmation = false,
+            executionIntent = IntentExecutionIntent.EXECUTE,
+        )
+
         intentClass == StoryIntentClass.DESTRUCTIVE || destructiveByResolution -> StoryTurnPolicy(
             intentClass = intentClass,
             decisionPath = StoryDecisionPath.SELECTOR,
             explicitWriteIntent = true,
             allowWriteTools = true,
             requireSelectorForDestructive = true,
+            requireSelectorForCreative = false,
             rationale = "Destructive story action requires selector confirmation before execution.",
             fromDecisionPrompt = false,
             requestTextHash = requestTextHash,
@@ -99,12 +131,13 @@ fun buildStoryTurnPolicy(
             executionIntent = IntentExecutionIntent.EXECUTE,
         )
 
-        writeAllowedBySignal || (writeAllowedByResolution && resolutionConfident) -> StoryTurnPolicy(
+        writeAllowedBySignal || (writeAllowedByResolution && resolutionConfident && executeWriteReady) -> StoryTurnPolicy(
             intentClass = if (intentClass == StoryIntentClass.AMBIGUOUS) StoryIntentClass.WRITE else intentClass,
             decisionPath = StoryDecisionPath.DIRECT_WRITE,
             explicitWriteIntent = true,
             allowWriteTools = true,
             requireSelectorForDestructive = false,
+            requireSelectorForCreative = false,
             rationale = "Story write enabled by classifier signal (confidence=$confidence, evidence=\"$evidence\").",
             fromDecisionPrompt = false,
             requestTextHash = requestTextHash,
@@ -128,6 +161,7 @@ fun buildStoryTurnPolicy(
             explicitWriteIntent = false,
             allowWriteTools = false,
             requireSelectorForDestructive = false,
+            requireSelectorForCreative = false,
             rationale = "Story advisory request. Respond without write tools.",
             fromDecisionPrompt = false,
             requestTextHash = requestTextHash,
@@ -145,6 +179,7 @@ fun buildStoryTurnPolicy(
             explicitWriteIntent = false,
             allowWriteTools = false,
             requireSelectorForDestructive = false,
+            requireSelectorForCreative = false,
             rationale = "Story request is ambiguous/low-confidence. Ask one focused follow-up.",
             fromDecisionPrompt = false,
             requestTextHash = requestTextHash,

@@ -149,6 +149,33 @@ class ChatTurnPolicyClassifierTest {
     }
 
     @Test
+    fun `execute creative create with required creative choice uses selector before write`() {
+        val request = ChatRequest(
+            text = "Create multiple new cast directions for this arc and apply one.",
+            storyId = "s1",
+        )
+
+        val policy = buildTurnPolicy(
+            request = request,
+            intentSignal = ChatIntentSignal(
+                intentClass = ChatIntentClass.CREATIVE,
+                explicitWriteIntent = true,
+                confidence = 0.89,
+                evidenceSpan = "multiple cast directions",
+                reasoning = "High-impact branch with multiple valid paths.",
+                resolvedAction = com.ead.dispatch.sample.domain.agents.intent.IntentResolvedAction.WRITE_CREATE,
+                executionIntent = IntentExecutionIntent.EXECUTE,
+                requiresCreativeChoice = true,
+            ),
+        )
+
+        assertEquals(ChatDecisionPath.SELECTOR, policy.decisionPath)
+        assertTrue(policy.allowWriteTools)
+        assertFalse(policy.requireSelectorForDestructive)
+        assertTrue(policy.requireSelectorForCreative)
+    }
+
+    @Test
     fun `preference save signal propagates into policy`() {
         val request = ChatRequest(
             text = "I prefer first-person present tense and sparse prose.",

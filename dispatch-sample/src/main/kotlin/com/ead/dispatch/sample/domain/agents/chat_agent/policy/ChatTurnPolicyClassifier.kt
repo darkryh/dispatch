@@ -22,6 +22,7 @@ fun buildTurnPolicy(
             explicitWriteIntent = true,
             allowWriteTools = true,
             requireSelectorForDestructive = false,
+            requireSelectorForCreative = false,
             rationale = "User answered a selector prompt; continue execution with writes enabled.",
             fromDecisionPrompt = true,
             requestTextHash = requestTextHash,
@@ -39,6 +40,7 @@ fun buildTurnPolicy(
     val confidenceBand = intentSignal.confidenceBand
     val riskClass = intentSignal.riskClass
     val requiresConfirmation = intentSignal.requiresConfirmation
+    val requiresCreativeChoice = intentSignal.requiresCreativeChoice
     val executionIntent = intentSignal.executionIntent
     val writeAllowedBySignal = (explicitWriteIntent && confidence >= explicitWriteConfidenceThreshold) ||
         (intentClass == ChatIntentClass.WRITE && confidence >= writeClassConfidenceThreshold)
@@ -49,10 +51,20 @@ fun buildTurnPolicy(
             resolvedAction == IntentResolvedAction.WRITE_UPDATE ||
             resolvedAction == IntentResolvedAction.WRITE_DELETE
     val resolutionConfident = confidenceBand != IntentConfidenceBand.LOW
+    val executeWriteReady =
+        executionIntent == IntentExecutionIntent.EXECUTE &&
+            explicitWriteIntent &&
+            confidence >= explicitWriteConfidenceThreshold
     val destructiveByResolution =
         resolvedAction == IntentResolvedAction.WRITE_DELETE ||
             riskClass == IntentRiskClass.DESTRUCTIVE ||
             requiresConfirmation
+    val creativeSelectorNeeded =
+        executionIntent == IntentExecutionIntent.EXECUTE &&
+            !destructiveByResolution &&
+            requiresCreativeChoice &&
+            resolvedAction == IntentResolvedAction.WRITE_CREATE &&
+            (intentClass == ChatIntentClass.CREATIVE || intentClass == ChatIntentClass.WRITE)
     val inquiryWriteLike = executionIntent == IntentExecutionIntent.INQUIRE &&
         (intentClass == ChatIntentClass.WRITE ||
             intentClass == ChatIntentClass.DESTRUCTIVE ||
@@ -71,6 +83,7 @@ fun buildTurnPolicy(
             explicitWriteIntent = false,
             allowWriteTools = false,
             requireSelectorForDestructive = false,
+            requireSelectorForCreative = false,
             rationale = "Inquiry/question turn: answer without executing write tools.",
             fromDecisionPrompt = false,
             requestTextHash = requestTextHash,
@@ -87,12 +100,36 @@ fun buildTurnPolicy(
             executionIntent = IntentExecutionIntent.INQUIRE,
         )
 
+        creativeSelectorNeeded -> ChatTurnPolicy(
+            intentClass = intentClass,
+            decisionPath = ChatDecisionPath.SELECTOR,
+            explicitWriteIntent = true,
+            allowWriteTools = true,
+            requireSelectorForDestructive = false,
+            requireSelectorForCreative = true,
+            rationale = "High-impact creative branching requires selector choice before write execution.",
+            fromDecisionPrompt = false,
+            requestTextHash = requestTextHash,
+            shouldSavePreference = intentSignal.shouldSavePreference,
+            preferenceConceptKeywords = intentSignal.preferenceConceptKeywords,
+            preferenceConfidence = intentSignal.preferenceConfidence,
+            preferenceEvidenceSpan = intentSignal.preferenceEvidenceSpan,
+            preferenceReasoning = intentSignal.preferenceReasoning,
+            resolvedAction = IntentResolvedAction.WRITE_CREATE,
+            confidenceBand = confidenceBand,
+            riskClass = IntentRiskClass.SAFE,
+            anchorHint = intentSignal.anchorHint,
+            requiresConfirmation = false,
+            executionIntent = IntentExecutionIntent.EXECUTE,
+        )
+
         intentClass == ChatIntentClass.DESTRUCTIVE || destructiveByResolution -> ChatTurnPolicy(
             intentClass = intentClass,
             decisionPath = ChatDecisionPath.SELECTOR,
             explicitWriteIntent = true,
             allowWriteTools = true,
             requireSelectorForDestructive = true,
+            requireSelectorForCreative = false,
             rationale = "Destructive action requires selector confirmation before execution.",
             fromDecisionPrompt = false,
             requestTextHash = requestTextHash,
@@ -109,12 +146,13 @@ fun buildTurnPolicy(
             executionIntent = IntentExecutionIntent.EXECUTE,
         )
 
-        writeAllowedBySignal || (writeAllowedByResolution && resolutionConfident) -> ChatTurnPolicy(
+        writeAllowedBySignal || (writeAllowedByResolution && resolutionConfident && executeWriteReady) -> ChatTurnPolicy(
             intentClass = if (intentClass == ChatIntentClass.AMBIGUOUS) ChatIntentClass.WRITE else intentClass,
             decisionPath = ChatDecisionPath.DIRECT_WRITE,
             explicitWriteIntent = true,
             allowWriteTools = true,
             requireSelectorForDestructive = false,
+            requireSelectorForCreative = false,
             rationale = "Write enabled by classifier signal (confidence=$confidence, evidence=\"$evidence\").",
             fromDecisionPrompt = false,
             requestTextHash = requestTextHash,
@@ -143,6 +181,7 @@ fun buildTurnPolicy(
             explicitWriteIntent = false,
             allowWriteTools = false,
             requireSelectorForDestructive = false,
+            requireSelectorForCreative = false,
             rationale = "Creative/advisory request. Respond without write tools.",
             fromDecisionPrompt = false,
             requestTextHash = requestTextHash,
@@ -165,6 +204,7 @@ fun buildTurnPolicy(
             explicitWriteIntent = false,
             allowWriteTools = false,
             requireSelectorForDestructive = false,
+            requireSelectorForCreative = false,
             rationale = "Intent or target is ambiguous/low-confidence. Ask one focused follow-up.",
             fromDecisionPrompt = false,
             requestTextHash = requestTextHash,

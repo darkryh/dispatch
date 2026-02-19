@@ -31,7 +31,7 @@ fun isToolAllowedForTurn(policy: ChatTurnPolicy, toolName: String?): Boolean {
 
     // In selector-gated destructive turns, force decision-first behavior:
     // do not expose write tools until the follow-up turn confirms the decision.
-    if (policy.requireSelectorForDestructive && writeTool) return false
+    if ((policy.requireSelectorForDestructive || policy.requireSelectorForCreative) && writeTool) return false
 
     return true
 }

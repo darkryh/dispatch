@@ -100,6 +100,8 @@ private data class StoryIntentClassifierResponse(
     val anchorHint: String = "",
     @SerialName("requires_confirmation")
     val requiresConfirmation: Boolean = false,
+    @SerialName("requires_creative_choice")
+    val requiresCreativeChoice: Boolean = false,
     @SerialName("execution_intent")
     val executionIntent: ExecutionIntentLabel = ExecutionIntentLabel.INQUIRE,
 )
@@ -116,6 +118,7 @@ suspend fun AIAgentContext.classifyStoryTurnIntentWithAI(request: StoryRequest):
             confidenceBand = IntentConfidenceBand.HIGH,
             riskClass = IntentRiskClass.SAFE,
             requiresConfirmation = false,
+            requiresCreativeChoice = false,
             executionIntent = IntentExecutionIntent.EXECUTE,
         )
     }
@@ -132,6 +135,7 @@ suspend fun AIAgentContext.classifyStoryTurnIntentWithAI(request: StoryRequest):
             confidenceBand = IntentConfidenceBand.LOW,
             riskClass = IntentRiskClass.SAFE,
             requiresConfirmation = false,
+            requiresCreativeChoice = false,
             executionIntent = IntentExecutionIntent.INQUIRE,
         )
     }
@@ -186,6 +190,7 @@ suspend fun AIAgentContext.classifyStoryTurnIntentWithAI(request: StoryRequest):
             confidenceBand = IntentConfidenceBand.LOW,
             riskClass = IntentRiskClass.SAFE,
             requiresConfirmation = false,
+            requiresCreativeChoice = false,
             executionIntent = IntentExecutionIntent.INQUIRE,
         )
     }
@@ -208,6 +213,7 @@ suspend fun AIAgentContext.classifyStoryTurnIntentWithAI(request: StoryRequest):
         riskClass = classified.riskClass.toRiskClass(),
         anchorHint = classified.anchorHint.trim(),
         requiresConfirmation = classified.requiresConfirmation,
+        requiresCreativeChoice = classified.requiresCreativeChoice,
         executionIntent = classified.executionIntent.toExecutionIntent(),
     )
 }
@@ -221,6 +227,59 @@ private fun storyTurnIntentClassifierPrompt(userText: String, recentContext: Str
             +"Use message and recent context to resolve continuation intent."
             br()
             +"Interpret intent semantically (not by keywords), resolve continuation from context, and set requires_confirmation=true for destructive/high-risk actions."
+            br()
+            +"Speech-act precedence: classify by communicative act first, then action semantics."
+            br()
+            +"If the latest turn is primarily a question, capability check, permission check, hypothetical, comparison, or option-seeking request, set execution_intent=INQUIRE."
+            br()
+            +"Only set execution_intent=EXECUTE when the user is committing to apply changes now in this turn."
+            br()
+            +"Set requires_creative_choice=true when execution intent is clear but narrative direction selection should remain with the user before persisting changes."
+            br()
+            +"Do not set requires_creative_choice for simple bounded creates."
+            br()
+            +"Creative selector decision framework (semantic, not lexical):"
+            br()
+            numbered {
+                item("Direction openness: multiple narrative branches are valid and not uniquely implied by constraints.")
+                item("Constraint density: role/theme/tone/continuity-fit requirements remain partial, conflicting, or underspecified.")
+                item("Continuity impact: the choice can significantly influence subsequent chapters/scenes/arcs.")
+                item("Reversibility risk: locking one branch now is likely to cause costly continuity rework.")
+                item("Delegated choice intent: user is explicitly or implicitly asking assistant to choose among narrative directions.")
+            }
+            br()
+            +"Trigger requires_creative_choice=true when this framework indicates meaningful branch choice risk and user-direction preference should be preserved."
+            br()
+            +"If uncertain between direct creative write and creative selector on EXECUTE turns, prefer requires_creative_choice=true."
+            br()
+            +"Compound-turn precedence:"
+            br()
+            +"When a single turn both requests create/apply now and also expresses narrative-fit uncertainty (style/role/tone/continuity compatibility not decided), keep execution_intent=EXECUTE and set requires_creative_choice=true."
+            br()
+            +"In this compound case, selector comes before persistence; do not collapse into direct write."
+            br()
+            +"Examples are illustrative, not exhaustive."
+            br()
+            +"Do not infer creative selector from specific words alone."
+            br()
+            +"Use recent context to determine whether direction is already stabilized."
+            br()
+            +"Generic request families that may require creative selector:"
+            br()
+            bulleted {
+                item("High-leverage story additions with open fit (protagonists, primary conflicts, world-rule pivots, chapter direction branches).")
+                item("Multi-option story generation where one persisted branch must be selected.")
+                item("Style/arc alignment asks where canon plausibly supports divergent directions.")
+            }
+            br()
+            +"Do not trigger creative selector when:"
+            br()
+            bulleted {
+                item("The story write is bounded and specific with clear constraints.")
+                item("The direction/path has already been selected in prior turns.")
+                item("The turn is inquiry-only (execution_intent=INQUIRE).")
+                item("The turn is exploratory ideation with no persistence requested.")
+            }
             br()
             +"Classify execution intent by speech act."
             br()
@@ -272,6 +331,29 @@ private fun storyTurnIntentClassifierPrompt(userText: String, recentContext: Str
                 item("Short continuation acknowledgements after a prepared write plan/decision -> EXECUTE")
                 item("\"proceed\", \"yes apply\" after selector/decision prompt -> EXECUTE")
                 item("Destructive explicit command: \"delete this scene now\" -> EXECUTE with destructive risk/confirmation")
+                item("Continuation commit after prepared target: \"let's go ahead\", \"apply it\", \"continue\" -> EXECUTE")
+            }
+            br()
+            +"Creative selector examples:"
+            br()
+            bulleted {
+                item("Execute + under-constrained fit: \"create a new protagonist now; choose the best fit for current cast and tone\" -> EXECUTE + requires_creative_choice=true")
+                item("Execute + branching narrative: \"add possible chapter directions and choose one that matches current arc tone\" -> EXECUTE + requires_creative_choice=true")
+                item("Execute + compatibility uncertainty: \"create a high-impact character now; uncertain what narrative style best integrates with existing chapters\" -> EXECUTE + requires_creative_choice=true")
+                item("Execute + delegated branch-fit: \"add a major ally and decide the best arc role for current continuity\" -> EXECUTE + requires_creative_choice=true")
+                item("Bounded create: \"create three random side characters\" -> EXECUTE + requires_creative_choice=false")
+                item("Precise story write: \"create chapter 4 opening in first-person past tense, 700 words\" -> EXECUTE + requires_creative_choice=false")
+            }
+            br()
+            +"Additional contrastive examples:"
+            br()
+            bulleted {
+                item("Early story bootstrap: \"create one random character for this new story\" -> EXECUTE + requires_creative_choice=false")
+                item("Established continuity + open fit: \"add a protagonist and decide how they should connect to existing chapters\" -> EXECUTE + requires_creative_choice=true")
+                item("Bounded story create: \"create a supporting medic, calm tone, chapter-2 ally role\" -> EXECUTE + requires_creative_choice=false")
+                item("Compound mixed signal: \"create it now, but I'm unsure which narrative direction fits best\" -> EXECUTE + requires_creative_choice=true")
+                item("Cross-entity branch coupling: \"add a character and aligned chapter direction that best fits current world rules\" -> EXECUTE + requires_creative_choice=true")
+                item("Post-selector continuation: \"use option 1 and apply\" after prior selector -> EXECUTE + requires_creative_choice=false")
             }
             br()
             +"Return JSON only."
@@ -291,6 +373,7 @@ private fun storyTurnIntentClassifierPrompt(userText: String, recentContext: Str
                   "risk_class": "SAFE | DESTRUCTIVE",
                   "anchor_hint": "short target reference",
                   "requires_confirmation": false,
+                  "requires_creative_choice": false,
                   "execution_intent": "EXECUTE | INQUIRE"
                 }
                 """.trimIndent(),

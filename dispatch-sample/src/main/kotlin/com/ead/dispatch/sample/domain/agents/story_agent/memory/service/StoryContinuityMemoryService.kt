@@ -27,14 +27,28 @@ class StoryContinuityMemoryService(
         val scenes = repository.getScenesByChapter(chapter.id).sortedBy { it.number }
         val now = Clock.System.now().toEpochMilliseconds()
 
-        val keyBeats = buildKeyBeats(chapter, scenes)
+        val baseKeyBeats = buildKeyBeats(chapter, scenes)
         val entities = extractEntities(storyId)
-        var unresolved = keyBeats.takeLast(2)
         var summaryShort = summarizeDraftText(chapter, approvedText)
+        var summaryDelta = summaryShort
+        val keyBeats = baseKeyBeats.toMutableList()
+        var unresolved = keyBeats.takeLast(2)
+        val additionalWarnings = mutableListOf<String>()
         summarizer?.summarize(chapter, approvedText, keyBeats)?.let { llmSummary ->
             summaryShort = llmSummary.summaryShort.ifBlank { summaryShort }
+            summaryDelta = llmSummary.summaryDelta.ifBlank { summaryDelta }
             if (llmSummary.unresolvedThreads.isNotEmpty()) {
                 unresolved = llmSummary.unresolvedThreads
+            }
+            if (llmSummary.newFacts.isNotEmpty()) {
+                keyBeats += llmSummary.newFacts.map { fact -> "Fact: ${fact.compact(100)}" }
+            }
+            if (llmSummary.resolvedThreads.isNotEmpty()) {
+                keyBeats += llmSummary.resolvedThreads.map { thread -> "Resolved: ${thread.compact(100)}" }
+            }
+            if (llmSummary.continuityRisks.isNotEmpty()) {
+                unresolved += llmSummary.continuityRisks.map { risk -> "Risk: ${risk.compact(100)}" }
+                additionalWarnings += llmSummary.continuityRisks.map { risk -> "Continuity risk: ${risk.compact(100)}" }
             }
         }
 
@@ -44,9 +58,9 @@ class StoryContinuityMemoryService(
                 storyId = storyId,
                 approvedChecksum = approvedChecksum,
                 summaryShort = summaryShort,
-                keyBeatsJson = json.encodeToString(ListSerializer(String.serializer()), keyBeats),
+                keyBeatsJson = json.encodeToString(ListSerializer(String.serializer()), keyBeats.distinct().take(10)),
                 entitiesJson = json.encodeToString(ListSerializer(String.serializer()), entities),
-                unresolvedThreadsJson = json.encodeToString(ListSerializer(String.serializer()), unresolved),
+                unresolvedThreadsJson = json.encodeToString(ListSerializer(String.serializer()), unresolved.distinct().take(5)),
                 pov = story.styleProfile?.pov,
                 tense = story.styleProfile?.tense,
                 updatedAt = now,
@@ -59,14 +73,12 @@ class StoryContinuityMemoryService(
             .sortedBy { it.updatedAt }
             .joinToString(separator = " ") { it.summaryShort }
             .compact(700)
-
         val activeThreads = recent
             .flatMap { decodeList(it.unresolvedThreadsJson) }
             .mapNotNull { it.trim().takeIf(String::isNotEmpty) }
             .distinct()
             .take(5)
-
-        val warnings = buildWarnings(recent)
+        val warnings = (buildWarnings(recent) + additionalWarnings).distinct().take(4)
         val chapterIds = recent.map { it.chapterId }
 
         repository.upsertStoryContinuityMemory(
@@ -79,6 +91,7 @@ class StoryContinuityMemoryService(
                 updatedAt = now,
             )
         )
+
     }
 
     suspend fun loadForPrompt(
@@ -91,18 +104,46 @@ class StoryContinuityMemoryService(
             StoryChapterMemorySnapshot(
                 chapterId = row.chapterId,
                 summaryShort = row.summaryShort,
+                summaryDelta = row.summaryShort,
                 keyBeats = decodeList(row.keyBeatsJson).take(3),
                 entities = decodeList(row.entitiesJson).take(4),
+                newFacts = decodeList(row.keyBeatsJson)
+                    .filter { it.startsWith("Fact:") }
+                    .map { it.removePrefix("Fact:").trim() }
+                    .take(2),
+                resolvedThreads = decodeList(row.keyBeatsJson)
+                    .filter { it.startsWith("Resolved:") }
+                    .map { it.removePrefix("Resolved:").trim() }
+                    .take(1),
                 unresolvedThreads = decodeList(row.unresolvedThreadsJson).take(2),
+                continuityRisks = decodeList(row.unresolvedThreadsJson)
+                    .filter { it.startsWith("Risk:") }
+                    .map { it.removePrefix("Risk:").trim() }
+                    .take(1),
                 pov = row.pov,
                 tense = row.tense,
                 updatedAt = row.updatedAt,
             )
         }
+        val rollingDelta = recentSnapshots
+            .sortedBy { it.updatedAt }
+            .joinToString(" ") { it.summaryDelta }
+            .compact(400)
+        val recentNewFacts = recentSnapshots
+            .flatMap { it.newFacts }
+            .distinct()
+            .take(6)
+        val resolvedThreads = recentSnapshots
+            .flatMap { it.resolvedThreads }
+            .distinct()
+            .take(4)
         return trimToBudget(
             StoryContinuitySnapshot(
+                rollingDelta = rollingDelta,
                 rollingSummary = continuity.rollingSummary,
                 activeThreads = decodeList(continuity.activeThreadsJson),
+                recentNewFacts = recentNewFacts,
+                resolvedThreads = resolvedThreads,
                 continuityWarnings = decodeList(continuity.continuityWarningsJson),
                 recentChapters = recentSnapshots,
             ),
@@ -163,18 +204,31 @@ class StoryContinuityMemoryService(
         maxChars: Int,
     ): StoryContinuitySnapshot {
         var budget = maxChars.coerceAtLeast(200)
+        val rollingDelta = snapshot.rollingDelta.compact((budget * 25) / 100).also { budget -= it.length }
         val rolling = snapshot.rollingSummary.compact((budget * 45) / 100).also { budget -= it.length }
         val threads = snapshot.activeThreads
             .map { it.compact(90) }
             .scanWithinBudget(budget / 3)
             .also { used -> budget -= used.sumOf { it.length } }
+        val facts = snapshot.recentNewFacts
+            .map { it.compact(80) }
+            .scanWithinBudget(budget / 4)
+            .also { used -> budget -= used.sumOf { it.length } }
+        val resolved = snapshot.resolvedThreads
+            .map { it.compact(80) }
+            .scanWithinBudget(budget / 6)
+            .also { used -> budget -= used.sumOf { it.length } }
         val chapters = snapshot.recentChapters
             .map { chapter ->
                 chapter.copy(
                     summaryShort = chapter.summaryShort.compact(140),
+                    summaryDelta = chapter.summaryDelta.compact(110),
                     keyBeats = chapter.keyBeats.map { it.compact(80) }.take(2),
                     entities = chapter.entities.take(3),
+                    newFacts = chapter.newFacts.map { it.compact(70) }.take(1),
+                    resolvedThreads = chapter.resolvedThreads.map { it.compact(70) }.take(1),
                     unresolvedThreads = chapter.unresolvedThreads.map { it.compact(80) }.take(1),
+                    continuityRisks = chapter.continuityRisks.map { it.compact(70) }.take(1),
                 )
             }
             .scanChaptersWithinBudget((budget * 8) / 10)
@@ -182,8 +236,11 @@ class StoryContinuityMemoryService(
             .map { it.compact(90) }
             .take(2)
         return StoryContinuitySnapshot(
+            rollingDelta = rollingDelta,
             rollingSummary = rolling,
             activeThreads = threads,
+            recentNewFacts = facts,
+            resolvedThreads = resolved,
             continuityWarnings = warnings,
             recentChapters = chapters,
         )

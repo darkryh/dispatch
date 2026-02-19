@@ -40,6 +40,7 @@ data class ChatIntentSignal(
     val riskClass: IntentRiskClass = IntentRiskClass.SAFE,
     val anchorHint: String = "",
     val requiresConfirmation: Boolean = false,
+    val requiresCreativeChoice: Boolean = false,
     val executionIntent: IntentExecutionIntent = IntentExecutionIntent.EXECUTE,
 )
 
@@ -71,6 +72,7 @@ data class ChatTurnPolicy(
     val explicitWriteIntent: Boolean,
     val allowWriteTools: Boolean,
     val requireSelectorForDestructive: Boolean,
+    val requireSelectorForCreative: Boolean = false,
     val rationale: String,
     val fromDecisionPrompt: Boolean,
     val requestTextHash: String = "",

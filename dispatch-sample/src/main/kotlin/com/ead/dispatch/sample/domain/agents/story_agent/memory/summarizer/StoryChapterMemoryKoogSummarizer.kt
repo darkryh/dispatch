@@ -40,13 +40,26 @@ class StoryChapterMemoryKoogSummarizer : StoryChapterMemorySummarizer {
             id = "story-memory-summarizer",
         )
         val result = runCatching { agent.run(request).getOrThrow().data }.getOrNull() ?: return null
-        val summary = result.summaryShort.trim().takeIf { it.isNotEmpty() } ?: return null
+        val summaryDelta = result.summaryDelta.trim().takeIf { it.isNotEmpty() } ?: return null
         return StoryChapterMemorySummary(
-            summaryShort = summary.compact(280),
-            unresolvedThreads = result.unresolvedThreads
+            summaryShort = summaryDelta.compact(280),
+            summaryDelta = summaryDelta.compact(220),
+            newFacts = result.newFacts
                 .mapNotNull { it.trim().takeIf(String::isNotEmpty) }
                 .distinct()
                 .take(3),
+            resolvedThreads = result.resolvedThreads
+                .mapNotNull { it.trim().takeIf(String::isNotEmpty) }
+                .distinct()
+                .take(2),
+            unresolvedThreads = result.openThreads
+                .mapNotNull { it.trim().takeIf(String::isNotEmpty) }
+                .distinct()
+                .take(3),
+            continuityRisks = result.continuityRisks
+                .mapNotNull { it.trim().takeIf(String::isNotEmpty) }
+                .distinct()
+                .take(2),
         )
     }
 }

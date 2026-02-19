@@ -11,15 +11,21 @@ fun storyChapterMemorySummarizerPrompt(
     system {
         markdown {
             h2("Role")
-            +"Summarize approved chapter canon for continuity memory."
+            +"Summarize approved chapter canon into compact delta memory for continuity."
             br()
             +"Return only structured fields."
             br()
 
             h2("Output Rules")
-            +"summaryShort: one compact continuity summary (1-2 sentences, <= 280 chars)."
+            +"summaryDelta: one compact statement of what changed in canon this chapter (<= 220 chars)."
             br()
-            +"unresolvedThreads: 0-3 short bullet-like strings for open questions/tensions."
+            +"newFacts: 0-3 concise canonical additions introduced in this chapter."
+            br()
+            +"resolvedThreads: 0-2 concise tensions/questions that became resolved."
+            br()
+            +"openThreads: 0-3 concise tensions/questions still unresolved."
+            br()
+            +"continuityRisks: 0-2 concise potential continuity risks/contradictions."
             br()
             +"Do not invent facts not present in inputs."
             br()
