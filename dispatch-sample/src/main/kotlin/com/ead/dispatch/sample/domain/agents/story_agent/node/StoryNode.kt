@@ -98,6 +98,7 @@ private fun AIAgentGraphContextBase.setupAndStreamStoryMode(
             val continuityMemory = withContext(Dispatchers.IO) {
                 continuityMemoryService.loadForPrompt(request.storyId)
             }
+            val loadedStoryPreferencesContext = agentContext.currentLoadedStoryPreferencesContext()
 
             llm.writeSession {
                 rewritePrompt { existing ->
@@ -114,6 +115,7 @@ private fun AIAgentGraphContextBase.setupAndStreamStoryMode(
                         ragContext = ragContext,
                         turnPolicy = turnInput.policy,
                         continuityMemory = continuityMemory,
+                        loadedStoryPreferencesContext = loadedStoryPreferencesContext,
                     )
 
                     basePrompt.withMessages { baseMessages ->

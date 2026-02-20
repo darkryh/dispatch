@@ -8,11 +8,13 @@ import ai.koog.agents.core.tools.ToolRegistry
 import ai.koog.agents.core.tools.reflect.asTools
 import ai.koog.agents.features.eventHandler.feature.EventHandler
 import ai.koog.agents.features.tokenizer.feature.MessageTokenizer
+import ai.koog.agents.memory.feature.AgentMemory
 import ai.koog.agents.snapshot.feature.Persistence
 import ai.koog.prompt.tokenizer.SimpleRegexBasedTokenizer
 import ai.koog.prompt.streaming.StreamFrame
 import com.ead.dispatch.sample.data.repositories.StructuredIndexRepository
 import com.ead.dispatch.sample.domain.AIProvider
+import com.ead.dispatch.sample.domain.MemoryStore
 import com.ead.dispatch.sample.domain.Storage
 import com.ead.dispatch.sample.domain.agents.StoryAgent
 import com.ead.dispatch.sample.domain.agents.chat_agent.extensions.runWithStartCheckpoint
@@ -21,6 +23,8 @@ import com.ead.dispatch.sample.domain.agents.story_agent.node.StoryTurnInput
 import com.ead.dispatch.sample.domain.agents.story_agent.node.nodeApplyStoryTurnPolicy
 import com.ead.dispatch.sample.domain.agents.story_agent.node.nodeAuditStoryTurn
 import com.ead.dispatch.sample.domain.agents.story_agent.node.nodeClassifyStoryIntent
+import com.ead.dispatch.sample.domain.agents.story_agent.node.nodeLoadStoryPreferences
+import com.ead.dispatch.sample.domain.agents.story_agent.node.nodeSaveStoryPreferences
 import com.ead.dispatch.sample.domain.agents.story_agent.node.nodeSetupAndStreamStoryMode
 import com.ead.dispatch.sample.domain.agents.tools.InteractionTools
 import com.ead.dispatch.sample.domain.agents.tools.StoryDraftTools
@@ -61,6 +65,8 @@ class KoogStoryAgent(
 
                 val applyTurnPolicy by nodeApplyStoryTurnPolicy()
 
+                val loadStoryPreferences by nodeLoadStoryPreferences()
+
                 val contextBeforeLlm by nodeManageContextBeforeLlm<StoryTurnInput>(
                     hints = { turnInput ->
                         ContextHints(
@@ -88,17 +94,21 @@ class KoogStoryAgent(
 
                 val contextAfterLlm by nodeManageContextAfterLlm<ContextualResponse<Flow<StreamFrame>>>()
 
+                val saveStoryPreferences by nodeSaveStoryPreferences()
+
                 val auditTurn by nodeAuditStoryTurn()
 
                 edge(nodeStart forwardTo classifyIntent)
 
                 edge(classifyIntent forwardTo applyTurnPolicy)
-                edge(applyTurnPolicy forwardTo contextBeforeLlm)
+                edge(applyTurnPolicy forwardTo loadStoryPreferences)
+                edge(loadStoryPreferences forwardTo contextBeforeLlm)
 
                 edge(contextBeforeLlm forwardTo storyAgentModel)
 
                 edge(storyAgentModel forwardTo contextAfterLlm)
-                edge(contextAfterLlm forwardTo auditTurn)
+                edge(contextAfterLlm forwardTo saveStoryPreferences)
+                edge(saveStoryPreferences forwardTo auditTurn)
                 edge(auditTurn forwardTo nodeFinish)
             },
             responseProcessor = null,
@@ -126,6 +136,13 @@ class KoogStoryAgent(
                     this.storage = Storage.provider
                     this.enableAutomaticPersistence = false
                     this.rollbackStrategy = RollbackStrategy.Default
+                }
+                install(AgentMemory.Feature) {
+                    memoryProvider = MemoryStore.provider
+                    productName = "dispatch"
+                    organizationName = "ead"
+                    featureName = "story"
+                    this.agentName = agentName
                 }
             },
             id = agentName,

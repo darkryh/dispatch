@@ -15,6 +15,7 @@ import com.ead.dispatch.sample.domain.SessionManager
 import com.ead.dispatch.sample.domain.Storage
 import com.ead.dispatch.sample.domain.agents.ChatAgent
 import com.ead.dispatch.sample.domain.agents.StoryAgent
+import com.ead.dispatch.sample.domain.agents.chat_agent.ChatDecisionContext
 import com.ead.dispatch.sample.domain.agents.chat_agent.ChatRequest
 import com.ead.dispatch.sample.domain.agents.story_agent.StoryRequest
 import com.ead.dispatch.sample.domain.agents.tools.StoryDraftTools
@@ -229,6 +230,7 @@ class ChatViewModel(
     private fun submitMessage(
         text: String,
         fromDecisionPrompt: Boolean,
+        decisionContext: ChatDecisionContext? = null,
     ) {
         val input = text.trim()
         if (input.isBlank()) {
@@ -257,6 +259,7 @@ class ChatViewModel(
                             text = input,
                             storyId = session.id,
                             fromDecisionPrompt = fromDecisionPrompt,
+                            decisionContext = decisionContext,
                         )
                     )
                     WriterMode.CHAT_STORY -> storyAgent.run(
@@ -352,15 +355,28 @@ class ChatViewModel(
     }
 
     fun onDecisionSelected(selection: DecisionSelection) {
-        _pendingDecision.value ?: return
-        val selectedText = when (selection) {
-            is DecisionSelection.Option -> selection.option.label
-            is DecisionSelection.Custom -> selection.text.trim()
-        }.trim()
-        if (selectedText.isBlank()) return
+        val pendingDecision = _pendingDecision.value ?: return
+        val (selectedText, isCustomSelection) = when (selection) {
+            is DecisionSelection.Option -> selection.option.label to false
+            is DecisionSelection.Custom -> selection.text.trim() to true
+        }
+        val normalizedSelection = selectedText.trim()
+        if (normalizedSelection.isBlank()) return
+
+        val decisionContext = ChatDecisionContext(
+            promptId = pendingDecision.promptId,
+            question = pendingDecision.question,
+            optionLabels = pendingDecision.options.map { it.label },
+            selectedValue = normalizedSelection,
+            isCustomSelection = isCustomSelection,
+        )
 
         setPendingDecision(writerMode.value, null)
-        submitMessage(selectedText, fromDecisionPrompt = true)
+        submitMessage(
+            text = normalizedSelection,
+            fromDecisionPrompt = true,
+            decisionContext = decisionContext,
+        )
     }
 
     private fun restoreModeState(checkpoints: List<AgentCheckpointData>): ModeHistoryState {

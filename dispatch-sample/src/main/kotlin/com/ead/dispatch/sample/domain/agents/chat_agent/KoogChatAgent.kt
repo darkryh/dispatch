@@ -22,8 +22,8 @@ import com.ead.dispatch.sample.domain.agents.chat_agent.extensions.runWithStartC
 import com.ead.dispatch.sample.domain.agents.chat_agent.node.nodeApplyTurnPolicy
 import com.ead.dispatch.sample.domain.agents.chat_agent.node.nodeAuditTurn
 import com.ead.dispatch.sample.domain.agents.chat_agent.node.nodeClassifyIntent
-import com.ead.dispatch.sample.domain.agents.chat_agent.node.nodeLoadUserPreferences
-import com.ead.dispatch.sample.domain.agents.chat_agent.node.nodeSaveUserPreferences
+import com.ead.dispatch.sample.domain.agents.chat_agent.node.nodeLoadChatPreferences
+import com.ead.dispatch.sample.domain.agents.chat_agent.node.nodeSaveChatPreferences
 import com.ead.dispatch.sample.domain.agents.chat_agent.node.nodeSetupAndStreamChatMode
 import com.ead.dispatch.sample.domain.agents.chat_agent.policy.ChatTurnInput
 import com.ead.dispatch.sample.domain.agents.tools.CharacterTools
@@ -84,13 +84,13 @@ class KoogChatAgent(
 
                 val applyTurnPolicy by nodeApplyTurnPolicy()
 
-                val loadUserPreferences by nodeLoadUserPreferences()
+                val loadChatPreferences by nodeLoadChatPreferences()
 
                 val contextBeforeLlm by nodeManageContextBeforeLlm<ChatTurnInput>(
                     hints = { turnInput ->
                         ContextHints(
                             phase = TaskPhase.EXECUTION,
-                            factConcepts = PreferencesMemory.userConcepts,
+                            factConcepts = SelectorPreferencesMemory.userConcepts,
                             continuityPacket = ContinuityPacket(
                                 objective = "Follow chat turn policy: ${turnInput.policy.decisionPath.name}/${turnInput.policy.resolvedAction.name}.",
                                 constraints = listOf(
@@ -113,23 +113,23 @@ class KoogChatAgent(
 
                 val contextAfterLlm by nodeManageContextAfterLlm<ContextualResponse<Flow<StreamFrame>>>()
 
-                val saveUserPreferences by nodeSaveUserPreferences()
+                val saveChatPreferences by nodeSaveChatPreferences()
 
                 val auditTurn by nodeAuditTurn()
 
                 edge(nodeStart forwardTo classifyIntent)
 
                 edge(classifyIntent forwardTo applyTurnPolicy)
-                edge(applyTurnPolicy forwardTo loadUserPreferences)
-                edge(loadUserPreferences forwardTo contextBeforeLlm)
+                edge(applyTurnPolicy forwardTo loadChatPreferences)
+                edge(loadChatPreferences forwardTo contextBeforeLlm)
 
                 edge(contextBeforeLlm forwardTo chatAgentModel)
 
                 edge(chatAgentModel forwardTo contextAfterLlm)
 
-                edge(contextAfterLlm forwardTo saveUserPreferences)
+                edge(contextAfterLlm forwardTo saveChatPreferences)
 
-                edge(saveUserPreferences forwardTo auditTurn)
+                edge(saveChatPreferences forwardTo auditTurn)
                 edge(auditTurn forwardTo nodeFinish)
             },
             responseProcessor = null,

@@ -19,7 +19,7 @@ fun chatAgentPrompt(
     inputRequest: ChatRequest,
     ragContext: List<RagContextChunk>,
     turnPolicy: ChatTurnPolicy,
-    loadedUserPreferencesContext: String? = null,
+    loadedChatPreferencesContext: String? = null,
 )  = prompt("chat-agent") {
     val missing = buildList {
         if (context.story?.title.isNullOrBlank()) add("story.title")
@@ -190,11 +190,11 @@ fun chatAgentPrompt(
                 br()
             }
 
-            if (!loadedUserPreferencesContext.isNullOrBlank()) {
-                h2("Retrieved Writer Preferences")
+            if (!loadedChatPreferencesContext.isNullOrBlank()) {
+                h2("Retrieved Chat Preferences")
                 +"Use as soft guidance when relevant. Do not output this section verbatim."
                 br()
-                +loadedUserPreferencesContext
+                +loadedChatPreferencesContext
                 br()
             }
 

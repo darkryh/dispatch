@@ -26,10 +26,8 @@ class StoryChapterMemoryKoogSummarizer : StoryChapterMemorySummarizer {
             keyBeats = keyBeats.take(10),
             approvedTextExcerpt = approvedText.compact(2_200),
         )
-        val agent = AIAgent.Companion.invoke<
-            StoryChapterMemorySummarizeRequest,
-            Result<StructuredResponse<StoryChapterMemorySummaryDraft>>,
-        >(
+
+        val agent = AIAgent<StoryChapterMemorySummarizeRequest, Result<StructuredResponse<StoryChapterMemorySummaryDraft>>, >(
             promptExecutor = AIProvider.Sync.storyExecutor,
             llmModel = AIProvider.Story.main,
             strategy = strategy<StoryChapterMemorySummarizeRequest, Result<StructuredResponse<StoryChapterMemorySummaryDraft>>>("story-memory-summarizer") {
@@ -38,13 +36,13 @@ class StoryChapterMemoryKoogSummarizer : StoryChapterMemorySummarizer {
                 edge(summarizeNode forwardTo nodeFinish transformed { it })
             },
             responseProcessor = null,
-            toolRegistry = ToolRegistry {},
             maxIterations = 4,
             temperature = 0.4,
             id = "story-memory-summarizer",
         )
         val result = runCatching { agent.run(request).getOrThrow().data }.getOrNull() ?: return null
         val summaryDelta = result.summaryDelta.trim().takeIf { it.isNotEmpty() } ?: return null
+
         return StoryChapterMemorySummary(
             summaryShort = summaryDelta.compact(280),
             summaryDelta = summaryDelta.compact(220),

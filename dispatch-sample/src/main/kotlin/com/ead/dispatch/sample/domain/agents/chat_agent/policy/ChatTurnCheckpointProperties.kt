@@ -18,11 +18,13 @@ object ChatTurnCheckpointProperties {
     const val REQUIRES_CONFIRMATION = "dispatch.chat.requires_confirmation"
     const val SHOULD_SAVE_PREFERENCE = "dispatch.chat.should_save_preference"
     const val PREFERENCE_CONCEPTS = "dispatch.chat.preference_concepts"
-    const val PREFERENCE_CONFIDENCE = "dispatch.chat.preference_confidence"
-    const val PREFERENCE_EVIDENCE = "dispatch.chat.preference_evidence"
+    const val PREFERENCE_CONFIDENCE_BAND = "dispatch.chat.preference_confidence_band"
+    const val PREFERENCE_NOVELTY = "dispatch.chat.preference_novelty"
 
     const val PREFERENCE_SAVE_RECOMMENDED = "dispatch.chat.preference_save_recommended"
     const val PREFERENCE_CONCEPTS_SUGGESTED = "dispatch.chat.preference_concepts_suggested"
+    const val PREFERENCE_SAVE_CONFIDENCE_BAND = "dispatch.chat.preference_save_confidence_band"
+    const val PREFERENCE_SAVE_NOVELTY = "dispatch.chat.preference_save_novelty"
     const val PREFERENCE_SAVE_EXECUTED = "dispatch.chat.preference_save_executed"
     const val PREFERENCE_SAVE_SKIPPED_REASON = "dispatch.chat.preference_save_skipped_reason"
     const val REQUESTED_TOOL_CALLS = "dispatch.chat.requested_tool_calls"
@@ -60,13 +62,15 @@ object ChatTurnCheckpointProperties {
             merged[REQUIRES_CONFIRMATION] = JsonPrimitive(policy.requiresConfirmation)
             merged[SHOULD_SAVE_PREFERENCE] = JsonPrimitive(policy.shouldSavePreference)
             merged[PREFERENCE_CONCEPTS] = JsonPrimitive(policy.preferenceConceptKeywords.joinToString(","))
-            merged[PREFERENCE_CONFIDENCE] = JsonPrimitive(policy.preferenceConfidence)
-            merged[PREFERENCE_EVIDENCE] = JsonPrimitive(policy.preferenceEvidenceSpan)
+            merged[PREFERENCE_CONFIDENCE_BAND] = JsonPrimitive(policy.preferenceConfidenceBand.name)
+            merged[PREFERENCE_NOVELTY] = JsonPrimitive(policy.preferenceNovelty.name)
         }
 
         if (metrics != null) {
             merged[PREFERENCE_SAVE_RECOMMENDED] = JsonPrimitive(metrics.preferenceSaveRecommended)
             merged[PREFERENCE_CONCEPTS_SUGGESTED] = JsonPrimitive(metrics.preferenceConceptsSuggested)
+            merged[PREFERENCE_SAVE_CONFIDENCE_BAND] = JsonPrimitive(metrics.preferenceConfidenceBand)
+            merged[PREFERENCE_SAVE_NOVELTY] = JsonPrimitive(metrics.preferenceNovelty)
             merged[PREFERENCE_SAVE_EXECUTED] = JsonPrimitive(metrics.preferenceSaveExecuted)
             merged[PREFERENCE_SAVE_SKIPPED_REASON] = JsonPrimitive(metrics.preferenceSaveSkippedReason)
             merged[REQUESTED_TOOL_CALLS] = JsonPrimitive(metrics.requestedToolCalls)

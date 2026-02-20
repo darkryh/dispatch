@@ -1,4 +1,4 @@
-package com.ead.dispatch.sample.domain.agents.chat_agent.node
+package com.ead.dispatch.sample.domain.agents.story_agent.node
 
 import ai.koog.agents.core.agent.context.AIAgentGraphContextBase
 import ai.koog.agents.core.agent.context.featureOrThrow
@@ -13,71 +13,66 @@ import ai.koog.agents.memory.model.Fact
 import ai.koog.agents.memory.model.MultipleFacts
 import ai.koog.agents.memory.model.SingleFact
 import ai.koog.prompt.streaming.StreamFrame
-import com.ead.koog.context.orchestrator.api.ContextualResponse
 import com.ead.dispatch.sample.domain.agents.chat_agent.MemorySubjects
-import com.ead.dispatch.sample.domain.agents.chat_agent.ChatRequest
-import com.ead.dispatch.sample.domain.agents.chat_agent.SelectorPreferencesMemory
+import com.ead.dispatch.sample.domain.agents.chat_agent.PreferencesMemory
 import com.ead.dispatch.sample.domain.agents.intent.IntentConfidenceBand
-import com.ead.dispatch.sample.domain.agents.chat_agent.policy.ChatDecisionPath
-import com.ead.dispatch.sample.domain.agents.chat_agent.policy.currentChatTurnRequest
-import com.ead.dispatch.sample.domain.agents.chat_agent.policy.ChatPreferenceNovelty
-import com.ead.dispatch.sample.domain.agents.chat_agent.policy.ChatTurnPolicy
-import com.ead.dispatch.sample.domain.agents.chat_agent.policy.ChatTurnInput
-import com.ead.dispatch.sample.domain.agents.chat_agent.policy.currentChatTurnPolicy
-import com.ead.dispatch.sample.domain.agents.chat_agent.policy.currentLastSavedPreferenceHash
-import com.ead.dispatch.sample.domain.agents.chat_agent.policy.storeLastSavedPreferenceHash
-import com.ead.dispatch.sample.domain.agents.chat_agent.policy.storeLoadedChatPreferencesContext
-import com.ead.dispatch.sample.domain.agents.chat_agent.policy.updateChatTurnMetrics
+import com.ead.dispatch.sample.domain.agents.story_agent.policy.PreferenceNovelty
+import com.ead.dispatch.sample.domain.agents.story_agent.policy.currentStoryLastSavedPreferenceHash
+import com.ead.dispatch.sample.domain.agents.story_agent.policy.currentStoryTurnPolicy
+import com.ead.dispatch.sample.domain.agents.story_agent.policy.currentStoryTurnRequest
+import com.ead.dispatch.sample.domain.agents.story_agent.policy.storeLoadedStoryPreferencesContext
+import com.ead.dispatch.sample.domain.agents.story_agent.policy.storeStoryLastSavedPreferenceHash
+import com.ead.dispatch.sample.domain.agents.story_agent.policy.updateStoryTurnMetrics
+import com.ead.koog.context.orchestrator.api.ContextualResponse
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.Flow
 
 /**
- * Loads reusable chat preferences (selector-derived concepts) into prompt context.
- * This node does not persist new preferences; it only prepares retrieval context.
+ * Loads reusable story preferences into prompt context before the story turn is executed.
  */
 @AIAgentBuilderDslMarker
-fun AIAgentSubgraphBuilderBase<*, *>.nodeLoadChatPreferences(
+fun AIAgentSubgraphBuilderBase<*, *>.nodeLoadStoryPreferences(
     name: String? = null,
     scope: MemoryScopeType = MemoryScopeType.PRODUCT,
-): AIAgentNodeDelegate<ChatTurnInput, ChatTurnInput> =
-    node(name ?: "load-chat-preferences") { turnInput ->
-        loadChatPreferencesOnce(turnInput, scope)
+): AIAgentNodeDelegate<StoryTurnInput, StoryTurnInput> =
+    node(name ?: "story-load-story-preferences") { turnInput ->
+        loadStoryPreferencesOnce(turnInput, scope)
     }
 
 /**
- * Persists chat preferences for selector-driven turns only.
+ * Persists writer preferences from story-mode history.
  * Save is deduplicated by turn request hash.
  */
 @AIAgentBuilderDslMarker
-fun AIAgentSubgraphBuilderBase<*, *>.nodeSaveChatPreferences(
+fun AIAgentSubgraphBuilderBase<*, *>.nodeSaveStoryPreferences(
     name: String? = null,
     scope: MemoryScopeType = MemoryScopeType.PRODUCT,
 ): AIAgentNodeDelegate<ContextualResponse<Flow<StreamFrame>>, ContextualResponse<Flow<StreamFrame>>> =
-    node(name ?: "save-chat-preferences") { response ->
-        saveChatPreferencesOnce(response, scope)
+    node(name ?: "story-save-story-preferences") { response ->
+        saveStoryPreferencesOnce(response, scope)
     }
 
 @OptIn(InternalAgentsApi::class)
-private suspend fun AIAgentGraphContextBase.loadChatPreferencesOnce(
-    turnInput: ChatTurnInput,
+private suspend fun AIAgentGraphContextBase.loadStoryPreferencesOnce(
+    turnInput: StoryTurnInput,
     scope: MemoryScopeType,
-): ChatTurnInput {
-    if (!shouldLoadChatPreferences(turnInput)) {
-        storeLoadedChatPreferencesContext(null)
+): StoryTurnInput {
+    if (turnInput.policy.fromDecisionPrompt) {
+        storeLoadedStoryPreferencesContext(null)
         return turnInput
     }
 
     val memory = featureOrThrow(AgentMemory.Feature)
     val scopeValue = memory.scopesProfile.getScope(scope)
     if (scopeValue == null) {
-        storeLoadedChatPreferencesContext(null)
+        storeLoadedStoryPreferencesContext(null)
         return turnInput
     }
 
     val sections = buildList {
-        SelectorPreferencesMemory.userConcepts.forEach { concept ->
+        PreferencesMemory.userConcepts.forEach { concept ->
             val facts = memory.agentMemory.load(concept, MemorySubjects.User, scopeValue)
             val section = concept.toKoogFactSection(facts)
             if (!section.isNullOrBlank()) add(section)
@@ -89,37 +84,32 @@ private suspend fun AIAgentGraphContextBase.loadChatPreferencesOnce(
     } else {
         sections.joinToString(separator = "\n\n")
     }
-    storeLoadedChatPreferencesContext(promptContext)
+    storeLoadedStoryPreferencesContext(promptContext)
 
     return turnInput
 }
 
-internal fun shouldLoadChatPreferences(turnInput: ChatTurnInput): Boolean {
-    if (turnInput.policy.fromDecisionPrompt) return false
-
-    return when (turnInput.policy.decisionPath) {
-        ChatDecisionPath.DIRECT_RESPONSE,
-        ChatDecisionPath.DIRECT_WRITE -> true
-        ChatDecisionPath.FOLLOW_UP,
-        ChatDecisionPath.SELECTOR -> false
-    }
-}
-
 @OptIn(InternalAgentsApi::class)
-private suspend fun AIAgentGraphContextBase.saveChatPreferencesOnce(
+private suspend fun AIAgentGraphContextBase.saveStoryPreferencesOnce(
     response: ContextualResponse<Flow<StreamFrame>>,
     scope: MemoryScopeType,
 ): ContextualResponse<Flow<StreamFrame>> = kotlinx.coroutines.coroutineScope {
-    val policy = currentChatTurnPolicy()
-    val request = currentChatTurnRequest()
-    if (policy == null) {
-        return@coroutineScope response
-    }
+    val policy = currentStoryTurnPolicy() ?: return@coroutineScope response
+    val request = currentStoryTurnRequest() ?: return@coroutineScope response
+    val previousSavedHash = currentStoryLastSavedPreferenceHash()
+    val conceptsToSave = resolveStoryPreferenceConcepts(policy.preferenceConceptKeywords)
 
-    val previousSavedHash = currentLastSavedPreferenceHash()
-    val skipReason = preferenceSaveSkipReason(policy, request, previousSavedHash)
+    val skipReason = storyPreferenceSaveSkipReason(
+        fromDecisionPrompt = policy.fromDecisionPrompt,
+        shouldSavePreference = policy.shouldSavePreference,
+        preferenceConfidenceBand = policy.preferenceConfidenceBand,
+        preferenceNovelty = policy.preferenceNovelty,
+        hasResolvedConcepts = conceptsToSave.isNotEmpty(),
+        requestTextHash = policy.requestTextHash,
+        previousSavedHash = previousSavedHash,
+    )
     if (skipReason != null) {
-        updateChatTurnMetrics { metrics ->
+        updateStoryTurnMetrics { metrics ->
             metrics.preferenceSaveRecommended = policy.shouldSavePreference
             metrics.preferenceConceptsSuggested = policy.preferenceConceptKeywords.joinToString(",")
             metrics.preferenceConfidenceBand = policy.preferenceConfidenceBand.name
@@ -130,7 +120,6 @@ private suspend fun AIAgentGraphContextBase.saveChatPreferencesOnce(
         return@coroutineScope response
     }
 
-    val conceptsToSave = resolveChatPreferenceConcepts(policy.preferenceConceptKeywords)
     val memory = featureOrThrow(AgentMemory.Feature)
     val scopeValue = requireNotNull(memory.scopesProfile.getScope(scope)) {
         "Memory scope name missing for $scope."
@@ -149,45 +138,48 @@ private suspend fun AIAgentGraphContextBase.saveChatPreferencesOnce(
         }
         .awaitAll()
 
-    storeLastSavedPreferenceHash(policy.requestTextHash)
-    updateChatTurnMetrics { metrics ->
+    storeStoryLastSavedPreferenceHash(policy.requestTextHash)
+    updateStoryTurnMetrics { metrics ->
         metrics.preferenceSaveRecommended = policy.shouldSavePreference
         metrics.preferenceConceptsSuggested = conceptsToSave.joinToString(",") { it.keyword }
         metrics.preferenceConfidenceBand = policy.preferenceConfidenceBand.name
         metrics.preferenceNovelty = policy.preferenceNovelty.name
         metrics.preferenceSaveExecuted = true
         metrics.preferenceSaveSkippedReason = ""
+        metrics.preferenceSaveRequestHash = request.text.take(120)
     }
 
     response
 }
 
-internal fun preferenceSaveSkipReason(
-    policy: ChatTurnPolicy,
-    request: ChatRequest?,
+internal fun storyPreferenceSaveSkipReason(
+    fromDecisionPrompt: Boolean,
+    shouldSavePreference: Boolean,
+    preferenceConfidenceBand: IntentConfidenceBand,
+    preferenceNovelty: PreferenceNovelty,
+    hasResolvedConcepts: Boolean,
+    requestTextHash: String,
     previousSavedHash: String?,
 ): String? {
-    // Chat preference save is valid only after a selector decision is submitted.
-    if (!policy.fromDecisionPrompt) return "chat_non_selector_preference_save_disabled"
-    if (!policy.shouldSavePreference) return "classifier_not_recommended"
-    if (policy.preferenceConfidenceBand == IntentConfidenceBand.LOW) return "low_confidence"
-    if (policy.preferenceNovelty == ChatPreferenceNovelty.ALREADY_KNOWN) return "already_known"
+    if (fromDecisionPrompt) return "from_decision_prompt"
+    if (!shouldSavePreference) return "classifier_not_recommended"
+    if (preferenceConfidenceBand == IntentConfidenceBand.LOW) return "low_confidence"
+    if (preferenceNovelty == PreferenceNovelty.ALREADY_KNOWN) return "already_known"
     if (
-        policy.preferenceNovelty == ChatPreferenceNovelty.UNCERTAIN &&
-        policy.preferenceConfidenceBand != IntentConfidenceBand.HIGH
+        preferenceNovelty == PreferenceNovelty.UNCERTAIN &&
+        preferenceConfidenceBand != IntentConfidenceBand.HIGH
     ) {
         return "uncertain_low_confidence"
     }
-    if (policy.preferenceConceptKeywords.isEmpty()) return "no_target_concepts"
-    if (request?.decisionContext == null) return "missing_decision_context"
-    if (policy.requestTextHash.isBlank()) return "missing_request_hash"
-    if (previousSavedHash == policy.requestTextHash) return "duplicate_message_hash"
+    if (!hasResolvedConcepts) return "no_target_concepts"
+    if (requestTextHash.isBlank()) return "missing_request_hash"
+    if (previousSavedHash == requestTextHash) return "duplicate_message_hash"
     return null
 }
 
-internal fun resolveChatPreferenceConcepts(keywords: List<String>): List<Concept> {
+internal fun resolveStoryPreferenceConcepts(keywords: List<String>): List<Concept> {
     if (keywords.isEmpty()) return emptyList()
-    val conceptsByKeyword = SelectorPreferencesMemory.userConcepts.associateBy { it.keyword.lowercase() }
+    val conceptsByKeyword = PreferencesMemory.userConcepts.associateBy { it.keyword.lowercase() }
     return keywords
         .asSequence()
         .map { it.trim().lowercase() }

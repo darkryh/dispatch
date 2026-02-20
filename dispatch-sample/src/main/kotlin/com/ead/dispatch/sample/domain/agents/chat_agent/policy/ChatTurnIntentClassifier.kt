@@ -8,7 +8,7 @@ import ai.koog.prompt.message.Message
 import ai.koog.prompt.structure.StructureFixingParser
 import com.ead.dispatch.sample.domain.AIProvider
 import com.ead.dispatch.sample.domain.agents.chat_agent.ChatRequest
-import com.ead.dispatch.sample.domain.agents.chat_agent.PreferencesMemory
+import com.ead.dispatch.sample.domain.agents.chat_agent.SelectorPreferencesMemory
 import com.ead.dispatch.sample.domain.agents.intent.IntentConfidenceBand
 import com.ead.dispatch.sample.domain.agents.intent.IntentExecutionIntent
 import com.ead.dispatch.sample.domain.agents.intent.IntentResolvedAction
@@ -80,6 +80,18 @@ private enum class ExecutionIntentLabel {
 }
 
 @Serializable
+private enum class PreferenceNoveltyLabel {
+    @SerialName("NEW")
+    NEW,
+
+    @SerialName("ALREADY_KNOWN")
+    ALREADY_KNOWN,
+
+    @SerialName("UNCERTAIN")
+    UNCERTAIN,
+}
+
+@Serializable
 private data class ChatIntentClassifierResponse(
     @SerialName("intent_class")
     val intentClass: ChatIntentClassifierLabel,
@@ -95,12 +107,10 @@ private data class ChatIntentClassifierResponse(
     val shouldSavePreference: Boolean = false,
     @SerialName("preference_concepts")
     val preferenceConcepts: List<String> = emptyList(),
-    @SerialName("preference_confidence")
-    val preferenceConfidence: Double = 0.0,
-    @SerialName("preference_evidence_span")
-    val preferenceEvidenceSpan: String = "",
-    @SerialName("preference_reasoning")
-    val preferenceReasoning: String = "",
+    @SerialName("preference_confidence_band")
+    val preferenceConfidenceBand: ConfidenceBandLabel = ConfidenceBandLabel.LOW,
+    @SerialName("preference_novelty")
+    val preferenceNovelty: PreferenceNoveltyLabel = PreferenceNoveltyLabel.UNCERTAIN,
     @SerialName("resolved_action")
     val resolvedAction: ResolvedActionLabel = ResolvedActionLabel.FOLLOW_UP,
     @SerialName("confidence_band")
@@ -125,11 +135,6 @@ suspend fun AIAgentContext.classifyTurnIntentWithAI(request: ChatRequest): ChatI
             confidence = 1.0,
             evidenceSpan = request.text.take(140),
             reasoning = "User answered a decision prompt; continue as write flow.",
-            shouldSavePreference = false,
-            preferenceConceptKeywords = emptyList(),
-            preferenceConfidence = 0.0,
-            preferenceEvidenceSpan = "",
-            preferenceReasoning = "Decision prompt response should not trigger preference save.",
             resolvedAction = IntentResolvedAction.WRITE_UPDATE,
             confidenceBand = IntentConfidenceBand.HIGH,
             riskClass = IntentRiskClass.SAFE,
@@ -147,11 +152,6 @@ suspend fun AIAgentContext.classifyTurnIntentWithAI(request: ChatRequest): ChatI
             confidence = 0.0,
             evidenceSpan = "",
             reasoning = "Message is blank.",
-            shouldSavePreference = false,
-            preferenceConceptKeywords = emptyList(),
-            preferenceConfidence = 0.0,
-            preferenceEvidenceSpan = "",
-            preferenceReasoning = "",
             resolvedAction = IntentResolvedAction.FOLLOW_UP,
             confidenceBand = IntentConfidenceBand.LOW,
             riskClass = IntentRiskClass.SAFE,
@@ -208,11 +208,6 @@ suspend fun AIAgentContext.classifyTurnIntentWithAI(request: ChatRequest): ChatI
             confidence = 0.0,
             evidenceSpan = userText.take(140),
             reasoning = "Classifier failed; fallback to ambiguous.",
-            shouldSavePreference = false,
-            preferenceConceptKeywords = emptyList(),
-            preferenceConfidence = 0.0,
-            preferenceEvidenceSpan = "",
-            preferenceReasoning = "Classifier failed; skip preference save.",
             resolvedAction = IntentResolvedAction.FOLLOW_UP,
             confidenceBand = IntentConfidenceBand.LOW,
             riskClass = IntentRiskClass.SAFE,
@@ -228,8 +223,7 @@ suspend fun AIAgentContext.classifyTurnIntentWithAI(request: ChatRequest): ChatI
         ChatIntentClassifierLabel.AMBIGUOUS -> ChatIntentClass.AMBIGUOUS
         ChatIntentClassifierLabel.DESTRUCTIVE -> ChatIntentClass.DESTRUCTIVE
     }
-
-    val allowedPreferenceConcepts = PreferencesMemory.userConcepts
+    val allowedPreferenceConcepts = SelectorPreferencesMemory.userConcepts
         .map { it.keyword.lowercase() }
         .toSet()
     val mappedPreferenceConcepts = classified.preferenceConcepts
@@ -237,7 +231,6 @@ suspend fun AIAgentContext.classifyTurnIntentWithAI(request: ChatRequest): ChatI
         .filter { it.isNotEmpty() }
         .distinct()
         .filter { it in allowedPreferenceConcepts }
-
     val shouldSavePreference = classified.shouldSavePreference && mappedPreferenceConcepts.isNotEmpty()
 
     return ChatIntentSignal(
@@ -248,9 +241,8 @@ suspend fun AIAgentContext.classifyTurnIntentWithAI(request: ChatRequest): ChatI
         reasoning = classified.reasoning.trim(),
         shouldSavePreference = shouldSavePreference,
         preferenceConceptKeywords = mappedPreferenceConcepts,
-        preferenceConfidence = classified.preferenceConfidence.coerceIn(0.0, 1.0),
-        preferenceEvidenceSpan = classified.preferenceEvidenceSpan.trim(),
-        preferenceReasoning = classified.preferenceReasoning.trim(),
+        preferenceConfidenceBand = classified.preferenceConfidenceBand.toConfidenceBand(),
+        preferenceNovelty = classified.preferenceNovelty.toPreferenceNovelty(),
         resolvedAction = classified.resolvedAction.toResolvedAction(),
         confidenceBand = classified.confidenceBand.toConfidenceBand(),
         riskClass = classified.riskClass.toRiskClass(),
@@ -267,14 +259,18 @@ private fun chatTurnIntentClassifierPrompt(userText: String, recentContext: Stri
             h2("Role")
             +"Classify the latest chat turn using language-agnostic, context-aware intent reasoning."
             br()
-
             h2("Preference Save Signal")
-            +"Set should_save_preference=true only for durable writing preferences."
+            +"Set should_save_preference=true only for durable selector-style preferences."
             br()
             +"Allowed preference_concepts values:"
             br()
-            +"writer_pov_preference, writer_tense_preference, writer_tone_like_preference, writer_prose_style_preference, writer_content_boundary_preference"
+            +"selector_naming_direction_preference, selector_character_direction_preference, selector_plot_direction_preference, selector_tone_direction_preference, selector_general_creative_preference"
             br()
+            +"Set preference_confidence_band to HIGH/MEDIUM/LOW."
+            br()
+            +"Set preference_novelty to NEW when likely new, ALREADY_KNOWN when already present, UNCERTAIN otherwise."
+            br()
+
             +"Interpret intent semantically (not by keywords), resolve continuation using context, and set requires_confirmation=true for destructive/high-risk actions."
             br()
             +"Speech-act precedence: classify by communicative act first, then action semantics."
@@ -418,10 +414,9 @@ private fun chatTurnIntentClassifierPrompt(userText: String, recentContext: Stri
                   "evidence_span": "short quote",
                   "reasoning": "short explanation",
                   "should_save_preference": false,
-                  "preference_concepts": ["writer_tone_like_preference"],
-                  "preference_confidence": 0.0,
-                  "preference_evidence_span": "short quote",
-                  "preference_reasoning": "short explanation",
+                  "preference_concepts": ["selector_general_creative_preference"],
+                  "preference_confidence_band": "HIGH | MEDIUM | LOW",
+                  "preference_novelty": "NEW | ALREADY_KNOWN | UNCERTAIN",
                   "resolved_action": "ADVISE | WRITE_CREATE | WRITE_UPDATE | WRITE_DELETE | FOLLOW_UP",
                   "confidence_band": "HIGH | MEDIUM | LOW",
                   "risk_class": "SAFE | DESTRUCTIVE",
@@ -468,4 +463,10 @@ private fun RiskClassLabel.toRiskClass(): IntentRiskClass = when (this) {
 private fun ExecutionIntentLabel.toExecutionIntent(): IntentExecutionIntent = when (this) {
     ExecutionIntentLabel.EXECUTE -> IntentExecutionIntent.EXECUTE
     ExecutionIntentLabel.INQUIRE -> IntentExecutionIntent.INQUIRE
+}
+
+private fun PreferenceNoveltyLabel.toPreferenceNovelty(): ChatPreferenceNovelty = when (this) {
+    PreferenceNoveltyLabel.NEW -> ChatPreferenceNovelty.NEW
+    PreferenceNoveltyLabel.ALREADY_KNOWN -> ChatPreferenceNovelty.ALREADY_KNOWN
+    PreferenceNoveltyLabel.UNCERTAIN -> ChatPreferenceNovelty.UNCERTAIN
 }

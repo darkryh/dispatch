@@ -23,12 +23,23 @@ enum class StoryDecisionPath {
 }
 
 @Serializable
+enum class PreferenceNovelty {
+    NEW,
+    ALREADY_KNOWN,
+    UNCERTAIN,
+}
+
+@Serializable
 data class StoryIntentSignal(
     val intentClass: StoryIntentClass = StoryIntentClass.AMBIGUOUS,
     val explicitWriteIntent: Boolean = false,
     val confidence: Double = 0.0,
     val evidenceSpan: String = "",
     val reasoning: String = "",
+    val shouldSavePreference: Boolean = false,
+    val preferenceConceptKeywords: List<String> = emptyList(),
+    val preferenceConfidenceBand: IntentConfidenceBand = IntentConfidenceBand.LOW,
+    val preferenceNovelty: PreferenceNovelty = PreferenceNovelty.UNCERTAIN,
     val resolvedAction: IntentResolvedAction = IntentResolvedAction.FOLLOW_UP,
     val confidenceBand: IntentConfidenceBand = IntentConfidenceBand.LOW,
     val riskClass: IntentRiskClass = IntentRiskClass.SAFE,
@@ -49,6 +60,10 @@ data class StoryTurnPolicy(
     val rationale: String,
     val fromDecisionPrompt: Boolean,
     val requestTextHash: String = "",
+    val shouldSavePreference: Boolean = false,
+    val preferenceConceptKeywords: List<String> = emptyList(),
+    val preferenceConfidenceBand: IntentConfidenceBand = IntentConfidenceBand.LOW,
+    val preferenceNovelty: PreferenceNovelty = PreferenceNovelty.UNCERTAIN,
     val resolvedAction: IntentResolvedAction = IntentResolvedAction.FOLLOW_UP,
     val confidenceBand: IntentConfidenceBand = IntentConfidenceBand.LOW,
     val riskClass: IntentRiskClass = IntentRiskClass.SAFE,
@@ -61,6 +76,13 @@ data class StoryTurnPolicy(
 data class StoryTurnMetrics(
     val intentClass: StoryIntentClass,
     val decisionPath: StoryDecisionPath,
+    var preferenceSaveRecommended: Boolean = false,
+    var preferenceConceptsSuggested: String = "",
+    var preferenceConfidenceBand: String = "",
+    var preferenceNovelty: String = "",
+    var preferenceSaveExecuted: Boolean = false,
+    var preferenceSaveSkippedReason: String = "",
+    var preferenceSaveRequestHash: String = "",
     var requestedToolCalls: Int = 0,
     var executedToolCalls: Int = 0,
     var blockedToolCalls: Int = 0,
@@ -78,4 +100,8 @@ data class StoryTurnMetrics(
 fun StoryTurnPolicy.toMetrics(): StoryTurnMetrics = StoryTurnMetrics(
     intentClass = intentClass,
     decisionPath = decisionPath,
+    preferenceSaveRecommended = shouldSavePreference,
+    preferenceConceptsSuggested = preferenceConceptKeywords.joinToString(","),
+    preferenceConfidenceBand = preferenceConfidenceBand.name,
+    preferenceNovelty = preferenceNovelty.name,
 )

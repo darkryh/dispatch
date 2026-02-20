@@ -11,6 +11,7 @@ import com.ead.dispatch.sample.domain.agents.intent.IntentConfidenceBand
 import com.ead.dispatch.sample.domain.agents.intent.IntentExecutionIntent
 import com.ead.dispatch.sample.domain.agents.intent.IntentResolvedAction
 import com.ead.dispatch.sample.domain.agents.intent.IntentRiskClass
+import com.ead.dispatch.sample.domain.agents.chat_agent.PreferencesMemory
 import com.ead.dispatch.sample.domain.agents.story_agent.StoryRequest
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -79,6 +80,18 @@ private enum class ExecutionIntentLabel {
 }
 
 @Serializable
+private enum class PreferenceNoveltyLabel {
+    @SerialName("NEW")
+    NEW,
+
+    @SerialName("ALREADY_KNOWN")
+    ALREADY_KNOWN,
+
+    @SerialName("UNCERTAIN")
+    UNCERTAIN,
+}
+
+@Serializable
 private data class StoryIntentClassifierResponse(
     @SerialName("intent_class")
     val intentClass: StoryIntentClassifierLabel,
@@ -90,6 +103,14 @@ private data class StoryIntentClassifierResponse(
     val evidenceSpan: String = "",
     @SerialName("reasoning")
     val reasoning: String = "",
+    @SerialName("should_save_preference")
+    val shouldSavePreference: Boolean = false,
+    @SerialName("preference_concepts")
+    val preferenceConcepts: List<String> = emptyList(),
+    @SerialName("preference_confidence_band")
+    val preferenceConfidenceBand: ConfidenceBandLabel = ConfidenceBandLabel.LOW,
+    @SerialName("preference_novelty")
+    val preferenceNovelty: PreferenceNoveltyLabel = PreferenceNoveltyLabel.UNCERTAIN,
     @SerialName("resolved_action")
     val resolvedAction: ResolvedActionLabel = ResolvedActionLabel.FOLLOW_UP,
     @SerialName("confidence_band")
@@ -201,6 +222,15 @@ suspend fun AIAgentContext.classifyStoryTurnIntentWithAI(request: StoryRequest):
         StoryIntentClassifierLabel.AMBIGUOUS -> StoryIntentClass.AMBIGUOUS
         StoryIntentClassifierLabel.DESTRUCTIVE -> StoryIntentClass.DESTRUCTIVE
     }
+    val allowedPreferenceConcepts = PreferencesMemory.userConcepts
+        .map { it.keyword.lowercase() }
+        .toSet()
+    val mappedPreferenceConcepts = classified.preferenceConcepts
+        .map { it.trim().lowercase() }
+        .filter { it.isNotEmpty() }
+        .distinct()
+        .filter { it in allowedPreferenceConcepts }
+    val shouldSavePreference = classified.shouldSavePreference && mappedPreferenceConcepts.isNotEmpty()
 
     return StoryIntentSignal(
         intentClass = intentClass,
@@ -208,6 +238,10 @@ suspend fun AIAgentContext.classifyStoryTurnIntentWithAI(request: StoryRequest):
         confidence = classified.confidence.coerceIn(0.0, 1.0),
         evidenceSpan = classified.evidenceSpan.trim(),
         reasoning = classified.reasoning.trim(),
+        shouldSavePreference = shouldSavePreference,
+        preferenceConceptKeywords = mappedPreferenceConcepts,
+        preferenceConfidenceBand = classified.preferenceConfidenceBand.toConfidenceBand(),
+        preferenceNovelty = classified.preferenceNovelty.toPreferenceNovelty(),
         resolvedAction = classified.resolvedAction.toResolvedAction(),
         confidenceBand = classified.confidenceBand.toConfidenceBand(),
         riskClass = classified.riskClass.toRiskClass(),
@@ -225,6 +259,17 @@ private fun storyTurnIntentClassifierPrompt(userText: String, recentContext: Str
             +"Classify the latest STORY mode turn with language-agnostic, context-aware intent reasoning."
             br()
             +"Use message and recent context to resolve continuation intent."
+            br()
+            h2("Preference Save Signal")
+            +"Set should_save_preference=true only for durable writer preferences stated by the user."
+            br()
+            +"Allowed preference_concepts values:"
+            br()
+            +"writer_pov_preference, writer_tense_preference, writer_tone_like_preference, writer_prose_style_preference, writer_content_boundary_preference"
+            br()
+            +"Set preference_confidence_band to HIGH/MEDIUM/LOW for extraction confidence."
+            br()
+            +"Set preference_novelty to NEW when likely new, ALREADY_KNOWN when already present, UNCERTAIN otherwise."
             br()
             +"Interpret intent semantically (not by keywords), resolve continuation from context, and set requires_confirmation=true for destructive/high-risk actions."
             br()
@@ -368,6 +413,10 @@ private fun storyTurnIntentClassifierPrompt(userText: String, recentContext: Str
                   "confidence": 0.0,
                   "evidence_span": "short quote",
                   "reasoning": "short explanation",
+                  "should_save_preference": false,
+                  "preference_concepts": ["writer_tone_like_preference"],
+                  "preference_confidence_band": "HIGH | MEDIUM | LOW",
+                  "preference_novelty": "NEW | ALREADY_KNOWN | UNCERTAIN",
                   "resolved_action": "ADVISE | WRITE_CREATE | WRITE_UPDATE | WRITE_DELETE | FOLLOW_UP",
                   "confidence_band": "HIGH | MEDIUM | LOW",
                   "risk_class": "SAFE | DESTRUCTIVE",
@@ -414,4 +463,10 @@ private fun RiskClassLabel.toRiskClass(): IntentRiskClass = when (this) {
 private fun ExecutionIntentLabel.toExecutionIntent(): IntentExecutionIntent = when (this) {
     ExecutionIntentLabel.EXECUTE -> IntentExecutionIntent.EXECUTE
     ExecutionIntentLabel.INQUIRE -> IntentExecutionIntent.INQUIRE
+}
+
+private fun PreferenceNoveltyLabel.toPreferenceNovelty(): PreferenceNovelty = when (this) {
+    PreferenceNoveltyLabel.NEW -> PreferenceNovelty.NEW
+    PreferenceNoveltyLabel.ALREADY_KNOWN -> PreferenceNovelty.ALREADY_KNOWN
+    PreferenceNoveltyLabel.UNCERTAIN -> PreferenceNovelty.UNCERTAIN
 }

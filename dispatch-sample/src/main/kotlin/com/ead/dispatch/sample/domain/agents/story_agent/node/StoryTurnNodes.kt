@@ -9,6 +9,7 @@ import com.ead.dispatch.sample.domain.agents.story_agent.policy.StoryIntentSigna
 import com.ead.dispatch.sample.domain.agents.story_agent.policy.StoryTurnPolicy
 import com.ead.dispatch.sample.domain.agents.story_agent.policy.buildStoryTurnPolicy
 import com.ead.dispatch.sample.domain.agents.story_agent.policy.classifyStoryTurnIntentWithAI
+import com.ead.dispatch.sample.domain.agents.story_agent.policy.storeStoryTurnRequest
 import com.ead.dispatch.sample.domain.agents.story_agent.policy.storeStoryTurnPolicy
 import com.ead.dispatch.sample.domain.agents.story_agent.policy.updateStoryTurnMetrics
 import com.ead.koog.context.orchestrator.api.ContextualResponse
@@ -49,6 +50,7 @@ fun AIAgentSubgraphBuilderBase<*, *>.nodeApplyStoryTurnPolicy(
             intentSignal = classified.intentSignal,
         )
         storeStoryTurnPolicy(policy)
+        storeStoryTurnRequest(classified.request)
         StoryTurnInput(
             request = classified.request,
             policy = policy,

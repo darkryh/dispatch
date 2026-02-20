@@ -16,7 +16,7 @@ import ai.koog.prompt.message.ResponseMetaInfo
 import ai.koog.prompt.streaming.StreamFrame
 import com.ead.dispatch.sample.data.repositories.StructuredIndexRepository
 import com.ead.dispatch.sample.domain.AIProvider
-import com.ead.dispatch.sample.domain.agents.chat_agent.PreferencesMemory
+import com.ead.dispatch.sample.domain.agents.chat_agent.SelectorPreferencesMemory
 import com.ead.dispatch.sample.domain.agents.chat_agent.chatAgentPrompt
 import com.ead.dispatch.sample.domain.agents.chat_agent.policy.*
 import com.ead.dispatch.sample.domain.agents.chat_agent.util.saveCheckpointForHistory
@@ -95,7 +95,7 @@ private fun AIAgentGraphContextBase.setupAndStreamChatMode(
                     query = ragQuery,
                 )
             }
-            val loadedUserPreferencesContext = agentContext.currentLoadedUserPreferencesContext()
+            val loadedChatPreferencesContext = agentContext.currentLoadedChatPreferencesContext()
 
             llm.writeSession {
                 rewritePrompt { existing ->
@@ -110,7 +110,7 @@ private fun AIAgentGraphContextBase.setupAndStreamChatMode(
                         inputRequest = request,
                         ragContext = ragContext,
                         turnPolicy = turnInput.policy,
-                        loadedUserPreferencesContext = loadedUserPreferencesContext,
+                        loadedChatPreferencesContext = loadedChatPreferencesContext,
                     )
 
                     basePrompt.withMessages { baseMessages ->
@@ -259,7 +259,7 @@ private fun baseHints(
     return ContextHints(
         phase = TaskPhase.EXECUTION,
         recentToolCalls = recentToolCalls,
-        factConcepts = PreferencesMemory.userConcepts,
+        factConcepts = SelectorPreferencesMemory.userConcepts,
         continuityPacket = continuity,
     )
 }

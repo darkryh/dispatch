@@ -16,7 +16,18 @@ object StoryTurnCheckpointProperties {
     const val RISK_CLASS = "dispatch.story.risk_class"
     const val ANCHOR_HINT = "dispatch.story.anchor_hint"
     const val REQUIRES_CONFIRMATION = "dispatch.story.requires_confirmation"
+    const val SHOULD_SAVE_PREFERENCE = "dispatch.story.should_save_preference"
+    const val PREFERENCE_CONCEPTS = "dispatch.story.preference_concepts"
+    const val PREFERENCE_CONFIDENCE_BAND = "dispatch.story.preference_confidence_band"
+    const val PREFERENCE_NOVELTY = "dispatch.story.preference_novelty"
 
+    const val PREFERENCE_SAVE_RECOMMENDED = "dispatch.story.preference_save_recommended"
+    const val PREFERENCE_CONCEPTS_SUGGESTED = "dispatch.story.preference_concepts_suggested"
+    const val PREFERENCE_SAVE_CONFIDENCE_BAND = "dispatch.story.preference_save_confidence_band"
+    const val PREFERENCE_SAVE_NOVELTY = "dispatch.story.preference_save_novelty"
+    const val PREFERENCE_SAVE_EXECUTED = "dispatch.story.preference_save_executed"
+    const val PREFERENCE_SAVE_SKIPPED_REASON = "dispatch.story.preference_save_skipped_reason"
+    const val PREFERENCE_SAVE_REQUEST_HASH = "dispatch.story.preference_save_request_hash"
     const val REQUESTED_TOOL_CALLS = "dispatch.story.requested_tool_calls"
     const val EXECUTED_TOOL_CALLS = "dispatch.story.executed_tool_calls"
     const val BLOCKED_TOOL_CALLS = "dispatch.story.blocked_tool_calls"
@@ -50,9 +61,20 @@ object StoryTurnCheckpointProperties {
             merged[RISK_CLASS] = JsonPrimitive(policy.riskClass.name)
             merged[ANCHOR_HINT] = JsonPrimitive(policy.anchorHint)
             merged[REQUIRES_CONFIRMATION] = JsonPrimitive(policy.requiresConfirmation)
+            merged[SHOULD_SAVE_PREFERENCE] = JsonPrimitive(policy.shouldSavePreference)
+            merged[PREFERENCE_CONCEPTS] = JsonPrimitive(policy.preferenceConceptKeywords.joinToString(","))
+            merged[PREFERENCE_CONFIDENCE_BAND] = JsonPrimitive(policy.preferenceConfidenceBand.name)
+            merged[PREFERENCE_NOVELTY] = JsonPrimitive(policy.preferenceNovelty.name)
         }
 
         if (metrics != null) {
+            merged[PREFERENCE_SAVE_RECOMMENDED] = JsonPrimitive(metrics.preferenceSaveRecommended)
+            merged[PREFERENCE_CONCEPTS_SUGGESTED] = JsonPrimitive(metrics.preferenceConceptsSuggested)
+            merged[PREFERENCE_SAVE_CONFIDENCE_BAND] = JsonPrimitive(metrics.preferenceConfidenceBand)
+            merged[PREFERENCE_SAVE_NOVELTY] = JsonPrimitive(metrics.preferenceNovelty)
+            merged[PREFERENCE_SAVE_EXECUTED] = JsonPrimitive(metrics.preferenceSaveExecuted)
+            merged[PREFERENCE_SAVE_SKIPPED_REASON] = JsonPrimitive(metrics.preferenceSaveSkippedReason)
+            merged[PREFERENCE_SAVE_REQUEST_HASH] = JsonPrimitive(metrics.preferenceSaveRequestHash)
             merged[REQUESTED_TOOL_CALLS] = JsonPrimitive(metrics.requestedToolCalls)
             merged[EXECUTED_TOOL_CALLS] = JsonPrimitive(metrics.executedToolCalls)
             merged[BLOCKED_TOOL_CALLS] = JsonPrimitive(metrics.blockedToolCalls)

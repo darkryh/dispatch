@@ -11,6 +11,7 @@ import com.ead.dispatch.sample.domain.agents.chat_agent.policy.ChatIntentSignal
 import com.ead.dispatch.sample.domain.agents.chat_agent.policy.ClassifiedChatTurn
 import com.ead.dispatch.sample.domain.agents.chat_agent.policy.buildTurnPolicy
 import com.ead.dispatch.sample.domain.agents.chat_agent.policy.classifyTurnIntentWithAI
+import com.ead.dispatch.sample.domain.agents.chat_agent.policy.storeChatTurnRequest
 import com.ead.dispatch.sample.domain.agents.chat_agent.policy.storeChatTurnPolicy
 import com.ead.dispatch.sample.domain.agents.chat_agent.policy.updateChatTurnMetrics
 import kotlinx.coroutines.flow.Flow
@@ -30,9 +31,8 @@ fun AIAgentSubgraphBuilderBase<*, *>.nodeClassifyIntent(
             reasoning = intentSignal.reasoning,
             shouldSavePreference = intentSignal.shouldSavePreference,
             preferenceConceptKeywords = intentSignal.preferenceConceptKeywords,
-            preferenceConfidence = intentSignal.preferenceConfidence,
-            preferenceEvidenceSpan = intentSignal.preferenceEvidenceSpan,
-            preferenceReasoning = intentSignal.preferenceReasoning,
+            preferenceConfidenceBand = intentSignal.preferenceConfidenceBand,
+            preferenceNovelty = intentSignal.preferenceNovelty,
             resolvedAction = intentSignal.resolvedAction,
             confidenceBand = intentSignal.confidenceBand,
             riskClass = intentSignal.riskClass,
@@ -57,9 +57,8 @@ fun AIAgentSubgraphBuilderBase<*, *>.nodeApplyTurnPolicy(
                 reasoning = classified.reasoning,
                 shouldSavePreference = classified.shouldSavePreference,
                 preferenceConceptKeywords = classified.preferenceConceptKeywords,
-                preferenceConfidence = classified.preferenceConfidence,
-                preferenceEvidenceSpan = classified.preferenceEvidenceSpan,
-                preferenceReasoning = classified.preferenceReasoning,
+                preferenceConfidenceBand = classified.preferenceConfidenceBand,
+                preferenceNovelty = classified.preferenceNovelty,
                 resolvedAction = classified.resolvedAction,
                 confidenceBand = classified.confidenceBand,
                 riskClass = classified.riskClass,
@@ -69,6 +68,7 @@ fun AIAgentSubgraphBuilderBase<*, *>.nodeApplyTurnPolicy(
             ),
         )
         storeChatTurnPolicy(policy)
+        storeChatTurnRequest(classified.request)
         ChatTurnInput(
             request = classified.request,
             policy = policy,

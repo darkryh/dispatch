@@ -42,6 +42,10 @@ fun buildStoryTurnPolicy(
     val requiresConfirmation = intentSignal.requiresConfirmation
     val requiresCreativeChoice = intentSignal.requiresCreativeChoice
     val executionIntent = intentSignal.executionIntent
+    val shouldSavePreference = intentSignal.shouldSavePreference
+    val preferenceConceptKeywords = intentSignal.preferenceConceptKeywords
+    val preferenceConfidenceBand = intentSignal.preferenceConfidenceBand
+    val preferenceNovelty = intentSignal.preferenceNovelty
     val writeAllowedBySignal = (explicitWriteIntent && confidence >= explicitWriteConfidenceThreshold) ||
         (intentClass == StoryIntentClass.WRITE && confidence >= writeClassConfidenceThreshold)
     val writeAllowedByResolution =
@@ -87,6 +91,10 @@ fun buildStoryTurnPolicy(
             rationale = "Inquiry/question turn: answer without executing write tools.",
             fromDecisionPrompt = false,
             requestTextHash = requestTextHash,
+            shouldSavePreference = shouldSavePreference,
+            preferenceConceptKeywords = preferenceConceptKeywords,
+            preferenceConfidenceBand = preferenceConfidenceBand,
+            preferenceNovelty = preferenceNovelty,
             resolvedAction = IntentResolvedAction.ADVISE,
             confidenceBand = confidenceBand,
             riskClass = riskClass,
@@ -105,6 +113,10 @@ fun buildStoryTurnPolicy(
             rationale = "High-impact creative branching requires selector choice before write execution.",
             fromDecisionPrompt = false,
             requestTextHash = requestTextHash,
+            shouldSavePreference = shouldSavePreference,
+            preferenceConceptKeywords = preferenceConceptKeywords,
+            preferenceConfidenceBand = preferenceConfidenceBand,
+            preferenceNovelty = preferenceNovelty,
             resolvedAction = IntentResolvedAction.WRITE_CREATE,
             confidenceBand = confidenceBand,
             riskClass = IntentRiskClass.SAFE,
@@ -123,6 +135,10 @@ fun buildStoryTurnPolicy(
             rationale = "Destructive story action requires selector confirmation before execution.",
             fromDecisionPrompt = false,
             requestTextHash = requestTextHash,
+            shouldSavePreference = shouldSavePreference,
+            preferenceConceptKeywords = preferenceConceptKeywords,
+            preferenceConfidenceBand = preferenceConfidenceBand,
+            preferenceNovelty = preferenceNovelty,
             resolvedAction = IntentResolvedAction.WRITE_DELETE,
             confidenceBand = confidenceBand,
             riskClass = IntentRiskClass.DESTRUCTIVE,
@@ -141,6 +157,10 @@ fun buildStoryTurnPolicy(
             rationale = "Story write enabled by classifier signal (confidence=$confidence, evidence=\"$evidence\").",
             fromDecisionPrompt = false,
             requestTextHash = requestTextHash,
+            shouldSavePreference = shouldSavePreference,
+            preferenceConceptKeywords = preferenceConceptKeywords,
+            preferenceConfidenceBand = preferenceConfidenceBand,
+            preferenceNovelty = preferenceNovelty,
             resolvedAction = when (resolvedAction) {
                 IntentResolvedAction.WRITE_DELETE -> IntentResolvedAction.WRITE_UPDATE
                 IntentResolvedAction.FOLLOW_UP,
@@ -165,6 +185,10 @@ fun buildStoryTurnPolicy(
             rationale = "Story advisory request. Respond without write tools.",
             fromDecisionPrompt = false,
             requestTextHash = requestTextHash,
+            shouldSavePreference = shouldSavePreference,
+            preferenceConceptKeywords = preferenceConceptKeywords,
+            preferenceConfidenceBand = preferenceConfidenceBand,
+            preferenceNovelty = preferenceNovelty,
             resolvedAction = IntentResolvedAction.ADVISE,
             confidenceBand = confidenceBand,
             riskClass = IntentRiskClass.SAFE,
@@ -183,6 +207,10 @@ fun buildStoryTurnPolicy(
             rationale = "Story request is ambiguous/low-confidence. Ask one focused follow-up.",
             fromDecisionPrompt = false,
             requestTextHash = requestTextHash,
+            shouldSavePreference = shouldSavePreference,
+            preferenceConceptKeywords = preferenceConceptKeywords,
+            preferenceConfidenceBand = preferenceConfidenceBand,
+            preferenceNovelty = preferenceNovelty,
             resolvedAction = IntentResolvedAction.FOLLOW_UP,
             confidenceBand = confidenceBand,
             riskClass = riskClass,

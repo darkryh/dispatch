@@ -26,6 +26,7 @@ fun storyAgentPrompt(
     ragContext: List<RagContextChunk>,
     turnPolicy: StoryTurnPolicy,
     continuityMemory: StoryContinuitySnapshot? = null,
+    loadedStoryPreferencesContext: String? = null,
 ): Prompt = prompt("story-agent") {
     val volumes = storyModeContext.volumes.sortedBy { it.number }
     val chaptersByVolume = storyModeContext.chapters.groupBy { it.volumeId }
@@ -173,10 +174,8 @@ fun storyAgentPrompt(
                     }
                     if (volumes.size > 1) {
                         val hiddenVolumes = volumes.size - 1
-                        if (hiddenVolumes > 0) {
-                            +"(+$hiddenVolumes more volumes)"
-                            br()
-                        }
+                        +"(+$hiddenVolumes more volumes)"
+                        br()
                     }
                 }
             }
@@ -246,6 +245,14 @@ fun storyAgentPrompt(
                         br()
                     }
                 }
+            }
+
+            if (!loadedStoryPreferencesContext.isNullOrBlank()) {
+                h3("Retrieved Story Preferences")
+                +"Use as soft guidance when relevant. Do not output this section verbatim."
+                br()
+                +loadedStoryPreferencesContext
+                br()
             }
 
             h2("Response Style")

@@ -24,6 +24,13 @@ enum class ChatDecisionPath {
 }
 
 @Serializable
+enum class ChatPreferenceNovelty {
+    NEW,
+    ALREADY_KNOWN,
+    UNCERTAIN,
+}
+
+@Serializable
 data class ChatIntentSignal(
     val intentClass: ChatIntentClass = ChatIntentClass.AMBIGUOUS,
     val explicitWriteIntent: Boolean = false,
@@ -32,9 +39,8 @@ data class ChatIntentSignal(
     val reasoning: String = "",
     val shouldSavePreference: Boolean = false,
     val preferenceConceptKeywords: List<String> = emptyList(),
-    val preferenceConfidence: Double = 0.0,
-    val preferenceEvidenceSpan: String = "",
-    val preferenceReasoning: String = "",
+    val preferenceConfidenceBand: IntentConfidenceBand = IntentConfidenceBand.LOW,
+    val preferenceNovelty: ChatPreferenceNovelty = ChatPreferenceNovelty.UNCERTAIN,
     val resolvedAction: IntentResolvedAction = IntentResolvedAction.FOLLOW_UP,
     val confidenceBand: IntentConfidenceBand = IntentConfidenceBand.LOW,
     val riskClass: IntentRiskClass = IntentRiskClass.SAFE,
@@ -54,9 +60,8 @@ data class ClassifiedChatTurn(
     val reasoning: String = "",
     val shouldSavePreference: Boolean = false,
     val preferenceConceptKeywords: List<String> = emptyList(),
-    val preferenceConfidence: Double = 0.0,
-    val preferenceEvidenceSpan: String = "",
-    val preferenceReasoning: String = "",
+    val preferenceConfidenceBand: IntentConfidenceBand = IntentConfidenceBand.LOW,
+    val preferenceNovelty: ChatPreferenceNovelty = ChatPreferenceNovelty.UNCERTAIN,
     val resolvedAction: IntentResolvedAction = IntentResolvedAction.FOLLOW_UP,
     val confidenceBand: IntentConfidenceBand = IntentConfidenceBand.LOW,
     val riskClass: IntentRiskClass = IntentRiskClass.SAFE,
@@ -78,9 +83,8 @@ data class ChatTurnPolicy(
     val requestTextHash: String = "",
     val shouldSavePreference: Boolean = false,
     val preferenceConceptKeywords: List<String> = emptyList(),
-    val preferenceConfidence: Double = 0.0,
-    val preferenceEvidenceSpan: String = "",
-    val preferenceReasoning: String = "",
+    val preferenceConfidenceBand: IntentConfidenceBand = IntentConfidenceBand.LOW,
+    val preferenceNovelty: ChatPreferenceNovelty = ChatPreferenceNovelty.UNCERTAIN,
     val resolvedAction: IntentResolvedAction = IntentResolvedAction.FOLLOW_UP,
     val confidenceBand: IntentConfidenceBand = IntentConfidenceBand.LOW,
     val riskClass: IntentRiskClass = IntentRiskClass.SAFE,
@@ -101,6 +105,8 @@ data class ChatTurnMetrics(
     val decisionPath: ChatDecisionPath,
     var preferenceSaveRecommended: Boolean = false,
     var preferenceConceptsSuggested: String = "",
+    var preferenceConfidenceBand: String = "",
+    var preferenceNovelty: String = "",
     var preferenceSaveExecuted: Boolean = false,
     var preferenceSaveSkippedReason: String = "",
     var requestedToolCalls: Int = 0,
@@ -122,4 +128,6 @@ fun ChatTurnPolicy.toMetrics(): ChatTurnMetrics = ChatTurnMetrics(
     decisionPath = decisionPath,
     preferenceSaveRecommended = shouldSavePreference,
     preferenceConceptsSuggested = preferenceConceptKeywords.joinToString(","),
+    preferenceConfidenceBand = preferenceConfidenceBand.name,
+    preferenceNovelty = preferenceNovelty.name,
 )
