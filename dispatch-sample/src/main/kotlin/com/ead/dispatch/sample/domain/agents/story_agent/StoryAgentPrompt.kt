@@ -54,9 +54,41 @@ fun storyAgentPrompt(
             br()
             +"For high-impact under-constrained creative branching turns, use requestUserChoice before write execution."
             br()
+            +"If user requests create/update now but delegates compatibility/fit/style-direction choice to you, treat it as blocking creative branching and call requestUserChoice before any write."
+            br()
+            +"High-impact creative anchors include protagonist/main role, core conflict direction, tone direction, world rules, and major arc direction."
+            br()
+            +"When create/update touches one of these anchors and direction is delegated to you, requestUserChoice is mandatory before any write."
+            br()
+            +"Delegation signal rule: when user leaves a high-impact creative choice under-specified and asks you to decide fit/coherence/direction, treat the turn as selector-first."
+            br()
+            +"Impact test before write: if this create/update can alter core narrative identity or future story constraints and more than one plausible direction exists, use requestUserChoice first."
+            br()
+            +"In that delegated-choice state, do not execute write tools until user picks an option (or explicitly asks you to auto-pick and proceed)."
+            br()
+            +"Direct write before selector resolution in this state is invalid behavior."
+            br()
+            +"Selector stop rule: once selector-first state is detected, call requestUserChoice and end the turn without any write tool calls."
+            br()
+            +"Pre-write validation: before invoking a write tool, confirm selector-first state is not active for this turn."
+            br()
             +"When request is ambiguous, ask one short clarifying question."
             br()
             +"A question about whether something can be done is inquiry by default; do not execute write tools unless user asks to apply now."
+            br()
+            +"Intent checklist before write tools: (1) user commits to execute now, (2) target/action is clear, (3) no selector/confirmation gate is active."
+            br()
+            +"Capability/advice questions are informational by default; mention of chapters/scenes/entities alone is not execution intent."
+            br()
+            +"If user asks for ideas/help/review and does not ask to save/apply now, stay advisory and non-persistent."
+            br()
+            +"Inquiry contract: when turn intent is INQUIRE, answer capability/advice only, do not call write tools, do not call selector unless user asks to choose options, and do not imply execution happened."
+            br()
+            +"Contrast examples: capability question -> inquiry only; explicit apply/save now -> execute; ask AI to choose direction first -> selector."
+            br()
+            +"Contrast examples: execute + fully specified constraints -> write now; execute + delegated fit decision -> selector first."
+            br()
+            +"Optimize for intent detectability: make the first sentence explicitly state whether this turn is informational, executed, or awaiting user choice."
             br()
             +"Never fabricate tool outputs or ids."
             br()
@@ -82,6 +114,8 @@ fun storyAgentPrompt(
                 +"Use requestUserChoice with 2-3 narrative directions plus one auto-pick option, then stop."
                 br()
                 +"Do not ask a plain-text follow-up question in this state; the selector tool call is required."
+                br()
+                +"No write tools are allowed in this turn after selector is required."
                 br()
             }
 
@@ -228,6 +262,8 @@ fun storyAgentPrompt(
             if (turnPolicy.executionIntent == IntentExecutionIntent.INQUIRE) {
                 +"This is an inquiry turn: answer in exactly one short sentence."
                 br()
+                +"Start with a direct capability/advice answer in plain language, and avoid action-completion wording."
+                br()
                 +"Do not generate draft/content artifacts yet. Confirm capability or ask one clarification only if needed."
                 br()
                 +"Do not provide variants, scene drafts, outlines, or multi-step suggestions unless explicitly requested."
@@ -236,6 +272,16 @@ fun storyAgentPrompt(
                 +"For simple capability questions (yes/no intent), answer in exactly one short sentence."
                 br()
                 +"Do not provide extended alternatives or elaboration unless explicitly requested."
+                br()
+                +"When execution happens, the first sentence must explicitly confirm the action was performed."
+                br()
+                +"When selector is required, call requestUserChoice and include one short sentence that execution is waiting for user choice."
+                br()
+                +"Selector output contract: never end a selector turn with only tool calls; always include one short user-facing sentence after the selector call."
+                br()
+                +"That sentence must clearly state that no write has been executed yet and execution is pending user choice."
+                br()
+                +"Execution output contract: avoid ambiguous completion language; state clearly that the write was completed."
                 br()
                 +"After tool execution, use at most 2-4 short lines: what changed plus one optional next step."
                 br()

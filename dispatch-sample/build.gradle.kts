@@ -39,6 +39,7 @@ dependencies {
     runtimeOnly(libs.slf4j.nop)
 
     testImplementation(libs.koog.agents.test)
+    testImplementation(libs.dokimos.koog)
 
 }
 

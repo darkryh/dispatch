@@ -10,6 +10,7 @@ ktor = "3.4.0"
 sqldelight = "2.2.1"
 multiplatform-settings = "1.3.0"
 appdirs = "1.5.0"
+dokimos = "0.13.0"
 
 # Testing
 kotest = "5.9.1"
@@ -79,6 +80,7 @@ koog-tools = { module = "ai.koog:agents-tools", version.ref = "koog" }
 koog-features-event-handler = { module = "ai.koog:agents-features-event-handler", version.ref = "koog" }
 koog-features-memory = { module = "ai.koog:agents-features-memory", version.ref = "koog" }
 koog-agents-test = { module = "ai.koog:agents-test", version.ref = "koog" }
+dokimos-koog = { module = "dev.dokimos:dokimos-koog", version.ref = "dokimos" }
 
 # SQLDelight
 sqldelight-sqlite-driver = { module = "app.cash.sqldelight:sqlite-driver", version.ref = "sqldelight" }
