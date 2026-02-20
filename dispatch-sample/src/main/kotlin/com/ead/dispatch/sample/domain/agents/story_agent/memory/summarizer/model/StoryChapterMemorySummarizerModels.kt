@@ -17,4 +17,7 @@ data class StoryChapterMemorySummaryDraft(
     val resolvedThreads: List<String> = emptyList(),
     val openThreads: List<String> = emptyList(),
     val continuityRisks: List<String> = emptyList(),
+    val warnings: List<String> = emptyList(),
+    val confidence: String = "LOW",
+    val isUsable: Boolean = false,
 )

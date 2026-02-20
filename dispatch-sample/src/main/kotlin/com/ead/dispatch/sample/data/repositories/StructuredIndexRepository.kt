@@ -70,20 +70,60 @@ class StructuredIndexRepository(
         val storyId: String,
         val approvedChecksum: String,
         val summaryShort: String,
+        val summaryDelta: String,
         val keyBeatsJson: String,
+        val newFactsJson: String,
+        val resolvedThreadsJson: String,
+        val openThreadsJson: String,
+        val continuityRisksJson: String,
+        val warningsJson: String,
         val entitiesJson: String,
-        val unresolvedThreadsJson: String,
+        val summarizerConfidence: String,
+        val summarizerUsable: Boolean,
+        val summarizerModel: String? = null,
+        val summarizerRunId: String? = null,
         val pov: String? = null,
         val tense: String? = null,
         val updatedAt: Long,
     )
 
+    data class StoryChapterMemoryItemState(
+        val id: String,
+        val chapterId: String,
+        val storyId: String,
+        val kind: String,
+        val value: String,
+        val position: Long,
+        val sourceChapterId: String? = null,
+        val sourceVolumeId: String? = null,
+        val status: String,
+        val confidence: String,
+        val createdAt: Long,
+    )
+
     data class StoryContinuityMemoryState(
         val storyId: String,
+        val rollingDelta: String,
         val rollingSummary: String,
         val activeThreadsJson: String,
+        val recentNewFactsJson: String,
+        val recentResolvedThreadsJson: String,
         val continuityWarningsJson: String,
         val lastChapterIdsJson: String,
+        val packetModel: String? = null,
+        val packetGeneratedAt: Long? = null,
+        val updatedAt: Long,
+    )
+
+    data class StoryMemoryRetryQueueState(
+        val id: String,
+        val storyId: String,
+        val chapterId: String,
+        val approvedChecksum: String,
+        val failureReason: String,
+        val attemptCount: Long,
+        val nextAttemptAt: Long? = null,
+        val lastError: String? = null,
         val updatedAt: Long,
     )
 
@@ -853,9 +893,18 @@ class StructuredIndexRepository(
             story_id = record.storyId,
             approved_checksum = record.approvedChecksum,
             summary_short = record.summaryShort,
+            summary_delta = record.summaryDelta,
             key_beats_json = record.keyBeatsJson,
+            new_facts_json = record.newFactsJson,
+            resolved_threads_json = record.resolvedThreadsJson,
+            open_threads_json = record.openThreadsJson,
+            continuity_risks_json = record.continuityRisksJson,
+            warnings_json = record.warningsJson,
             entities_json = record.entitiesJson,
-            unresolved_threads_json = record.unresolvedThreadsJson,
+            summarizer_confidence = record.summarizerConfidence,
+            summarizer_usable = if (record.summarizerUsable) 1 else 0,
+            summarizer_model = record.summarizerModel,
+            summarizer_run_id = record.summarizerRunId,
             pov = record.pov,
             tense = record.tense,
             updated_at = record.updatedAt,
@@ -863,15 +912,24 @@ class StructuredIndexRepository(
     }
 
     suspend fun getStoryChapterMemoryByChapterId(chapterId: String): StoryChapterMemoryState? = query {
-        queries.selectStoryChapterMemoryByChapterId(chapter_id = chapterId) { chapterIdValue, storyId, approvedChecksum, summaryShort, keyBeatsJson, entitiesJson, unresolvedThreadsJson, pov, tense, updatedAt ->
+        queries.selectStoryChapterMemoryByChapterId(chapter_id = chapterId) { chapterIdValue, storyId, approvedChecksum, summaryShort, summaryDelta, keyBeatsJson, newFactsJson, resolvedThreadsJson, openThreadsJson, continuityRisksJson, warningsJson, entitiesJson, summarizerConfidence, summarizerUsable, summarizerModel, summarizerRunId, pov, tense, updatedAt ->
             StoryChapterMemoryState(
                 chapterId = chapterIdValue,
                 storyId = storyId,
                 approvedChecksum = approvedChecksum,
                 summaryShort = summaryShort,
+                summaryDelta = summaryDelta,
                 keyBeatsJson = keyBeatsJson,
+                newFactsJson = newFactsJson,
+                resolvedThreadsJson = resolvedThreadsJson,
+                openThreadsJson = openThreadsJson,
+                continuityRisksJson = continuityRisksJson,
+                warningsJson = warningsJson,
                 entitiesJson = entitiesJson,
-                unresolvedThreadsJson = unresolvedThreadsJson,
+                summarizerConfidence = summarizerConfidence,
+                summarizerUsable = summarizerUsable == 1L,
+                summarizerModel = summarizerModel,
+                summarizerRunId = summarizerRunId,
                 pov = pov,
                 tense = tense,
                 updatedAt = updatedAt,
@@ -886,15 +944,24 @@ class StructuredIndexRepository(
         queries.selectStoryChapterMemoryByStoryId(
             story_id = storyId,
             limit_value = limit,
-        ) { chapterId, storyIdValue, approvedChecksum, summaryShort, keyBeatsJson, entitiesJson, unresolvedThreadsJson, pov, tense, updatedAt ->
+        ) { chapterId, storyIdValue, approvedChecksum, summaryShort, summaryDelta, keyBeatsJson, newFactsJson, resolvedThreadsJson, openThreadsJson, continuityRisksJson, warningsJson, entitiesJson, summarizerConfidence, summarizerUsable, summarizerModel, summarizerRunId, pov, tense, updatedAt ->
             StoryChapterMemoryState(
                 chapterId = chapterId,
                 storyId = storyIdValue,
                 approvedChecksum = approvedChecksum,
                 summaryShort = summaryShort,
+                summaryDelta = summaryDelta,
                 keyBeatsJson = keyBeatsJson,
+                newFactsJson = newFactsJson,
+                resolvedThreadsJson = resolvedThreadsJson,
+                openThreadsJson = openThreadsJson,
+                continuityRisksJson = continuityRisksJson,
+                warningsJson = warningsJson,
                 entitiesJson = entitiesJson,
-                unresolvedThreadsJson = unresolvedThreadsJson,
+                summarizerConfidence = summarizerConfidence,
+                summarizerUsable = summarizerUsable == 1L,
+                summarizerModel = summarizerModel,
+                summarizerRunId = summarizerRunId,
                 pov = pov,
                 tense = tense,
                 updatedAt = updatedAt,
@@ -902,28 +969,110 @@ class StructuredIndexRepository(
         }.executeAsList()
     }
 
+    suspend fun replaceStoryChapterMemoryItems(
+        chapterId: String,
+        items: List<StoryChapterMemoryItemState>,
+    ) = query {
+        database.transaction {
+            queries.deleteStoryChapterMemoryItemsByChapterId(chapter_id = chapterId)
+            items.forEach { item ->
+                queries.insertStoryChapterMemoryItem(
+                    id = item.id,
+                    chapter_id = item.chapterId,
+                    story_id = item.storyId,
+                    kind = item.kind,
+                    value = item.value,
+                    position = item.position,
+                    source_chapter_id = item.sourceChapterId,
+                    source_volume_id = item.sourceVolumeId,
+                    status = item.status,
+                    confidence = item.confidence,
+                    created_at = item.createdAt,
+                )
+            }
+        }
+    }
+
+    suspend fun listStoryChapterMemoryItemsByStoryId(
+        storyId: String,
+        limit: Long,
+    ): List<StoryChapterMemoryItemState> = query {
+        queries.selectStoryChapterMemoryItemsByStoryId(
+            story_id = storyId,
+            limit_value = limit,
+        ) { id, chapterId, storyIdValue, kind, value, position, sourceChapterId, sourceVolumeId, status, confidence, createdAt ->
+            StoryChapterMemoryItemState(
+                id = id,
+                chapterId = chapterId,
+                storyId = storyIdValue,
+                kind = kind,
+                value = value,
+                position = position,
+                sourceChapterId = sourceChapterId,
+                sourceVolumeId = sourceVolumeId,
+                status = status,
+                confidence = confidence,
+                createdAt = createdAt,
+            )
+        }.executeAsList()
+    }
+
     suspend fun upsertStoryContinuityMemory(record: StoryContinuityMemoryState) = query {
         queries.insertOrReplaceStoryContinuityMemory(
             story_id = record.storyId,
+            rolling_delta = record.rollingDelta,
             rolling_summary = record.rollingSummary,
             active_threads_json = record.activeThreadsJson,
+            recent_new_facts_json = record.recentNewFactsJson,
+            recent_resolved_threads_json = record.recentResolvedThreadsJson,
             continuity_warnings_json = record.continuityWarningsJson,
             last_chapter_ids_json = record.lastChapterIdsJson,
+            packet_model = record.packetModel,
+            packet_generated_at = record.packetGeneratedAt,
             updated_at = record.updatedAt,
         )
     }
 
     suspend fun getStoryContinuityMemoryByStoryId(storyId: String): StoryContinuityMemoryState? = query {
-        queries.selectStoryContinuityMemoryByStoryId(story_id = storyId) { storyIdValue, rollingSummary, activeThreadsJson, continuityWarningsJson, lastChapterIdsJson, updatedAt ->
+        queries.selectStoryContinuityMemoryByStoryId(story_id = storyId) { storyIdValue, rollingDelta, rollingSummary, activeThreadsJson, recentNewFactsJson, recentResolvedThreadsJson, continuityWarningsJson, lastChapterIdsJson, packetModel, packetGeneratedAt, updatedAt ->
             StoryContinuityMemoryState(
                 storyId = storyIdValue,
+                rollingDelta = rollingDelta,
                 rollingSummary = rollingSummary,
                 activeThreadsJson = activeThreadsJson,
+                recentNewFactsJson = recentNewFactsJson,
+                recentResolvedThreadsJson = recentResolvedThreadsJson,
                 continuityWarningsJson = continuityWarningsJson,
                 lastChapterIdsJson = lastChapterIdsJson,
+                packetModel = packetModel,
+                packetGeneratedAt = packetGeneratedAt,
                 updatedAt = updatedAt,
             )
         }.executeAsOneOrNull()
+    }
+
+    suspend fun upsertStoryMemoryRetryQueue(record: StoryMemoryRetryQueueState) = query {
+        queries.insertOrReplaceStoryMemoryRetryQueue(
+            id = record.id,
+            story_id = record.storyId,
+            chapter_id = record.chapterId,
+            approved_checksum = record.approvedChecksum,
+            failure_reason = record.failureReason,
+            attempt_count = record.attemptCount,
+            next_attempt_at = record.nextAttemptAt,
+            last_error = record.lastError,
+            updated_at = record.updatedAt,
+        )
+    }
+
+    suspend fun clearStoryMemoryRetryQueue(
+        chapterId: String,
+        approvedChecksum: String,
+    ) = query {
+        queries.deleteStoryMemoryRetryQueueByChapterAndChecksum(
+            chapter_id = chapterId,
+            approved_checksum = approvedChecksum,
+        )
     }
 
     suspend fun deleteStoryDraftPreviewStateByStoryId(storyId: String) = query {

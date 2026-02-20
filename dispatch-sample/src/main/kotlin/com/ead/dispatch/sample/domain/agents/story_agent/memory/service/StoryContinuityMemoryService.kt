@@ -5,7 +5,9 @@ import com.ead.dispatch.sample.data.db.entities.StorySceneRecord
 import com.ead.dispatch.sample.data.repositories.StructuredIndexRepository
 import com.ead.dispatch.sample.domain.agents.story_agent.memory.model.StoryChapterMemorySnapshot
 import com.ead.dispatch.sample.domain.agents.story_agent.memory.model.StoryChapterMemorySummarizer
+import com.ead.dispatch.sample.domain.agents.story_agent.memory.model.StoryChapterMemorySummary
 import com.ead.dispatch.sample.domain.agents.story_agent.memory.model.StoryContinuitySnapshot
+import java.util.UUID
 import kotlinx.datetime.Clock
 import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.serializer
@@ -16,6 +18,22 @@ class StoryContinuityMemoryService(
     private val summarizer: StoryChapterMemorySummarizer? = null,
 ) {
     private val json = Json { ignoreUnknownKeys = true }
+
+    private companion object {
+        const val MAX_RECENT_CHAPTERS_AGGREGATE = 8L
+        const val MAX_ACTIVE_THREADS = 8
+        const val MAX_RECENT_NEW_FACTS = 8
+        const val MAX_RECENT_RESOLVED_THREADS = 6
+        const val MAX_CONTINUITY_WARNINGS = 6
+        const val MAX_PROMPT_CHAPTERS = 4L
+        const val MAX_PROMPT_KEY_BEATS = 3
+        const val MAX_PROMPT_ENTITIES = 4
+        const val MAX_PROMPT_NEW_FACTS = 3
+        const val MAX_PROMPT_RESOLVED_THREADS = 2
+        const val MAX_PROMPT_OPEN_THREADS = 3
+        const val MAX_PROMPT_CONTINUITY_RISKS = 2
+        const val MAX_PROMPT_WARNINGS = 2
+    }
 
     suspend fun refreshFromApprovedChapter(
         storyId: String,
@@ -29,27 +47,23 @@ class StoryContinuityMemoryService(
 
         val baseKeyBeats = buildKeyBeats(chapter, scenes)
         val entities = extractEntities(storyId)
-        var summaryShort = summarizeDraftText(chapter, approvedText)
-        var summaryDelta = summaryShort
-        val keyBeats = baseKeyBeats.toMutableList()
-        var unresolved = keyBeats.takeLast(2)
-        val additionalWarnings = mutableListOf<String>()
-        summarizer?.summarize(chapter, approvedText, keyBeats)?.let { llmSummary ->
-            summaryShort = llmSummary.summaryShort.ifBlank { summaryShort }
-            summaryDelta = llmSummary.summaryDelta.ifBlank { summaryDelta }
-            if (llmSummary.unresolvedThreads.isNotEmpty()) {
-                unresolved = llmSummary.unresolvedThreads
-            }
-            if (llmSummary.newFacts.isNotEmpty()) {
-                keyBeats += llmSummary.newFacts.map { fact -> "Fact: ${fact.compact(100)}" }
-            }
-            if (llmSummary.resolvedThreads.isNotEmpty()) {
-                keyBeats += llmSummary.resolvedThreads.map { thread -> "Resolved: ${thread.compact(100)}" }
-            }
-            if (llmSummary.continuityRisks.isNotEmpty()) {
-                unresolved += llmSummary.continuityRisks.map { risk -> "Risk: ${risk.compact(100)}" }
-                additionalWarnings += llmSummary.continuityRisks.map { risk -> "Continuity risk: ${risk.compact(100)}" }
-            }
+        val llmSummary = buildSummary(chapter, approvedText, baseKeyBeats)
+
+        if (!llmSummary.isUsable) {
+            repository.upsertStoryMemoryRetryQueue(
+                StructuredIndexRepository.StoryMemoryRetryQueueState(
+                    id = "retry-${chapter.id}-${approvedChecksum.hashCode()}",
+                    storyId = storyId,
+                    chapterId = chapter.id,
+                    approvedChecksum = approvedChecksum,
+                    failureReason = "summarizer_unusable",
+                    attemptCount = 1,
+                    nextAttemptAt = now + (5 * 60 * 1000),
+                    lastError = "Summarizer output is unusable or empty.",
+                    updatedAt = now,
+                )
+            )
+            return
         }
 
         repository.upsertStoryChapterMemory(
@@ -57,98 +71,146 @@ class StoryContinuityMemoryService(
                 chapterId = chapter.id,
                 storyId = storyId,
                 approvedChecksum = approvedChecksum,
-                summaryShort = summaryShort,
-                keyBeatsJson = json.encodeToString(ListSerializer(String.serializer()), keyBeats.distinct().take(10)),
-                entitiesJson = json.encodeToString(ListSerializer(String.serializer()), entities),
-                unresolvedThreadsJson = json.encodeToString(ListSerializer(String.serializer()), unresolved.distinct().take(5)),
+                summaryShort = llmSummary.summaryShort,
+                summaryDelta = llmSummary.summaryDelta,
+                keyBeatsJson = encodeList(baseKeyBeats),
+                newFactsJson = encodeList(llmSummary.newFacts),
+                resolvedThreadsJson = encodeList(llmSummary.resolvedThreads),
+                openThreadsJson = encodeList(llmSummary.unresolvedThreads),
+                continuityRisksJson = encodeList(llmSummary.continuityRisks),
+                warningsJson = encodeList(llmSummary.warnings),
+                entitiesJson = encodeList(entities),
+                summarizerConfidence = normalizeConfidence(llmSummary.confidence),
+                summarizerUsable = llmSummary.isUsable,
+                summarizerModel = "story-main",
+                summarizerRunId = "sum-${chapter.id}-${now}",
                 pov = story.styleProfile?.pov,
                 tense = story.styleProfile?.tense,
                 updatedAt = now,
             )
         )
 
-        val recent = repository.listStoryChapterMemoryByStoryId(storyId, limit = 6)
+        repository.replaceStoryChapterMemoryItems(
+            chapterId = chapter.id,
+            items = buildMemoryItems(
+                chapter = chapter,
+                storyId = storyId,
+                keyBeats = baseKeyBeats,
+                summary = llmSummary,
+                createdAt = now,
+            ),
+        )
+        repository.clearStoryMemoryRetryQueue(chapter.id, approvedChecksum)
 
+        val recent = repository.listStoryChapterMemoryByStoryId(storyId, limit = MAX_RECENT_CHAPTERS_AGGREGATE)
         val rollingSummary = recent
             .sortedBy { it.updatedAt }
             .joinToString(separator = " ") { it.summaryShort }
+            .compact(900)
+        val rollingDelta = recent
+            .sortedBy { it.updatedAt }
+            .joinToString(separator = " ") { it.summaryDelta }
             .compact(700)
         val activeThreads = recent
-            .flatMap { decodeList(it.unresolvedThreadsJson) }
+            .flatMap { decodeList(it.openThreadsJson) + decodeList(it.continuityRisksJson) }
             .mapNotNull { it.trim().takeIf(String::isNotEmpty) }
             .distinct()
-            .take(5)
-        val warnings = (buildWarnings(recent) + additionalWarnings).distinct().take(4)
+            .take(MAX_ACTIVE_THREADS)
+        val recentNewFacts = recent
+            .flatMap { decodeList(it.newFactsJson) }
+            .mapNotNull { it.trim().takeIf(String::isNotEmpty) }
+            .distinct()
+            .take(MAX_RECENT_NEW_FACTS)
+        val recentResolved = recent
+            .flatMap { decodeList(it.resolvedThreadsJson) }
+            .mapNotNull { it.trim().takeIf(String::isNotEmpty) }
+            .distinct()
+            .take(MAX_RECENT_RESOLVED_THREADS)
+        val warnings = recent
+            .flatMap { decodeList(it.warningsJson) }
+            .mapNotNull { it.trim().takeIf(String::isNotEmpty) }
+            .distinct()
+            .take(MAX_CONTINUITY_WARNINGS)
         val chapterIds = recent.map { it.chapterId }
 
         repository.upsertStoryContinuityMemory(
             StructuredIndexRepository.StoryContinuityMemoryState(
                 storyId = storyId,
+                rollingDelta = rollingDelta,
                 rollingSummary = rollingSummary,
-                activeThreadsJson = json.encodeToString(ListSerializer(String.serializer()), activeThreads),
-                continuityWarningsJson = json.encodeToString(ListSerializer(String.serializer()), warnings),
-                lastChapterIdsJson = json.encodeToString(ListSerializer(String.serializer()), chapterIds),
+                activeThreadsJson = encodeList(activeThreads),
+                recentNewFactsJson = encodeList(recentNewFacts),
+                recentResolvedThreadsJson = encodeList(recentResolved),
+                continuityWarningsJson = encodeList(warnings),
+                lastChapterIdsJson = encodeList(chapterIds),
+                packetModel = "continuity-packet-v2",
+                packetGeneratedAt = now,
                 updatedAt = now,
             )
         )
-
     }
 
-    suspend fun loadForPrompt(
-        storyId: String,
-        maxChars: Int = 1500,
-    ): StoryContinuitySnapshot? {
+    suspend fun loadForPrompt(storyId: String): StoryContinuitySnapshot? {
         val continuity = repository.getStoryContinuityMemoryByStoryId(storyId) ?: return null
-        val recentRows = repository.listStoryChapterMemoryByStoryId(storyId, limit = 4)
+        val recentRows = repository.listStoryChapterMemoryByStoryId(storyId, limit = MAX_PROMPT_CHAPTERS)
         val recentSnapshots = recentRows.map { row ->
             StoryChapterMemorySnapshot(
                 chapterId = row.chapterId,
                 summaryShort = row.summaryShort,
-                summaryDelta = row.summaryShort,
-                keyBeats = decodeList(row.keyBeatsJson).take(3),
-                entities = decodeList(row.entitiesJson).take(4),
-                newFacts = decodeList(row.keyBeatsJson)
-                    .filter { it.startsWith("Fact:") }
-                    .map { it.removePrefix("Fact:").trim() }
-                    .take(2),
-                resolvedThreads = decodeList(row.keyBeatsJson)
-                    .filter { it.startsWith("Resolved:") }
-                    .map { it.removePrefix("Resolved:").trim() }
-                    .take(1),
-                unresolvedThreads = decodeList(row.unresolvedThreadsJson).take(2),
-                continuityRisks = decodeList(row.unresolvedThreadsJson)
-                    .filter { it.startsWith("Risk:") }
-                    .map { it.removePrefix("Risk:").trim() }
-                    .take(1),
+                summaryDelta = row.summaryDelta,
+                keyBeats = decodeList(row.keyBeatsJson).take(MAX_PROMPT_KEY_BEATS),
+                entities = decodeList(row.entitiesJson).take(MAX_PROMPT_ENTITIES),
+                newFacts = decodeList(row.newFactsJson).take(MAX_PROMPT_NEW_FACTS),
+                resolvedThreads = decodeList(row.resolvedThreadsJson).take(MAX_PROMPT_RESOLVED_THREADS),
+                unresolvedThreads = decodeList(row.openThreadsJson).take(MAX_PROMPT_OPEN_THREADS),
+                continuityRisks = decodeList(row.continuityRisksJson).take(MAX_PROMPT_CONTINUITY_RISKS),
+                warnings = decodeList(row.warningsJson).take(MAX_PROMPT_WARNINGS),
+                summarizerConfidence = row.summarizerConfidence,
+                summarizerUsable = row.summarizerUsable,
                 pov = row.pov,
                 tense = row.tense,
                 updatedAt = row.updatedAt,
             )
         }
-        val rollingDelta = recentSnapshots
-            .sortedBy { it.updatedAt }
-            .joinToString(" ") { it.summaryDelta }
-            .compact(400)
-        val recentNewFacts = recentSnapshots
-            .flatMap { it.newFacts }
-            .distinct()
-            .take(6)
-        val resolvedThreads = recentSnapshots
-            .flatMap { it.resolvedThreads }
-            .distinct()
-            .take(4)
-        return trimToBudget(
-            StoryContinuitySnapshot(
-                rollingDelta = rollingDelta,
-                rollingSummary = continuity.rollingSummary,
-                activeThreads = decodeList(continuity.activeThreadsJson),
-                recentNewFacts = recentNewFacts,
-                resolvedThreads = resolvedThreads,
-                continuityWarnings = decodeList(continuity.continuityWarningsJson),
-                recentChapters = recentSnapshots,
-            ),
-            maxChars = maxChars,
+
+        val snapshot = StoryContinuitySnapshot(
+            rollingDelta = continuity.rollingDelta,
+            rollingSummary = continuity.rollingSummary,
+            activeThreads = decodeList(continuity.activeThreadsJson),
+            recentNewFacts = decodeList(continuity.recentNewFactsJson),
+            resolvedThreads = decodeList(continuity.recentResolvedThreadsJson),
+            continuityWarnings = decodeList(continuity.continuityWarningsJson),
+            recentChapters = recentSnapshots,
         )
+
+        return snapshot
+    }
+
+    private suspend fun buildSummary(
+        chapter: StoryChapterRecord,
+        approvedText: String,
+        keyBeats: List<String>,
+    ): StoryChapterMemorySummary {
+        if (summarizer == null) {
+            val summaryDelta = summarizeDraftText(chapter, approvedText)
+            return StoryChapterMemorySummary(
+                summaryShort = summaryDelta.compact(280),
+                summaryDelta = summaryDelta.compact(220),
+                confidence = "MEDIUM",
+                isUsable = summaryDelta.isNotBlank(),
+            )
+        }
+
+        val result = summarizer.summarize(chapter, approvedText, keyBeats)
+        if (result == null) {
+            return StoryChapterMemorySummary(
+                summaryShort = "",
+                summaryDelta = "",
+                confidence = "LOW",
+                isUsable = false,
+            )
+        }
+        return result
     }
 
     private fun summarizeDraftText(
@@ -170,112 +232,73 @@ class StoryContinuityMemoryService(
             val summary = scene.summary?.trim().orEmpty()
             if (summary.isNotEmpty()) beats += "Scene ${scene.number}: $summary"
         }
-        return beats.map { it.compact(120) }.distinct().take(8)
+        return beats.map { it.compact(120) }.distinct()
+    }
+
+    private fun buildMemoryItems(
+        chapter: StoryChapterRecord,
+        storyId: String,
+        keyBeats: List<String>,
+        summary: StoryChapterMemorySummary,
+        createdAt: Long,
+    ): List<StructuredIndexRepository.StoryChapterMemoryItemState> {
+        fun toItems(
+            kind: String,
+            values: List<String>,
+            status: String = "ACTIVE",
+        ): List<StructuredIndexRepository.StoryChapterMemoryItemState> = values
+            .mapIndexedNotNull { index, raw ->
+                val value = raw.trim()
+                if (value.isEmpty()) return@mapIndexedNotNull null
+                StructuredIndexRepository.StoryChapterMemoryItemState(
+                    id = "mem-${UUID.randomUUID()}",
+                    chapterId = chapter.id,
+                    storyId = storyId,
+                    kind = kind,
+                    value = value,
+                    position = index.toLong(),
+                    sourceChapterId = chapter.id,
+                    sourceVolumeId = chapter.volumeId,
+                    status = status,
+                    confidence = normalizeConfidence(summary.confidence),
+                    createdAt = createdAt,
+                )
+            }
+
+        return buildList {
+            addAll(toItems(kind = "KEY_BEAT", values = keyBeats))
+            addAll(toItems(kind = "NEW_FACT", values = summary.newFacts))
+            addAll(toItems(kind = "RESOLVED_THREAD", values = summary.resolvedThreads, status = "RESOLVED"))
+            addAll(toItems(kind = "OPEN_THREAD", values = summary.unresolvedThreads))
+            addAll(toItems(kind = "CONTINUITY_RISK", values = summary.continuityRisks))
+            addAll(toItems(kind = "WARNING", values = summary.warnings))
+        }
     }
 
     private suspend fun extractEntities(storyId: String): List<String> {
-        val characters = repository.getStoryCharacters(storyId).take(3).map { "character:${it.name}" }
-        val locations = repository.getLocationsByStory(storyId).take(2).map { "location:${it.profile.name}" }
-        val arcs = repository.getArcsByStory(storyId).take(2).map { "arc:${it.title}" }
+        val characters = repository.getStoryCharacters(storyId).map { "character:${it.name}" }
+        val locations = repository.getLocationsByStory(storyId).map { "location:${it.profile.name}" }
+        val arcs = repository.getArcsByStory(storyId).map { "arc:${it.title}" }
         return (characters + locations + arcs).distinct()
     }
 
-    private fun buildWarnings(
-        recent: List<StructuredIndexRepository.StoryChapterMemoryState>,
-    ): List<String> {
-        if (recent.isEmpty()) return emptyList()
-        val duplicateSummaries = recent
-            .groupBy { it.summaryShort }
-            .filterValues { it.size > 1 }
-            .keys
-        return if (duplicateSummaries.isEmpty()) {
-            emptyList()
-        } else {
-            listOf("Potential repetitive continuity notes detected.")
+    private fun normalizeConfidence(raw: String): String =
+        when (raw.trim().uppercase()) {
+            "HIGH" -> "HIGH"
+            "MEDIUM" -> "MEDIUM"
+            else -> "LOW"
         }
-    }
 
     private fun decodeList(raw: String): List<String> =
         runCatching { json.decodeFromString(ListSerializer(String.serializer()), raw) }
             .getOrElse { emptyList() }
 
-    private fun trimToBudget(
-        snapshot: StoryContinuitySnapshot,
-        maxChars: Int,
-    ): StoryContinuitySnapshot {
-        var budget = maxChars.coerceAtLeast(200)
-        val rollingDelta = snapshot.rollingDelta.compact((budget * 25) / 100).also { budget -= it.length }
-        val rolling = snapshot.rollingSummary.compact((budget * 45) / 100).also { budget -= it.length }
-        val threads = snapshot.activeThreads
-            .map { it.compact(90) }
-            .scanWithinBudget(budget / 3)
-            .also { used -> budget -= used.sumOf { it.length } }
-        val facts = snapshot.recentNewFacts
-            .map { it.compact(80) }
-            .scanWithinBudget(budget / 4)
-            .also { used -> budget -= used.sumOf { it.length } }
-        val resolved = snapshot.resolvedThreads
-            .map { it.compact(80) }
-            .scanWithinBudget(budget / 6)
-            .also { used -> budget -= used.sumOf { it.length } }
-        val chapters = snapshot.recentChapters
-            .map { chapter ->
-                chapter.copy(
-                    summaryShort = chapter.summaryShort.compact(140),
-                    summaryDelta = chapter.summaryDelta.compact(110),
-                    keyBeats = chapter.keyBeats.map { it.compact(80) }.take(2),
-                    entities = chapter.entities.take(3),
-                    newFacts = chapter.newFacts.map { it.compact(70) }.take(1),
-                    resolvedThreads = chapter.resolvedThreads.map { it.compact(70) }.take(1),
-                    unresolvedThreads = chapter.unresolvedThreads.map { it.compact(80) }.take(1),
-                    continuityRisks = chapter.continuityRisks.map { it.compact(70) }.take(1),
-                )
-            }
-            .scanChaptersWithinBudget((budget * 8) / 10)
-        val warnings = snapshot.continuityWarnings
-            .map { it.compact(90) }
-            .take(2)
-        return StoryContinuitySnapshot(
-            rollingDelta = rollingDelta,
-            rollingSummary = rolling,
-            activeThreads = threads,
-            recentNewFacts = facts,
-            resolvedThreads = resolved,
-            continuityWarnings = warnings,
-            recentChapters = chapters,
-        )
-    }
+    private fun encodeList(values: List<String>): String =
+        json.encodeToString(ListSerializer(String.serializer()), values)
+
 }
 
 private fun String.compact(maxChars: Int): String {
     val normalized = replace('\n', ' ').replace(Regex("\\s+"), " ").trim()
     return if (normalized.length <= maxChars) normalized else normalized.take(maxChars) + "..."
-}
-
-private fun List<String>.scanWithinBudget(maxChars: Int): List<String> {
-    var used = 0
-    val result = mutableListOf<String>()
-    for (item in this) {
-        if (used + item.length > maxChars) break
-        result += item
-        used += item.length
-    }
-    return result
-}
-
-private fun List<StoryChapterMemorySnapshot>.scanChaptersWithinBudget(
-    maxChars: Int,
-): List<StoryChapterMemorySnapshot> {
-    var used = 0
-    val result = mutableListOf<StoryChapterMemorySnapshot>()
-    for (item in this) {
-        val textCost = item.summaryShort.length +
-            item.keyBeats.sumOf { it.length } +
-            item.entities.sumOf { it.length } +
-            item.unresolvedThreads.sumOf { it.length }
-        if (used + textCost > maxChars) break
-        result += item
-        used += textCost
-    }
-    return result
 }

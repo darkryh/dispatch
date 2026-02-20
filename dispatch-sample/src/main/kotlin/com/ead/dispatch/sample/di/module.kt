@@ -12,6 +12,8 @@ import com.ead.dispatch.sample.domain.agents.chat_agent.KoogChatAgent
 import com.ead.dispatch.sample.domain.agents.story_agent.KoogStoryAgent
 import com.ead.dispatch.sample.domain.agents.StoryAgent
 import com.ead.dispatch.sample.domain.agents.story_agent.memory.model.StoryChapterMemorySummarizer
+import com.ead.dispatch.sample.domain.agents.story_agent.memory.policy.KoogStorySummarizationPolicy
+import com.ead.dispatch.sample.domain.agents.story_agent.memory.policy.StorySummarizationPolicy
 import com.ead.dispatch.sample.domain.agents.story_agent.memory.service.StoryContinuityMemoryService
 import com.ead.dispatch.sample.domain.agents.story_agent.memory.summarizer.StoryChapterMemoryKoogSummarizer
 import com.ead.dispatch.sample.domain.agents.internal.character_agent.CharacterAgent
@@ -29,6 +31,7 @@ import com.ead.dispatch.sample.domain.agents.tools.StoryDraftTools
 import com.ead.dispatch.sample.domain.embedding.EmbeddingIndexService
 import com.ead.dispatch.sample.domain.embedding.EmbeddingReindexer
 import com.ead.dispatch.sample.domain.embedding.RagContextService
+import com.ead.dispatch.sample.domain.export.StoryExportService
 import com.ead.dispatch.sample.presentation.characters.CharacterViewModel
 import com.ead.dispatch.sample.presentation.chat_mode.chat.ChatViewModel
 import com.ead.dispatch.sample.presentation.chat_mode.story.ChapterListViewModel
@@ -68,8 +71,10 @@ val module = dispatchModule {
     single { StructuredIndexRepository(databaseRuntime = get(), embeddingIndexService = get()) }
     single { RagContextService(repository = get(), embeddingIndexService = get()) }
     single<StoryChapterMemorySummarizer> { StoryChapterMemoryKoogSummarizer() }
+    single<StorySummarizationPolicy> { KoogStorySummarizationPolicy() }
     single { StoryContinuityMemoryService(repository = get(), summarizer = get()) }
-    single { StoryDraftTools(repository = get(), continuityMemoryService = get()) }
+    single { StoryDraftTools(repository = get(), continuityMemoryService = get(), summarizationPolicy = get()) }
+    single { StoryExportService(repository = get()) }
     single { CommandManager() }
     single { SessionManager(repository = get()) }
     single<ChatAgent> {
@@ -105,6 +110,7 @@ val module = dispatchModule {
             chatAgent = get(),
             storyAgent = get(),
             storyDraftTools = get(),
+            storyExportService = get(),
             savedStateHandle = savedStateHandle,
         )
     }

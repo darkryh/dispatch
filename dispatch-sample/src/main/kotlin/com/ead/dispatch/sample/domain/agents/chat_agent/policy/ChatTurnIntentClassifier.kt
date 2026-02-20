@@ -128,22 +128,6 @@ private data class ChatIntentClassifierResponse(
 )
 
 suspend fun AIAgentContext.classifyTurnIntentWithAI(request: ChatRequest): ChatIntentSignal {
-    if (request.fromDecisionPrompt) {
-        return ChatIntentSignal(
-            intentClass = ChatIntentClass.WRITE,
-            explicitWriteIntent = true,
-            confidence = 1.0,
-            evidenceSpan = request.text.take(140),
-            reasoning = "User answered a decision prompt; continue as write flow.",
-            resolvedAction = IntentResolvedAction.WRITE_UPDATE,
-            confidenceBand = IntentConfidenceBand.HIGH,
-            riskClass = IntentRiskClass.SAFE,
-            requiresConfirmation = false,
-            requiresCreativeChoice = false,
-            executionIntent = IntentExecutionIntent.EXECUTE,
-        )
-    }
-
     val userText = request.text.trim()
     if (userText.isBlank()) {
         return ChatIntentSignal(
@@ -185,7 +169,7 @@ suspend fun AIAgentContext.classifyTurnIntentWithAI(request: ChatRequest): ChatI
 
             try {
                 rewritePrompt {
-                    chatTurnIntentClassifierPrompt(userText, recentContext)
+                    chatTurnIntentClassifierPrompt(request, userText, recentContext)
                 }
 
                 requestLLMStructured<ChatIntentClassifierResponse>(
@@ -233,7 +217,7 @@ suspend fun AIAgentContext.classifyTurnIntentWithAI(request: ChatRequest): ChatI
         .filter { it in allowedPreferenceConcepts }
     val shouldSavePreference = classified.shouldSavePreference && mappedPreferenceConcepts.isNotEmpty()
 
-    return ChatIntentSignal(
+    val signal = ChatIntentSignal(
         intentClass = intentClass,
         explicitWriteIntent = classified.explicitWriteIntent,
         confidence = classified.confidence.coerceIn(0.0, 1.0),
@@ -251,9 +235,15 @@ suspend fun AIAgentContext.classifyTurnIntentWithAI(request: ChatRequest): ChatI
         requiresCreativeChoice = classified.requiresCreativeChoice,
         executionIntent = classified.executionIntent.toExecutionIntent(),
     )
+
+    return applySelectorDecisionIntentSubtype(request, signal)
 }
 
-private fun chatTurnIntentClassifierPrompt(userText: String, recentContext: String): Prompt = prompt("chat-turn-intent-classifier") {
+private fun chatTurnIntentClassifierPrompt(
+    request: ChatRequest,
+    userText: String,
+    recentContext: String,
+): Prompt = prompt("chat-turn-intent-classifier") {
     system {
         markdown {
             h2("Role")
@@ -269,6 +259,10 @@ private fun chatTurnIntentClassifierPrompt(userText: String, recentContext: Stri
             +"Set preference_confidence_band to HIGH/MEDIUM/LOW."
             br()
             +"Set preference_novelty to NEW when likely new, ALREADY_KNOWN when already present, UNCERTAIN otherwise."
+            br()
+            +"For decision-prompt turns, use decision context to determine if the chosen option reflects durable user preference."
+            br()
+            +"For non-decision turns, keep should_save_preference=false unless durable preference is explicitly clear."
             br()
 
             +"Interpret intent semantically (not by keywords), resolve continuation using context, and set requires_confirmation=true for destructive/high-risk actions."
@@ -435,6 +429,9 @@ private fun chatTurnIntentClassifierPrompt(userText: String, recentContext: Stri
         markdown {
             h3("Recent Context")
             +(recentContext.ifBlank { "(none)" })
+            h3("Turn Metadata")
+            +"from_decision_prompt: ${request.fromDecisionPrompt}"
+            selectorDecisionMetadata(request.decisionContext).forEach { +it }
             h3("User Message")
             +userText
         }

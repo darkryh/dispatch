@@ -1,6 +1,7 @@
 package com.ead.dispatch.sample.domain.agents.chat_agent.policy
 
 import com.ead.dispatch.sample.domain.agents.chat_agent.ChatRequest
+import com.ead.dispatch.sample.domain.agents.intent.IntentConfidenceBand
 import com.ead.dispatch.sample.domain.agents.intent.IntentExecutionIntent
 import kotlin.math.roundToInt
 import kotlin.test.Test
@@ -200,14 +201,13 @@ class ChatModeReplayValidationTest {
                         reasoning = "Ideation/advice request.",
                         shouldSavePreference = text.contains("prefer") || text.contains("avoid") || text.contains("like"),
                         preferenceConceptKeywords = when {
-                            text.contains("first person") -> listOf("writer_pov_preference", "writer_tense_preference")
-                            text.contains("avoid graphic violence") -> listOf("writer_content_boundary_preference")
-                            text.contains("melancholic") -> listOf("writer_tone_like_preference", "writer_prose_style_preference")
+                            text.contains("first person") -> listOf("selector_character_direction_preference")
+                            text.contains("avoid graphic violence") -> listOf("selector_tone_direction_preference")
+                            text.contains("melancholic") -> listOf("selector_tone_direction_preference", "selector_general_creative_preference")
                             else -> emptyList()
                         },
-                        preferenceConfidence = 0.82,
-                        preferenceEvidenceSpan = text.take(40),
-                        preferenceReasoning = "Durable preference signal when present.",
+                        preferenceConfidenceBand = IntentConfidenceBand.MEDIUM,
+                        preferenceNovelty = ChatPreferenceNovelty.NEW,
                     ),
                 )
             )

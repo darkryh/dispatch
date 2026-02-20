@@ -8,6 +8,10 @@ import ai.koog.agents.core.tools.reflect.ToolSet
 import com.ead.dispatch.sample.data.db.entities.StoryChapterRecord
 import com.ead.dispatch.sample.data.db.type.ContentType
 import com.ead.dispatch.sample.data.repositories.StructuredIndexRepository
+import com.ead.dispatch.sample.domain.agents.story_agent.memory.policy.SkipStorySummarizationPolicy
+import com.ead.dispatch.sample.domain.agents.story_agent.memory.policy.StorySummarizationAction
+import com.ead.dispatch.sample.domain.agents.story_agent.memory.policy.StorySummarizationPolicy
+import com.ead.dispatch.sample.domain.agents.story_agent.memory.policy.StorySummarizationPolicyInput
 import com.ead.dispatch.sample.domain.agents.story_agent.memory.service.StoryContinuityMemoryService
 import com.ead.dispatch.sample.domain.content.ChapterContentStore
 import com.ead.dispatch.sample.domain.agents.tools.model.ChapterDraftEditOperationRequest
@@ -27,6 +31,7 @@ import com.ead.dispatch.sample.domain.agents.tools.model.ToolResult
 import kotlinx.datetime.Clock
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.ListSerializer
+import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
 import java.security.MessageDigest
 import java.util.UUID
@@ -35,6 +40,7 @@ class StoryDraftTools(
     private val repository: StructuredIndexRepository,
     private val contentStore: ChapterContentStore = ChapterContentStore(),
     private val continuityMemoryService: StoryContinuityMemoryService? = null,
+    private val summarizationPolicy: StorySummarizationPolicy = SkipStorySummarizationPolicy,
 ) : ToolSet {
 
     @Tool
@@ -870,6 +876,34 @@ class StoryDraftTools(
         version: StoredDraftVersion,
     ) {
         val service = continuityMemoryService ?: return
+        val existingMemory = repository.getStoryChapterMemoryByChapterId(chapter.id)
+        val now = Clock.System.now().toEpochMilliseconds()
+        val existingOpenThreadCount = existingMemory
+            ?.openThreadsJson
+            ?.let { decodeStringList(it).size }
+            ?: 0
+        val existingRiskCount = existingMemory
+            ?.continuityRisksJson
+            ?.let { decodeStringList(it).size }
+            ?: 0
+        val decision = summarizationPolicy.decide(
+            StorySummarizationPolicyInput(
+                storyId = storyId,
+                chapterId = chapter.id,
+                chapterNumber = chapter.number,
+                chapterTitle = chapter.title,
+                approvedChecksum = version.checksum,
+                approvedWordCount = version.wordCount.toInt(),
+                hasExistingSummary = existingMemory != null,
+                previousApprovedChecksum = existingMemory?.approvedChecksum,
+                millisSinceLastSummary = existingMemory?.let { now - it.updatedAt },
+                existingOpenThreadCount = existingOpenThreadCount,
+                existingRiskCount = existingRiskCount,
+            )
+        )
+        if (decision.action != StorySummarizationAction.SUMMARIZE_NOW) {
+            return
+        }
         service.refreshFromApprovedChapter(
             storyId = storyId,
             chapter = chapter,
@@ -877,6 +911,10 @@ class StoryDraftTools(
             approvedChecksum = version.checksum,
         )
     }
+
+    private fun decodeStringList(raw: String): List<String> =
+        runCatching { json.decodeFromString(ListSerializer(String.serializer()), raw) }
+            .getOrDefault(emptyList())
 
     private fun pendingRangesForDiff(
         beforeText: String,

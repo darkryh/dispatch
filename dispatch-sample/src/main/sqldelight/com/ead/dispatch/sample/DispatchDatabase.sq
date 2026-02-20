@@ -200,21 +200,70 @@ CREATE TABLE story_chapter_memory (
   story_id TEXT NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
   approved_checksum TEXT NOT NULL,
   summary_short TEXT NOT NULL,
+  summary_delta TEXT NOT NULL,
   key_beats_json TEXT NOT NULL,
+  new_facts_json TEXT NOT NULL,
+  resolved_threads_json TEXT NOT NULL,
+  open_threads_json TEXT NOT NULL,
+  continuity_risks_json TEXT NOT NULL,
+  warnings_json TEXT NOT NULL,
   entities_json TEXT NOT NULL,
-  unresolved_threads_json TEXT NOT NULL,
+  summarizer_confidence TEXT NOT NULL CHECK (
+    summarizer_confidence IN ('HIGH', 'MEDIUM', 'LOW')
+  ),
+  summarizer_usable INTEGER NOT NULL CHECK (summarizer_usable IN (0, 1)),
+  summarizer_model TEXT,
+  summarizer_run_id TEXT,
   pov TEXT,
   tense TEXT,
   updated_at INTEGER NOT NULL
 );
 
+CREATE TABLE story_chapter_memory_items (
+  id TEXT NOT NULL PRIMARY KEY,
+  chapter_id TEXT NOT NULL REFERENCES story_chapter_memory(chapter_id) ON DELETE CASCADE,
+  story_id TEXT NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
+  kind TEXT NOT NULL CHECK (
+    kind IN ('KEY_BEAT', 'NEW_FACT', 'RESOLVED_THREAD', 'OPEN_THREAD', 'CONTINUITY_RISK', 'WARNING')
+  ),
+  value TEXT NOT NULL,
+  position INTEGER NOT NULL CHECK (position >= 0),
+  source_chapter_id TEXT REFERENCES story_chapters(id) ON DELETE SET NULL,
+  source_volume_id TEXT REFERENCES story_volumes(id) ON DELETE SET NULL,
+  status TEXT NOT NULL CHECK (
+    status IN ('ACTIVE', 'RESOLVED', 'SUPERSEDED')
+  ),
+  confidence TEXT NOT NULL CHECK (
+    confidence IN ('HIGH', 'MEDIUM', 'LOW')
+  ),
+  created_at INTEGER NOT NULL
+);
+
 CREATE TABLE story_continuity_memory (
   story_id TEXT NOT NULL PRIMARY KEY REFERENCES stories(id) ON DELETE CASCADE,
+  rolling_delta TEXT NOT NULL,
   rolling_summary TEXT NOT NULL,
   active_threads_json TEXT NOT NULL,
+  recent_new_facts_json TEXT NOT NULL,
+  recent_resolved_threads_json TEXT NOT NULL,
   continuity_warnings_json TEXT NOT NULL,
   last_chapter_ids_json TEXT NOT NULL,
+  packet_model TEXT,
+  packet_generated_at INTEGER,
   updated_at INTEGER NOT NULL
+);
+
+CREATE TABLE story_memory_retry_queue (
+  id TEXT NOT NULL PRIMARY KEY,
+  story_id TEXT NOT NULL REFERENCES stories(id) ON DELETE CASCADE,
+  chapter_id TEXT NOT NULL REFERENCES story_chapters(id) ON DELETE CASCADE,
+  approved_checksum TEXT NOT NULL,
+  failure_reason TEXT NOT NULL,
+  attempt_count INTEGER NOT NULL CHECK (attempt_count >= 0),
+  next_attempt_at INTEGER,
+  last_error TEXT,
+  updated_at INTEGER NOT NULL,
+  UNIQUE(chapter_id, approved_checksum)
 );
 
 CREATE TABLE story_chapter_key_events (
@@ -420,6 +469,11 @@ CREATE INDEX story_draft_proposals_chapter_status_created_idx ON story_draft_pro
 CREATE INDEX story_draft_preview_state_updated_idx ON story_draft_preview_state(updated_at DESC);
 CREATE INDEX story_chapter_memory_story_updated_idx ON story_chapter_memory(story_id, updated_at DESC);
 CREATE INDEX story_chapter_memory_chapter_updated_idx ON story_chapter_memory(chapter_id, updated_at DESC);
+CREATE INDEX story_chapter_memory_items_story_kind_created_idx ON story_chapter_memory_items(story_id, kind, created_at DESC);
+CREATE INDEX story_chapter_memory_items_chapter_kind_position_idx ON story_chapter_memory_items(chapter_id, kind, position);
+CREATE INDEX story_chapter_memory_items_story_status_created_idx ON story_chapter_memory_items(story_id, status, created_at DESC);
+CREATE INDEX story_memory_retry_queue_story_updated_idx ON story_memory_retry_queue(story_id, updated_at DESC);
+CREATE INDEX story_memory_retry_queue_chapter_checksum_idx ON story_memory_retry_queue(chapter_id, approved_checksum);
 CREATE INDEX story_locations_story_id_idx ON story_locations(story_id);
 CREATE INDEX story_arcs_story_id_idx ON story_arcs(story_id);
 CREATE INDEX story_arcs_scope_idx ON story_arcs(scope_type, scope_id);
@@ -1759,9 +1813,18 @@ INSERT OR REPLACE INTO story_chapter_memory(
   story_id,
   approved_checksum,
   summary_short,
+  summary_delta,
   key_beats_json,
+  new_facts_json,
+  resolved_threads_json,
+  open_threads_json,
+  continuity_risks_json,
+  warnings_json,
   entities_json,
-  unresolved_threads_json,
+  summarizer_confidence,
+  summarizer_usable,
+  summarizer_model,
+  summarizer_run_id,
   pov,
   tense,
   updated_at
@@ -1770,9 +1833,18 @@ INSERT OR REPLACE INTO story_chapter_memory(
   :story_id,
   :approved_checksum,
   :summary_short,
+  :summary_delta,
   :key_beats_json,
+  :new_facts_json,
+  :resolved_threads_json,
+  :open_threads_json,
+  :continuity_risks_json,
+  :warnings_json,
   :entities_json,
-  :unresolved_threads_json,
+  :summarizer_confidence,
+  :summarizer_usable,
+  :summarizer_model,
+  :summarizer_run_id,
   :pov,
   :tense,
   :updated_at
@@ -1788,23 +1860,98 @@ WHERE story_id = :story_id
 ORDER BY updated_at DESC
 LIMIT :limit_value;
 
+insertStoryChapterMemoryItem:
+INSERT OR REPLACE INTO story_chapter_memory_items(
+  id,
+  chapter_id,
+  story_id,
+  kind,
+  value,
+  position,
+  source_chapter_id,
+  source_volume_id,
+  status,
+  confidence,
+  created_at
+) VALUES (
+  :id,
+  :chapter_id,
+  :story_id,
+  :kind,
+  :value,
+  :position,
+  :source_chapter_id,
+  :source_volume_id,
+  :status,
+  :confidence,
+  :created_at
+);
+
+deleteStoryChapterMemoryItemsByChapterId:
+DELETE FROM story_chapter_memory_items
+WHERE chapter_id = :chapter_id;
+
+selectStoryChapterMemoryItemsByStoryId:
+SELECT * FROM story_chapter_memory_items
+WHERE story_id = :story_id
+ORDER BY created_at DESC
+LIMIT :limit_value;
+
 insertOrReplaceStoryContinuityMemory:
 INSERT OR REPLACE INTO story_continuity_memory(
   story_id,
+  rolling_delta,
   rolling_summary,
   active_threads_json,
+  recent_new_facts_json,
+  recent_resolved_threads_json,
   continuity_warnings_json,
   last_chapter_ids_json,
+  packet_model,
+  packet_generated_at,
   updated_at
 ) VALUES (
   :story_id,
+  :rolling_delta,
   :rolling_summary,
   :active_threads_json,
+  :recent_new_facts_json,
+  :recent_resolved_threads_json,
   :continuity_warnings_json,
   :last_chapter_ids_json,
+  :packet_model,
+  :packet_generated_at,
   :updated_at
 );
 
 selectStoryContinuityMemoryByStoryId:
 SELECT * FROM story_continuity_memory
 WHERE story_id = :story_id;
+
+insertOrReplaceStoryMemoryRetryQueue:
+INSERT OR REPLACE INTO story_memory_retry_queue(
+  id,
+  story_id,
+  chapter_id,
+  approved_checksum,
+  failure_reason,
+  attempt_count,
+  next_attempt_at,
+  last_error,
+  updated_at
+) VALUES (
+  :id,
+  :story_id,
+  :chapter_id,
+  :approved_checksum,
+  :failure_reason,
+  :attempt_count,
+  :next_attempt_at,
+  :last_error,
+  :updated_at
+);
+
+deleteStoryMemoryRetryQueueByChapterAndChecksum:
+DELETE FROM story_memory_retry_queue
+WHERE chapter_id = :chapter_id
+  AND approved_checksum = :approved_checksum;

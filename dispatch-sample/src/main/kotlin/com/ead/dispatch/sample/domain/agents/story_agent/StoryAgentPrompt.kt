@@ -209,7 +209,7 @@ fun storyAgentPrompt(
                     +"Active threads:"
                     br()
                     continuityMemory.activeThreads.take(3).forEach { thread ->
-                        +"  - ${thread.compact(90)}"
+                        +"  - $thread"
                         br()
                     }
                 }
@@ -217,7 +217,7 @@ fun storyAgentPrompt(
                     +"Recent new facts:"
                     br()
                     continuityMemory.recentNewFacts.take(3).forEach { fact ->
-                        +"  - ${fact.compact(90)}"
+                        +"  - $fact"
                         br()
                     }
                 }
@@ -225,7 +225,7 @@ fun storyAgentPrompt(
                     +"Recently resolved threads:"
                     br()
                     continuityMemory.resolvedThreads.take(2).forEach { thread ->
-                        +"  - ${thread.compact(90)}"
+                        +"  - $thread"
                         br()
                     }
                 }
@@ -233,7 +233,7 @@ fun storyAgentPrompt(
                     +"Recent approved chapter deltas:"
                     br()
                     continuityMemory.recentChapters.forEachIndexed { index, chapterMemory ->
-                        +"  ${index + 1}. ${chapterMemory.summaryDelta.ifBlank { chapterMemory.summaryShort }.compact(120)}"
+                        +"  ${index + 1}. ${chapterMemory.summaryDelta.ifBlank { chapterMemory.summaryShort }}"
                         br()
                     }
                 }
@@ -241,7 +241,7 @@ fun storyAgentPrompt(
                     +"Warnings:"
                     br()
                     continuityMemory.continuityWarnings.take(2).forEach { warning ->
-                        +"  - ${warning.compact(90)}"
+                        +"  - $warning"
                         br()
                     }
                 }

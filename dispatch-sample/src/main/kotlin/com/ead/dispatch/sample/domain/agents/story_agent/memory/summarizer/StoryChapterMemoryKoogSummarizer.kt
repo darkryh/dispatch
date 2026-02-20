@@ -14,6 +14,15 @@ import com.ead.dispatch.sample.domain.agents.story_agent.memory.summarizer.model
 import com.ead.dispatch.sample.domain.agents.story_agent.memory.summarizer.node.nodeSummarizeStoryMemory
 
 class StoryChapterMemoryKoogSummarizer : StoryChapterMemorySummarizer {
+    private companion object {
+        const val MAX_INPUT_KEY_BEATS = 10
+        const val MAX_NEW_FACTS = 3
+        const val MAX_RESOLVED_THREADS = 2
+        const val MAX_OPEN_THREADS = 3
+        const val MAX_CONTINUITY_RISKS = 2
+        const val MAX_WARNINGS = 2
+    }
+
     override suspend fun summarize(
         chapter: StoryChapterRecord,
         approvedText: String,
@@ -23,8 +32,8 @@ class StoryChapterMemoryKoogSummarizer : StoryChapterMemorySummarizer {
             chapterNumber = chapter.number,
             chapterTitle = chapter.title,
             chapterSummary = chapter.summary,
-            keyBeats = keyBeats.take(10),
-            approvedTextExcerpt = approvedText.compact(2_200),
+            keyBeats = keyBeats.take(MAX_INPUT_KEY_BEATS),
+            approvedTextExcerpt = approvedText.compact(2_200)
         )
 
         val agent = AIAgent<StoryChapterMemorySummarizeRequest, Result<StructuredResponse<StoryChapterMemorySummaryDraft>>, >(
@@ -41,7 +50,17 @@ class StoryChapterMemoryKoogSummarizer : StoryChapterMemorySummarizer {
             id = "story-memory-summarizer",
         )
         val result = runCatching { agent.run(request).getOrThrow().data }.getOrNull() ?: return null
-        val summaryDelta = result.summaryDelta.trim().takeIf { it.isNotEmpty() } ?: return null
+        val summaryDelta = result.summaryDelta.trim()
+        val normalizedConfidence = result.confidence.trim().uppercase().ifBlank { "LOW" }
+        val isUsable = result.isUsable && summaryDelta.isNotEmpty()
+        if (!isUsable) {
+            return StoryChapterMemorySummary(
+                summaryShort = "",
+                summaryDelta = "",
+                confidence = normalizedConfidence,
+                isUsable = false,
+            )
+        }
 
         return StoryChapterMemorySummary(
             summaryShort = summaryDelta.compact(280),
@@ -49,19 +68,25 @@ class StoryChapterMemoryKoogSummarizer : StoryChapterMemorySummarizer {
             newFacts = result.newFacts
                 .mapNotNull { it.trim().takeIf(String::isNotEmpty) }
                 .distinct()
-                .take(3),
+                .take(MAX_NEW_FACTS),
             resolvedThreads = result.resolvedThreads
                 .mapNotNull { it.trim().takeIf(String::isNotEmpty) }
                 .distinct()
-                .take(2),
+                .take(MAX_RESOLVED_THREADS),
             unresolvedThreads = result.openThreads
                 .mapNotNull { it.trim().takeIf(String::isNotEmpty) }
                 .distinct()
-                .take(3),
+                .take(MAX_OPEN_THREADS),
             continuityRisks = result.continuityRisks
                 .mapNotNull { it.trim().takeIf(String::isNotEmpty) }
                 .distinct()
-                .take(2),
+                .take(MAX_CONTINUITY_RISKS),
+            warnings = result.warnings
+                .mapNotNull { it.trim().takeIf(String::isNotEmpty) }
+                .distinct()
+                .take(MAX_WARNINGS),
+            confidence = normalizedConfidence,
+            isUsable = true,
         )
     }
 }

@@ -25,6 +25,8 @@ import com.ead.dispatch.sample.domain.agents.tools.model.StoryDraftPreviewSnapsh
 import com.ead.dispatch.sample.domain.agents.tools.model.StoryDraftPreviewStatus
 import com.ead.dispatch.sample.domain.content.ChapterContentStore
 import com.ead.dispatch.sample.domain.entity.EntityOptionType
+import com.ead.dispatch.sample.domain.export.StoryExportRequest
+import com.ead.dispatch.sample.domain.export.StoryExportService
 import com.ead.dispatch.sample.domain.model.message.CliMessage
 import com.ead.dispatch.sample.domain.model.message.CliMessageRole
 import com.ead.dispatch.sample.domain.model.session.Session
@@ -74,6 +76,7 @@ class ChatViewModel(
     private val chatAgent: ChatAgent,
     private val storyAgent: StoryAgent,
     private val storyDraftTools: StoryDraftTools,
+    private val storyExportService: StoryExportService,
     savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
     private val chapterContentStore = ChapterContentStore()
@@ -220,6 +223,77 @@ class ChatViewModel(
             }
             CommandAction.OpenStoryChat -> {
                 navigator.navigate(StoryChatRoute(storyId = _session.value?.id))
+            }
+            is CommandAction.ExportStory -> {
+                runExport(commandAction)
+            }
+            is CommandAction.ShowError -> {
+                appendMessage(
+                    mode = _writerMode.value,
+                    message = CliMessage(
+                        data = commandAction.message,
+                        role = CliMessageRole.ASSISTANT,
+                    ),
+                )
+            }
+        }
+    }
+
+    private fun runExport(commandAction: CommandAction.ExportStory) {
+        if (_isProcessing.value) return
+        _isProcessing.value = true
+        viewModelScope.launch(Dispatchers.IO) {
+            try {
+                val session = activeSession(firstMessagePreview = "Export")
+                val story = repository.getStoriesBySession(session.id).firstOrNull()
+                if (story == null) {
+                    appendMessage(
+                        mode = WriterMode.CHAT_STORY,
+                        message = CliMessage(
+                            role = CliMessageRole.ASSISTANT,
+                            data = "No story exists yet for this session, so export cannot run.",
+                        ),
+                    )
+                    return@launch
+                }
+
+                val request = StoryExportRequest(
+                    storyId = story.id,
+                    scopeType = commandAction.scopeType,
+                    scopeId = commandAction.scopeId,
+                    format = commandAction.format,
+                    outputTarget = commandAction.outputTarget,
+                    outputPath = commandAction.outputPath,
+                )
+                val result = storyExportService.export(request)
+                result.onSuccess { export ->
+                    val summary = buildString {
+                        append("Export complete: ${export.files.size} file(s) written to ${export.rootPath}")
+                        if (export.warnings.isNotEmpty()) {
+                            append("\nWarnings:")
+                            export.warnings.forEach { warning ->
+                                append("\n- $warning")
+                            }
+                        }
+                    }
+                    appendMessage(
+                        mode = WriterMode.CHAT_STORY,
+                        message = CliMessage(
+                            role = CliMessageRole.ASSISTANT,
+                            data = summary,
+                        ),
+                    )
+                }.onFailure { throwable ->
+                    appendMessage(
+                        mode = WriterMode.CHAT_STORY,
+                        message = CliMessage(
+                            role = CliMessageRole.ASSISTANT,
+                            data = "Export failed: ${throwable.message ?: "Unknown error"}",
+                        ),
+                    )
+                }
+            } finally {
+                _isProcessing.value = false
             }
         }
     }

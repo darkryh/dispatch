@@ -13,15 +13,19 @@ import com.ead.dispatch.sample.data.db.type.ArcScope
 import com.ead.dispatch.sample.data.db.type.ContentStatus
 import com.ead.dispatch.sample.data.db.type.SessionMode
 import com.ead.dispatch.sample.data.repositories.StructuredIndexRepository
+import com.ead.dispatch.sample.domain.AIProvider
+import com.ead.dispatch.sample.domain.Storage
 import com.ead.dispatch.sample.domain.agents.chat_agent.ChatAgentEmbedder
 import com.ead.dispatch.sample.domain.agents.chat_agent.ChatRequest
 import com.ead.dispatch.sample.domain.agents.chat_agent.KoogChatAgent
+import com.ead.dispatch.sample.domain.agents.chat_agent.policy.ChatTurnCheckpointProperties
 import com.ead.dispatch.sample.domain.embedding.EmbeddingIndexService
 import com.ead.dispatch.sample.domain.embedding.RagContextService
 import com.ead.dispatch.sample.domain.model.session.Session
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
+import kotlinx.serialization.json.JsonPrimitive
 import java.util.UUID
 import kotlin.io.path.createTempDirectory
 
@@ -98,6 +102,21 @@ internal class ChatModeEvalHarness : AutoCloseable {
 
             val afterCount = entityCount(storyId)
             val assistantText = assistant.toString().trim()
+            val latestCheckpoint = Storage.provider.getLatestCheckpoint(AIProvider.getChatAgentId(session.id))
+            val checkpointProperties = latestCheckpoint?.properties.orEmpty()
+            val preferenceSaveExecuted = (checkpointProperties[ChatTurnCheckpointProperties.PREFERENCE_SAVE_EXECUTED] as? JsonPrimitive)
+                ?.content
+                ?.trim()
+                ?.lowercase()
+                ?.let { raw ->
+                    when (raw) {
+                        "true" -> true
+                        "false" -> false
+                        else -> null
+                    }
+                }
+            val preferenceSaveSkippedReason = (checkpointProperties[ChatTurnCheckpointProperties.PREFERENCE_SAVE_SKIPPED_REASON] as? JsonPrimitive)
+                ?.content
 
             ChatEvalObservation(
                 case = case,
@@ -106,6 +125,8 @@ internal class ChatModeEvalHarness : AutoCloseable {
                 usedSelector = toolCalls.any { it.equals("requestUserChoice", ignoreCase = true) },
                 wroteState = afterCount > beforeCount,
                 wordCount = countWords(assistantText),
+                preferenceSaveExecuted = preferenceSaveExecuted,
+                preferenceSaveSkippedReason = preferenceSaveSkippedReason,
             )
         }
     }

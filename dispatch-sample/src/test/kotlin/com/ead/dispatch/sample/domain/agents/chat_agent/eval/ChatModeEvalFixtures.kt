@@ -1,5 +1,7 @@
 package com.ead.dispatch.sample.domain.agents.chat_agent.eval
 
+import com.ead.dispatch.sample.domain.agents.chat_agent.ChatDecisionContext
+
 internal enum class ExpectedChatBehavior {
     INQUIRE,
     EXECUTE,
@@ -11,6 +13,7 @@ internal data class ChatEvalCase(
     val prompt: String,
     val expectedBehavior: ExpectedChatBehavior,
     val fromDecisionPrompt: Boolean = false,
+    val decisionContext: ChatDecisionContext? = null,
     val seedProfile: ChatEvalSeedProfile = ChatEvalSeedProfile.BASIC,
     val warmupPrompts: List<String> = emptyList(),
 )
@@ -92,6 +95,8 @@ internal data class ChatEvalObservation(
     val usedSelector: Boolean,
     val wroteState: Boolean,
     val wordCount: Int,
+    val preferenceSaveExecuted: Boolean? = null,
+    val preferenceSaveSkippedReason: String? = null,
 )
 
 internal fun countWords(text: String): Int {

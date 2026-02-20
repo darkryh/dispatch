@@ -4,8 +4,10 @@ import com.ead.dispatch.sample.domain.agents.chat_agent.ChatRequest
 import com.ead.dispatch.sample.domain.agents.chat_agent.ChatDecisionContext
 import com.ead.dispatch.sample.domain.agents.chat_agent.policy.ChatDecisionPath
 import com.ead.dispatch.sample.domain.agents.chat_agent.policy.ChatIntentClass
+import com.ead.dispatch.sample.domain.agents.chat_agent.policy.ChatPreferenceNovelty
 import com.ead.dispatch.sample.domain.agents.chat_agent.policy.ChatTurnInput
 import com.ead.dispatch.sample.domain.agents.chat_agent.policy.ChatTurnPolicy
+import com.ead.dispatch.sample.domain.agents.intent.IntentConfidenceBand
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -139,6 +141,10 @@ class MemoryPreferenceNodesPolicyTest {
         decisionPath: ChatDecisionPath = ChatDecisionPath.DIRECT_RESPONSE,
         fromDecisionPrompt: Boolean = false,
         requestTextHash: String = "hash",
+        shouldSavePreference: Boolean = true,
+        preferenceConceptKeywords: List<String> = listOf("selector_general_creative_preference"),
+        preferenceConfidenceBand: IntentConfidenceBand = IntentConfidenceBand.HIGH,
+        preferenceNovelty: ChatPreferenceNovelty = ChatPreferenceNovelty.NEW,
     ): ChatTurnPolicy = ChatTurnPolicy(
         intentClass = ChatIntentClass.CREATIVE,
         decisionPath = decisionPath,
@@ -148,6 +154,10 @@ class MemoryPreferenceNodesPolicyTest {
         rationale = "test policy",
         fromDecisionPrompt = fromDecisionPrompt,
         requestTextHash = requestTextHash,
+        shouldSavePreference = shouldSavePreference,
+        preferenceConceptKeywords = preferenceConceptKeywords,
+        preferenceConfidenceBand = preferenceConfidenceBand,
+        preferenceNovelty = preferenceNovelty,
     )
 
     private fun selectorRequest(

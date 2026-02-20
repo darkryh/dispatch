@@ -27,7 +27,15 @@ fun storyChapterMemorySummarizerPrompt(
             br()
             +"continuityRisks: 0-2 concise potential continuity risks/contradictions."
             br()
+            +"warnings: 0-2 concise continuity warnings worth surfacing to the writer."
+            br()
+            +"confidence: HIGH/MEDIUM/LOW indicating extraction confidence."
+            br()
+            +"isUsable: true only when output is reliable enough for persistence."
+            br()
             +"Do not invent facts not present in inputs."
+            br()
+            +"Do not prefix values with tags like 'Fact:' or 'Risk:'."
             br()
         }
     }

@@ -14,6 +14,7 @@ import com.ead.dispatch.sample.domain.agents.tools.model.StoryDraftPreviewPendin
 import com.ead.dispatch.sample.domain.agents.tools.model.StoryDraftPreviewSnapshot
 import com.ead.dispatch.sample.domain.agents.tools.model.StoryDraftPreviewStatus
 import com.ead.dispatch.sample.domain.agents.tools.model.ToolResult
+import com.ead.dispatch.sample.domain.agents.story_agent.memory.policy.SummarizeNowStorySummarizationPolicy
 import com.ead.dispatch.sample.domain.agents.story_agent.memory.service.StoryContinuityMemoryService
 import com.ead.dispatch.sample.domain.content.ChapterContentStore
 import com.ead.dispatch.sample.domain.embedding.EmbeddingIndexService
@@ -55,6 +56,7 @@ class StoryDraftToolsPreviewIntegrationTest {
                 repository = repository,
                 contentStore = contentStore,
                 continuityMemoryService = StoryContinuityMemoryService(repository),
+                summarizationPolicy = SummarizeNowStorySummarizationPolicy,
             )
 
             val now = Clock.System.now().toEpochMilliseconds()
@@ -186,6 +188,7 @@ class StoryDraftToolsPreviewIntegrationTest {
                 repository = repository,
                 contentStore = contentStore,
                 continuityMemoryService = StoryContinuityMemoryService(repository),
+                summarizationPolicy = SummarizeNowStorySummarizationPolicy,
             )
 
             val now = Clock.System.now().toEpochMilliseconds()

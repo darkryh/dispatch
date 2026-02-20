@@ -1,6 +1,7 @@
 package com.ead.dispatch.sample.domain.agents.chat_agent.policy
 
 import com.ead.dispatch.sample.domain.agents.chat_agent.ChatRequest
+import com.ead.dispatch.sample.domain.agents.intent.IntentConfidenceBand
 import com.ead.dispatch.sample.domain.agents.intent.IntentExecutionIntent
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -192,26 +193,26 @@ class ChatTurnPolicyClassifierTest {
                 reasoning = "Preference statement",
                 shouldSavePreference = true,
                 preferenceConceptKeywords = listOf(
-                    "writer_pov_preference",
-                    "writer_tense_preference",
-                    "writer_prose_style_preference",
+                    "selector_character_direction_preference",
+                    "selector_tone_direction_preference",
+                    "selector_general_creative_preference",
                 ),
-                preferenceConfidence = 0.88,
-                preferenceEvidenceSpan = "first-person present tense and sparse prose",
-                preferenceReasoning = "Durable style preference.",
+                preferenceConfidenceBand = IntentConfidenceBand.HIGH,
+                preferenceNovelty = ChatPreferenceNovelty.NEW,
             ),
         )
 
         assertTrue(policy.shouldSavePreference)
         assertEquals(
-            listOf("writer_pov_preference", "writer_tense_preference", "writer_prose_style_preference"),
+            listOf("selector_character_direction_preference", "selector_tone_direction_preference", "selector_general_creative_preference"),
             policy.preferenceConceptKeywords,
         )
-        assertTrue(policy.preferenceConfidence >= 0.88)
+        assertEquals(IntentConfidenceBand.HIGH, policy.preferenceConfidenceBand)
+        assertEquals(ChatPreferenceNovelty.NEW, policy.preferenceNovelty)
     }
 
     @Test
-    fun `decision prompt path suppresses preference save`() {
+    fun `decision prompt path preserves classifier preference signal`() {
         val request = ChatRequest(
             text = "yes proceed",
             storyId = "s1",
@@ -223,13 +224,14 @@ class ChatTurnPolicyClassifierTest {
             intentSignal = ChatIntentSignal(
                 intentClass = ChatIntentClass.CREATIVE,
                 shouldSavePreference = true,
-                preferenceConceptKeywords = listOf("writer_tone_like_preference"),
-                preferenceConfidence = 0.95,
+                preferenceConceptKeywords = listOf("selector_tone_direction_preference"),
+                preferenceConfidenceBand = IntentConfidenceBand.HIGH,
+                preferenceNovelty = ChatPreferenceNovelty.NEW,
             ),
         )
 
         assertEquals(ChatDecisionPath.DIRECT_WRITE, policy.decisionPath)
-        assertFalse(policy.shouldSavePreference)
-        assertTrue(policy.preferenceConceptKeywords.isEmpty())
+        assertTrue(policy.shouldSavePreference)
+        assertEquals(listOf("selector_tone_direction_preference"), policy.preferenceConceptKeywords)
     }
 }

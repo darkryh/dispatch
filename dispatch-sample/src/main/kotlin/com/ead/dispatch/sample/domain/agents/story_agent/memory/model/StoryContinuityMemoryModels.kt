@@ -14,6 +14,9 @@ data class StoryChapterMemorySnapshot(
     val resolvedThreads: List<String> = emptyList(),
     val unresolvedThreads: List<String>,
     val continuityRisks: List<String> = emptyList(),
+    val warnings: List<String> = emptyList(),
+    val summarizerConfidence: String = "LOW",
+    val summarizerUsable: Boolean = false,
     val pov: String? = null,
     val tense: String? = null,
     val updatedAt: Long,
@@ -37,6 +40,9 @@ data class StoryChapterMemorySummary(
     val resolvedThreads: List<String> = emptyList(),
     val unresolvedThreads: List<String> = emptyList(),
     val continuityRisks: List<String> = emptyList(),
+    val warnings: List<String> = emptyList(),
+    val confidence: String = "LOW",
+    val isUsable: Boolean = false,
 )
 
 fun interface StoryChapterMemorySummarizer {

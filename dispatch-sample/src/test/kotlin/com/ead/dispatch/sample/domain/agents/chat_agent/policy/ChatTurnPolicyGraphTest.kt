@@ -8,6 +8,7 @@ import ai.koog.agents.testing.feature.testGraph
 import ai.koog.agents.testing.tools.getMockExecutor
 import com.ead.dispatch.sample.domain.AIProvider
 import com.ead.dispatch.sample.domain.agents.chat_agent.ChatRequest
+import com.ead.dispatch.sample.domain.agents.intent.IntentConfidenceBand
 import com.ead.dispatch.sample.domain.agents.chat_agent.node.nodeApplyTurnPolicy
 import com.ead.dispatch.sample.domain.agents.chat_agent.node.nodeClassifyIntent
 import kotlinx.coroutines.runBlocking
@@ -140,8 +141,9 @@ class ChatTurnPolicyGraphTest {
                 evidenceSpan = "irrelevant because bypass",
                 reasoning = "should not be used for decision prompt",
                 shouldSavePreference = true,
-                preferenceConcepts = listOf("writer_tone_like_preference"),
-                preferenceConfidence = 0.99,
+                preferenceConcepts = listOf("selector_tone_direction_preference"),
+                preferenceConfidenceBand = "HIGH",
+                preferenceNovelty = "NEW",
             ),
             agentId = "chat-policy-decision-prompt-bypass-test",
         )
@@ -193,13 +195,12 @@ class ChatTurnPolicyGraphTest {
                 reasoning = "user provided stable writing preferences",
                 shouldSavePreference = true,
                 preferenceConcepts = listOf(
-                    "writer_pov_preference",
-                    "writer_tense_preference",
+                    "selector_character_direction_preference",
+                    "selector_general_creative_preference",
                     "unknown_concept_should_be_filtered",
                 ),
-                preferenceConfidence = 0.87,
-                preferenceEvidenceSpan = "first-person present tense",
-                preferenceReasoning = "durable preference statement",
+                preferenceConfidenceBand = "HIGH",
+                preferenceNovelty = "NEW",
             ),
             agentId = "chat-policy-preference-signal-test",
         )
@@ -215,10 +216,11 @@ class ChatTurnPolicyGraphTest {
         assertFalse(result.policy.allowWriteTools)
         assertTrue(result.policy.shouldSavePreference)
         assertEquals(
-            listOf("writer_pov_preference", "writer_tense_preference"),
+            listOf("selector_character_direction_preference", "selector_general_creative_preference"),
             result.policy.preferenceConceptKeywords,
         )
-        assertTrue(result.policy.preferenceConfidence >= 0.87)
+        assertEquals(IntentConfidenceBand.HIGH, result.policy.preferenceConfidenceBand)
+        assertEquals(ChatPreferenceNovelty.NEW, result.policy.preferenceNovelty)
     }
 
     private fun mockClassifierExecutor(
@@ -229,9 +231,8 @@ class ChatTurnPolicyGraphTest {
         reasoning: String,
         shouldSavePreference: Boolean = false,
         preferenceConcepts: List<String> = emptyList(),
-        preferenceConfidence: Double = 0.0,
-        preferenceEvidenceSpan: String = "",
-        preferenceReasoning: String = "",
+        preferenceConfidenceBand: String = "LOW",
+        preferenceNovelty: String = "UNCERTAIN",
         executionIntent: String = "EXECUTE",
     ): ai.koog.prompt.executor.model.PromptExecutor =
         getMockExecutor(
@@ -252,9 +253,8 @@ class ChatTurnPolicyGraphTest {
                   "reasoning": "$reasoning",
                   "should_save_preference": $shouldSavePreference,
                   "preference_concepts": $conceptsJson,
-                  "preference_confidence": $preferenceConfidence,
-                  "preference_evidence_span": "$preferenceEvidenceSpan",
-                  "preference_reasoning": "$preferenceReasoning",
+                  "preference_confidence_band": "$preferenceConfidenceBand",
+                  "preference_novelty": "$preferenceNovelty",
                   "execution_intent": "$executionIntent"
                 }
                 """.trimIndent(),
