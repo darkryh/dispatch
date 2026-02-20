@@ -1,6 +1,6 @@
 package com.ead.dispatch.sample.presentation.library.world_rules
 
-import com.ead.dispatch.sample.domain.agents.world_rule_agent.WorldRuleAIDraft
+import com.ead.dispatch.sample.domain.agents.internal.world_rule_agent.WorldRuleAIDraft
 import com.ead.dispatch.sample.presentation.editor.model.EditorAIMode
 import com.ead.dispatch.sample.presentation.editor.model.EditorFieldKey
 import com.ead.dispatch.sample.presentation.editor.model.EditorMode

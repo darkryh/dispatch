@@ -3,10 +3,10 @@ package com.ead.dispatch.sample.presentation.library.relationships
 import com.ead.dispatch.runtime.SavedStateHandle
 import com.ead.dispatch.sample.data.db.entities.StoryRelationshipRecord
 import com.ead.dispatch.sample.data.repositories.StructuredIndexRepository
-import com.ead.dispatch.sample.domain.agents.relationship_agent.RelationshipAgent
-import com.ead.dispatch.sample.domain.agents.relationship_agent.RelationshipAIRequest
-import com.ead.dispatch.sample.domain.agents.relationship_agent.RelationshipAIMode
-import com.ead.dispatch.sample.domain.agents.relationship_agent.RelationshipStoryContext
+import com.ead.dispatch.sample.domain.agents.internal.relationship_agent.RelationshipAgent
+import com.ead.dispatch.sample.domain.agents.internal.relationship_agent.RelationshipAIRequest
+import com.ead.dispatch.sample.domain.agents.internal.relationship_agent.RelationshipAIMode
+import com.ead.dispatch.sample.domain.agents.internal.relationship_agent.RelationshipStoryContext
 import com.ead.dispatch.sample.navigation.RelationshipEditorRoute
 import com.ead.dispatch.navigation.toRoute
 import com.ead.dispatch.sample.presentation.editor.model.EditorAIMode

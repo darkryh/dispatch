@@ -1,6 +1,6 @@
 package com.ead.dispatch.sample.presentation.library.cultures
 
-import com.ead.dispatch.sample.domain.agents.culture_agent.CultureAIDraft
+import com.ead.dispatch.sample.domain.agents.internal.culture_agent.CultureAIDraft
 import com.ead.dispatch.sample.presentation.editor.model.EditorFieldKey
 import com.ead.dispatch.sample.presentation.util.FieldValue
 

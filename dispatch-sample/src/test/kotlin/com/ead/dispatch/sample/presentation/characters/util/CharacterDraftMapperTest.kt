@@ -1,6 +1,6 @@
 package com.ead.dispatch.sample.presentation.characters.util
 
-import com.ead.dispatch.sample.domain.agents.character_agent.CharacterAIDraft
+import com.ead.dispatch.sample.domain.agents.internal.character_agent.CharacterAIDraft
 import com.ead.dispatch.sample.presentation.util.FieldValue
 import kotlin.test.Test
 import kotlin.test.assertEquals

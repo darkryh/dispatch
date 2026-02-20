@@ -3,10 +3,10 @@ package com.ead.dispatch.sample.presentation.characters
 import com.ead.dispatch.runtime.SavedStateHandle
 import com.ead.dispatch.sample.data.db.entities.StoryCharacterRecord
 import com.ead.dispatch.sample.data.repositories.StructuredIndexRepository
-import com.ead.dispatch.sample.domain.agents.character_agent.CharacterAgent
-import com.ead.dispatch.sample.domain.agents.character_agent.CharacterAIRequest
-import com.ead.dispatch.sample.domain.agents.character_agent.CharacterAIMode
-import com.ead.dispatch.sample.domain.agents.character_agent.CharacterStoryContext
+import com.ead.dispatch.sample.domain.agents.internal.character_agent.CharacterAgent
+import com.ead.dispatch.sample.domain.agents.internal.character_agent.CharacterAIRequest
+import com.ead.dispatch.sample.domain.agents.internal.character_agent.CharacterAIMode
+import com.ead.dispatch.sample.domain.agents.internal.character_agent.CharacterStoryContext
 import com.ead.dispatch.sample.navigation.CharacterRoute
 import com.ead.dispatch.navigation.toRoute
 import com.ead.dispatch.sample.presentation.characters.event.CharacterEvent

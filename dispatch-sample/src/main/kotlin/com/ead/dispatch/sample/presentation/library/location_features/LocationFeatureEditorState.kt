@@ -1,6 +1,6 @@
 package com.ead.dispatch.sample.presentation.library.location_features
 
-import com.ead.dispatch.sample.domain.agents.location_feature_agent.LocationFeatureAIDraft
+import com.ead.dispatch.sample.domain.agents.internal.location_feature_agent.LocationFeatureAIDraft
 import com.ead.dispatch.sample.presentation.editor.model.EditorAIMode
 import com.ead.dispatch.sample.presentation.editor.model.EditorFieldKey
 import com.ead.dispatch.sample.presentation.editor.model.EditorMode

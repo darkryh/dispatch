@@ -1,6 +1,6 @@
 package com.ead.dispatch.sample.presentation.library.organizations
 
-import com.ead.dispatch.sample.domain.agents.organization_agent.OrganizationAIDraft
+import com.ead.dispatch.sample.domain.agents.internal.organization_agent.OrganizationAIDraft
 import com.ead.dispatch.sample.presentation.editor.model.EditorAIMode
 import com.ead.dispatch.sample.presentation.editor.model.EditorFieldKey
 import com.ead.dispatch.sample.presentation.editor.model.EditorMode

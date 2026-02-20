@@ -1,6 +1,6 @@
 package com.ead.dispatch.sample.presentation.library.relationships
 
-import com.ead.dispatch.sample.domain.agents.relationship_agent.RelationshipAIDraft
+import com.ead.dispatch.sample.domain.agents.internal.relationship_agent.RelationshipAIDraft
 import com.ead.dispatch.sample.presentation.editor.model.EditorAIMode
 import com.ead.dispatch.sample.presentation.editor.model.EditorFieldKey
 import com.ead.dispatch.sample.presentation.editor.model.EditorMode

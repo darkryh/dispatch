@@ -1,7 +1,7 @@
 package com.ead.dispatch.sample.presentation.library.cultures
 
 import com.ead.dispatch.annotation.Dispatchable
-import com.ead.dispatch.sample.domain.agents.culture_agent.CultureAIDraft
+import com.ead.dispatch.sample.domain.agents.internal.culture_agent.CultureAIDraft
 import com.ead.dispatch.sample.presentation.editor.components.EditorScreenStyles
 import com.ead.dispatch.widget.LabeledValue
 import com.ead.dispatch.widget.LabeledValueList

@@ -26,15 +26,19 @@ class StoryChapterMemoryKoogSummarizer : StoryChapterMemorySummarizer {
             keyBeats = keyBeats.take(10),
             approvedTextExcerpt = approvedText.compact(2_200),
         )
-        val agent = AIAgent<StoryChapterMemorySummarizeRequest, Result<StructuredResponse<StoryChapterMemorySummaryDraft>>>(
+        val agent = AIAgent.Companion.invoke<
+            StoryChapterMemorySummarizeRequest,
+            Result<StructuredResponse<StoryChapterMemorySummaryDraft>>,
+        >(
             promptExecutor = AIProvider.Sync.storyExecutor,
             llmModel = AIProvider.Story.main,
-            toolRegistry = ToolRegistry {},
             strategy = strategy<StoryChapterMemorySummarizeRequest, Result<StructuredResponse<StoryChapterMemorySummaryDraft>>>("story-memory-summarizer") {
                 val summarizeNode by nodeSummarizeStoryMemory()
                 edge(nodeStart forwardTo summarizeNode)
                 edge(summarizeNode forwardTo nodeFinish transformed { it })
             },
+            responseProcessor = null,
+            toolRegistry = ToolRegistry {},
             maxIterations = 4,
             temperature = 0.4,
             id = "story-memory-summarizer",

@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable
 import java.time.Duration
+import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
@@ -48,7 +49,7 @@ class ChatModeDokimosOptionalEvalIT {
                 harness.run(cases)
             }
 
-            assertTrue(observations.size == cases.size, "Missing observations for one or more cases.")
+            assertEquals(observations.size, cases.size, "Missing observations for one or more cases.")
 
             assertDeterministicGates(observations)
 

@@ -76,10 +76,9 @@ class KoogChatAgent(
     override suspend fun run(session: Session, input: ChatRequest): ContextualResponse<Flow<StreamFrame>> {
         val agentName = AIProvider.getChatAgentId(session.id)
 
-        val agent = AIAgent.Companion<ChatRequest, ContextualResponse<Flow<StreamFrame>>>(
+        val agent = AIAgent<ChatRequest, ContextualResponse<Flow<StreamFrame>>>(
             promptExecutor = AIProvider.Sync.chatExecutor,
             llmModel = AIProvider.Chat.main,
-            toolRegistry = toolRegistry,
             strategy = strategy<ChatRequest, ContextualResponse<Flow<StreamFrame>>>("chat-mode.planner") {
                 val classifyIntent by nodeClassifyIntent()
 
@@ -133,6 +132,8 @@ class KoogChatAgent(
                 edge(saveUserPreferences forwardTo auditTurn)
                 edge(auditTurn forwardTo nodeFinish)
             },
+            responseProcessor = null,
+            toolRegistry = toolRegistry,
             maxIterations = 50,
             temperature = 1.0,
             installFeatures = {

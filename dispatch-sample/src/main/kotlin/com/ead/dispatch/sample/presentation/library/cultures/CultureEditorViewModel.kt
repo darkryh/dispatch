@@ -3,10 +3,10 @@ package com.ead.dispatch.sample.presentation.library.cultures
 import com.ead.dispatch.runtime.SavedStateHandle
 import com.ead.dispatch.sample.data.db.entities.StoryCultureRecord
 import com.ead.dispatch.sample.data.repositories.StructuredIndexRepository
-import com.ead.dispatch.sample.domain.agents.culture_agent.CultureAgent
-import com.ead.dispatch.sample.domain.agents.culture_agent.CultureAIRequest
-import com.ead.dispatch.sample.domain.agents.culture_agent.CultureAIMode
-import com.ead.dispatch.sample.domain.agents.culture_agent.CultureStoryContext
+import com.ead.dispatch.sample.domain.agents.internal.culture_agent.CultureAgent
+import com.ead.dispatch.sample.domain.agents.internal.culture_agent.CultureAIRequest
+import com.ead.dispatch.sample.domain.agents.internal.culture_agent.CultureAIMode
+import com.ead.dispatch.sample.domain.agents.internal.culture_agent.CultureStoryContext
 import com.ead.dispatch.sample.navigation.CultureEditorRoute
 import com.ead.dispatch.navigation.toRoute
 import com.ead.dispatch.sample.presentation.editor.model.EditorAIMode

@@ -1,7 +1,7 @@
 package com.ead.dispatch.sample.presentation.library.organizations
 
 import com.ead.dispatch.annotation.Dispatchable
-import com.ead.dispatch.sample.domain.agents.organization_agent.OrganizationAIDraft
+import com.ead.dispatch.sample.domain.agents.internal.organization_agent.OrganizationAIDraft
 import com.ead.dispatch.sample.presentation.editor.components.EditorScreenStyles
 import com.ead.dispatch.widget.LabeledValue
 import com.ead.dispatch.widget.LabeledValueList

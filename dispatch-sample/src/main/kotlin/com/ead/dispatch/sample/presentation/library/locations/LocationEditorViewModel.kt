@@ -3,10 +3,10 @@ package com.ead.dispatch.sample.presentation.library.locations
 import com.ead.dispatch.runtime.SavedStateHandle
 import com.ead.dispatch.sample.data.db.entities.StoryLocationRecord
 import com.ead.dispatch.sample.data.repositories.StructuredIndexRepository
-import com.ead.dispatch.sample.domain.agents.location_agent.LocationAgent
-import com.ead.dispatch.sample.domain.agents.location_agent.LocationAIRequest
-import com.ead.dispatch.sample.domain.agents.location_agent.LocationAIMode
-import com.ead.dispatch.sample.domain.agents.location_agent.LocationStoryContext
+import com.ead.dispatch.sample.domain.agents.internal.location_agent.LocationAgent
+import com.ead.dispatch.sample.domain.agents.internal.location_agent.LocationAIRequest
+import com.ead.dispatch.sample.domain.agents.internal.location_agent.LocationAIMode
+import com.ead.dispatch.sample.domain.agents.internal.location_agent.LocationStoryContext
 import com.ead.dispatch.sample.navigation.LocationEditorRoute
 import com.ead.dispatch.navigation.toRoute
 import com.ead.dispatch.sample.presentation.editor.model.EditorAIMode

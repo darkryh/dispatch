@@ -3,10 +3,10 @@ package com.ead.dispatch.sample.presentation.library.artifacts
 import com.ead.dispatch.runtime.SavedStateHandle
 import com.ead.dispatch.sample.data.db.entities.StoryArtifactRecord
 import com.ead.dispatch.sample.data.repositories.StructuredIndexRepository
-import com.ead.dispatch.sample.domain.agents.artifact_agent.ArtifactAgent
-import com.ead.dispatch.sample.domain.agents.artifact_agent.ArtifactAIRequest
-import com.ead.dispatch.sample.domain.agents.artifact_agent.ArtifactAIMode
-import com.ead.dispatch.sample.domain.agents.artifact_agent.ArtifactStoryContext
+import com.ead.dispatch.sample.domain.agents.internal.artifact_agent.ArtifactAgent
+import com.ead.dispatch.sample.domain.agents.internal.artifact_agent.ArtifactAIRequest
+import com.ead.dispatch.sample.domain.agents.internal.artifact_agent.ArtifactAIMode
+import com.ead.dispatch.sample.domain.agents.internal.artifact_agent.ArtifactStoryContext
 import com.ead.dispatch.sample.navigation.ArtifactEditorRoute
 import com.ead.dispatch.navigation.toRoute
 import com.ead.dispatch.sample.presentation.editor.model.EditorAIMode

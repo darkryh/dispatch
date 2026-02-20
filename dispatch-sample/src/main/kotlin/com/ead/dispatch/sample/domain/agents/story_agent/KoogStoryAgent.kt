@@ -53,10 +53,9 @@ class KoogStoryAgent(
     override suspend fun run(session: Session, input: StoryRequest): ContextualResponse<Flow<StreamFrame>> {
         val agentName = AIProvider.getStoryAgentId(session.id)
 
-        val agent = AIAgent.Companion<StoryRequest, ContextualResponse<Flow<StreamFrame>>>(
+        val agent = AIAgent<StoryRequest, ContextualResponse<Flow<StreamFrame>>>(
             promptExecutor = AIProvider.Sync.storyExecutor,
             llmModel = AIProvider.Story.main,
-            toolRegistry = toolRegistry,
             strategy = strategy<StoryRequest, ContextualResponse<Flow<StreamFrame>>>("story-mode.writer") {
                 val classifyIntent by nodeClassifyStoryIntent()
 
@@ -102,6 +101,8 @@ class KoogStoryAgent(
                 edge(contextAfterLlm forwardTo auditTurn)
                 edge(auditTurn forwardTo nodeFinish)
             },
+            responseProcessor = null,
+            toolRegistry = toolRegistry,
             maxIterations = 50,
             temperature = 1.0,
             installFeatures = {

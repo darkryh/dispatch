@@ -1,6 +1,6 @@
 package com.ead.dispatch.sample.presentation.library.artifacts
 
-import com.ead.dispatch.sample.domain.agents.artifact_agent.ArtifactAIDraft
+import com.ead.dispatch.sample.domain.agents.internal.artifact_agent.ArtifactAIDraft
 import com.ead.dispatch.sample.presentation.editor.model.EditorFieldKey
 import com.ead.dispatch.sample.presentation.util.FieldValue
 

@@ -1,7 +1,7 @@
 package com.ead.dispatch.sample.presentation.library.world_rules
 
 import com.ead.dispatch.annotation.Dispatchable
-import com.ead.dispatch.sample.domain.agents.world_rule_agent.WorldRuleAIDraft
+import com.ead.dispatch.sample.domain.agents.internal.world_rule_agent.WorldRuleAIDraft
 import com.ead.dispatch.sample.presentation.editor.components.EditorScreenStyles
 import com.ead.dispatch.widget.LabeledValue
 import com.ead.dispatch.widget.LabeledValueList

@@ -39,6 +39,7 @@ import com.ead.koog.context.orchestrator.api.remainingPercentFlow
 import com.ead.koog.context.orchestrator.telemetry.ContextCheckpointProperties
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -246,108 +247,107 @@ class ChatViewModel(
         _isProcessing.value = true
 
         viewModelScope.launch {
-            val session = activeSession(input)
+            try {
+                val session = activeSession(input)
 
-            val response = when (mode) {
-                WriterMode.CHAT -> chatAgent.run(
-                    session = session,
-                    input = ChatRequest(
-                        text = input,
-                        storyId = session.id,
-                        fromDecisionPrompt = fromDecisionPrompt,
+                val response = when (mode) {
+                    WriterMode.CHAT -> chatAgent.run(
+                        session = session,
+                        input = ChatRequest(
+                            text = input,
+                            storyId = session.id,
+                            fromDecisionPrompt = fromDecisionPrompt,
+                        )
                     )
-                )
-                WriterMode.CHAT_STORY -> storyAgent.run(
-                    session = session,
-                    input = StoryRequest(
-                        text = input,
-                        storyId = session.id,
-                        fromDecisionPrompt = fromDecisionPrompt,
+                    WriterMode.CHAT_STORY -> storyAgent.run(
+                        session = session,
+                        input = StoryRequest(
+                            text = input,
+                            storyId = session.id,
+                            fromDecisionPrompt = fromDecisionPrompt,
+                        )
                     )
-                )
-            }
-            val assistantStreamingResponse = response.value
-
-            val metadataJob = viewModelScope.launch(Dispatchers.IO) {
-                response.metadata.remainingPercentFlow().collect { remainingPercent ->
-                    setContextRemainingPercent(mode, remainingPercent)
                 }
-            }
+                val assistantStreamingResponse = response.value
 
-            cancelRequested = false
+                val metadataJob = viewModelScope.launch(Dispatchers.IO) {
+                    response.metadata.remainingPercentFlow().collect { remainingPercent ->
+                        setContextRemainingPercent(mode, remainingPercent)
+                    }
+                }
 
-            val job = viewModelScope.launch(Dispatchers.IO) {
-                val currentJob = coroutineContext[Job]
+                cancelRequested = false
 
-                try {
-                    assistantStreamingResponse.collect { frame ->
-                        if (cancelRequested) {
-                            return@collect
-                        }
-                        if (modeState(mode).pendingDecision != null && frame !is StreamFrame.End) {
-                            // When a decision prompt is active, pause visible streaming until user responds.
-                            return@collect
-                        }
+                val job = viewModelScope.launch(Dispatchers.IO) {
+                    val currentJob = coroutineContext[Job]
 
-                    when (frame) {
-                        is StreamFrame.Append -> {
-                            _isProcessing.value = true
-                            if (frame.text.isEmpty()) {
+                    try {
+                        assistantStreamingResponse.collect { frame ->
+                            if (cancelRequested) {
                                 return@collect
                             }
-                            appendAssistantChunk(mode, frame.text)
-                        }
-                        is StreamFrame.ToolCall -> {
-                            val decision = parseDecisionPromptPayload(frame.name, frame.content)
-                            if (decision != null) {
-                                setPendingDecision(mode, decision)
-                                _isProcessing.value = false
-                            } else {
-                                _isProcessing.value = true
-                                appendMessage(
-                                    mode = mode,
-                                    message = CliMessage(
-                                        toolId = frame.id,
-                                        toolName = frame.name,
-                                        data = frame.content,
-                                        role = CliMessageRole.TOOL
+                            if (modeState(mode).pendingDecision != null && frame !is StreamFrame.End) {
+                                // When a decision prompt is active, pause visible streaming until user responds.
+                                return@collect
+                            }
+
+                            when (frame) {
+                                is StreamFrame.Append -> {
+                                    if (frame.text.isEmpty()) {
+                                        return@collect
+                                    }
+                                    appendAssistantChunk(mode, frame.text)
+                                }
+                                is StreamFrame.ToolCall -> {
+                                    val decision = parseDecisionPromptPayload(frame.name, frame.content)
+                                    if (decision != null) {
+                                        setPendingDecision(mode, decision)
+                                    } else {
+                                        appendMessage(
+                                            mode = mode,
+                                            message = CliMessage(
+                                                toolId = frame.id,
+                                                toolName = frame.name,
+                                                data = frame.content,
+                                                role = CliMessageRole.TOOL
+                                            )
+                                        )
+                                    }
+                                }
+                                is StreamFrame.End -> {
+                                    // Update session after receiving response (increment count again)
+                                    sessionManager.updateSession(
+                                        sessionId = session.id,
+                                        title = modeState(mode).messages.lastOrNull { it.role == CliMessageRole.USER }?.data,
+                                        incrementMessageCount = true
                                     )
-                                )
+                                    if (mode == WriterMode.CHAT_STORY) {
+                                        refreshStoryPreview(session.id)
+                                    }
+                                }
                             }
                         }
-                        is StreamFrame.End -> {
-                            // Update session after receiving response (increment count again)
-                            sessionManager.updateSession(
-                                sessionId = session.id,
-                                title = modeState(mode).messages.lastOrNull { it.role == CliMessageRole.USER }?.data,
-                                incrementMessageCount = true
-                            )
-                            if (mode == WriterMode.CHAT_STORY) {
-                                refreshStoryPreview(session.id)
-                            }
-                            _isProcessing.value = false
-                            if (activeStreamJob === currentJob) {
-                                activeStreamJob = null
-                            }
+                    } finally {
+
+                        metadataJob.cancelAndJoin()
+                        setContextRemainingPercent(mode, response.metadata.currentRemainingPercent())
+
+                        if (modeState(mode).contextRemainingPercent == null) {
+                            refreshContextStatus(session.id, mode)
                         }
-                    }
-                    }
-                } finally {
 
-                    metadataJob.cancelAndJoin()
-                    setContextRemainingPercent(mode, response.metadata.currentRemainingPercent())
-
-                    if (modeState(mode).contextRemainingPercent == null) {
-                        refreshContextStatus(session.id, mode)
+                        if (activeStreamJob === currentJob) {
+                            activeStreamJob = null
+                        }
+                        _isProcessing.value = false
                     }
-
-                    if (activeStreamJob === currentJob) {
-                        activeStreamJob = null
-                    }
-                    _isProcessing.value = false
                 }
+                activeStreamJob = job
+            } catch (cancellation: CancellationException) {
+                throw cancellation
+            } catch (_: Throwable) {
+                _isProcessing.value = false
             }
-            activeStreamJob = job
         }
     }
 

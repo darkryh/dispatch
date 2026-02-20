@@ -3,10 +3,10 @@ package com.ead.dispatch.sample.presentation.library.world_rules
 import com.ead.dispatch.runtime.SavedStateHandle
 import com.ead.dispatch.sample.data.db.entities.StoryWorldRuleRecord
 import com.ead.dispatch.sample.data.repositories.StructuredIndexRepository
-import com.ead.dispatch.sample.domain.agents.world_rule_agent.WorldRuleAgent
-import com.ead.dispatch.sample.domain.agents.world_rule_agent.WorldRuleAIRequest
-import com.ead.dispatch.sample.domain.agents.world_rule_agent.WorldRuleAIMode
-import com.ead.dispatch.sample.domain.agents.world_rule_agent.WorldRuleStoryContext
+import com.ead.dispatch.sample.domain.agents.internal.world_rule_agent.WorldRuleAgent
+import com.ead.dispatch.sample.domain.agents.internal.world_rule_agent.WorldRuleAIRequest
+import com.ead.dispatch.sample.domain.agents.internal.world_rule_agent.WorldRuleAIMode
+import com.ead.dispatch.sample.domain.agents.internal.world_rule_agent.WorldRuleStoryContext
 import com.ead.dispatch.sample.navigation.WorldRuleEditorRoute
 import com.ead.dispatch.navigation.toRoute
 import com.ead.dispatch.sample.presentation.editor.model.EditorAIMode

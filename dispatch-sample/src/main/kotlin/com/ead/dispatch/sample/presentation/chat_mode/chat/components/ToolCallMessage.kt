@@ -120,8 +120,12 @@ private fun parseToolResult(root: JsonObject, isError: Boolean, toolName: String
         val message = root["message"]?.jsonPrimitive?.asStringOrNull() ?: "Tool failed."
         val error = root["error"]?.jsonObject
         val properties = buildList {
-            error?.get("code")?.jsonPrimitive?.asStringOrNull()?.let { add("code" to it) }
-            error?.get("details")?.jsonPrimitive?.asStringOrNull()?.let { add("details" to it) }
+            error?.get("code")?.jsonPrimitive?.asStringOrNull()?.let { value ->
+                if (shouldDisplayToolProperty("code", value)) add("code" to value)
+            }
+            error?.get("details")?.jsonPrimitive?.asStringOrNull()?.let { value ->
+                if (shouldDisplayToolProperty("details", value)) add("details" to value)
+            }
         }
         return ToolDisplay(
             summary = "Error: $message",
@@ -188,7 +192,9 @@ private fun parseToolRequest(root: JsonObject, toolName: String?): ToolDisplay {
         if (request != null) {
             flattenJson(request, null, this)
         } else if (entityId != null) {
-            add("entityId" to entityId)
+            if (shouldDisplayToolProperty("entityId", entityId)) {
+                add("entityId" to entityId)
+            }
         }
     }
 
@@ -286,25 +292,34 @@ private fun flattenJson(
             }
         }
         is JsonArray -> {
-            val values = element.mapNotNull { item ->
-                when (item) {
-                    is JsonPrimitive -> item.asStringOrNull()
-                    is JsonObject -> item.toString()
-                    else -> null
-                }
-            }.map { it.trim() }.filter { it.isNotBlank() }
-            if (values.isNotEmpty() && prefix != null) {
+            if (prefix == null) return
+            val values = element
+                .mapNotNull { item -> (item as? JsonPrimitive)?.asStringOrNull()?.trim() }
+                .filter { it.isNotBlank() && !isJsonLikeText(it) }
+            if (values.isNotEmpty() && shouldDisplayToolProperty(prefix, values.joinToString(", "))) {
                 output.add(prefix to values.joinToString(", "))
             }
         }
         is JsonPrimitive -> {
             val content = element.asStringOrNull()?.trim().orEmpty()
-            if (content.isNotBlank() && prefix != null) {
+            if (content.isNotBlank() && prefix != null && shouldDisplayToolProperty(prefix, content)) {
                 output.add(prefix to content)
             }
         }
     }
 }
+
+private fun shouldDisplayToolProperty(key: String, value: String): Boolean {
+    if (value.isBlank()) return false
+    if (isJsonLikeText(value)) return false
+    return true
+}
+
+private fun isJsonLikeText(value: String): Boolean {
+    return JSON_TEXT_REGEX.matches(value)
+}
+
+private val JSON_TEXT_REGEX = Regex("""(?s)^\s*(?:\{.*}|\[.*])\s*$""")
 
 private fun JsonPrimitive.asStringOrNull(): String? {
     val value = content

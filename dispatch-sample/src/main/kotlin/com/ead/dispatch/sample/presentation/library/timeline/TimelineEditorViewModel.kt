@@ -3,10 +3,10 @@ package com.ead.dispatch.sample.presentation.library.timeline
 import com.ead.dispatch.runtime.SavedStateHandle
 import com.ead.dispatch.sample.data.db.entities.StoryTimelineEntryRecord
 import com.ead.dispatch.sample.data.repositories.StructuredIndexRepository
-import com.ead.dispatch.sample.domain.agents.timeline_agent.TimelineAgent
-import com.ead.dispatch.sample.domain.agents.timeline_agent.TimelineAIRequest
-import com.ead.dispatch.sample.domain.agents.timeline_agent.TimelineAIMode
-import com.ead.dispatch.sample.domain.agents.timeline_agent.TimelineStoryContext
+import com.ead.dispatch.sample.domain.agents.internal.timeline_agent.TimelineAgent
+import com.ead.dispatch.sample.domain.agents.internal.timeline_agent.TimelineAIRequest
+import com.ead.dispatch.sample.domain.agents.internal.timeline_agent.TimelineAIMode
+import com.ead.dispatch.sample.domain.agents.internal.timeline_agent.TimelineStoryContext
 import com.ead.dispatch.sample.navigation.TimelineEditorRoute
 import com.ead.dispatch.navigation.toRoute
 import com.ead.dispatch.sample.presentation.editor.model.EditorAIMode

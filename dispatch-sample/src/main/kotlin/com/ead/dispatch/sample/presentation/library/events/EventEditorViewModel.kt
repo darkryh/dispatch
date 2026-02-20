@@ -3,10 +3,10 @@ package com.ead.dispatch.sample.presentation.library.events
 import com.ead.dispatch.runtime.SavedStateHandle
 import com.ead.dispatch.sample.data.db.entities.StoryEventRecord
 import com.ead.dispatch.sample.data.repositories.StructuredIndexRepository
-import com.ead.dispatch.sample.domain.agents.event_agent.EventAgent
-import com.ead.dispatch.sample.domain.agents.event_agent.EventAIRequest
-import com.ead.dispatch.sample.domain.agents.event_agent.EventAIMode
-import com.ead.dispatch.sample.domain.agents.event_agent.EventStoryContext
+import com.ead.dispatch.sample.domain.agents.internal.event_agent.EventAgent
+import com.ead.dispatch.sample.domain.agents.internal.event_agent.EventAIRequest
+import com.ead.dispatch.sample.domain.agents.internal.event_agent.EventAIMode
+import com.ead.dispatch.sample.domain.agents.internal.event_agent.EventStoryContext
 import com.ead.dispatch.sample.navigation.EventEditorRoute
 import com.ead.dispatch.navigation.toRoute
 import com.ead.dispatch.sample.presentation.editor.model.EditorAIMode

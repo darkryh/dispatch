@@ -1,7 +1,7 @@
 package com.ead.dispatch.sample.presentation.characters.components
 
 import com.ead.dispatch.annotation.Dispatchable
-import com.ead.dispatch.sample.domain.agents.character_agent.CharacterAIDraft
+import com.ead.dispatch.sample.domain.agents.internal.character_agent.CharacterAIDraft
 import com.ead.dispatch.widget.LabeledValue
 import com.ead.dispatch.widget.LabeledValueList
 

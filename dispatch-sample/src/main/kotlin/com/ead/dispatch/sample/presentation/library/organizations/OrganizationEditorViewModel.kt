@@ -3,10 +3,10 @@ package com.ead.dispatch.sample.presentation.library.organizations
 import com.ead.dispatch.runtime.SavedStateHandle
 import com.ead.dispatch.sample.data.db.entities.StoryOrganizationRecord
 import com.ead.dispatch.sample.data.repositories.StructuredIndexRepository
-import com.ead.dispatch.sample.domain.agents.organization_agent.OrganizationAgent
-import com.ead.dispatch.sample.domain.agents.organization_agent.OrganizationAIRequest
-import com.ead.dispatch.sample.domain.agents.organization_agent.OrganizationAIMode
-import com.ead.dispatch.sample.domain.agents.organization_agent.OrganizationStoryContext
+import com.ead.dispatch.sample.domain.agents.internal.organization_agent.OrganizationAgent
+import com.ead.dispatch.sample.domain.agents.internal.organization_agent.OrganizationAIRequest
+import com.ead.dispatch.sample.domain.agents.internal.organization_agent.OrganizationAIMode
+import com.ead.dispatch.sample.domain.agents.internal.organization_agent.OrganizationStoryContext
 import com.ead.dispatch.sample.navigation.OrganizationEditorRoute
 import com.ead.dispatch.navigation.toRoute
 import com.ead.dispatch.sample.presentation.editor.model.EditorAIMode

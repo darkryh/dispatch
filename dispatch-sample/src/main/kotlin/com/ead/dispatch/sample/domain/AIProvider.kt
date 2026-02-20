@@ -4,6 +4,7 @@ import ai.koog.prompt.executor.clients.deepseek.DeepSeekModels
 import ai.koog.prompt.executor.clients.openai.OpenAIModels
 import ai.koog.prompt.executor.llms.all.simpleOllamaAIExecutor
 import ai.koog.prompt.executor.llms.all.simpleOpenAIExecutor
+import ai.koog.prompt.executor.model.PromptExecutor
 import ai.koog.prompt.llm.LLMCapability
 import ai.koog.prompt.llm.LLMProvider
 import ai.koog.prompt.llm.LLModel
@@ -50,26 +51,26 @@ object AIProvider {
      * Role-based model configuration for the Chat Agent.
      */
     object Chat {
-        var main: LLModel = chatGptMini
-        var intent: LLModel = chatGptNano
-        var fixer: LLModel = chatGptNano
+        var main: LLModel = deepseekChatLlmModel
+        var intent: LLModel = deepseekChatLlmModel
+        var fixer: LLModel = deepseekChatLlmModel
     }
 
     /**
      * Role-based model configuration for the Story Agent.
      */
     object Story {
-        var main: LLModel = chatGptMini
-        var intent: LLModel = chatGptNano
-        var fixer: LLModel = chatGptNano
+        var main: LLModel = deepseekChatLlmModel
+        var intent: LLModel = deepseekChatLlmModel
+        var fixer: LLModel = deepseekChatLlmModel
     }
 
     /**
      * Centralized synchronization for executors.
      */
     object Sync {
-        var chatExecutor = openAiPromptExecutor
-        var storyExecutor = openAiPromptExecutor
+        var chatExecutor: PromptExecutor = deepseekPromptExecutor
+        var storyExecutor: PromptExecutor = deepseekPromptExecutor
     }
 
     fun getChatAgentId(id : String) = "${id}:chat-agent"

@@ -1,6 +1,6 @@
 package com.ead.dispatch.sample.presentation.library.events
 
-import com.ead.dispatch.sample.domain.agents.event_agent.EventAIDraft
+import com.ead.dispatch.sample.domain.agents.internal.event_agent.EventAIDraft
 import com.ead.dispatch.sample.presentation.editor.model.EditorAIMode
 import com.ead.dispatch.sample.presentation.editor.model.EditorFieldKey
 import com.ead.dispatch.sample.presentation.editor.model.EditorMode

@@ -1,14 +1,14 @@
 package com.ead.dispatch.sample.presentation.library
 
-import com.ead.dispatch.sample.domain.agents.artifact_agent.ArtifactAIDraft
-import com.ead.dispatch.sample.domain.agents.culture_agent.CultureAIDraft
-import com.ead.dispatch.sample.domain.agents.event_agent.EventAIDraft
-import com.ead.dispatch.sample.domain.agents.location_agent.LocationAIDraft
-import com.ead.dispatch.sample.domain.agents.location_feature_agent.LocationFeatureAIDraft
-import com.ead.dispatch.sample.domain.agents.organization_agent.OrganizationAIDraft
-import com.ead.dispatch.sample.domain.agents.relationship_agent.RelationshipAIDraft
-import com.ead.dispatch.sample.domain.agents.timeline_agent.TimelineAIDraft
-import com.ead.dispatch.sample.domain.agents.world_rule_agent.WorldRuleAIDraft
+import com.ead.dispatch.sample.domain.agents.internal.artifact_agent.ArtifactAIDraft
+import com.ead.dispatch.sample.domain.agents.internal.culture_agent.CultureAIDraft
+import com.ead.dispatch.sample.domain.agents.internal.event_agent.EventAIDraft
+import com.ead.dispatch.sample.domain.agents.internal.location_agent.LocationAIDraft
+import com.ead.dispatch.sample.domain.agents.internal.location_feature_agent.LocationFeatureAIDraft
+import com.ead.dispatch.sample.domain.agents.internal.organization_agent.OrganizationAIDraft
+import com.ead.dispatch.sample.domain.agents.internal.relationship_agent.RelationshipAIDraft
+import com.ead.dispatch.sample.domain.agents.internal.timeline_agent.TimelineAIDraft
+import com.ead.dispatch.sample.domain.agents.internal.world_rule_agent.WorldRuleAIDraft
 import com.ead.dispatch.sample.presentation.editor.model.EditorFieldKey
 import com.ead.dispatch.sample.presentation.library.artifacts.ArtifactDraftMapper
 import com.ead.dispatch.sample.presentation.library.cultures.CultureDraftMapper

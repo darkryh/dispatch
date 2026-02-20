@@ -1,6 +1,6 @@
 package com.ead.dispatch.sample.presentation.library.timeline
 
-import com.ead.dispatch.sample.domain.agents.timeline_agent.TimelineAIDraft
+import com.ead.dispatch.sample.domain.agents.internal.timeline_agent.TimelineAIDraft
 import com.ead.dispatch.sample.presentation.editor.model.EditorFieldKey
 import com.ead.dispatch.sample.presentation.util.FieldValue
 

@@ -2,7 +2,6 @@ package com.ead.dispatch.sample.presentation.chat_mode.chat
 
 import com.ead.dispatch.annotation.Dispatchable
 import com.ead.dispatch.koin.inject
-import com.ead.dispatch.layout.Column
 import com.ead.dispatch.layout.Row
 import com.ead.dispatch.layout.Spacer
 import com.ead.dispatch.modifier.Modifier
@@ -10,46 +9,22 @@ import com.ead.dispatch.modifier.fillMaxWidth
 import com.ead.dispatch.modifier.height
 import com.ead.dispatch.modifier.width
 import com.ead.dispatch.navigation.LocalNavigator
-import com.ead.dispatch.runtime.DisposableEffect
-import com.ead.dispatch.runtime.LocalKeyboardInterceptor
-import com.ead.dispatch.runtime.LocalTerminalHeight
-import com.ead.dispatch.runtime.LocalTerminalWidth
-import com.ead.dispatch.runtime.LocalTheme
+import com.ead.dispatch.navigation.Navigator
+import com.ead.dispatch.runtime.*
 import com.ead.dispatch.sample.domain.CommandManager
 import com.ead.dispatch.sample.domain.agents.tools.model.StoryDraftPreviewStatus
 import com.ead.dispatch.sample.domain.entity.EntityOptionType
 import com.ead.dispatch.sample.domain.model.message.CliMessage
 import com.ead.dispatch.sample.domain.model.message.CliMessageRole
 import com.ead.dispatch.sample.domain.model.story.WriterMode
-import com.ead.dispatch.sample.presentation.chat_mode.chat.components.ChatCommandPalette
-import com.ead.dispatch.sample.presentation.chat_mode.chat.components.ChatHeader
-import com.ead.dispatch.sample.presentation.chat_mode.chat.components.ChatInputTextField
-import com.ead.dispatch.sample.presentation.chat_mode.chat.components.ChatMessage
-import com.ead.dispatch.sample.presentation.chat_mode.chat.components.ChatProgressAnimation
-import com.ead.dispatch.sample.presentation.chat_mode.chat.components.ChatStatusBar
+import com.ead.dispatch.sample.presentation.chat_mode.chat.components.*
 import com.ead.dispatch.sample.presentation.chat_mode.chat.event.ChatEvent
 import com.ead.dispatch.state.getValue
 import com.ead.dispatch.state.remember
 import com.ead.dispatch.theme.DispatchTheme
 import com.ead.dispatch.viewmodel.collectAsState
 import com.ead.dispatch.viewmodel.viewModel
-import com.ead.dispatch.widget.CommandOption
-import com.ead.dispatch.widget.ChangeFocusMode
-import com.ead.dispatch.widget.CommandPaletteTextStyles
-import com.ead.dispatch.widget.DiffReviewAction
-import com.ead.dispatch.widget.DiffReviewPanel
-import com.ead.dispatch.widget.DiffReviewPanelState
-import com.ead.dispatch.widget.DecisionPrompt
-import com.ead.dispatch.widget.DecisionPromptTextStyles
-import com.ead.dispatch.widget.FileChangeApprovalConfig
-import com.ead.dispatch.widget.FileChangePreviewState
-import com.ead.dispatch.widget.KeyHint
-import com.ead.dispatch.widget.LazyColumn
-import com.ead.dispatch.widget.PendingLineRange
-import com.ead.dispatch.widget.PreviewFileType
-import com.ead.dispatch.widget.Text
-import com.ead.dispatch.widget.rememberCommandPaletteState
-import com.ead.dispatch.widget.rememberInputHistoryIndexState
+import com.ead.dispatch.widget.*
 import com.github.ajalt.mordant.rendering.TextColors.Companion.rgb
 import com.github.ajalt.mordant.rendering.TextStyle
 import kotlinx.datetime.Clock
@@ -194,16 +169,16 @@ private fun ChatConversationColumn(
     inputText: String,
     placeholder: String,
     icon: String,
-    navigator: com.ead.dispatch.navigation.Navigator,
+    navigator: Navigator,
     historyItems: List<String>,
-    historyIndexState: com.ead.dispatch.widget.InputHistoryIndexState,
+    historyIndexState: InputHistoryIndexState,
     commands: List<CommandOption<String>>,
-    commandPaletteState: com.ead.dispatch.widget.CommandPaletteState<String>,
+    commandPaletteState: CommandPaletteState<String>,
     decisionPromptStyles: DecisionPromptTextStyles,
     theme: DispatchTheme,
     contextRemainingPercent: Int?,
     onEvent: (ChatEvent) -> Unit,
-    onDecisionSelected: (com.ead.dispatch.widget.DecisionSelection) -> Unit,
+    onDecisionSelected: (DecisionSelection) -> Unit,
     inlineStoryPreview: StoryPreviewUiState?,
     inlineStoryPreviewRows: Int,
 ) {
@@ -374,6 +349,7 @@ private fun StoryPreviewPanel(
         DiffReviewAction("Reject Proposal"),
     )
     val showActions = snapshot.status == StoryDraftPreviewStatus.PENDING && !snapshot.proposalId.isNullOrBlank()
+
     val previewState = FileChangePreviewState(
         filePath = "chapter:${snapshot.chapterTitle}",
         fileType = PreviewFileType.MARKDOWN,
@@ -388,6 +364,7 @@ private fun StoryPreviewPanel(
         pageIndex = preview.selectedPageIndex,
         pageSizeRows = maxVisibleRows.coerceAtLeast(1),
     )
+
     val panelState = DiffReviewPanelState(
         title = if (preview.focused) "Preview (focused)" else "Preview",
         subtitle = scopeLabel.takeIf { it.isNotBlank() },
@@ -398,6 +375,7 @@ private fun StoryPreviewPanel(
         selectedActionIndex = preview.selectedActionIndex,
         actionsFocused = preview.focused && preview.activeZone == StoryPreviewFocusZone.ACTIONS,
     )
+
     DiffReviewPanel(
         state = panelState,
         maxVisibleRows = maxVisibleRows,

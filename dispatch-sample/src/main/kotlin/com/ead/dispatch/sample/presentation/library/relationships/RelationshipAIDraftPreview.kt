@@ -1,7 +1,7 @@
 package com.ead.dispatch.sample.presentation.library.relationships
 
 import com.ead.dispatch.annotation.Dispatchable
-import com.ead.dispatch.sample.domain.agents.relationship_agent.RelationshipAIDraft
+import com.ead.dispatch.sample.domain.agents.internal.relationship_agent.RelationshipAIDraft
 import com.ead.dispatch.sample.presentation.editor.components.EditorScreenStyles
 import com.ead.dispatch.widget.LabeledValue
 import com.ead.dispatch.widget.LabeledValueList
