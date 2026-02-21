@@ -20,16 +20,14 @@ fun AIAgentSubgraphBuilderBase<*, *>.nodeGenerateOrganizationDraft(
 private suspend fun AIAgentContext.generateOrganizationDraft(
     request: OrganizationAIRequest,
 ): Result<StructuredResponse<OrganizationAIDraft>> = llm.writeSession {
-    this.model = AIProvider.deepseekChatLlmModel
-
     rewritePrompt {
         organizationAgentPrompt(request)
     }
 
     requestLLMStructured<OrganizationAIDraft>(
         fixingParser = StructureFixingParser(
-            model = AIProvider.deepseekChatLlmModel,
-            retries = 2,
+            model = AIProvider.SubAgent.fixer,
+            retries = 2
         )
     )
 }

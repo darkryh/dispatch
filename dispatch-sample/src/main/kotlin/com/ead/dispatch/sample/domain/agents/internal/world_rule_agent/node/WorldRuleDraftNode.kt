@@ -20,15 +20,13 @@ fun AIAgentSubgraphBuilderBase<*, *>.nodeGenerateWorldRuleDraft(
 private suspend fun AIAgentContext.generateWorldRuleDraft(
     request: WorldRuleAIRequest,
 ): Result<StructuredResponse<WorldRuleAIDraft>> = llm.writeSession {
-    this.model = AIProvider.deepseekChatLlmModel
-
     rewritePrompt {
         worldRuleAgentPrompt(request)
     }
 
     requestLLMStructured<WorldRuleAIDraft>(
         fixingParser = StructureFixingParser(
-            model = AIProvider.deepseekChatLlmModel,
+            model = AIProvider.SubAgent.fixer,
             retries = 2,
         )
     )

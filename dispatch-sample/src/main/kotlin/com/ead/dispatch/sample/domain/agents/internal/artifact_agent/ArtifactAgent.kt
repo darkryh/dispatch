@@ -16,8 +16,8 @@ class ArtifactAgent {
             ArtifactAIMode.CREATIVE -> 1.0
         }
         val agent = AIAgent<ArtifactAIRequest, Result<StructuredResponse<ArtifactAIDraft>>>(
-            promptExecutor = AIProvider.deepseekPromptExecutor,
-            llmModel = AIProvider.deepseekChatLlmModel,
+            promptExecutor = AIProvider.Sync.subAgentExecutor,
+            llmModel = AIProvider.SubAgent.agent,
             toolRegistry = ToolRegistry {},
             strategy = strategy<ArtifactAIRequest, Result<StructuredResponse<ArtifactAIDraft>>>("artifact-draft") {
                 val draftNode by nodeGenerateArtifactDraft()

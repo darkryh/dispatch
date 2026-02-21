@@ -20,16 +20,14 @@ fun AIAgentSubgraphBuilderBase<*, *>.nodeGenerateArtifactDraft(
 private suspend fun AIAgentContext.generateArtifactDraft(
     request: ArtifactAIRequest,
 ): Result<StructuredResponse<ArtifactAIDraft>> = llm.writeSession {
-    this.model = AIProvider.deepseekChatLlmModel
-
     rewritePrompt {
         artifactAgentPrompt(request)
     }
 
     requestLLMStructured<ArtifactAIDraft>(
         fixingParser = StructureFixingParser(
-            model = AIProvider.deepseekChatLlmModel,
-            retries = 2,
+            model = AIProvider.SubAgent.fixer,
+            retries = 2
         )
     )
 }

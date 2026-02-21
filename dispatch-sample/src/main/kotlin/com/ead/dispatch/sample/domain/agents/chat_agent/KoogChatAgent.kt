@@ -19,12 +19,12 @@ import com.ead.dispatch.sample.domain.Pathing
 import com.ead.dispatch.sample.domain.Storage
 import com.ead.dispatch.sample.domain.agents.ChatAgent
 import com.ead.dispatch.sample.domain.agents.chat_agent.extensions.runWithStartCheckpoint
-import com.ead.dispatch.sample.domain.agents.chat_agent.node.nodeApplyTurnPolicy
 import com.ead.dispatch.sample.domain.agents.chat_agent.node.nodeAuditTurn
-import com.ead.dispatch.sample.domain.agents.chat_agent.node.nodeClassifyIntent
 import com.ead.dispatch.sample.domain.agents.chat_agent.node.nodeLoadChatPreferences
 import com.ead.dispatch.sample.domain.agents.chat_agent.node.nodeSaveChatPreferences
 import com.ead.dispatch.sample.domain.agents.chat_agent.node.nodeSetupAndStreamChatMode
+import com.ead.dispatch.sample.domain.agents.chat_agent.node.subgraphClassifyIntent
+import com.ead.dispatch.sample.domain.agents.chat_agent.node.subgraphSetupAndStreamChatMode
 import com.ead.dispatch.sample.domain.agents.chat_agent.policy.ChatTurnInput
 import com.ead.dispatch.sample.domain.agents.tools.CharacterTools
 import com.ead.dispatch.sample.domain.agents.tools.InteractionTools
@@ -42,6 +42,7 @@ import com.ead.koog.context.orchestrator.api.TaskPhase
 import com.ead.koog.context.orchestrator.api.nodeManageContextAfterLlm
 import com.ead.koog.context.orchestrator.api.nodeManageContextBeforeLlm
 import com.ead.koog.context.orchestrator.state.ContinuityPacket
+import jdk.internal.agent.resources.agent
 import kotlinx.coroutines.flow.Flow
 
 class KoogChatAgent(
@@ -80,56 +81,26 @@ class KoogChatAgent(
             promptExecutor = AIProvider.Sync.chatExecutor,
             llmModel = AIProvider.Chat.main,
             strategy = strategy<ChatRequest, ContextualResponse<Flow<StreamFrame>>>("chat-mode.planner") {
-                val classifyIntent by nodeClassifyIntent()
-
-                val applyTurnPolicy by nodeApplyTurnPolicy()
+                val chatIntent by subgraphClassifyIntent()
 
                 val loadChatPreferences by nodeLoadChatPreferences()
 
-                val contextBeforeLlm by nodeManageContextBeforeLlm<ChatTurnInput>(
-                    hints = { turnInput ->
-                        ContextHints(
-                            phase = TaskPhase.EXECUTION,
-                            factConcepts = SelectorPreferencesMemory.userConcepts,
-                            continuityPacket = ContinuityPacket(
-                                objective = "Follow chat turn policy: ${turnInput.policy.decisionPath.name}/${turnInput.policy.resolvedAction.name}.",
-                                constraints = listOf(
-                                    "write_tools_allowed=${turnInput.policy.allowWriteTools}",
-                                    "require_selector_for_destructive=${turnInput.policy.requireSelectorForDestructive}",
-                                    "require_selector_for_creative=${turnInput.policy.requireSelectorForCreative}",
-                                    "confidence_band=${turnInput.policy.confidenceBand.name}",
-                                    "risk_class=${turnInput.policy.riskClass.name}",
-                                ),
-                                criticalReferences = listOf("storyId=${turnInput.request.storyId}"),
-                            )
-                        )
-                    }
-                )
-
-                val chatAgentModel by nodeSetupAndStreamChatMode(
-                    repository = repository,
-                    ragContextService = ragContextService
-                )
-
-                val contextAfterLlm by nodeManageContextAfterLlm<ContextualResponse<Flow<StreamFrame>>>()
+                val chatStreamingResponse by subgraphSetupAndStreamChatMode(repository, ragContextService)
 
                 val saveChatPreferences by nodeSaveChatPreferences()
 
                 val auditTurn by nodeAuditTurn()
 
-                edge(nodeStart forwardTo classifyIntent)
+                edge(nodeStart forwardTo chatIntent)
 
-                edge(classifyIntent forwardTo applyTurnPolicy)
-                edge(applyTurnPolicy forwardTo loadChatPreferences)
-                edge(loadChatPreferences forwardTo contextBeforeLlm)
+                edge(chatIntent forwardTo loadChatPreferences)
 
-                edge(contextBeforeLlm forwardTo chatAgentModel)
+                edge(loadChatPreferences forwardTo chatStreamingResponse)
 
-                edge(chatAgentModel forwardTo contextAfterLlm)
-
-                edge(contextAfterLlm forwardTo saveChatPreferences)
+                edge(chatStreamingResponse forwardTo saveChatPreferences)
 
                 edge(saveChatPreferences forwardTo auditTurn)
+
                 edge(auditTurn forwardTo nodeFinish)
             },
             responseProcessor = null,
@@ -182,7 +153,11 @@ class KoogChatAgent(
             id = agentName,
         )
 
-        return agent.runWithStartCheckpoint(agentName, input)
+        return agent.runWithStartCheckpoint(
+            agentId = agentName,
+            input = input,
+            startNodePath = "$agentName/chat-mode.planner/chat-intent-flow",
+        )
     }
 
 

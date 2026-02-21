@@ -43,7 +43,7 @@ class InteractionTools(
                 ChoiceOptionPayload(id = id, label = label)
             }
 
-        if (rawOptions.size < MIN_OPTIONS || rawOptions.size > MAX_OPTIONS) {
+        if (rawOptions.size !in MIN_OPTIONS..MAX_OPTIONS) {
             return failure(
                 "INVALID_OPTIONS",
                 "Choice options must include between $MIN_OPTIONS and $MAX_OPTIONS items.",

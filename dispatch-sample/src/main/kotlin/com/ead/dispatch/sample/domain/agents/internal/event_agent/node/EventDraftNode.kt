@@ -20,16 +20,14 @@ fun AIAgentSubgraphBuilderBase<*, *>.nodeGenerateEventDraft(
 private suspend fun AIAgentContext.generateEventDraft(
     request: EventAIRequest,
 ): Result<StructuredResponse<EventAIDraft>> = llm.writeSession {
-    this.model = AIProvider.deepseekChatLlmModel
-
     rewritePrompt {
         eventAgentPrompt(request)
     }
 
     requestLLMStructured<EventAIDraft>(
         fixingParser = StructureFixingParser(
-            model = AIProvider.deepseekChatLlmModel,
-            retries = 2,
+            model = AIProvider.SubAgent.fixer,
+            retries = 2
         )
     )
 }

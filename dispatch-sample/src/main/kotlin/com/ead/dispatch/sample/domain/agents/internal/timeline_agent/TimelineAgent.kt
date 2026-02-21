@@ -16,8 +16,8 @@ class TimelineAgent {
             TimelineAIMode.CREATIVE -> 1.0
         }
         val agent = AIAgent<TimelineAIRequest, Result<StructuredResponse<TimelineAIDraft>>>(
-            promptExecutor = AIProvider.deepseekPromptExecutor,
-            llmModel = AIProvider.deepseekChatLlmModel,
+            promptExecutor = AIProvider.Sync.subAgentExecutor,
+            llmModel = AIProvider.SubAgent.agent,
             toolRegistry = ToolRegistry {},
             strategy = strategy<TimelineAIRequest, Result<StructuredResponse<TimelineAIDraft>>>("timeline-draft") {
                 val draftNode by nodeGenerateTimelineDraft()

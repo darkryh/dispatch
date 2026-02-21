@@ -159,7 +159,7 @@ class ChatTurnPolicyGraphTest {
         assertEquals(ChatDecisionPath.DIRECT_WRITE, result.policy.decisionPath)
         assertTrue(result.policy.allowWriteTools)
         assertTrue(result.policy.fromDecisionPrompt)
-        assertFalse(result.policy.shouldSavePreference)
+        assertTrue(result.policy.shouldSavePreference)
     }
 
     @Test

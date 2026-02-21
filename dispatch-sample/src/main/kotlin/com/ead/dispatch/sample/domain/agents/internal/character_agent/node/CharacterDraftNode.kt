@@ -20,15 +20,13 @@ fun AIAgentSubgraphBuilderBase<*, *>.nodeGenerateCharacterDraft(
 private suspend fun AIAgentContext.generateCharacterDraft(
     request: CharacterAIRequest,
 ): Result<StructuredResponse<CharacterAIDraft>> = llm.writeSession {
-    this.model = AIProvider.deepseekChatLlmModel
-
     rewritePrompt {
         characterAgentPrompt(request)
     }
 
     requestLLMStructured<CharacterAIDraft>(
         fixingParser = StructureFixingParser(
-            model = AIProvider.deepseekChatLlmModel,
+            model = AIProvider.SubAgent.fixer,
             retries = 2,
         )
     )

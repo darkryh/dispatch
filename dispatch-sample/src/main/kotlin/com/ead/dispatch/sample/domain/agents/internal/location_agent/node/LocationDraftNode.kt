@@ -20,16 +20,14 @@ fun AIAgentSubgraphBuilderBase<*, *>.nodeGenerateLocationDraft(
 private suspend fun AIAgentContext.generateLocationDraft(
     request: LocationAIRequest,
 ): Result<StructuredResponse<LocationAIDraft>> = llm.writeSession {
-    this.model = AIProvider.deepseekChatLlmModel
-
     rewritePrompt {
         locationAgentPrompt(request)
     }
 
     requestLLMStructured<LocationAIDraft>(
         fixingParser = StructureFixingParser(
-            model = AIProvider.deepseekChatLlmModel,
-            retries = 2,
+            model = AIProvider.SubAgent.fixer,
+            retries = 2
         )
     )
 }

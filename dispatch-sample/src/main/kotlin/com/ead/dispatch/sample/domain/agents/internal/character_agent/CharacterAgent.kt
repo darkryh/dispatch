@@ -16,8 +16,8 @@ class CharacterAgent {
             CharacterAIMode.CREATIVE -> 1.0
         }
         val agent = AIAgent<CharacterAIRequest, Result<StructuredResponse<CharacterAIDraft>>>(
-            promptExecutor = AIProvider.deepseekPromptExecutor,
-            llmModel = AIProvider.deepseekChatLlmModel,
+            promptExecutor = AIProvider.Sync.subAgentExecutor,
+            llmModel = AIProvider.SubAgent.agent,
             toolRegistry = ToolRegistry {},
             strategy = strategy<CharacterAIRequest, Result<StructuredResponse<CharacterAIDraft>>>("character-draft") {
                 val draftNode by nodeGenerateCharacterDraft()

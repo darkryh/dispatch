@@ -19,25 +19,18 @@ import com.ead.dispatch.sample.domain.Storage
 import com.ead.dispatch.sample.domain.agents.StoryAgent
 import com.ead.dispatch.sample.domain.agents.chat_agent.extensions.runWithStartCheckpoint
 import com.ead.dispatch.sample.domain.agents.story_agent.memory.service.StoryContinuityMemoryService
-import com.ead.dispatch.sample.domain.agents.story_agent.node.StoryTurnInput
-import com.ead.dispatch.sample.domain.agents.story_agent.node.nodeApplyStoryTurnPolicy
 import com.ead.dispatch.sample.domain.agents.story_agent.node.nodeAuditStoryTurn
-import com.ead.dispatch.sample.domain.agents.story_agent.node.nodeClassifyStoryIntent
 import com.ead.dispatch.sample.domain.agents.story_agent.node.nodeLoadStoryPreferences
 import com.ead.dispatch.sample.domain.agents.story_agent.node.nodeSaveStoryPreferences
-import com.ead.dispatch.sample.domain.agents.story_agent.node.nodeSetupAndStreamStoryMode
+import com.ead.dispatch.sample.domain.agents.story_agent.node.subgraphClassifyStoryIntent
+import com.ead.dispatch.sample.domain.agents.story_agent.node.subgraphSetupAndStreamStoryMode
 import com.ead.dispatch.sample.domain.agents.tools.InteractionTools
 import com.ead.dispatch.sample.domain.agents.tools.StoryDraftTools
 import com.ead.dispatch.sample.domain.agents.tools.StoryInfoTools
 import com.ead.dispatch.sample.domain.agents.tools.StoryStructureTools
 import com.ead.dispatch.sample.domain.embedding.RagContextService
 import com.ead.dispatch.sample.domain.model.session.Session
-import com.ead.koog.context.orchestrator.api.ContextHints
 import com.ead.koog.context.orchestrator.api.ContextualResponse
-import com.ead.koog.context.orchestrator.api.TaskPhase
-import com.ead.koog.context.orchestrator.api.nodeManageContextAfterLlm
-import com.ead.koog.context.orchestrator.api.nodeManageContextBeforeLlm
-import com.ead.koog.context.orchestrator.state.ContinuityPacket
 import kotlinx.coroutines.flow.Flow
 
 class KoogStoryAgent(
@@ -61,54 +54,30 @@ class KoogStoryAgent(
             promptExecutor = AIProvider.Sync.storyExecutor,
             llmModel = AIProvider.Story.main,
             strategy = strategy<StoryRequest, ContextualResponse<Flow<StreamFrame>>>("story-mode.writer") {
-                val classifyIntent by nodeClassifyStoryIntent()
-
-                val applyTurnPolicy by nodeApplyStoryTurnPolicy()
+                val storyIntent by subgraphClassifyStoryIntent()
 
                 val loadStoryPreferences by nodeLoadStoryPreferences()
 
-                val contextBeforeLlm by nodeManageContextBeforeLlm<StoryTurnInput>(
-                    hints = { turnInput ->
-                        ContextHints(
-                            phase = TaskPhase.EXECUTION,
-                            continuityPacket = ContinuityPacket(
-                                objective = "Execute story mode turn policy: ${turnInput.policy.decisionPath.name}/${turnInput.policy.resolvedAction.name}.",
-                                constraints = listOf(
-                                    "write_tools_allowed=${turnInput.policy.allowWriteTools}",
-                                    "require_selector_for_destructive=${turnInput.policy.requireSelectorForDestructive}",
-                                    "require_selector_for_creative=${turnInput.policy.requireSelectorForCreative}",
-                                    "confidence_band=${turnInput.policy.confidenceBand.name}",
-                                    "risk_class=${turnInput.policy.riskClass.name}",
-                                ),
-                                criticalReferences = listOf("storyId=${turnInput.request.storyId}"),
-                            )
-                        )
-                    }
-                )
-
-                val storyAgentModel by nodeSetupAndStreamStoryMode(
+                val storyStreamingResponse by subgraphSetupAndStreamStoryMode(
                     repository = repository,
                     ragContextService = ragContextService,
                     continuityMemoryService = continuityMemoryService,
                 )
 
-                val contextAfterLlm by nodeManageContextAfterLlm<ContextualResponse<Flow<StreamFrame>>>()
-
                 val saveStoryPreferences by nodeSaveStoryPreferences()
 
                 val auditTurn by nodeAuditStoryTurn()
 
-                edge(nodeStart forwardTo classifyIntent)
+                edge(nodeStart forwardTo storyIntent)
 
-                edge(classifyIntent forwardTo applyTurnPolicy)
-                edge(applyTurnPolicy forwardTo loadStoryPreferences)
-                edge(loadStoryPreferences forwardTo contextBeforeLlm)
+                edge(storyIntent forwardTo loadStoryPreferences)
 
-                edge(contextBeforeLlm forwardTo storyAgentModel)
+                edge(loadStoryPreferences forwardTo storyStreamingResponse)
 
-                edge(storyAgentModel forwardTo contextAfterLlm)
-                edge(contextAfterLlm forwardTo saveStoryPreferences)
+                edge(storyStreamingResponse forwardTo saveStoryPreferences)
+
                 edge(saveStoryPreferences forwardTo auditTurn)
+
                 edge(auditTurn forwardTo nodeFinish)
             },
             responseProcessor = null,
@@ -151,7 +120,7 @@ class KoogStoryAgent(
         return agent.runWithStartCheckpoint(
             agentId = agentName,
             input = input,
-            startNodePath = "$agentName/story-mode.writer/story-classify-intent",
+            startNodePath = "$agentName/story-mode.writer/story-intent-flow",
         )
     }
 }

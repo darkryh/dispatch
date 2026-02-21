@@ -20,7 +20,7 @@ fun AIAgentSubgraphBuilderBase<*, *>.nodeClassifyingLlmModelRequest(
 ): AIAgentNodeDelegate<ChatRequest, Pair<ChatRequest, Result<StructuredResponse<ChatClassifierResponse>>>> =
     node(name) { input ->
         classifierAgentRun(
-            model = AIProvider.deepseekChatLlmModel,
+            model = AIProvider.Chat.intent,
             chatRequest = input
         )
     }
@@ -33,8 +33,8 @@ private suspend fun AIAgentContext.classifierAgentRun(
 
     rewritePrompt {
         chatClassifierPrompt(
-            flashModel = AIProvider.deepseekChatLlmModel.id,
-            proModel = AIProvider.deepseekReasonerLlmModel.id,
+            flashModel = AIProvider.Chat.intent.id,
+            proModel = AIProvider.Chat.intent.id,
             promptBuilder = {
                 user(chatRequest.text)
             }
@@ -45,7 +45,7 @@ private suspend fun AIAgentContext.classifierAgentRun(
         first = chatRequest,
         second = requestLLMStructured<ChatClassifierResponse>(
             fixingParser = StructureFixingParser(
-                model = AIProvider.deepseekChatLlmModel,
+                model = AIProvider.Chat.fixer,
                 retries = 2
             )
         )

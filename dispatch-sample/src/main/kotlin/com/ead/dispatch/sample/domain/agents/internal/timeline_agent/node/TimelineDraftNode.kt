@@ -20,16 +20,14 @@ fun AIAgentSubgraphBuilderBase<*, *>.nodeGenerateTimelineDraft(
 private suspend fun AIAgentContext.generateTimelineDraft(
     request: TimelineAIRequest,
 ): Result<StructuredResponse<TimelineAIDraft>> = llm.writeSession {
-    this.model = AIProvider.deepseekChatLlmModel
-
     rewritePrompt {
         timelineAgentPrompt(request)
     }
 
     requestLLMStructured<TimelineAIDraft>(
         fixingParser = StructureFixingParser(
-            model = AIProvider.deepseekChatLlmModel,
-            retries = 2,
+            model = AIProvider.SubAgent.fixer,
+            retries = 2
         )
     )
 }

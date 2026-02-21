@@ -20,16 +20,14 @@ fun AIAgentSubgraphBuilderBase<*, *>.nodeGenerateRelationshipDraft(
 private suspend fun AIAgentContext.generateRelationshipDraft(
     request: RelationshipAIRequest,
 ): Result<StructuredResponse<RelationshipAIDraft>> = llm.writeSession {
-    this.model = AIProvider.deepseekChatLlmModel
-
     rewritePrompt {
         relationshipAgentPrompt(request)
     }
 
     requestLLMStructured<RelationshipAIDraft>(
         fixingParser = StructureFixingParser(
-            model = AIProvider.deepseekChatLlmModel,
-            retries = 2,
+            model = AIProvider.SubAgent.fixer,
+            retries = 2
         )
     )
 }

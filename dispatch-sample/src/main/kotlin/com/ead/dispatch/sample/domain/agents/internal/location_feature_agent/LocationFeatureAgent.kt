@@ -16,8 +16,8 @@ class LocationFeatureAgent {
             LocationFeatureAIMode.CREATIVE -> 1.0
         }
         val agent = AIAgent<LocationFeatureAIRequest, Result<StructuredResponse<LocationFeatureAIDraft>>>(
-            promptExecutor = AIProvider.deepseekPromptExecutor,
-            llmModel = AIProvider.deepseekChatLlmModel,
+            promptExecutor = AIProvider.Sync.subAgentExecutor,
+            llmModel = AIProvider.SubAgent.agent,
             toolRegistry = ToolRegistry {},
             strategy = strategy<LocationFeatureAIRequest, Result<StructuredResponse<LocationFeatureAIDraft>>>("location-feature-draft") {
                 val draftNode by nodeGenerateLocationFeatureDraft()

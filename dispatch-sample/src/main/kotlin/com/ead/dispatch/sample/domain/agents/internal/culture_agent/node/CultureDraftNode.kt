@@ -20,16 +20,14 @@ fun AIAgentSubgraphBuilderBase<*, *>.nodeGenerateCultureDraft(
 private suspend fun AIAgentContext.generateCultureDraft(
     request: CultureAIRequest,
 ): Result<StructuredResponse<CultureAIDraft>> = llm.writeSession {
-    this.model = AIProvider.deepseekChatLlmModel
-
     rewritePrompt {
         cultureAgentPrompt(request)
     }
 
     requestLLMStructured<CultureAIDraft>(
         fixingParser = StructureFixingParser(
-            model = AIProvider.deepseekChatLlmModel,
-            retries = 2,
+            model = AIProvider.SubAgent.fixer,
+            retries = 2
         )
     )
 }

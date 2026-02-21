@@ -16,8 +16,8 @@ class RelationshipAgent {
             RelationshipAIMode.CREATIVE -> 1.0
         }
         val agent = AIAgent<RelationshipAIRequest, Result<StructuredResponse<RelationshipAIDraft>>>(
-            promptExecutor = AIProvider.deepseekPromptExecutor,
-            llmModel = AIProvider.deepseekChatLlmModel,
+            promptExecutor = AIProvider.Sync.subAgentExecutor,
+            llmModel = AIProvider.SubAgent.agent,
             toolRegistry = ToolRegistry {},
             strategy = strategy<RelationshipAIRequest, Result<StructuredResponse<RelationshipAIDraft>>>("relationship-draft") {
                 val draftNode by nodeGenerateRelationshipDraft()
