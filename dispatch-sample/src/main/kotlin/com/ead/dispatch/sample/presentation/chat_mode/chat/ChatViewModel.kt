@@ -44,10 +44,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.datetime.Clock
 import kotlinx.serialization.builtins.ListSerializer
@@ -91,6 +93,8 @@ class ChatViewModel(
     val inputText: StateFlow<String> = _inputText.asStateFlow()
     private val _isProcessing = MutableStateFlow(false)
     val isProcessing: StateFlow<Boolean> = _isProcessing.asStateFlow()
+    private val _processingElapsedSeconds = MutableStateFlow(0L)
+    val processingElapsedSeconds: StateFlow<Long> = _processingElapsedSeconds.asStateFlow()
 
     private val _messages = MutableStateFlow(emptyList<CliMessage>())
     val messages: StateFlow<List<CliMessage>> = _messages.asStateFlow()
@@ -111,6 +115,7 @@ class ChatViewModel(
         .toMutableMap()
 
     private var activeStreamJob: Job? = null
+    private var processingTimerJob: Job? = null
     private var cancelRequested = false
 
     init {
@@ -181,7 +186,7 @@ class ChatViewModel(
                 cancelRequested = true
                 activeStreamJob?.cancel()
                 activeStreamJob = null
-                _isProcessing.value = false
+                stopProcessingTimer()
             }
             ChatEvent.OnToggleStoryPreviewFocus -> {
                 if (_writerMode.value != WriterMode.CHAT_STORY) return
@@ -239,9 +244,32 @@ class ChatViewModel(
         }
     }
 
+    private fun startProcessingTimer() {
+        _isProcessing.value = true
+        _processingElapsedSeconds.value = 0L
+
+        processingTimerJob?.cancel()
+        val startedAtEpochMillis = Clock.System.now().toEpochMilliseconds()
+        processingTimerJob = viewModelScope.launch {
+            while (isActive) {
+                val nowEpochMillis = Clock.System.now().toEpochMilliseconds()
+                val elapsedMillis = (nowEpochMillis - startedAtEpochMillis).coerceAtLeast(0L)
+                _processingElapsedSeconds.value = elapsedMillis / 1_000L
+                delay(200L)
+            }
+        }
+    }
+
+    private fun stopProcessingTimer() {
+        processingTimerJob?.cancel()
+        processingTimerJob = null
+        _isProcessing.value = false
+        _processingElapsedSeconds.value = 0L
+    }
+
     private fun runExport(commandAction: CommandAction.ExportStory) {
         if (_isProcessing.value) return
-        _isProcessing.value = true
+        startProcessingTimer()
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val session = activeSession(firstMessagePreview = "Export")
@@ -293,7 +321,7 @@ class ChatViewModel(
                     )
                 }
             } finally {
-                _isProcessing.value = false
+                stopProcessingTimer()
             }
         }
     }
@@ -320,7 +348,7 @@ class ChatViewModel(
             )
         )
         _inputText.value = ""
-        _isProcessing.value = true
+        startProcessingTimer()
 
         viewModelScope.launch {
             try {
@@ -416,14 +444,14 @@ class ChatViewModel(
                         if (activeStreamJob === currentJob) {
                             activeStreamJob = null
                         }
-                        _isProcessing.value = false
+                        stopProcessingTimer()
                     }
                 }
                 activeStreamJob = job
             } catch (cancellation: CancellationException) {
                 throw cancellation
             } catch (_: Throwable) {
-                _isProcessing.value = false
+                stopProcessingTimer()
             }
         }
     }
@@ -692,7 +720,7 @@ class ChatViewModel(
         if (!canUseStoryPreviewShortcut()) return
         val snapshot = modeState(WriterMode.CHAT_STORY).storyPreviewSnapshot ?: return
         val proposalId = snapshot.proposalId ?: return
-        _isProcessing.value = true
+        startProcessingTimer()
         viewModelScope.launch(Dispatchers.IO) {
             try {
                 val result = if (actionIndex == 0) {
@@ -724,7 +752,7 @@ class ChatViewModel(
                     }
                 }
             } finally {
-                _isProcessing.value = false
+                stopProcessingTimer()
             }
         }
     }

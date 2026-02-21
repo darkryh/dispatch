@@ -51,9 +51,9 @@ object AIProvider {
      * Role-based model configuration for the Chat Agent.
      */
     object Chat {
-        var main: LLModel = deepseekChatLlmModel
-        var intent: LLModel = deepseekChatLlmModel
-        var fixer: LLModel = deepseekChatLlmModel
+        var main: LLModel = chatGptNano
+        var intent: LLModel = chatGptMini
+        var fixer: LLModel = chatGptNano
     }
 
     /**
@@ -61,16 +61,16 @@ object AIProvider {
      */
     object Story {
         var main: LLModel = deepseekChatLlmModel
-        var intent: LLModel = deepseekChatLlmModel
-        var fixer: LLModel = deepseekChatLlmModel
+        var intent: LLModel = chatGptMini
+        var fixer: LLModel = chatGptNano
     }
 
     /**
      * Centralized synchronization for executors.
      */
     object Sync {
-        var chatExecutor: PromptExecutor = deepseekPromptExecutor
-        var storyExecutor: PromptExecutor = deepseekPromptExecutor
+        var chatExecutor: PromptExecutor = openAiPromptExecutor
+        var storyExecutor: PromptExecutor = openAiPromptExecutor
     }
 
     fun getChatAgentId(id : String) = "${id}:chat-agent"

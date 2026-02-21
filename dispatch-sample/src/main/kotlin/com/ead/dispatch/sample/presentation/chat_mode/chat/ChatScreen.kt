@@ -36,6 +36,7 @@ fun ChatScreen() {
 
     val inputText by viewModel.inputText.collectAsState()
     val isProcessing by viewModel.isProcessing.collectAsState()
+    val processingElapsedSeconds by viewModel.processingElapsedSeconds.collectAsState()
     val messages by viewModel.messages.collectAsState()
     val pendingDecision by viewModel.pendingDecision.collectAsState()
     val contextRemainingPercent by viewModel.contextRemainingPercent.collectAsState()
@@ -141,6 +142,7 @@ fun ChatScreen() {
         messages = messages,
         pendingDecision = pendingDecision,
         isProcessing = isProcessing,
+        processingElapsedSeconds = processingElapsedSeconds,
         inputText = inputText,
         placeholder = placeholder,
         icon = icon,
@@ -166,6 +168,7 @@ private fun ChatConversationColumn(
     messages: List<CliMessage>,
     pendingDecision: DecisionPromptPayload?,
     isProcessing: Boolean,
+    processingElapsedSeconds: Long,
     inputText: String,
     placeholder: String,
     icon: String,
@@ -244,7 +247,12 @@ private fun ChatConversationColumn(
         }
 
         item { Spacer(Modifier.height(1)) }
-        item { ChatProgressAnimation(isProcessing) }
+        item {
+            ChatProgressAnimation(
+                isProcessing = isProcessing,
+                processingElapsedSeconds = processingElapsedSeconds,
+            )
+        }
         item {
             ChatInputTextField(
                 modifier = Modifier.fillMaxWidth(),
