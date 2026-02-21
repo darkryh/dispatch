@@ -60,7 +60,7 @@ object AIProvider {
      * Role-based model configuration for the Story Agent.
      */
     object Story {
-        var main: LLModel = deepseekChatLlmModel
+        var main: LLModel = chatGptNano
         var intent: LLModel = chatGptMini
         var fixer: LLModel = chatGptNano
     }
