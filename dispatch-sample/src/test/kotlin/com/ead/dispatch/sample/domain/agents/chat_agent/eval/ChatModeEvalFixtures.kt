@@ -81,6 +81,12 @@ internal fun leanChatEvalCases(): List<ChatEvalCase> = listOf(
         seedProfile = ChatEvalSeedProfile.RICH_CONTEXT,
     ),
     ChatEvalCase(
+        id = "rich-exec-2",
+        prompt = "Create and save two new characters, one new location, and one new event for the current story context.",
+        expectedBehavior = ExpectedChatBehavior.EXECUTE,
+        seedProfile = ChatEvalSeedProfile.RICH_CONTEXT,
+    ),
+    ChatEvalCase(
         id = "rich-sel-1",
         prompt = "Create and save a new protagonist, but first choose the best narrative direction to fit the existing cast conflict.",
         expectedBehavior = ExpectedChatBehavior.SELECTOR,

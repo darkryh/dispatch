@@ -4,6 +4,7 @@ import ai.koog.agents.core.agent.AIAgent
 import ai.koog.prompt.executor.clients.deepseek.DeepSeekModels
 import ai.koog.prompt.llm.LLModel
 import com.ead.dispatch.sample.domain.AIProvider
+import com.ead.dispatch.sample.domain.agents.chat_agent.policy.isDecisionToolName
 import dev.dokimos.core.EvalTestCaseParam
 import dev.dokimos.core.ExperimentResult
 import dev.dokimos.koog.asJudge
@@ -75,33 +76,23 @@ class ChatModeDokimosOptionalEvalIT {
             .orEmpty()
             .ifBlank { "deepseek" }
 
-        val (judgeExecutor, judgeModel) = when (judgeProvider) {
+        val judgeModel= when (judgeProvider) {
             "deepseek" -> {
-                val deepseekKey = System.getenv("DEEPSEEK_API_KEY")
-                check(!deepseekKey.isNullOrBlank()) {
-                    "DEEPSEEK_API_KEY is required when DISPATCH_DOKIMOS_JUDGE_PROVIDER=deepseek."
-                }
-                val model = parseDeepSeekJudgeModel(
+                parseDeepSeekJudgeModel(
                     value = System.getenv("DISPATCH_DOKIMOS_JUDGE_MODEL"),
                     default = DeepSeekModels.DeepSeekChat,
                 )
-                AIProvider.deepseekPromptExecutor to model
             }
             else -> {
-                val openAiKey = System.getenv("OPENAI_API_KEY")
-                check(!openAiKey.isNullOrBlank()) {
-                    "OPENAI_API_KEY is required when DISPATCH_DOKIMOS_JUDGE_PROVIDER=openai."
-                }
-                val model = parseChatModel(
+                parseChatModel(
                     value = System.getenv("DISPATCH_DOKIMOS_JUDGE_MODEL"),
                     default = AIProvider.chatGptMini,
                 )
-                AIProvider.openAiPromptExecutor to model
             }
         }
 
         fun judgeAgent() = AIAgent(
-            promptExecutor = judgeExecutor,
+            promptExecutor = AIProvider.Sync.executor,
             llmModel = judgeModel,
             maxIterations = 8,
         )
@@ -187,6 +178,10 @@ class ChatModeDokimosOptionalEvalIT {
 
         observations.forEach { observation ->
             val expected = observation.case.expectedBehavior
+            val hasNonDecisionToolCall = observation.toolCalls.any { !isDecisionToolName(it) }
+            if (hasNonDecisionToolCall && observation.assistantText.isBlank()) {
+                failures += "${observation.case.id}: non-selector tool calls ended with empty assistant response."
+            }
             when (expected) {
                 ExpectedChatBehavior.INQUIRE -> {
                     if (observation.wroteState) {

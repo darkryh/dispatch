@@ -16,7 +16,7 @@ class OrganizationAgent {
             OrganizationAIMode.CREATIVE -> 1.0
         }
         val agent = AIAgent<OrganizationAIRequest, Result<StructuredResponse<OrganizationAIDraft>>>(
-            promptExecutor = AIProvider.Sync.subAgentExecutor,
+            promptExecutor = AIProvider.Sync.executor,
             llmModel = AIProvider.SubAgent.agent,
             toolRegistry = ToolRegistry {},
             strategy = strategy<OrganizationAIRequest, Result<StructuredResponse<OrganizationAIDraft>>>("organization-draft") {

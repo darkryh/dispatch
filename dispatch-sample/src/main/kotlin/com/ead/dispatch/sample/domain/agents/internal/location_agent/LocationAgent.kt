@@ -16,7 +16,7 @@ class LocationAgent {
             LocationAIMode.CREATIVE -> 1.0
         }
         val agent = AIAgent<LocationAIRequest, Result<StructuredResponse<LocationAIDraft>>>(
-            promptExecutor = AIProvider.Sync.subAgentExecutor,
+            promptExecutor = AIProvider.Sync.executor,
             llmModel = AIProvider.SubAgent.agent,
             toolRegistry = ToolRegistry {},
             strategy = strategy<LocationAIRequest, Result<StructuredResponse<LocationAIDraft>>>("location-draft") {

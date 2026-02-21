@@ -16,7 +16,7 @@ class EventAgent {
             EventAIMode.CREATIVE -> 1.0
         }
         val agent = AIAgent<EventAIRequest, Result<StructuredResponse<EventAIDraft>>>(
-            promptExecutor = AIProvider.Sync.subAgentExecutor,
+            promptExecutor = AIProvider.Sync.executor,
             llmModel = AIProvider.SubAgent.agent,
             toolRegistry = ToolRegistry {},
             strategy = strategy<EventAIRequest, Result<StructuredResponse<EventAIDraft>>>("event-draft") {

@@ -51,7 +51,7 @@ class KoogStoryAgent(
         val agentName = AIProvider.getStoryAgentId(session.id)
 
         val agent = AIAgent<StoryRequest, ContextualResponse<Flow<StreamFrame>>>(
-            promptExecutor = AIProvider.Sync.storyExecutor,
+            promptExecutor = AIProvider.Sync.executor,
             llmModel = AIProvider.Story.main,
             strategy = strategy<StoryRequest, ContextualResponse<Flow<StreamFrame>>>("story-mode.writer") {
                 val storyIntent by subgraphClassifyStoryIntent()

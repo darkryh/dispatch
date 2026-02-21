@@ -250,11 +250,11 @@ private fun chatTurnIntentClassifierPrompt(
             +"Classify the latest chat turn using language-agnostic, context-aware intent reasoning."
             br()
             h2("Preference Save Signal")
-            +"Set should_save_preference=true only for durable selector-style preferences."
+            +"Set should_save_preference=true only for durable chat readability preferences."
             br()
             +"Allowed preference_concepts values:"
             br()
-            +"selector_naming_direction_preference, selector_character_direction_preference, selector_plot_direction_preference, selector_tone_direction_preference, selector_general_creative_preference"
+            +"chat_readability_preference"
             br()
             +"Set preference_confidence_band to HIGH/MEDIUM/LOW."
             br()
@@ -408,7 +408,7 @@ private fun chatTurnIntentClassifierPrompt(
                   "evidence_span": "short quote",
                   "reasoning": "short explanation",
                   "should_save_preference": false,
-                  "preference_concepts": ["selector_general_creative_preference"],
+                  "preference_concepts": ["chat_readability_preference"],
                   "preference_confidence_band": "HIGH | MEDIUM | LOW",
                   "preference_novelty": "NEW | ALREADY_KNOWN | UNCERTAIN",
                   "resolved_action": "ADVISE | WRITE_CREATE | WRITE_UPDATE | WRITE_DELETE | FOLLOW_UP",

@@ -1,20 +1,21 @@
 package com.ead.dispatch.sample.domain
 
+import ai.koog.prompt.executor.clients.deepseek.DeepSeekLLMClient
 import ai.koog.prompt.executor.clients.deepseek.DeepSeekModels
+import ai.koog.prompt.executor.clients.openai.OpenAILLMClient
 import ai.koog.prompt.executor.clients.openai.OpenAIModels
-import ai.koog.prompt.executor.llms.all.simpleOllamaAIExecutor
-import ai.koog.prompt.executor.llms.all.simpleOpenAIExecutor
+import ai.koog.prompt.executor.llms.MultiLLMPromptExecutor
 import ai.koog.prompt.executor.model.PromptExecutor
+import ai.koog.prompt.executor.ollama.client.OllamaClient
 import ai.koog.prompt.llm.LLMCapability
 import ai.koog.prompt.llm.LLMProvider
 import ai.koog.prompt.llm.LLModel
-import com.ead.dispatch.sample.domain.util.simpleDeepseekExecutor
 
 object AIProvider {
     private val deepseekApiKey get() = System.getenv("DEEPSEEK_API_KEY")
         ?: throw Exception("DEEPSEEK_API_KEY not set in System Operative environment")
 
-    val deepseekPromptExecutor get() = simpleDeepseekExecutor(deepseekApiKey)
+    val deepseekClient get() = DeepSeekLLMClient(deepseekApiKey)
 
     val deepseekChatLlmModel = DeepSeekModels.DeepSeekChat
     val deepseekReasonerLlmModel = DeepSeekModels.DeepSeekReasoner
@@ -22,16 +23,16 @@ object AIProvider {
     private val openAiApiKey get() = System.getenv("OPENAI_API_KEY")
     ?: throw Exception("OPENAI_API_KEY not set in System Operative environment")
 
-    val openAiPromptExecutor get() = simpleOpenAIExecutor(openAiApiKey)
+    val openAiClient get() = OpenAILLMClient(openAiApiKey)
 
     val chatGptNano = OpenAIModels.Chat.GPT5Nano
     val chatGptMini = OpenAIModels.Chat.GPT5Mini
 
     @Suppress("unused")
-    val localPromptExecutor get() = simpleOllamaAIExecutor(baseUrl = "http://127.0.0.1:11434")
+    val ollamaClient get() = OllamaClient(baseUrl = "http://127.0.0.1:11434")
 
     @Suppress("unused")
-    val localLlmModel get() = LLModel(
+    val ollamaLlmModel get() = LLModel(
         provider = LLMProvider.Ollama,
         id = "qwen3:8b",
         capabilities =listOf(
@@ -51,32 +52,34 @@ object AIProvider {
      * Role-based model configuration for the Chat Agent.
      */
     object Chat {
-        var main: LLModel = deepseekChatLlmModel
-        var intent: LLModel = deepseekChatLlmModel
-        var fixer: LLModel = deepseekChatLlmModel
+        var main: LLModel = chatGptNano
+        var intent: LLModel = chatGptMini
+        var fixer: LLModel = chatGptNano
     }
 
     /**
      * Role-based model configuration for the Story Agent.
      */
     object Story {
-        var main: LLModel = deepseekChatLlmModel
-        var intent: LLModel = deepseekChatLlmModel
-        var fixer: LLModel = deepseekChatLlmModel
+        var main: LLModel = chatGptNano
+        var intent: LLModel = chatGptMini
+        var fixer: LLModel = chatGptNano
     }
 
     /**
      * Centralized synchronization for executors.
      */
     object Sync {
-        var chatExecutor: PromptExecutor = deepseekPromptExecutor
-        var storyExecutor: PromptExecutor = deepseekPromptExecutor
-        var subAgentExecutor: PromptExecutor = deepseekPromptExecutor
+        val executor: PromptExecutor = MultiLLMPromptExecutor(
+            LLMProvider.OpenAI to openAiClient,
+            LLMProvider.DeepSeek to deepseekClient,
+            LLMProvider.Ollama to ollamaClient
+        )
     }
 
     object SubAgent {
-        var agent : LLModel = deepseekChatLlmModel
-        var fixer: LLModel = deepseekChatLlmModel
+        var agent : LLModel = chatGptNano
+        var fixer: LLModel = chatGptNano
     }
 
     fun getChatAgentId(id : String) = "${id}:chat-agent"

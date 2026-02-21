@@ -192,21 +192,14 @@ class ChatTurnPolicyClassifierTest {
                 evidenceSpan = "I prefer",
                 reasoning = "Preference statement",
                 shouldSavePreference = true,
-                preferenceConceptKeywords = listOf(
-                    "selector_character_direction_preference",
-                    "selector_tone_direction_preference",
-                    "selector_general_creative_preference",
-                ),
+                preferenceConceptKeywords = listOf("chat_readability_preference"),
                 preferenceConfidenceBand = IntentConfidenceBand.HIGH,
                 preferenceNovelty = ChatPreferenceNovelty.NEW,
             ),
         )
 
         assertTrue(policy.shouldSavePreference)
-        assertEquals(
-            listOf("selector_character_direction_preference", "selector_tone_direction_preference", "selector_general_creative_preference"),
-            policy.preferenceConceptKeywords,
-        )
+        assertEquals(listOf("chat_readability_preference"), policy.preferenceConceptKeywords)
         assertEquals(IntentConfidenceBand.HIGH, policy.preferenceConfidenceBand)
         assertEquals(ChatPreferenceNovelty.NEW, policy.preferenceNovelty)
     }
@@ -224,7 +217,7 @@ class ChatTurnPolicyClassifierTest {
             intentSignal = ChatIntentSignal(
                 intentClass = ChatIntentClass.CREATIVE,
                 shouldSavePreference = true,
-                preferenceConceptKeywords = listOf("selector_tone_direction_preference"),
+                preferenceConceptKeywords = listOf("chat_readability_preference"),
                 preferenceConfidenceBand = IntentConfidenceBand.HIGH,
                 preferenceNovelty = ChatPreferenceNovelty.NEW,
             ),
@@ -232,6 +225,6 @@ class ChatTurnPolicyClassifierTest {
 
         assertEquals(ChatDecisionPath.DIRECT_WRITE, policy.decisionPath)
         assertTrue(policy.shouldSavePreference)
-        assertEquals(listOf("selector_tone_direction_preference"), policy.preferenceConceptKeywords)
+        assertEquals(listOf("chat_readability_preference"), policy.preferenceConceptKeywords)
     }
 }

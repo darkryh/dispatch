@@ -7,93 +7,36 @@ object SelectorPreferencesMemory {
 
     private val globalContract = """
         Extraction contract (must follow all):
-        - Extract only reusable direction preferences revealed by selector choices.
-        - Do not store story-specific details, names, plot facts, or lore.
-        - Store short normalized labels (2-8 words), not explanations.
-        - If no stable preference is expressed, return no facts.
-        - Extract at most 3 facts per concept per turn.
+        - Evidence rule: extract only reusable chat readability preference signals.
+        - No-story-detail rule: do not store names, entities, lore, plot facts, or one-story specifics.
+        - Output shape: save one normalized label (2-4 words), not explanations.
+        - Stability rule: if preference is unclear or one-off, return no facts.
+        - Volume rule: extract at most 1 fact for this concept per turn.
+        Forbidden in all cases:
+        - Story direction details, archetypes, worldbuilding specifics, or scene-level content.
+        - Behavioral control rules (when to ask, when to execute tools, confirmation policy).
     """.trimIndent()
 
-    val selectorNamingDirectionPreference = Concept(
-        keyword = "selector_naming_direction_preference",
+    val chatReadabilityPreference = Concept(
+        keyword = "chat_readability_preference",
         description = """
-            Preferred naming/title direction selected by the user in choice prompts.
+            Preferred readability style for chat-mode assistant responses.
             Examples:
-            - character-focused titles
-            - mystery-focused titles
-            - atmospheric titles
+            - compact clarity
+            - balanced clarity
+            - rich clarity
+            Sample value patterns (examples, not strict enums):
+            - compact_clarity
+            - balanced_clarity
+            - rich_clarity
             Allowed scope:
-            - Durable naming/title direction only.
+            - Reusable comfort preference for how responses are phrased and packaged in chat mode.
             $globalContract
         """.trimIndent(),
-        factType = FactType.MULTIPLE,
-    )
-
-    val selectorCharacterDirectionPreference = Concept(
-        keyword = "selector_character_direction_preference",
-        description = """
-            Preferred character design direction selected by the user.
-            Examples:
-            - morally gray protagonist
-            - vulnerable antihero
-            - mentor-led arc
-            Allowed scope:
-            - Reusable character direction taste, not specific bios.
-            $globalContract
-        """.trimIndent(),
-        factType = FactType.MULTIPLE,
-    )
-
-    val selectorPlotDirectionPreference = Concept(
-        keyword = "selector_plot_direction_preference",
-        description = """
-            Preferred plot direction selected by the user.
-            Examples:
-            - mystery-forward pacing
-            - conflict escalation
-            - investigation-first reveals
-            Allowed scope:
-            - Reusable plot direction taste, not concrete events.
-            $globalContract
-        """.trimIndent(),
-        factType = FactType.MULTIPLE,
-    )
-
-    val selectorToneDirectionPreference = Concept(
-        keyword = "selector_tone_direction_preference",
-        description = """
-            Preferred tone or atmosphere direction selected by the user.
-            Examples:
-            - dark atmospheric
-            - hopeful recovery arc
-            - restrained violence tone
-            Allowed scope:
-            - Reusable tone direction taste only.
-            $globalContract
-        """.trimIndent(),
-        factType = FactType.MULTIPLE,
-    )
-
-    val selectorGeneralCreativePreference = Concept(
-        keyword = "selector_general_creative_preference",
-        description = """
-            General reusable creative direction preference from selector choices.
-            Use only when no specific family concept applies.
-            Examples:
-            - prefers grounded options
-            - prefers high-tension direction
-            Allowed scope:
-            - Cross-session creative direction preference only.
-            $globalContract
-        """.trimIndent(),
-        factType = FactType.MULTIPLE,
+        factType = FactType.SINGLE,
     )
 
     val userConcepts = listOf(
-        selectorNamingDirectionPreference,
-        selectorCharacterDirectionPreference,
-        selectorPlotDirectionPreference,
-        selectorToneDirectionPreference,
-        selectorGeneralCreativePreference,
+        chatReadabilityPreference,
     )
 }

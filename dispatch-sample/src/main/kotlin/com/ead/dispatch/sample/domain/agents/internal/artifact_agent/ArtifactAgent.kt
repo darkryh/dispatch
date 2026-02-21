@@ -16,7 +16,7 @@ class ArtifactAgent {
             ArtifactAIMode.CREATIVE -> 1.0
         }
         val agent = AIAgent<ArtifactAIRequest, Result<StructuredResponse<ArtifactAIDraft>>>(
-            promptExecutor = AIProvider.Sync.subAgentExecutor,
+            promptExecutor = AIProvider.Sync.executor,
             llmModel = AIProvider.SubAgent.agent,
             toolRegistry = ToolRegistry {},
             strategy = strategy<ArtifactAIRequest, Result<StructuredResponse<ArtifactAIDraft>>>("artifact-draft") {

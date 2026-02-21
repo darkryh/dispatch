@@ -201,9 +201,9 @@ class ChatModeReplayValidationTest {
                         reasoning = "Ideation/advice request.",
                         shouldSavePreference = text.contains("prefer") || text.contains("avoid") || text.contains("like"),
                         preferenceConceptKeywords = when {
-                            text.contains("first person") -> listOf("selector_character_direction_preference")
-                            text.contains("avoid graphic violence") -> listOf("selector_tone_direction_preference")
-                            text.contains("melancholic") -> listOf("selector_tone_direction_preference", "selector_general_creative_preference")
+                            text.contains("first person") -> listOf("chat_readability_preference")
+                            text.contains("avoid graphic violence") -> listOf("chat_readability_preference")
+                            text.contains("melancholic") -> listOf("chat_readability_preference")
                             else -> emptyList()
                         },
                         preferenceConfidenceBand = IntentConfidenceBand.MEDIUM,

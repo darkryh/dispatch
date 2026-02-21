@@ -162,13 +162,15 @@ fun chatAgentPrompt(
                 br()
                 +"Do not provide extra examples, variants, or long breakdowns unless the user asks for them."
                 br()
+                +"After non-selector tool execution, include at least one short user-facing completion sentence."
+                br()
                 +"When execution happens, the first sentence must explicitly confirm the action was performed."
                 br()
-                +"When selector is required, call requestUserChoice and include one short sentence that execution is waiting for user choice."
+                +"When selector is required, call requestUserChoice before any write."
                 br()
-                +"Selector output contract: never end a selector turn with only tool calls; always include one short user-facing sentence after the selector call."
+                +"Selector output contract: ending the turn with the selector tool call is allowed."
                 br()
-                +"That sentence must clearly state that no write has been executed yet and execution is pending user choice."
+                +"If you include selector text, keep it to one short sentence that no write has been executed yet."
                 br()
                 +"Execution output contract: avoid ambiguous completion language; state clearly that the write was completed."
                 br()

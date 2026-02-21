@@ -4,6 +4,7 @@ import ai.koog.agents.core.dsl.builder.AIAgentBuilderDslMarker
 import ai.koog.agents.core.dsl.builder.AIAgentSubgraphBuilderBase
 import ai.koog.agents.core.dsl.builder.AIAgentSubgraphDelegate
 import ai.koog.agents.core.dsl.builder.forwardTo
+import ai.koog.prompt.params.LLMParams
 import ai.koog.prompt.streaming.StreamFrame
 import com.ead.dispatch.sample.data.repositories.StructuredIndexRepository
 import com.ead.dispatch.sample.domain.agents.story_agent.StoryRequest
@@ -21,7 +22,10 @@ import kotlinx.coroutines.flow.Flow
 fun AIAgentSubgraphBuilderBase<*, *>.subgraphClassifyStoryIntent(
     name: String? = null,
 ): AIAgentSubgraphDelegate<StoryRequest, StoryTurnInput> =
-    subgraph(name = name ?: "story-intent-flow") {
+    subgraph(
+        name = name ?: "story-intent-flow",
+        llmParams = LLMParams(temperature = .2)
+    ) {
         val classifyIntent by nodeClassifyStoryIntent()
         val applyTurnPolicy by nodeApplyStoryTurnPolicy()
 
@@ -37,7 +41,10 @@ fun AIAgentSubgraphBuilderBase<*, *>.subgraphSetupAndStreamStoryMode(
     continuityMemoryService: StoryContinuityMemoryService,
     name: String? = null,
 ): AIAgentSubgraphDelegate<StoryTurnInput, ContextualResponse<Flow<StreamFrame>>> =
-    subgraph(name = name ?: "story-streaming-flow") {
+    subgraph(
+        name = name ?: "story-streaming-flow",
+        llmParams = LLMParams(temperature = 1.0)
+    ) {
         val contextBeforeLlm by nodeManageContextBeforeLlm<StoryTurnInput>(
             hints = { turnInput ->
                 ContextHints(

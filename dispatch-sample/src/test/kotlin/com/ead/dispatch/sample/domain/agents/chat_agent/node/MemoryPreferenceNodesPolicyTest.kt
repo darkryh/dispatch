@@ -10,18 +10,17 @@ import com.ead.dispatch.sample.domain.agents.chat_agent.policy.ChatTurnPolicy
 import com.ead.dispatch.sample.domain.agents.intent.IntentConfidenceBand
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class MemoryPreferenceNodesPolicyTest {
 
     @Test
-    fun `load preferences only for direct response and direct write`() {
+    fun `load preferences for all chat turns`() {
         assertTrue(shouldLoadChatPreferences(inputWith(decisionPath = ChatDecisionPath.DIRECT_RESPONSE)))
         assertTrue(shouldLoadChatPreferences(inputWith(decisionPath = ChatDecisionPath.DIRECT_WRITE)))
-        assertFalse(shouldLoadChatPreferences(inputWith(decisionPath = ChatDecisionPath.FOLLOW_UP)))
-        assertFalse(shouldLoadChatPreferences(inputWith(decisionPath = ChatDecisionPath.SELECTOR)))
-        assertFalse(
+        assertTrue(shouldLoadChatPreferences(inputWith(decisionPath = ChatDecisionPath.FOLLOW_UP)))
+        assertTrue(shouldLoadChatPreferences(inputWith(decisionPath = ChatDecisionPath.SELECTOR)))
+        assertTrue(
             shouldLoadChatPreferences(
                 inputWith(
                     decisionPath = ChatDecisionPath.DIRECT_WRITE,
@@ -142,7 +141,7 @@ class MemoryPreferenceNodesPolicyTest {
         fromDecisionPrompt: Boolean = false,
         requestTextHash: String = "hash",
         shouldSavePreference: Boolean = true,
-        preferenceConceptKeywords: List<String> = listOf("selector_general_creative_preference"),
+        preferenceConceptKeywords: List<String> = listOf("chat_readability_preference"),
         preferenceConfidenceBand: IntentConfidenceBand = IntentConfidenceBand.HIGH,
         preferenceNovelty: ChatPreferenceNovelty = ChatPreferenceNovelty.NEW,
     ): ChatTurnPolicy = ChatTurnPolicy(

@@ -16,7 +16,7 @@ class CultureAgent {
             CultureAIMode.CREATIVE -> 1.0
         }
         val agent = AIAgent<CultureAIRequest, Result<StructuredResponse<CultureAIDraft>>>(
-            promptExecutor = AIProvider.Sync.subAgentExecutor,
+            promptExecutor = AIProvider.Sync.executor,
             llmModel = AIProvider.SubAgent.agent,
             toolRegistry = ToolRegistry {},
             strategy = strategy<CultureAIRequest, Result<StructuredResponse<CultureAIDraft>>>("culture-draft") {

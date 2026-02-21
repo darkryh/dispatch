@@ -67,7 +67,7 @@ object SkipStorySummarizationPolicy : StorySummarizationPolicy {
 class KoogStorySummarizationPolicy : StorySummarizationPolicy {
     override suspend fun decide(input: StorySummarizationPolicyInput): StorySummarizationDecision {
         val agent = AIAgent<StorySummarizationPolicyInput, Result<StructuredResponse<StorySummarizationDecisionDraft>>, >(
-            promptExecutor = AIProvider.Sync.storyExecutor,
+            promptExecutor = AIProvider.Sync.executor,
             llmModel = AIProvider.Story.intent,
             strategy = strategy<StorySummarizationPolicyInput, Result<StructuredResponse<StorySummarizationDecisionDraft>>>("story-summarization-policy") {
                 val decideNode by nodeDecideStorySummarizationPolicy()

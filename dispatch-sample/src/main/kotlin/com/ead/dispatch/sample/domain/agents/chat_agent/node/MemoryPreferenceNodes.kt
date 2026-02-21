@@ -18,7 +18,6 @@ import com.ead.dispatch.sample.domain.agents.chat_agent.MemorySubjects
 import com.ead.dispatch.sample.domain.agents.chat_agent.ChatRequest
 import com.ead.dispatch.sample.domain.agents.chat_agent.SelectorPreferencesMemory
 import com.ead.dispatch.sample.domain.agents.intent.IntentConfidenceBand
-import com.ead.dispatch.sample.domain.agents.chat_agent.policy.ChatDecisionPath
 import com.ead.dispatch.sample.domain.agents.chat_agent.policy.currentChatTurnRequest
 import com.ead.dispatch.sample.domain.agents.chat_agent.policy.ChatPreferenceNovelty
 import com.ead.dispatch.sample.domain.agents.chat_agent.policy.ChatTurnPolicy
@@ -34,7 +33,7 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.flow.Flow
 
 /**
- * Loads reusable chat preferences (selector-derived concepts) into prompt context.
+ * Loads reusable chat readability preference into prompt context.
  * This node does not persist new preferences; it only prepares retrieval context.
  */
 @AIAgentBuilderDslMarker
@@ -64,11 +63,6 @@ private suspend fun AIAgentGraphContextBase.loadChatPreferencesOnce(
     turnInput: ChatTurnInput,
     scope: MemoryScopeType,
 ): ChatTurnInput {
-    if (!shouldLoadChatPreferences(turnInput)) {
-        storeLoadedChatPreferencesContext(null)
-        return turnInput
-    }
-
     val memory = featureOrThrow(AgentMemory.Feature)
     val scopeValue = memory.scopesProfile.getScope(scope)
     if (scopeValue == null) {
@@ -94,16 +88,7 @@ private suspend fun AIAgentGraphContextBase.loadChatPreferencesOnce(
     return turnInput
 }
 
-internal fun shouldLoadChatPreferences(turnInput: ChatTurnInput): Boolean {
-    if (turnInput.policy.fromDecisionPrompt) return false
-
-    return when (turnInput.policy.decisionPath) {
-        ChatDecisionPath.DIRECT_RESPONSE,
-        ChatDecisionPath.DIRECT_WRITE -> true
-        ChatDecisionPath.FOLLOW_UP,
-        ChatDecisionPath.SELECTOR -> false
-    }
-}
+internal fun shouldLoadChatPreferences(@Suppress("UNUSED_PARAMETER") turnInput: ChatTurnInput): Boolean = true
 
 @OptIn(InternalAgentsApi::class)
 private suspend fun AIAgentGraphContextBase.saveChatPreferencesOnce(

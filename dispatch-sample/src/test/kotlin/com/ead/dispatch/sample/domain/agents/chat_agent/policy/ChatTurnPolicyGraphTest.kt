@@ -141,7 +141,7 @@ class ChatTurnPolicyGraphTest {
                 evidenceSpan = "irrelevant because bypass",
                 reasoning = "should not be used for decision prompt",
                 shouldSavePreference = true,
-                preferenceConcepts = listOf("selector_tone_direction_preference"),
+                preferenceConcepts = listOf("chat_readability_preference"),
                 preferenceConfidenceBand = "HIGH",
                 preferenceNovelty = "NEW",
             ),
@@ -195,8 +195,7 @@ class ChatTurnPolicyGraphTest {
                 reasoning = "user provided stable writing preferences",
                 shouldSavePreference = true,
                 preferenceConcepts = listOf(
-                    "selector_character_direction_preference",
-                    "selector_general_creative_preference",
+                    "chat_readability_preference",
                     "unknown_concept_should_be_filtered",
                 ),
                 preferenceConfidenceBand = "HIGH",
@@ -215,10 +214,7 @@ class ChatTurnPolicyGraphTest {
         assertEquals(ChatDecisionPath.DIRECT_RESPONSE, result.policy.decisionPath)
         assertFalse(result.policy.allowWriteTools)
         assertTrue(result.policy.shouldSavePreference)
-        assertEquals(
-            listOf("selector_character_direction_preference", "selector_general_creative_preference"),
-            result.policy.preferenceConceptKeywords,
-        )
+        assertEquals(listOf("chat_readability_preference"), result.policy.preferenceConceptKeywords)
         assertEquals(IntentConfidenceBand.HIGH, result.policy.preferenceConfidenceBand)
         assertEquals(ChatPreferenceNovelty.NEW, result.policy.preferenceNovelty)
     }

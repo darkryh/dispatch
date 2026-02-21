@@ -16,7 +16,7 @@ class WorldRuleAgent {
             WorldRuleAIMode.CREATIVE -> 1.0
         }
         val agent = AIAgent<WorldRuleAIRequest, Result<StructuredResponse<WorldRuleAIDraft>>>(
-            promptExecutor = AIProvider.Sync.subAgentExecutor,
+            promptExecutor = AIProvider.Sync.executor,
             llmModel = AIProvider.SubAgent.agent,
             toolRegistry = ToolRegistry {},
             strategy = strategy<WorldRuleAIRequest, Result<StructuredResponse<WorldRuleAIDraft>>>("world-rule-draft") {

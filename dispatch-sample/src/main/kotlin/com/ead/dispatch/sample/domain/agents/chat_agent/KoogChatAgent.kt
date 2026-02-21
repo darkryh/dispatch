@@ -22,10 +22,8 @@ import com.ead.dispatch.sample.domain.agents.chat_agent.extensions.runWithStartC
 import com.ead.dispatch.sample.domain.agents.chat_agent.node.nodeAuditTurn
 import com.ead.dispatch.sample.domain.agents.chat_agent.node.nodeLoadChatPreferences
 import com.ead.dispatch.sample.domain.agents.chat_agent.node.nodeSaveChatPreferences
-import com.ead.dispatch.sample.domain.agents.chat_agent.node.nodeSetupAndStreamChatMode
 import com.ead.dispatch.sample.domain.agents.chat_agent.node.subgraphClassifyIntent
 import com.ead.dispatch.sample.domain.agents.chat_agent.node.subgraphSetupAndStreamChatMode
-import com.ead.dispatch.sample.domain.agents.chat_agent.policy.ChatTurnInput
 import com.ead.dispatch.sample.domain.agents.tools.CharacterTools
 import com.ead.dispatch.sample.domain.agents.tools.InteractionTools
 import com.ead.dispatch.sample.domain.agents.tools.LocationTools
@@ -36,13 +34,7 @@ import com.ead.dispatch.sample.domain.embedding.RagContextService
 import com.ead.dispatch.sample.domain.model.session.Session
 import com.ead.koog.benchmark.core.JsonlBenchmarkRecorder
 import com.ead.koog.benchmark.koog.KoogBenchmark
-import com.ead.koog.context.orchestrator.api.ContextHints
 import com.ead.koog.context.orchestrator.api.ContextualResponse
-import com.ead.koog.context.orchestrator.api.TaskPhase
-import com.ead.koog.context.orchestrator.api.nodeManageContextAfterLlm
-import com.ead.koog.context.orchestrator.api.nodeManageContextBeforeLlm
-import com.ead.koog.context.orchestrator.state.ContinuityPacket
-import jdk.internal.agent.resources.agent
 import kotlinx.coroutines.flow.Flow
 
 class KoogChatAgent(
@@ -78,7 +70,7 @@ class KoogChatAgent(
         val agentName = AIProvider.getChatAgentId(session.id)
 
         val agent = AIAgent<ChatRequest, ContextualResponse<Flow<StreamFrame>>>(
-            promptExecutor = AIProvider.Sync.chatExecutor,
+            promptExecutor = AIProvider.Sync.executor,
             llmModel = AIProvider.Chat.main,
             strategy = strategy<ChatRequest, ContextualResponse<Flow<StreamFrame>>>("chat-mode.planner") {
                 val chatIntent by subgraphClassifyIntent()

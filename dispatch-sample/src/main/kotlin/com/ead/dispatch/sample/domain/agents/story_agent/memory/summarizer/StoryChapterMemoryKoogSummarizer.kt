@@ -3,7 +3,6 @@ package com.ead.dispatch.sample.domain.agents.story_agent.memory.summarizer
 import ai.koog.agents.core.agent.AIAgent
 import ai.koog.agents.core.dsl.builder.forwardTo
 import ai.koog.agents.core.dsl.builder.strategy
-import ai.koog.agents.core.tools.ToolRegistry
 import ai.koog.prompt.structure.StructuredResponse
 import com.ead.dispatch.sample.data.db.entities.StoryChapterRecord
 import com.ead.dispatch.sample.domain.AIProvider
@@ -37,7 +36,7 @@ class StoryChapterMemoryKoogSummarizer : StoryChapterMemorySummarizer {
         )
 
         val agent = AIAgent<StoryChapterMemorySummarizeRequest, Result<StructuredResponse<StoryChapterMemorySummaryDraft>>, >(
-            promptExecutor = AIProvider.Sync.storyExecutor,
+            promptExecutor = AIProvider.Sync.executor,
             llmModel = AIProvider.Story.main,
             strategy = strategy<StoryChapterMemorySummarizeRequest, Result<StructuredResponse<StoryChapterMemorySummaryDraft>>>("story-memory-summarizer") {
                 val summarizeNode by nodeSummarizeStoryMemory()
