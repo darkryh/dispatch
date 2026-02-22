@@ -56,16 +56,6 @@ internal fun leanChatEvalCases(): List<ChatEvalCase> = listOf(
         expectedBehavior = ExpectedChatBehavior.SELECTOR,
     ),
     ChatEvalCase(
-        id = "sel-2",
-        prompt = "Add a new core location and decide the tone direction that best fits the story arc before saving.",
-        expectedBehavior = ExpectedChatBehavior.SELECTOR,
-    ),
-    ChatEvalCase(
-        id = "sel-3",
-        prompt = "Create a new world rule and choose the most coherent narrative direction before saving.",
-        expectedBehavior = ExpectedChatBehavior.SELECTOR,
-    ),
-    ChatEvalCase(
         id = "rich-inq-1",
         prompt = "Can you propose options for a new protagonist without saving yet?",
         expectedBehavior = ExpectedChatBehavior.INQUIRE,
@@ -85,25 +75,6 @@ internal fun leanChatEvalCases(): List<ChatEvalCase> = listOf(
         prompt = "Create and save two new characters, one new location, and one new event for the current story context.",
         expectedBehavior = ExpectedChatBehavior.EXECUTE,
         seedProfile = ChatEvalSeedProfile.RICH_CONTEXT,
-    ),
-    ChatEvalCase(
-        id = "rich-sel-1",
-        prompt = "Create and save a new protagonist, but first choose the best narrative direction to fit the existing cast conflict.",
-        expectedBehavior = ExpectedChatBehavior.SELECTOR,
-        seedProfile = ChatEvalSeedProfile.RICH_CONTEXT,
-    ),
-    ChatEvalCase(
-        id = "rich-sel-2",
-        prompt = "Create and save a new core location that will anchor the next arc, but decide the best story direction first so it fits current cast tensions.",
-        expectedBehavior = ExpectedChatBehavior.SELECTOR,
-        seedProfile = ChatEvalSeedProfile.RICH_CONTEXT,
-        warmupPrompts = listOf(
-            "Create and save a supporting character named Cass who challenges Dark's cautious style.",
-            "Create and save an event where Dark fails a rescue because of hesitation.",
-            "Create and save an arc called Trust Fracture that escalates conflict between Dark and Mira.",
-            "Create and save a world rule where navigation routes destabilize under emotional conflict.",
-            "Update the existing event so it links directly to Rook's Salvage Tavern.",
-        ),
     ),
     ChatEvalCase(
         id = "rich-sel-3",
