@@ -236,7 +236,7 @@ class ChatModeDokimosOptionalEvalIT {
         appendLine("- sample_observations:")
         observations.take(8).forEach { observation ->
             appendLine(
-                "  * ${observation.case.id}: expected=${observation.case.expectedBehavior.name}, wrote=${observation.wroteState}, selector=${observation.usedSelector}, words=${observation.wordCount}",
+                "  * ${observation.case.id}: expected=${observation.case.expectedBehavior.name}, wrote=${observation.wroteState}, selector=${observation.usedSelector}, words=${observation.wordCount}, path=${observation.decisionPath ?: "?"}, exec=${observation.executionIntent ?: "?"}, action=${observation.resolvedAction ?: "?"}, creative=${observation.requiresCreativeChoice?.toString() ?: "?"}, beforePersist=${observation.decisionBeforePersist?.toString() ?: "?"}",
             )
         }
     }

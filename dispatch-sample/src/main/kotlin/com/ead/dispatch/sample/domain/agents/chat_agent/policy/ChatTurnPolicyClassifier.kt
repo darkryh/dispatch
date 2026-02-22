@@ -33,6 +33,8 @@ fun buildTurnPolicy(
             resolvedAction = IntentResolvedAction.WRITE_UPDATE,
             confidenceBand = IntentConfidenceBand.HIGH,
             riskClass = IntentRiskClass.SAFE,
+            requiresCreativeChoice = false,
+            decisionBeforePersist = false,
             executionIntent = IntentExecutionIntent.EXECUTE,
         )
     }
@@ -101,6 +103,8 @@ fun buildTurnPolicy(
             riskClass = riskClass,
             anchorHint = intentSignal.anchorHint,
             requiresConfirmation = false,
+            requiresCreativeChoice = false,
+            decisionBeforePersist = false,
             executionIntent = IntentExecutionIntent.INQUIRE,
         )
 
@@ -123,6 +127,8 @@ fun buildTurnPolicy(
             riskClass = IntentRiskClass.SAFE,
             anchorHint = intentSignal.anchorHint,
             requiresConfirmation = false,
+            requiresCreativeChoice = requiresCreativeChoice,
+            decisionBeforePersist = decisionBeforePersist,
             executionIntent = IntentExecutionIntent.EXECUTE,
         )
 
@@ -145,6 +151,8 @@ fun buildTurnPolicy(
             riskClass = IntentRiskClass.DESTRUCTIVE,
             anchorHint = intentSignal.anchorHint,
             requiresConfirmation = true,
+            requiresCreativeChoice = false,
+            decisionBeforePersist = false,
             executionIntent = IntentExecutionIntent.EXECUTE,
         )
 
@@ -173,6 +181,8 @@ fun buildTurnPolicy(
             riskClass = IntentRiskClass.SAFE,
             anchorHint = intentSignal.anchorHint,
             requiresConfirmation = false,
+            requiresCreativeChoice = false,
+            decisionBeforePersist = false,
             executionIntent = IntentExecutionIntent.EXECUTE,
         )
 
@@ -195,6 +205,8 @@ fun buildTurnPolicy(
             riskClass = IntentRiskClass.SAFE,
             anchorHint = intentSignal.anchorHint,
             requiresConfirmation = false,
+            requiresCreativeChoice = false,
+            decisionBeforePersist = false,
             executionIntent = IntentExecutionIntent.INQUIRE,
         )
 
@@ -217,6 +229,8 @@ fun buildTurnPolicy(
             riskClass = riskClass,
             anchorHint = intentSignal.anchorHint,
             requiresConfirmation = false,
+            requiresCreativeChoice = false,
+            decisionBeforePersist = false,
             executionIntent = IntentExecutionIntent.INQUIRE,
         )
     }

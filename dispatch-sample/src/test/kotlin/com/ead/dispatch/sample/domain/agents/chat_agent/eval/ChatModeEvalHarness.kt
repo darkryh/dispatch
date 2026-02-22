@@ -129,8 +129,16 @@ internal class ChatModeEvalHarness : AutoCloseable {
 
             val afterCount = entityCount(storyId)
             val assistantText = assistant.toString().trim()
-            val latestCheckpoint = Storage.provider.getLatestCheckpoint(AIProvider.getChatAgentId(session.id))
+            val agentId = AIProvider.getChatAgentId(session.id)
+            val latestCheckpoint = Storage.provider.getLatestCheckpoint(agentId)
             val checkpointProperties = latestCheckpoint?.properties.orEmpty()
+            val policyCheckpointProperties = Storage.provider.getCheckpoints(agentId)
+                .asReversed()
+                .firstOrNull { checkpoint ->
+                    checkpoint.nodePath.endsWith("/chat-intent-flow/apply-turn-policy")
+                }
+                ?.properties
+                .orEmpty()
             val preferenceSaveExecuted = (checkpointProperties[ChatTurnCheckpointProperties.PREFERENCE_SAVE_EXECUTED] as? JsonPrimitive)
                 ?.content
                 ?.trim()
@@ -144,6 +152,24 @@ internal class ChatModeEvalHarness : AutoCloseable {
                 }
             val preferenceSaveSkippedReason = (checkpointProperties[ChatTurnCheckpointProperties.PREFERENCE_SAVE_SKIPPED_REASON] as? JsonPrimitive)
                 ?.content
+            val decisionPath = (policyCheckpointProperties[ChatTurnCheckpointProperties.DECISION_PATH] as? JsonPrimitive)
+                ?.content
+            val resolvedAction = (policyCheckpointProperties[ChatTurnCheckpointProperties.RESOLVED_ACTION] as? JsonPrimitive)
+                ?.content
+            val executionIntent = (policyCheckpointProperties[ChatTurnCheckpointProperties.EXECUTION_INTENT] as? JsonPrimitive)
+                ?.content
+            val requiresCreativeChoice = (policyCheckpointProperties[ChatTurnCheckpointProperties.REQUIRES_CREATIVE_CHOICE] as? JsonPrimitive)
+                ?.content
+                ?.trim()
+                ?.lowercase()
+                ?.let { raw -> if (raw == "true") true else if (raw == "false") false else null }
+            val decisionBeforePersist = (policyCheckpointProperties[ChatTurnCheckpointProperties.DECISION_BEFORE_PERSIST] as? JsonPrimitive)
+                ?.content
+                ?.trim()
+                ?.lowercase()
+                ?.let { raw -> if (raw == "true") true else if (raw == "false") false else null }
+            val policyRationale = (policyCheckpointProperties[ChatTurnCheckpointProperties.POLICY_RATIONALE] as? JsonPrimitive)
+                ?.content
 
             ChatEvalObservation(
                 case = case,
@@ -152,6 +178,12 @@ internal class ChatModeEvalHarness : AutoCloseable {
                 usedSelector = toolCalls.any { it.equals("requestUserChoice", ignoreCase = true) },
                 wroteState = afterCount > beforeCount,
                 wordCount = countWords(assistantText),
+                decisionPath = decisionPath,
+                resolvedAction = resolvedAction,
+                executionIntent = executionIntent,
+                requiresCreativeChoice = requiresCreativeChoice,
+                decisionBeforePersist = decisionBeforePersist,
+                policyRationale = policyRationale,
                 preferenceSaveExecuted = preferenceSaveExecuted,
                 preferenceSaveSkippedReason = preferenceSaveSkippedReason,
             )

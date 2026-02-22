@@ -16,6 +16,9 @@ object ChatTurnCheckpointProperties {
     const val RISK_CLASS = "dispatch.chat.risk_class"
     const val ANCHOR_HINT = "dispatch.chat.anchor_hint"
     const val REQUIRES_CONFIRMATION = "dispatch.chat.requires_confirmation"
+    const val REQUIRES_CREATIVE_CHOICE = "dispatch.chat.requires_creative_choice"
+    const val DECISION_BEFORE_PERSIST = "dispatch.chat.decision_before_persist"
+    const val EXECUTION_INTENT = "dispatch.chat.execution_intent"
     const val SHOULD_SAVE_PREFERENCE = "dispatch.chat.should_save_preference"
     const val PREFERENCE_CONCEPTS = "dispatch.chat.preference_concepts"
     const val PREFERENCE_CONFIDENCE_BAND = "dispatch.chat.preference_confidence_band"
@@ -60,6 +63,9 @@ object ChatTurnCheckpointProperties {
             merged[RISK_CLASS] = JsonPrimitive(policy.riskClass.name)
             merged[ANCHOR_HINT] = JsonPrimitive(policy.anchorHint)
             merged[REQUIRES_CONFIRMATION] = JsonPrimitive(policy.requiresConfirmation)
+            merged[REQUIRES_CREATIVE_CHOICE] = JsonPrimitive(policy.requiresCreativeChoice)
+            merged[DECISION_BEFORE_PERSIST] = JsonPrimitive(policy.decisionBeforePersist)
+            merged[EXECUTION_INTENT] = JsonPrimitive(policy.executionIntent.name)
             merged[SHOULD_SAVE_PREFERENCE] = JsonPrimitive(policy.shouldSavePreference)
             merged[PREFERENCE_CONCEPTS] = JsonPrimitive(policy.preferenceConceptKeywords.joinToString(","))
             merged[PREFERENCE_CONFIDENCE_BAND] = JsonPrimitive(policy.preferenceConfidenceBand.name)

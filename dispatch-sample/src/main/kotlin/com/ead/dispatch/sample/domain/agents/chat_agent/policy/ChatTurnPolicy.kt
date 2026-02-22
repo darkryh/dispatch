@@ -68,6 +68,8 @@ data class ClassifiedChatTurn(
     val riskClass: IntentRiskClass = IntentRiskClass.SAFE,
     val anchorHint: String = "",
     val requiresConfirmation: Boolean = false,
+    val requiresCreativeChoice: Boolean = false,
+    val decisionBeforePersist: Boolean = false,
     val executionIntent: IntentExecutionIntent = IntentExecutionIntent.EXECUTE,
 )
 
@@ -91,6 +93,8 @@ data class ChatTurnPolicy(
     val riskClass: IntentRiskClass = IntentRiskClass.SAFE,
     val anchorHint: String = "",
     val requiresConfirmation: Boolean = false,
+    val requiresCreativeChoice: Boolean = false,
+    val decisionBeforePersist: Boolean = false,
     val executionIntent: IntentExecutionIntent = IntentExecutionIntent.EXECUTE,
 )
 

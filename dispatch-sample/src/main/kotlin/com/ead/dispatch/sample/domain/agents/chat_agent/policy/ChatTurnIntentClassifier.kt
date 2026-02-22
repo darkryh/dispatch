@@ -272,6 +272,15 @@ private fun chatTurnIntentClassifierPrompt(
 
             +"Interpret intent semantically (not by keywords), resolve continuation using context, and set requires_confirmation=true for destructive/high-risk actions."
             br()
+            +"Decision procedure (must follow in order):"
+            br()
+            numbered {
+                item("Determine speech act / execution intent first (INQUIRE vs EXECUTE) from the current turn plus recent workflow context.")
+                item("Determine write resolution (create/update/delete/advice/follow-up) independently of selector choice.")
+                item("Then evaluate branch-decision risk before persistence (selector need) for EXECUTE turns only.")
+                item("If branch-decision risk is meaningful, selector-first takes precedence over autonomous direct write.")
+            }
+            br()
             +"Speech-act precedence: classify by communicative act first, then action semantics."
             br()
             +"If the latest turn is primarily a question, capability check, permission check, hypothetical, comparison, or option-seeking request, set execution_intent=INQUIRE."
@@ -296,6 +305,20 @@ private fun chatTurnIntentClassifierPrompt(
             br()
             +"If uncertain between direct creative write and creative selector on EXECUTE turns, prefer requires_creative_choice=true."
             br()
+            +"Delegated-fit continuation rule:"
+            br()
+            +"When recent context shows prior creative generation/synthesis and the user asks to create another foundational element while delegating fit (e.g., 'best fit', 'what fits best', 'you decide'), treat this as selector-worthy branching rather than direct autonomous selection."
+            br()
+            +"In delegated-fit continuation cases, keep execution_intent=EXECUTE and set requires_creative_choice=true even if the user does not explicitly say the decision is important."
+            br()
+            +"If persistence/apply-now is implied by the create request and the branch should be chosen before writing, set decision_before_persist=true."
+            br()
+            +"Priority conflict rule:"
+            br()
+            +"When both statements are true: (A) the user delegates fit/direction to the assistant, and (B) multiple story-shaping branches remain plausible, DO NOT collapse to direct autonomous creation. Mark selector-first (requires_creative_choice=true)."
+            br()
+            +"Delegated fit means the assistant may evaluate options; it does not automatically mean the assistant should silently choose one and persist it."
+            br()
             +"Compound-turn precedence:"
             br()
             +"When a single turn both requests create/apply now and also expresses branch-fit uncertainty (style/role/tone/canon compatibility not decided), keep execution_intent=EXECUTE and set requires_creative_choice=true."
@@ -307,6 +330,16 @@ private fun chatTurnIntentClassifierPrompt(
             +"Do not infer creative selector from specific words alone."
             br()
             +"Use recent context to determine whether branch direction is already stabilized."
+            br()
+            +"Selector branch-risk scoring guide (semantic, not lexical):"
+            br()
+            bulleted {
+                item("Low: bounded utility/minor element; branch choice has limited downstream canon impact.")
+                item("Medium: multiple plausible fits exist and choice changes local scene/relationship dynamics.")
+                item("High: foundational element or decision materially shifts future arcs, cast balance, world behavior, or continuity commitments.")
+            }
+            br()
+            +"For EXECUTE + WRITE_CREATE turns with delegated fit and medium/high branch-risk, prefer selector-first."
             br()
             +"Generic request families that may require creative selector:"
             br()
@@ -397,6 +430,8 @@ private fun chatTurnIntentClassifierPrompt(
                 item("Execute + delegated fit decision: \"add a core ally and decide the best role fit for current arcs\" -> EXECUTE + requires_creative_choice=true")
                 item("Execute + ordering constraint: \"create and choose direction before saving\" -> EXECUTE + requires_creative_choice=true")
                 item("Execute + directional dependency: \"add/create entity, decide narrative direction first, then save\" -> EXECUTE + requires_creative_choice=true + decision_before_persist=true")
+                item("Continuation after prior cast generation: \"can you create another protagonist and decide what's the best fit for it?\" -> EXECUTE + requires_creative_choice=true (and decision_before_persist=true if persistence is implied)")
+                item("Continuation after failed-fix context: \"can you create the anchoring/stabilizer artifact and decide what's the best fit for it?\" -> EXECUTE + requires_creative_choice=true (and decision_before_persist=true if persistence is implied)")
                 item("Bounded create: \"create three random side characters\" -> EXECUTE + requires_creative_choice=false")
                 item("Precise create: \"create a 19-year-old medic ally named Lina, optimistic tone\" -> EXECUTE + requires_creative_choice=false")
             }
@@ -410,6 +445,8 @@ private fun chatTurnIntentClassifierPrompt(
                 item("Compound mixed signal: \"create now, but I'm not sure which direction best fits\" -> EXECUTE + requires_creative_choice=true")
                 item("Multi-entity coupling: \"create a character and matching faction direction; choose what best fits current world rules\" -> EXECUTE + requires_creative_choice=true")
                 item("Post-selector continuation: \"apply option 2\" after prior selector -> EXECUTE + requires_creative_choice=false")
+                item("Low-impact utility create: \"create and save a small dock token item traders use for storage marks\" -> EXECUTE + requires_creative_choice=false")
+                item("Low-impact one-scene utility artifact: \"create and save a small maintenance tool artifact for relay workers\" -> EXECUTE + requires_creative_choice=false")
             }
             br()
             +"Return JSON only."

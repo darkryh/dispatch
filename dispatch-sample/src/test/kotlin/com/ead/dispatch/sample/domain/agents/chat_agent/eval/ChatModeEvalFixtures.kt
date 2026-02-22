@@ -169,6 +169,12 @@ internal data class ChatEvalObservation(
     val usedSelector: Boolean,
     val wroteState: Boolean,
     val wordCount: Int,
+    val decisionPath: String? = null,
+    val resolvedAction: String? = null,
+    val executionIntent: String? = null,
+    val requiresCreativeChoice: Boolean? = null,
+    val decisionBeforePersist: Boolean? = null,
+    val policyRationale: String? = null,
     val preferenceSaveExecuted: Boolean? = null,
     val preferenceSaveSkippedReason: String? = null,
 )

@@ -14,6 +14,7 @@ import com.ead.dispatch.sample.domain.agents.chat_agent.policy.classifyTurnInten
 import com.ead.dispatch.sample.domain.agents.chat_agent.policy.storeChatTurnRequest
 import com.ead.dispatch.sample.domain.agents.chat_agent.policy.storeChatTurnPolicy
 import com.ead.dispatch.sample.domain.agents.chat_agent.policy.updateChatTurnMetrics
+import com.ead.dispatch.sample.domain.agents.chat_agent.util.saveCheckpointForHistory
 import kotlinx.coroutines.flow.Flow
 
 @AIAgentBuilderDslMarker
@@ -38,6 +39,8 @@ fun AIAgentSubgraphBuilderBase<*, *>.nodeClassifyIntent(
             riskClass = intentSignal.riskClass,
             anchorHint = intentSignal.anchorHint,
             requiresConfirmation = intentSignal.requiresConfirmation,
+            requiresCreativeChoice = intentSignal.requiresCreativeChoice,
+            decisionBeforePersist = intentSignal.decisionBeforePersist,
             executionIntent = intentSignal.executionIntent,
         )
     }
@@ -47,6 +50,7 @@ fun AIAgentSubgraphBuilderBase<*, *>.nodeApplyTurnPolicy(
     name: String? = null,
 ): AIAgentNodeDelegate<ClassifiedChatTurn, ChatTurnInput> =
     node(name ?: "apply-turn-policy") { classified ->
+        val nodePath = executionInfo.path()
         val policy = buildTurnPolicy(
             request = classified.request,
             intentSignal = ChatIntentSignal(
@@ -64,11 +68,20 @@ fun AIAgentSubgraphBuilderBase<*, *>.nodeApplyTurnPolicy(
                 riskClass = classified.riskClass,
                 anchorHint = classified.anchorHint,
                 requiresConfirmation = classified.requiresConfirmation,
+                requiresCreativeChoice = classified.requiresCreativeChoice,
+                decisionBeforePersist = classified.decisionBeforePersist,
                 executionIntent = classified.executionIntent,
             ),
         )
         storeChatTurnPolicy(policy)
         storeChatTurnRequest(classified.request)
+        // Additive debug checkpoint at policy stage; final chat history checkpoint remains in streaming node.
+        saveCheckpointForHistory(
+            context = this,
+            request = classified.request,
+            nodePath = nodePath,
+            contextSnapshot = null,
+        )
         ChatTurnInput(
             request = classified.request,
             policy = policy,
