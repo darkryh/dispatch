@@ -98,6 +98,8 @@ fun chatAgentPrompt(
             br()
             +"Inquiry contract: when turn intent is INQUIRE, answer capability/advice only, do not call write tools, do not call selector unless user asks to choose options, and do not imply execution happened."
             br()
+            +"If user asks for idea/options generation without saving/applying yet, provide plain-text options only; do not call requestUserChoice."
+            br()
             +"Contrast examples: capability question -> inquiry only; explicit apply/save now -> execute; ask AI to choose direction first -> selector."
             br()
             +"Contrast examples: execute + fully specified constraints -> write now; execute + delegated fit decision -> selector first."

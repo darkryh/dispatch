@@ -26,6 +26,7 @@ internal fun applySelectorDecisionIntentSubtype(
         riskClass = IntentRiskClass.SAFE,
         requiresConfirmation = false,
         requiresCreativeChoice = false,
+        decisionBeforePersist = false,
         executionIntent = IntentExecutionIntent.EXECUTE,
     )
 }

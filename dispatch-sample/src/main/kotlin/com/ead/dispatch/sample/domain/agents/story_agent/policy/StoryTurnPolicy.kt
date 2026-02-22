@@ -46,6 +46,7 @@ data class StoryIntentSignal(
     val anchorHint: String = "",
     val requiresConfirmation: Boolean = false,
     val requiresCreativeChoice: Boolean = false,
+    val decisionBeforePersist: Boolean = false,
     val executionIntent: IntentExecutionIntent = IntentExecutionIntent.EXECUTE,
 )
 

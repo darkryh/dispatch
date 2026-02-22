@@ -5,6 +5,7 @@ import ai.koog.prompt.executor.clients.deepseek.DeepSeekModels
 import ai.koog.prompt.llm.LLModel
 import com.ead.dispatch.sample.domain.AIProvider
 import com.ead.dispatch.sample.domain.agents.chat_agent.policy.isDecisionToolName
+import com.ead.dispatch.sample.domain.agents.chat_agent.policy.isWriteToolName
 import dev.dokimos.core.EvalTestCaseParam
 import dev.dokimos.core.ExperimentResult
 import dev.dokimos.koog.asJudge
@@ -179,6 +180,9 @@ class ChatModeDokimosOptionalEvalIT {
         observations.forEach { observation ->
             val expected = observation.case.expectedBehavior
             val hasNonDecisionToolCall = observation.toolCalls.any { !isDecisionToolName(it) }
+            val hasWriteToolCall = observation.toolCalls.any { tool ->
+                !isDecisionToolName(tool) && isWriteToolName(tool)
+            }
             if (hasNonDecisionToolCall && observation.assistantText.isBlank()) {
                 failures += "${observation.case.id}: non-selector tool calls ended with empty assistant response."
             }
@@ -195,6 +199,9 @@ class ChatModeDokimosOptionalEvalIT {
                 ExpectedChatBehavior.SELECTOR -> {
                     if (!observation.usedSelector) {
                         failures += "${observation.case.id}: SELECTOR did not trigger requestUserChoice. tools=${observation.toolCalls}"
+                    }
+                    if (hasWriteToolCall) {
+                        failures += "${observation.case.id}: SELECTOR called write tools before user choice. tools=${observation.toolCalls}"
                     }
                     if (observation.wroteState) {
                         failures += "${observation.case.id}: SELECTOR mutated state before user choice."

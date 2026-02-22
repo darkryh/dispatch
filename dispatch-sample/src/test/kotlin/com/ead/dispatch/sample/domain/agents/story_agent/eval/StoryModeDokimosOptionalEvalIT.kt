@@ -4,6 +4,7 @@ import ai.koog.agents.core.agent.AIAgent
 import ai.koog.prompt.executor.clients.deepseek.DeepSeekModels
 import ai.koog.prompt.llm.LLModel
 import com.ead.dispatch.sample.domain.AIProvider
+import com.ead.dispatch.sample.domain.agents.story_agent.policy.isStoryWriteToolName
 import dev.dokimos.core.EvalTestCaseParam
 import dev.dokimos.core.ExperimentResult
 import dev.dokimos.koog.asJudge
@@ -178,6 +179,9 @@ class StoryModeDokimosOptionalEvalIT {
         observations.forEach { observation ->
             val expected = observation.case.expectedBehavior
             val hasNonDecisionToolCall = observation.toolCalls.any { !it.equals("requestUserChoice", ignoreCase = true) }
+            val hasWriteToolCall = observation.toolCalls.any { tool ->
+                !tool.equals("requestUserChoice", ignoreCase = true) && isStoryWriteToolName(tool)
+            }
             if (hasNonDecisionToolCall && observation.assistantText.isBlank()) {
                 failures += "${observation.case.id}: non-selector tool calls ended with empty assistant response."
             }
@@ -194,6 +198,9 @@ class StoryModeDokimosOptionalEvalIT {
                 ExpectedStoryBehavior.SELECTOR -> {
                     if (!observation.usedSelector) {
                         failures += "${observation.case.id}: SELECTOR did not trigger requestUserChoice."
+                    }
+                    if (hasWriteToolCall) {
+                        failures += "${observation.case.id}: SELECTOR called write tools before user choice. tools=${observation.toolCalls}"
                     }
                     if (observation.wroteState) {
                         failures += "${observation.case.id}: SELECTOR wrote state before user choice."

@@ -41,6 +41,7 @@ fun buildStoryTurnPolicy(
     val riskClass = intentSignal.riskClass
     val requiresConfirmation = intentSignal.requiresConfirmation
     val requiresCreativeChoice = intentSignal.requiresCreativeChoice
+    val decisionBeforePersist = intentSignal.decisionBeforePersist
     val executionIntent = intentSignal.executionIntent
     val shouldSavePreference = intentSignal.shouldSavePreference
     val preferenceConceptKeywords = intentSignal.preferenceConceptKeywords
@@ -66,7 +67,7 @@ fun buildStoryTurnPolicy(
     val creativeSelectorNeeded =
         executionIntent == IntentExecutionIntent.EXECUTE &&
             !destructiveByResolution &&
-            requiresCreativeChoice &&
+            (requiresCreativeChoice || decisionBeforePersist) &&
             resolvedAction == IntentResolvedAction.WRITE_CREATE &&
             (intentClass == StoryIntentClass.CREATIVE || intentClass == StoryIntentClass.WRITE)
     val inquiryWriteLike = executionIntent == IntentExecutionIntent.INQUIRE &&

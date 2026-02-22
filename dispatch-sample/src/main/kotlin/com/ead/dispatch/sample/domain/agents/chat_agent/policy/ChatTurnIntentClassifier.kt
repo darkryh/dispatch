@@ -123,6 +123,8 @@ private data class ChatIntentClassifierResponse(
     val requiresConfirmation: Boolean = false,
     @SerialName("requires_creative_choice")
     val requiresCreativeChoice: Boolean = false,
+    @SerialName("decision_before_persist")
+    val decisionBeforePersist: Boolean = false,
     @SerialName("execution_intent")
     val executionIntent: ExecutionIntentLabel = ExecutionIntentLabel.INQUIRE,
 )
@@ -141,6 +143,7 @@ suspend fun AIAgentContext.classifyTurnIntentWithAI(request: ChatRequest): ChatI
             riskClass = IntentRiskClass.SAFE,
             requiresConfirmation = false,
             requiresCreativeChoice = false,
+            decisionBeforePersist = false,
             executionIntent = IntentExecutionIntent.INQUIRE,
         )
     }
@@ -197,6 +200,7 @@ suspend fun AIAgentContext.classifyTurnIntentWithAI(request: ChatRequest): ChatI
             riskClass = IntentRiskClass.SAFE,
             requiresConfirmation = false,
             requiresCreativeChoice = false,
+            decisionBeforePersist = false,
             executionIntent = IntentExecutionIntent.INQUIRE,
         )
     }
@@ -233,6 +237,7 @@ suspend fun AIAgentContext.classifyTurnIntentWithAI(request: ChatRequest): ChatI
         anchorHint = classified.anchorHint.trim(),
         requiresConfirmation = classified.requiresConfirmation,
         requiresCreativeChoice = classified.requiresCreativeChoice,
+        decisionBeforePersist = classified.decisionBeforePersist,
         executionIntent = classified.executionIntent.toExecutionIntent(),
     )
 
@@ -324,9 +329,15 @@ private fun chatTurnIntentClassifierPrompt(
             br()
             +"Set execution_intent=INQUIRE for capability checks, hypotheticals, comparisons, option-seeking, and mixed ask-first phrasing."
             br()
+            +"If user explicitly asks for ideas/options without saving/applying yet, classify as INQUIRE and keep requires_creative_choice=false."
+            br()
             +"Set execution_intent=EXECUTE only when user clearly requests to apply/save/create/update/delete now."
             br()
             +"Decision continuation messages after a selector prompt should be EXECUTE."
+            br()
+            +"Continuation assent after assistant-proposed action should be EXECUTE when the user is approving/proceeding in context."
+            br()
+            +"Do not require command-form phrasing; approvals, go-ahead confirmations, and collaborative continuation language can still be EXECUTE."
             br()
             +"If uncertain between INQUIRE and EXECUTE, default to INQUIRE."
             br()
@@ -338,6 +349,7 @@ private fun chatTurnIntentClassifierPrompt(
                 item("If the user refers to an existing target contextually, prefer WRITE_UPDATE unless delete/overwrite is clear.")
                 item("If the action target is unclear, keep execution_intent=INQUIRE and resolved_action=FOLLOW_UP.")
                 item("Do not require exact wording to infer continuation intent.")
+                item("When prior assistant context presents a concrete write plan and the user gives contextual approval, treat as EXECUTE unless the user defers/asks-only.")
             }
             br()
             +"Question-type examples (all should be INQUIRE unless user explicitly asks to apply now):"
@@ -350,6 +362,7 @@ private fun chatTurnIntentClassifierPrompt(
                 item("Mixed ask-first: \"can you create it, or just tell me first?\" -> INQUIRE")
                 item("Shorthand confirmation questions: \"ready?\", \"looks good?\" -> INQUIRE")
                 item("Non-English ability forms with same meaning are also INQUIRE (e.g., ES/PT/FR).")
+                item("Option ideation without persistence: \"propose options without saving yet\" -> INQUIRE + requires_creative_choice=false")
             }
             br()
             +"Additional boundary examples:"
@@ -371,6 +384,8 @@ private fun chatTurnIntentClassifierPrompt(
                 item("\"proceed\", \"yes apply\" after selector/decision prompt -> EXECUTE")
                 item("Destructive explicit command: \"delete this entry now\" -> EXECUTE with destructive risk/confirmation")
                 item("Continuation commit after prepared target: \"let's go ahead\", \"apply it\", \"continue\" -> EXECUTE")
+                item("Collaborative continuation assent after assistant proposes concrete creation/update -> EXECUTE")
+                item("Contextual approval turns (approve/confirm/go ahead) tied to an identified target in recent context -> EXECUTE")
             }
             br()
             +"Creative selector examples:"
@@ -380,6 +395,8 @@ private fun chatTurnIntentClassifierPrompt(
                 item("Execute + open branching: \"add 2-3 antagonist options and pick the best tone for our current arc\" -> EXECUTE + requires_creative_choice=true")
                 item("Execute + compatibility uncertainty: \"create a major character now; uncertain which voice and function should align with current canon\" -> EXECUTE + requires_creative_choice=true")
                 item("Execute + delegated fit decision: \"add a core ally and decide the best role fit for current arcs\" -> EXECUTE + requires_creative_choice=true")
+                item("Execute + ordering constraint: \"create and choose direction before saving\" -> EXECUTE + requires_creative_choice=true")
+                item("Execute + directional dependency: \"add/create entity, decide narrative direction first, then save\" -> EXECUTE + requires_creative_choice=true + decision_before_persist=true")
                 item("Bounded create: \"create three random side characters\" -> EXECUTE + requires_creative_choice=false")
                 item("Precise create: \"create a 19-year-old medic ally named Lina, optimistic tone\" -> EXECUTE + requires_creative_choice=false")
             }
@@ -417,6 +434,7 @@ private fun chatTurnIntentClassifierPrompt(
                   "anchor_hint": "short target reference",
                   "requires_confirmation": false,
                   "requires_creative_choice": false,
+                  "decision_before_persist": false,
                   "execution_intent": "EXECUTE | INQUIRE"
                 }
                 """.trimIndent(),

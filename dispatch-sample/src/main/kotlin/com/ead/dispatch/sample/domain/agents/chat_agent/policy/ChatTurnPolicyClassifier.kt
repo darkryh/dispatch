@@ -45,6 +45,7 @@ fun buildTurnPolicy(
     val riskClass = intentSignal.riskClass
     val requiresConfirmation = intentSignal.requiresConfirmation
     val requiresCreativeChoice = intentSignal.requiresCreativeChoice
+    val decisionBeforePersist = intentSignal.decisionBeforePersist
     val executionIntent = intentSignal.executionIntent
     val writeAllowedBySignal = (explicitWriteIntent && confidence >= explicitWriteConfidenceThreshold) ||
         (intentClass == ChatIntentClass.WRITE && confidence >= writeClassConfidenceThreshold)
@@ -66,7 +67,7 @@ fun buildTurnPolicy(
     val creativeSelectorNeeded =
         executionIntent == IntentExecutionIntent.EXECUTE &&
             !destructiveByResolution &&
-            requiresCreativeChoice &&
+            (requiresCreativeChoice || decisionBeforePersist) &&
             resolvedAction == IntentResolvedAction.WRITE_CREATE &&
             (intentClass == ChatIntentClass.CREATIVE || intentClass == ChatIntentClass.WRITE)
     val inquiryWriteLike = executionIntent == IntentExecutionIntent.INQUIRE &&

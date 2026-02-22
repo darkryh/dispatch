@@ -92,6 +92,36 @@ internal fun leanChatEvalCases(): List<ChatEvalCase> = listOf(
         expectedBehavior = ExpectedChatBehavior.SELECTOR,
         seedProfile = ChatEvalSeedProfile.RICH_CONTEXT,
     ),
+    ChatEvalCase(
+        id = "rich-sel-2",
+        prompt = "Create and save a new core location that will anchor the next arc, but decide the best story direction first so it fits current cast tensions.",
+        expectedBehavior = ExpectedChatBehavior.SELECTOR,
+        seedProfile = ChatEvalSeedProfile.RICH_CONTEXT,
+        warmupPrompts = listOf(
+            "Create and save a supporting character named Cass who challenges Dark's cautious style.",
+            "Create and save an event where Dark fails a rescue because of hesitation.",
+            "Create and save an arc called Trust Fracture that escalates conflict between Dark and Mira.",
+            "Create and save a world rule where navigation routes destabilize under emotional conflict.",
+            "Update the existing event so it links directly to Rook's Salvage Tavern.",
+        ),
+    ),
+    ChatEvalCase(
+        id = "rich-sel-3",
+        prompt = "Create and save a new protagonist for this story line, but choose the best narrative role and tone direction first before saving so continuity stays coherent.",
+        expectedBehavior = ExpectedChatBehavior.SELECTOR,
+        seedProfile = ChatEvalSeedProfile.RICH_CONTEXT,
+        warmupPrompts = listOf(
+            "Create and save a character named Tal who distrusts institutions and pressures Dark to act faster.",
+            "Create and save an event where Mira discovers forged route logs tied to a hidden faction.",
+            "Create and save a location named Echo Relay where memories leak into active navigation maps.",
+            "Create and save an organization called The Quiet Ledger that profits from route instability.",
+            "Create and save a culture called Drift Monastics focused on emotional restraint in navigation.",
+            "Create and save an arc named Signal Schism about rival interpretations of the living map.",
+            "Create and save a world rule that map fragments amplify unresolved guilt into false routes.",
+            "Update the main story plot outline to emphasize trust fractures and moral ambiguity in alliances.",
+            "Create and save a timeline entry called Chapter Pivot where alliances split over map ethics.",
+        ),
+    ),
 )
 
 internal data class ChatEvalObservation(
