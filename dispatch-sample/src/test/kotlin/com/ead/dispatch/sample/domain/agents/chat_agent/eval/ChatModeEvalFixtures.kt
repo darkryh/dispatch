@@ -15,12 +15,18 @@ internal data class ChatEvalCase(
     val fromDecisionPrompt: Boolean = false,
     val decisionContext: ChatDecisionContext? = null,
     val seedProfile: ChatEvalSeedProfile = ChatEvalSeedProfile.BASIC,
+    val injectedHistoryProfile: ChatEvalInjectedHistoryProfile? = null,
     val warmupPrompts: List<String> = emptyList(),
 )
 
 internal enum class ChatEvalSeedProfile {
     BASIC,
     RICH_CONTEXT,
+}
+
+internal enum class ChatEvalInjectedHistoryProfile {
+    LIGHT,
+    HEAVY,
 }
 
 internal fun leanChatEvalCases(): List<ChatEvalCase> = listOf(
@@ -54,6 +60,18 @@ internal fun leanChatEvalCases(): List<ChatEvalCase> = listOf(
         id = "sel-1",
         prompt = "Create a new protagonist and choose the best role direction for the main story conflict before saving.",
         expectedBehavior = ExpectedChatBehavior.SELECTOR,
+    ),
+    ChatEvalCase(
+        id = "implicit-light-sel-1",
+        prompt = "Add the person who would take point if Dark and Mira stop trusting each other.",
+        expectedBehavior = ExpectedChatBehavior.SELECTOR,
+        injectedHistoryProfile = ChatEvalInjectedHistoryProfile.LIGHT,
+    ),
+    ChatEvalCase(
+        id = "implicit-light-control-1",
+        prompt = "Add a dockside vendor who sells route ink and rumors.",
+        expectedBehavior = ExpectedChatBehavior.EXECUTE,
+        injectedHistoryProfile = ChatEvalInjectedHistoryProfile.LIGHT,
     ),
     ChatEvalCase(
         id = "rich-inq-1",
@@ -92,6 +110,20 @@ internal fun leanChatEvalCases(): List<ChatEvalCase> = listOf(
             "Update the main story plot outline to emphasize trust fractures and moral ambiguity in alliances.",
             "Create and save a timeline entry called Chapter Pivot where alliances split over map ethics.",
         ),
+    ),
+    ChatEvalCase(
+        id = "implicit-heavy-sel-1",
+        prompt = "Create the faction behind the forged route logs that has been steering recent conflicts.",
+        expectedBehavior = ExpectedChatBehavior.SELECTOR,
+        seedProfile = ChatEvalSeedProfile.RICH_CONTEXT,
+        injectedHistoryProfile = ChatEvalInjectedHistoryProfile.HEAVY,
+    ),
+    ChatEvalCase(
+        id = "implicit-heavy-control-1",
+        prompt = "Create a one-scene scout who helps carry supplies through Rook's Salvage Tavern.",
+        expectedBehavior = ExpectedChatBehavior.EXECUTE,
+        seedProfile = ChatEvalSeedProfile.RICH_CONTEXT,
+        injectedHistoryProfile = ChatEvalInjectedHistoryProfile.HEAVY,
     ),
 )
 

@@ -1,13 +1,24 @@
 package com.ead.dispatch.sample.domain.agents.chat_agent.eval
 
+import ai.koog.agents.snapshot.feature.AgentCheckpointData
+import ai.koog.prompt.message.Message
+import ai.koog.prompt.message.RequestMetaInfo
+import ai.koog.prompt.message.ResponseMetaInfo
 import ai.koog.prompt.streaming.StreamFrame
 import com.ead.dispatch.sample.data.db.entities.DatabaseRuntime
 import com.ead.dispatch.sample.data.db.entities.DispatchDatabaseFactory
 import com.ead.dispatch.sample.data.db.entities.SessionRecord
+import com.ead.dispatch.sample.data.db.entities.StoryArtifactRecord
 import com.ead.dispatch.sample.data.db.entities.StoryArcRecord
 import com.ead.dispatch.sample.data.db.entities.StoryCharacterRecord
+import com.ead.dispatch.sample.data.db.entities.StoryCultureRecord
+import com.ead.dispatch.sample.data.db.entities.StoryEventRecord
+import com.ead.dispatch.sample.data.db.entities.StoryLocationFeatureRecord
 import com.ead.dispatch.sample.data.db.entities.StoryLocationRecord
+import com.ead.dispatch.sample.data.db.entities.StoryOrganizationRecord
+import com.ead.dispatch.sample.data.db.entities.StoryRelationshipRecord
 import com.ead.dispatch.sample.data.db.entities.StoryRecord
+import com.ead.dispatch.sample.data.db.entities.StoryTimelineEntryRecord
 import com.ead.dispatch.sample.data.db.entities.StoryWorldRuleRecord
 import com.ead.dispatch.sample.data.db.type.ArcScope
 import com.ead.dispatch.sample.data.db.type.ContentStatus
@@ -25,6 +36,7 @@ import com.ead.dispatch.sample.domain.model.session.Session
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.Clock
+import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonPrimitive
 import java.util.UUID
 import kotlin.io.path.createTempDirectory
@@ -78,6 +90,17 @@ internal class ChatModeEvalHarness : AutoCloseable {
                 warmupResponse.value.collect { _ -> Unit }
             }
 
+            case.injectedHistoryProfile?.let { profile ->
+                injectChatHistoryCheckpoint(
+                    session = session,
+                    storyId = storyId,
+                    profile = profile,
+                )
+                if (profile == ChatEvalInjectedHistoryProfile.HEAVY) {
+                    validateHeavyContext(storyId)
+                }
+            }
+
             val beforeCount = entityCount(storyId)
 
             val response = chatAgent.run(
@@ -86,6 +109,7 @@ internal class ChatModeEvalHarness : AutoCloseable {
                     text = case.prompt,
                     storyId = storyId,
                     fromDecisionPrompt = case.fromDecisionPrompt,
+                    decisionContext = case.decisionContext,
                 )
             )
 
@@ -182,9 +206,25 @@ internal class ChatModeEvalHarness : AutoCloseable {
     private suspend fun seedRichStoryContext(storyId: String, now: Long) {
         val darkId = "char-dark-$storyId"
         val miraId = "char-mira-$storyId"
+        val talId = "char-tal-$storyId"
         val tavernId = "loc-salvage-$storyId"
+        val relayId = "loc-echo-relay-$storyId"
         val mainArcId = "arc-main-$storyId"
+        val fractureArcId = "arc-fracture-$storyId"
         val memoryRuleId = "rule-memory-map-$storyId"
+        val guiltRuleId = "rule-guilt-resonance-$storyId"
+        val brokersOrgId = "org-channel-brokers-$storyId"
+        val quietLedgerOrgId = "org-quiet-ledger-$storyId"
+        val eventForgedLogsId = "evt-forged-logs-$storyId"
+        val eventTavernFalloutId = "evt-tavern-fallout-$storyId"
+        val cultureId = "culture-drift-monastics-$storyId"
+        val featureTavernId = "feature-signal-cellar-$storyId"
+        val featureRelayId = "feature-memory-spire-$storyId"
+        val artifactId = "artifact-saltglass-compass-$storyId"
+        val timeline1Id = "tl-port-rumor-$storyId"
+        val timeline2Id = "tl-tavern-fallout-$storyId"
+        val rel1Id = "rel-dark-mira-$storyId"
+        val rel2Id = "rel-brokers-mira-$storyId"
 
         repository.insertStoryCharacter(
             StoryCharacterRecord(
@@ -212,6 +252,19 @@ internal class ChatModeEvalHarness : AutoCloseable {
                 createdAt = now,
             )
         )
+        repository.insertStoryCharacter(
+            StoryCharacterRecord(
+                id = talId,
+                storyId = storyId,
+                name = "Tal Ren",
+                description = "Restless scout who pushes for fast action and distrusts institutions.",
+                traits = listOf("impatient", "resourceful", "suspicious"),
+                roles = listOf("supporting", "rival-ally"),
+                goal = "Break the hidden route cartel before another convoy disappears.",
+                motivation = "A sibling vanished on a forged route.",
+                createdAt = now,
+            )
+        )
 
         repository.upsertLocation(
             StoryLocationRecord(
@@ -222,6 +275,18 @@ internal class ChatModeEvalHarness : AutoCloseable {
                     description = "A neutral hub where smugglers, scouts, and archivists trade intel.",
                 ),
                 tags = listOf("urban", "neutral-ground", "high-tension"),
+                createdAt = now,
+            )
+        )
+        repository.upsertLocation(
+            StoryLocationRecord(
+                id = relayId,
+                storyId = storyId,
+                profile = StoryLocationRecord.LocationProfile(
+                    name = "Echo Relay",
+                    description = "An old navigation tower where memory bleed distorts active maps.",
+                ),
+                tags = listOf("signal-node", "volatile", "plot-pivot"),
                 createdAt = now,
             )
         )
@@ -238,6 +303,18 @@ internal class ChatModeEvalHarness : AutoCloseable {
                 updatedAt = now,
             )
         )
+        repository.upsertArc(
+            StoryArcRecord(
+                id = fractureArcId,
+                storyId = storyId,
+                scopeType = ArcScope.STORY,
+                title = "Alliance Fracture",
+                summary = "Dark and Mira split over strategy as route manipulation spreads.",
+                status = ContentStatus.DRAFT,
+                createdAt = now,
+                updatedAt = now,
+            )
+        )
 
         repository.insertStoryWorldRule(
             StoryWorldRuleRecord(
@@ -249,7 +326,207 @@ internal class ChatModeEvalHarness : AutoCloseable {
                 updatedAt = now,
             )
         )
+        repository.insertStoryWorldRule(
+            StoryWorldRuleRecord(
+                id = guiltRuleId,
+                storyId = storyId,
+                title = "Unresolved Guilt Echoes",
+                description = "Map fragments amplify unresolved guilt into false route signals.",
+                createdAt = now,
+                updatedAt = now,
+            )
+        )
+
+        repository.insertStoryCulture(
+            StoryCultureRecord(
+                id = cultureId,
+                storyId = storyId,
+                name = "Drift Monastics",
+                description = "Navigators trained to suppress emotional leakage while charting living maps.",
+                createdAt = now,
+                updatedAt = now,
+            )
+        )
+
+        repository.insertStoryEvent(
+            StoryEventRecord(
+                id = eventTavernFalloutId,
+                storyId = storyId,
+                name = "Rook's Tavern Fallout",
+                description = "A negotiation collapses when forged route evidence implicates a trusted broker.",
+                createdAt = now,
+                updatedAt = now,
+            )
+        )
+        repository.insertStoryEvent(
+            StoryEventRecord(
+                id = eventForgedLogsId,
+                storyId = storyId,
+                name = "Misdirected Supply Run",
+                description = "Forged route logs divert a supply convoy into contested waters.",
+                createdAt = now,
+                updatedAt = now,
+            )
+        )
+
+        repository.insertStoryOrganization(
+            StoryOrganizationRecord(
+                id = brokersOrgId,
+                storyId = storyId,
+                name = "Channel Brokers",
+                description = "Market middlemen who profit from route instability and scarcity spikes.",
+                createdAt = now,
+                updatedAt = now,
+            )
+        )
+        repository.insertStoryOrganization(
+            StoryOrganizationRecord(
+                id = quietLedgerOrgId,
+                storyId = storyId,
+                name = "The Quiet Ledger",
+                description = "A covert accounting network suspected of coordinating forged route traffic.",
+                createdAt = now,
+                updatedAt = now,
+            )
+        )
+
+        repository.insertStoryLocationFeature(
+            StoryLocationFeatureRecord(
+                id = featureTavernId,
+                storyId = storyId,
+                locationId = tavernId,
+                name = "Signal Cellar",
+                description = "A backroom where route logs and smuggler ledgers are exchanged.",
+                createdAt = now,
+                updatedAt = now,
+            )
+        )
+        repository.insertStoryLocationFeature(
+            StoryLocationFeatureRecord(
+                id = featureRelayId,
+                storyId = storyId,
+                locationId = relayId,
+                name = "Memory Spire",
+                description = "A resonance column that intensifies intent-based distortions in maps.",
+                createdAt = now,
+                updatedAt = now,
+            )
+        )
+
+        repository.insertStoryArtifact(
+            StoryArtifactRecord(
+                id = artifactId,
+                storyId = storyId,
+                name = "Saltglass Compass",
+                description = "An unstable compass that reacts to guilt-tainted route signals.",
+                ownerId = miraId,
+                ownerType = "CHARACTER",
+                locationId = relayId,
+                createdAt = now,
+                updatedAt = now,
+            )
+        )
+
+        repository.insertStoryTimelineEntry(
+            StoryTimelineEntryRecord(
+                id = timeline1Id,
+                storyId = storyId,
+                title = "Port Rumor Spike",
+                description = "Smugglers report inconsistent routes and rising broker prices.",
+                orderIndex = 1,
+                createdAt = now,
+                updatedAt = now,
+            )
+        )
+        repository.insertStoryTimelineEntry(
+            StoryTimelineEntryRecord(
+                id = timeline2Id,
+                storyId = storyId,
+                title = "Tavern Fallout",
+                description = "Trust collapses after forged logs surface during negotiations at Rook's.",
+                orderIndex = 2,
+                createdAt = now,
+                updatedAt = now,
+            )
+        )
+
+        repository.insertStoryRelationship(
+            StoryRelationshipRecord(
+                id = rel1Id,
+                storyId = storyId,
+                subjectId = darkId,
+                subjectType = "CHARACTER",
+                objectId = miraId,
+                objectType = "CHARACTER",
+                relation = "strained alliance",
+                notes = "Trust weakened after the rescue failure.",
+                createdAt = now,
+                updatedAt = now,
+            )
+        )
+        repository.insertStoryRelationship(
+            StoryRelationshipRecord(
+                id = rel2Id,
+                storyId = storyId,
+                subjectId = brokersOrgId,
+                subjectType = "ORGANIZATION",
+                objectId = miraId,
+                objectType = "CHARACTER",
+                relation = "surveils",
+                notes = "Brokers track Mira's archive requests for route anomalies.",
+                createdAt = now,
+                updatedAt = now,
+            )
+        )
     }
+
+    private suspend fun validateHeavyContext(storyId: String) {
+        val counts = HeavyContextCounts(
+            characters = repository.getStoryCharacters(storyId).size,
+            locations = repository.getLocationsByStory(storyId).size,
+            arcs = repository.getArcsByStory(storyId).size,
+            worldRules = repository.getWorldRulesByStory(storyId).size,
+            cultures = repository.getCulturesByStory(storyId).size,
+            events = repository.getEventsByStory(storyId).size,
+            organizations = repository.getOrganizationsByStory(storyId).size,
+            relationships = repository.getRelationshipsByStory(storyId).size,
+            locationFeatures = repository.getLocationFeaturesByStory(storyId).size,
+            artifacts = repository.getArtifactsByStory(storyId).size,
+            timelineEntries = repository.getTimelineEntriesByStory(storyId).size,
+        )
+
+        val failures = buildList {
+            if (counts.characters < 3) add("characters>=3 (actual=${counts.characters})")
+            if (counts.locations < 2) add("locations>=2 (actual=${counts.locations})")
+            if (counts.arcs < 2) add("arcs>=2 (actual=${counts.arcs})")
+            if (counts.worldRules < 2) add("worldRules>=2 (actual=${counts.worldRules})")
+            if (counts.cultures < 1) add("cultures>=1 (actual=${counts.cultures})")
+            if (counts.events < 2) add("events>=2 (actual=${counts.events})")
+            if (counts.organizations < 2) add("organizations>=2 (actual=${counts.organizations})")
+            if (counts.relationships < 2) add("relationships>=2 (actual=${counts.relationships})")
+            if (counts.locationFeatures < 2) add("locationFeatures>=2 (actual=${counts.locationFeatures})")
+            if (counts.artifacts < 1) add("artifacts>=1 (actual=${counts.artifacts})")
+            if (counts.timelineEntries < 2) add("timelineEntries>=2 (actual=${counts.timelineEntries})")
+        }
+
+        check(failures.isEmpty()) {
+            "Heavy eval context is underbuilt for storyId=$storyId: ${failures.joinToString(", ")}"
+        }
+    }
+
+    private data class HeavyContextCounts(
+        val characters: Int,
+        val locations: Int,
+        val arcs: Int,
+        val worldRules: Int,
+        val cultures: Int,
+        val events: Int,
+        val organizations: Int,
+        val relationships: Int,
+        val locationFeatures: Int,
+        val artifacts: Int,
+        val timelineEntries: Int,
+    )
 
     private suspend fun entityCount(storyId: String): Int {
         return repository.getStoryCharacters(storyId).size +
@@ -264,4 +541,136 @@ internal class ChatModeEvalHarness : AutoCloseable {
             repository.getArtifactsByStory(storyId).size +
             repository.getTimelineEntriesByStory(storyId).size
     }
+
+    private suspend fun injectChatHistoryCheckpoint(
+        session: Session,
+        storyId: String,
+        profile: ChatEvalInjectedHistoryProfile,
+    ) {
+        val agentId = AIProvider.getChatAgentId(session.id)
+        val latest = Storage.provider.getLatestCheckpoint(agentId)
+        val history = buildInjectedHistory(storyId, profile)
+        val placeholderInput = ChatRequest(
+            text = "history-seeded-placeholder",
+            storyId = storyId,
+        )
+
+        val checkpoint = AgentCheckpointData(
+            checkpointId = latest?.checkpointId ?: "seed-${UUID.randomUUID()}",
+            createdAt = Clock.System.now(),
+            nodePath = "$agentId/chat-mode.planner/chat-intent-flow",
+            lastInput = Json.encodeToJsonElement(ChatRequest.serializer(), placeholderInput),
+            messageHistory = history,
+            version = latest?.version?.plus(1) ?: 0L,
+            properties = latest?.properties ?: emptyMap(),
+        )
+
+        Storage.provider.saveCheckpoint(agentId, checkpoint)
+    }
+
+    private fun buildInjectedHistory(
+        storyId: String,
+        profile: ChatEvalInjectedHistoryProfile,
+    ): List<Message> = when (profile) {
+        ChatEvalInjectedHistoryProfile.LIGHT -> buildLightInjectedHistory(storyId)
+        ChatEvalInjectedHistoryProfile.HEAVY -> buildHeavyInjectedHistory(storyId)
+    }
+
+    private fun buildLightInjectedHistory(storyId: String): List<Message> {
+        val callId = "tool-light-create-char"
+        return listOf(
+            user("yo, it is me again. continue the map story."),
+            assistant("We have Dark and Mira, the living-map conflict, and rising trust issues around route tampering."),
+            user("Create a side courier named Fen and save it."),
+            toolCall(callId, "createCharacter", """{"storyId":"$storyId","request":{"name":"Fen","roles":["supporting"]}}"""),
+            toolResult(
+                callId,
+                "createCharacter",
+                """{"type":"success","data":{"action":"create","entity":"CHARACTER","storyId":"$storyId","entityId":"char-fen","summary":"Created Fen (support courier)."},"message":"Character created."}"""
+            ),
+            assistant("Done. Fen is added as a support courier tied to the port routes."),
+            user("Dark and Mira are getting harder to align, and I think someone else may need to take point soon."),
+            assistant("Understood. That would affect the story's center of gravity, alliances, and future arc direction."),
+        )
+    }
+
+    private fun buildHeavyInjectedHistory(storyId: String): List<Message> {
+        val c1 = "tool-heavy-event"
+        val c2 = "tool-heavy-org"
+        val c3 = "tool-heavy-arc"
+        val c4 = "tool-heavy-timeline"
+        val c5 = "tool-heavy-character"
+        return listOf(
+            user("yo, it is me. let's continue from the tavern fallout."),
+            assistant("Current state: Dark and Mira are strained, route forgeries are escalating, and the map ethics conflict is destabilizing alliances."),
+            user("Summarize what changed after the rescue failure."),
+            assistant("Dark lost leverage after hesitation during the failed rescue, Mira now distrusts tactical delays, and multiple factions are exploiting the route confusion."),
+            user("Create an event where forged logs misdirect a supply run and save it."),
+            toolCall(c1, "createEvent", """{"storyId":"$storyId","request":{"name":"Misdirected Supply Run","description":"Forged route logs divert supplies into contested waters."}}"""),
+            toolResult(
+                c1,
+                "createEvent",
+                """{"type":"success","data":{"action":"create","entity":"EVENT","storyId":"$storyId","entityId":"evt-forged-logs","summary":"Created event: Misdirected Supply Run."},"message":"Event created."}"""
+            ),
+            assistant("Done. The forged-log supply diversion now directly escalates trust and scarcity pressure."),
+            user("Nice. Keep the pressure grounded in logistics, not magic spectacle."),
+            assistant("Understood. I will keep consequences practical: shortages, reroutes, and faction leverage first."),
+            user("Create an organization that profits from route instability and save it."),
+            toolCall(c2, "createOrganization", """{"storyId":"$storyId","request":{"name":"Channel Brokers","description":"Middlemen who exploit unstable route markets."}}"""),
+            toolResult(
+                c2,
+                "createOrganization",
+                """{"type":"success","data":{"action":"create","entity":"ORGANIZATION","storyId":"$storyId","entityId":"org-channel-brokers","summary":"Created organization: Channel Brokers."},"message":"Organization created."}"""
+            ),
+            assistant("Done. Channel Brokers now fit as opportunists, but not yet confirmed as the central force behind the forgeries."),
+            user("yeah keep it grounded tho, not too big yet."),
+            assistant("Understood. I'll keep them as pressure-amplifying operators, not a world-scale villain."),
+            user("Good. Do not make them the mastermind yet."),
+            assistant("Agreed. I will preserve ambiguity and keep them as an opportunist layer for now."),
+            user("Add an arc for the alliance fracture and save it."),
+            toolCall(c3, "createArc", """{"storyId":"$storyId","request":{"title":"Alliance Fracture","summary":"Dark and Mira split over strategy as route manipulation spreads."}}"""),
+            toolResult(
+                c3,
+                "createArc",
+                """{"type":"success","data":{"action":"create","entity":"ARC","storyId":"$storyId","entityId":"arc-alliance-fracture","summary":"Created arc: Alliance Fracture."},"message":"Arc created."}"""
+            ),
+            assistant("Done. The story now has an explicit fracture arc, but the mastermind force behind the forged logs is still unresolved and will shape future continuity."),
+            user("Add a timeline entry for when the tavern negotiations collapse, then save it."),
+            toolCall(c4, "createTimelineEntry", """{"storyId":"$storyId","request":{"title":"Tavern Negotiation Collapse","description":"Forged logs surface at Rook's Salvage Tavern and fracture trust between allies.","orderIndex":3}}"""),
+            toolResult(
+                c4,
+                "createTimelineEntry",
+                """{"type":"success","data":{"action":"create","entity":"TIMELINE","storyId":"$storyId","entityId":"tl-tavern-collapse","summary":"Created timeline entry: Tavern Negotiation Collapse."},"message":"Timeline entry created."}"""
+            ),
+            assistant("Done. The timeline now makes the tavern fallout explicit as the trigger for the fracture arc."),
+            user("wait, not 'mastermind force' vibes from before. more like coordinated pressure we still can't map."),
+            assistant("Good correction. I'll frame the hidden actor as a coordination layer causing pressure, not a revealed mastermind identity."),
+            user("Create a supporting scout tied to Tal who can report port traffic patterns and save it."),
+            toolCall(c5, "createCharacter", """{"storyId":"$storyId","request":{"name":"Iven Silt","roles":["supporting","scout"],"description":"Port scout who tracks convoy anomalies for Tal."}}"""),
+            toolResult(
+                c5,
+                "createCharacter",
+                """{"type":"success","data":{"action":"create","entity":"CHARACTER","storyId":"$storyId","entityId":"char-iven-silt","summary":"Created character: Iven Silt (supporting scout)."},"message":"Character created."}"""
+            ),
+            assistant("Done. Iven Silt now gives Tal a grounded reporting channel for convoy movement and route anomalies."),
+            user("Quick recap before we add anything foundational."),
+            assistant("Recap: trust fracture is active, route forgery pressure is causing concrete shortages, Channel Brokers benefit but remain a secondary suspect, and the unseen coordinating force is still open."),
+            user("I want the next additions to feel coherent with the trust fracture and map ethics conflict, not random."),
+            assistant("Understood. Foundational additions now need to fit continuity because they can define who carries the conflict and what the story is actually about going forward."),
+            user("Also keep the tone morally gray and practical; no clean heroes."),
+            assistant("Noted. I will favor compromised motives, tradeoffs, and practical consequences over heroic clarity."),
+        )
+    }
+
+    private fun user(content: String): Message.User =
+        Message.User(content, RequestMetaInfo.create(Clock.System))
+
+    private fun assistant(content: String): Message.Assistant =
+        Message.Assistant(content, ResponseMetaInfo.create(Clock.System))
+
+    private fun toolCall(id: String, tool: String, content: String): Message.Tool.Call =
+        Message.Tool.Call(id, tool, content, ResponseMetaInfo.create(Clock.System))
+
+    private fun toolResult(id: String, tool: String, content: String): Message.Tool.Result =
+        Message.Tool.Result(id, tool, content, RequestMetaInfo.create(Clock.System))
 }
