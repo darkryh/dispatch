@@ -21,7 +21,7 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 @Tag("integration")
-@EnabledIfEnvironmentVariable(named = "DISPATCH_DOKIMOS_CHAT_EVAL", matches = "(?i)true|1|yes")
+@EnabledIfEnvironmentVariable(named = "CHAT_AGENT_TEST", matches = "(?i)true|1|yes")
 @EnabledIfEnvironmentVariable(named = "OPENAI_API_KEY", matches = ".+")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class ChatModeDokimosOptionalEvalIT {
@@ -37,7 +37,7 @@ class ChatModeDokimosOptionalEvalIT {
     fun `optional dokimos chat lane passes deterministic and judge gates`() {
         assertTimeoutPreemptively(Duration.ofSeconds(resolveTimeoutSeconds())) {
             AIProvider.Chat.main = parseChatModel(
-                value = System.getenv("DISPATCH_DOKIMOS_CHAT_MODEL"),
+                value = System.getenv("CHAT_AGENT_MODEL"),
                 default = AIProvider.Chat.main,
             )
 
@@ -70,7 +70,7 @@ class ChatModeDokimosOptionalEvalIT {
     }
 
     private fun runDokimosJudgeEval(observations: List<ChatEvalObservation>): ExperimentResult {
-        val judgeProvider = System.getenv("DISPATCH_DOKIMOS_JUDGE_PROVIDER")
+        val judgeProvider = System.getenv("JUDGE_PROVIDER")
             ?.trim()
             ?.lowercase()
             .orEmpty()
@@ -79,13 +79,13 @@ class ChatModeDokimosOptionalEvalIT {
         val judgeModel= when (judgeProvider) {
             "deepseek" -> {
                 parseDeepSeekJudgeModel(
-                    value = System.getenv("DISPATCH_DOKIMOS_JUDGE_MODEL"),
+                    value = System.getenv("JUDGE_MODEL"),
                     default = DeepSeekModels.DeepSeekChat,
                 )
             }
             else -> {
                 parseChatModel(
-                    value = System.getenv("DISPATCH_DOKIMOS_JUDGE_MODEL"),
+                    value = System.getenv("JUDGE_MODEL"),
                     default = AIProvider.chatGptMini,
                 )
             }
@@ -235,19 +235,19 @@ class ChatModeDokimosOptionalEvalIT {
     }
 
     private fun parseMaxCases(defaultValue: Int): Int {
-        val raw = System.getenv("DISPATCH_DOKIMOS_MAX_CASES")?.trim().orEmpty()
+        val raw = System.getenv("MAX_CASES")?.trim().orEmpty()
         if (raw.isEmpty()) return defaultValue
         return raw.toIntOrNull()?.coerceIn(1, defaultValue) ?: defaultValue
     }
 
     private fun resolveDokimosParallelism(): Int {
-        val raw = System.getenv("DISPATCH_DOKIMOS_PARALLELISM")?.trim().orEmpty()
+        val raw = System.getenv("TEST_PARALLELISM")?.trim().orEmpty()
         if (raw.isEmpty()) return DEFAULT_PARALLELISM
         return raw.toIntOrNull()?.coerceIn(1, 16) ?: DEFAULT_PARALLELISM
     }
 
     private fun resolveTimeoutSeconds(): Long {
-        val raw = System.getenv("DISPATCH_DOKIMOS_TIMEOUT_SECONDS")?.trim().orEmpty()
+        val raw = System.getenv("TEST_TIMEOUT_SECONDS")?.trim().orEmpty()
         if (raw.isEmpty()) return DEFAULT_TIMEOUT_SECONDS
         return raw.toLongOrNull()?.coerceIn(60L, 600L) ?: DEFAULT_TIMEOUT_SECONDS
     }

@@ -162,6 +162,7 @@ class StoryModeReplayValidationTest {
         addSelectorCases()
         addInquirySafetyCases()
         addDecisionContinuationCases()
+        addBootstrapContinuationCases()
     }
 
     private fun MutableList<ReplayCase>.addCreativeCases() {
@@ -340,6 +341,37 @@ class StoryModeReplayValidationTest {
         }
     }
 
+    private fun MutableList<ReplayCase>.addBootstrapContinuationCases() {
+        val prompts = listOf(
+            "let's start chapter 1 now",
+            "begin the first chapter and apply it",
+            "create volume one and first chapter now",
+            "start chapter one with a short opening scene now",
+        )
+
+        prompts.forEachIndexed { index, text ->
+            add(
+                replayCase(
+                    id = "bootstrap-${index + 1}",
+                    category = "bootstrap",
+                    text = text,
+                    expectedOutcome = ExpectedOutcome.WRITE,
+                    signal = StoryIntentSignal(
+                        intentClass = StoryIntentClass.WRITE,
+                        explicitWriteIntent = true,
+                        confidence = 0.9,
+                        evidenceSpan = text.take(48),
+                        reasoning = "Bootstrap chapter execution request.",
+                        resolvedAction = IntentResolvedAction.WRITE_CREATE,
+                        confidenceBand = IntentConfidenceBand.HIGH,
+                        riskClass = IntentRiskClass.SAFE,
+                        executionIntent = IntentExecutionIntent.EXECUTE,
+                    ),
+                )
+            )
+        }
+    }
+
     private fun MutableList<ReplayCase>.addInquirySafetyCases() {
         val prompts = listOf(
             "can you create a chapter like this style?",
@@ -450,7 +482,7 @@ class StoryModeReplayValidationTest {
     }
 
     companion object {
-        private const val REQUIRED_REPLAY_CASE_COUNT = 56
+        private const val REQUIRED_REPLAY_CASE_COUNT = 60
         private const val WRITE_INTENT_PRECISION_MIN = 0.95
         private const val SELECTOR_PRECISION_MIN = 0.90
         private const val SELECTOR_RECALL_MIN = 0.95

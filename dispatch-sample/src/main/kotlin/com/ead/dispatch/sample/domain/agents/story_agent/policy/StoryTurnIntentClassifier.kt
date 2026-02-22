@@ -377,6 +377,7 @@ private fun storyTurnIntentClassifierPrompt(userText: String, recentContext: Str
                 item("\"proceed\", \"yes apply\" after selector/decision prompt -> EXECUTE")
                 item("Destructive explicit command: \"delete this scene now\" -> EXECUTE with destructive risk/confirmation")
                 item("Continuation commit after prepared target: \"let's go ahead\", \"apply it\", \"continue\" -> EXECUTE")
+                item("Bootstrap chapter start: \"let's start chapter 1 now\", \"begin first chapter now\" -> EXECUTE + WRITE_CREATE")
             }
             br()
             +"Creative selector examples:"
@@ -394,6 +395,7 @@ private fun storyTurnIntentClassifierPrompt(userText: String, recentContext: Str
             br()
             bulleted {
                 item("Early story bootstrap: \"create one random character for this new story\" -> EXECUTE + requires_creative_choice=false")
+                item("Start first chapter with no existing structure: \"start chapter 1 now\" -> EXECUTE + resolved_action=WRITE_CREATE + requires_creative_choice=false")
                 item("Established continuity + open fit: \"add a protagonist and decide how they should connect to existing chapters\" -> EXECUTE + requires_creative_choice=true")
                 item("Bounded story create: \"create a supporting medic, calm tone, chapter-2 ally role\" -> EXECUTE + requires_creative_choice=false")
                 item("Compound mixed signal: \"create it now, but I'm unsure which narrative direction fits best\" -> EXECUTE + requires_creative_choice=true")

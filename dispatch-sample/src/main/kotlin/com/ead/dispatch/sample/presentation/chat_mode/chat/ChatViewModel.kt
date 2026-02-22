@@ -391,11 +391,6 @@ class ChatViewModel(
                             if (cancelRequested) {
                                 return@collect
                             }
-                            if (modeState(mode).pendingDecision != null && frame !is StreamFrame.End) {
-                                // When a decision prompt is active, pause visible streaming until user responds.
-                                return@collect
-                            }
-
                             when (frame) {
                                 is StreamFrame.Append -> {
                                     if (frame.text.isEmpty()) {

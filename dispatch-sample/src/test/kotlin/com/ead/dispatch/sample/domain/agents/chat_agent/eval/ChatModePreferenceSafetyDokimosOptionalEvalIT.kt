@@ -9,7 +9,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 @Tag("integration")
-@EnabledIfEnvironmentVariable(named = "DISPATCH_DOKIMOS_CHAT_EVAL", matches = "(?i)true|1|yes")
+@EnabledIfEnvironmentVariable(named = "CHAT_AGENT_TEST", matches = "(?i)true|1|yes")
 @EnabledIfEnvironmentVariable(named = "OPENAI_API_KEY", matches = ".+")
 class ChatModePreferenceSafetyDokimosOptionalEvalIT {
 
@@ -104,4 +104,3 @@ class ChatModePreferenceSafetyDokimosOptionalEvalIT {
     private fun actualSnapshot(observation: ChatEvalObservation): String =
         "executed=${observation.preferenceSaveExecuted ?: false}|reason=${observation.preferenceSaveSkippedReason.orEmpty()}"
 }
-

@@ -335,6 +335,9 @@ private suspend fun AIAgentGraphContextBase.executeToolWithFix(
 private suspend fun AIAgentGraphContextBase.policyBlockReason(toolName: String?): String? {
     val policy = currentStoryTurnPolicy() ?: return null
     if (!isStoryToolAllowedForTurn(policy, toolName)) {
+        if (policy.requireSelectorForDestructive || policy.requireSelectorForCreative) {
+            return "Tool call blocked: this turn requires requestUserChoice only; no other tools are allowed before user choice."
+        }
         if (!policy.allowWriteTools && isStoryWriteToolName(toolName)) {
             return "Write tool call blocked: explicit write intent is required for this turn."
         }

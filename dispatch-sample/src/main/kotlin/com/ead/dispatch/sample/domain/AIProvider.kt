@@ -52,18 +52,18 @@ object AIProvider {
      * Role-based model configuration for the Chat Agent.
      */
     object Chat {
-        var main: LLModel = chatGptNano
-        var intent: LLModel = chatGptMini
-        var fixer: LLModel = chatGptNano
+        var main: LLModel = deepseekChatLlmModel
+        var intent: LLModel = deepseekChatLlmModel
+        var fixer: LLModel = deepseekChatLlmModel
     }
 
     /**
      * Role-based model configuration for the Story Agent.
      */
     object Story {
-        var main: LLModel = chatGptNano
-        var intent: LLModel = chatGptMini
-        var fixer: LLModel = chatGptNano
+        var main: LLModel = deepseekChatLlmModel
+        var intent: LLModel = deepseekChatLlmModel
+        var fixer: LLModel = deepseekChatLlmModel
     }
 
     /**

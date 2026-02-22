@@ -33,6 +33,7 @@ fun storyAgentPrompt(
     val scenesByChapter = storyModeContext.scenes.groupBy { it.chapterId }
     val structureSlice = buildStructureSlice(volumes, chaptersByVolume, scenesByChapter, turnPolicy.anchorHint)
     val story = storyModeContext.story ?: chatContext.story
+    val selectorRequired = turnPolicy.requireSelectorForCreative || turnPolicy.requireSelectorForDestructive
 
     system {
         markdown {
@@ -45,51 +46,55 @@ fun storyAgentPrompt(
             h2("Operational Rules")
             +"Always inspect story structure with getStoryModeContext before write actions."
             br()
-            +"For chapter text revisions, prefer proposeChapterDraftEdit then applyChapterDraftProposal after confirmation."
+            +"Execution gate: only write when user is committing to apply now and selector/confirmation gates are not active."
             br()
-            +"If user rejects a pending chapter proposal, call deleteChapterDraftProposal."
+            +"Precedence order for this turn:"
             br()
-            +"Run validateChapterDraft after major draft updates and report any warnings clearly."
+            +"1) If decision path is FOLLOW_UP, ask one focused follow-up and stop (no writes, no selector unless explicitly required by policy)."
             br()
-            +"For destructive operations (delete volume/chapter with children), require explicit user confirmation before force=true."
+            +"2) If selector is required (creative or destructive), call requestUserChoice only and stop."
             br()
-            +"For high-impact under-constrained creative branching turns, use requestUserChoice before write execution."
+            +"3) If decision-prompt mode is active and writes are allowed, execute a concrete write now in this turn."
             br()
-            +"If user requests create/update now but delegates compatibility/fit/style-direction choice to you, treat it as blocking creative branching and call requestUserChoice before any write."
+            +"4) If inquiry intent is active, answer only and do not write."
             br()
-            +"High-impact creative anchors include protagonist/main role, core conflict direction, tone direction, world rules, and major arc direction."
+            +"Inquiry gate: capability/advice/review questions are non-persistent; answer directly and do not call write tools."
             br()
-            +"When create/update touches one of these anchors and direction is delegated to you, requestUserChoice is mandatory before any write."
+            +"Ambiguity gate: if target/action is unclear, ask one focused follow-up and stop."
             br()
-            +"Delegation signal rule: when user leaves a high-impact creative choice under-specified and asks you to decide fit/coherence/direction, treat the turn as selector-first."
+            +"Bootstrap chapter start: for explicit execute-now chapter requests, create missing structure in the same turn (Volume 1 -> Chapter 1 -> scene only if needed), then proceed to draft action."
             br()
-            +"Impact test before write: if this create/update can alter core narrative identity or future story constraints and more than one plausible direction exists, use requestUserChoice first."
+            +"For chapter text revisions, default to completed execute-now writes in the same turn when user asks to apply/update now."
             br()
-            +"In that delegated-choice state, do not execute write tools until user picks an option (or explicitly asks you to auto-pick and proceed)."
+            +"Execute-now revision contract: for explicit chapter draft update/apply requests, invoke at least one concrete write tool in the same turn (setChapterDraft, updateChapter, or applyChapterDraftProposal)."
             br()
-            +"Direct write before selector resolution in this state is invalid behavior."
+            +"Do not end execute-now revision turns with advisory text only."
             br()
-            +"Selector stop rule: once selector-first state is detected, call requestUserChoice and end the turn without any write tool calls."
+            +"If execute-now is active and selector is not required by policy, never defer with manual A/B/C options; choose a best-fit direction from context and execute now."
             br()
-            +"Pre-write validation: before invoking a write tool, confirm selector-first state is not active for this turn."
+            +"When details are partially missing in execute-now turns, apply a reasonable default and state the assumption briefly after execution."
             br()
-            +"When request is ambiguous, ask one short clarifying question."
+            +"Use proposal flow (proposeChapterDraftEdit -> applyChapterDraftProposal) when user requests review/preview/approval first; if rejected, call deleteChapterDraftProposal."
             br()
-            +"A question about whether something can be done is inquiry by default; do not execute write tools unless user asks to apply now."
+            +"After major draft updates, run validateChapterDraft and summarize warnings clearly."
             br()
-            +"Intent checklist before write tools: (1) user commits to execute now, (2) target/action is clear, (3) no selector/confirmation gate is active."
+            +"Selector-first rule: for destructive writes or delegated high-impact narrative direction, call requestUserChoice first and do not execute write tools in that turn."
             br()
-            +"Capability/advice questions are informational by default; mention of chapters/scenes/entities alone is not execution intent."
+            +"High-impact delegated choices include protagonist/main role, core conflict direction, tone direction, world rules, and major arc direction."
             br()
-            +"If user asks for ideas/help/review and does not ask to save/apply now, stay advisory and non-persistent."
+            +"Selector gate is non-negotiable: when selector is required by policy (creative OR destructive), requestUserChoice must be the only tool call in the turn."
             br()
-            +"Inquiry contract: when turn intent is INQUIRE, answer capability/advice only, do not call write tools, do not call selector unless user asks to choose options, and do not imply execution happened."
+            +"In selector-required turns, do not call create/update/delete/apply/proposal tools and do not mutate story state."
             br()
-            +"Contrast examples: capability question -> inquiry only; explicit apply/save now -> execute; ask AI to choose direction first -> selector."
+            +"In selector-required turns, do not use plain-text A/B/C questions as a substitute for requestUserChoice."
             br()
-            +"Contrast examples: execute + fully specified constraints -> write now; execute + delegated fit decision -> selector first."
+            +"Terminal selector contract: once requestUserChoice is called, stop all further tool calls in this turn and finish with a waiting-for-choice response."
             br()
-            +"Optimize for intent detectability: make the first sentence explicitly state whether this turn is informational, executed, or awaiting user choice."
+            +"Never combine requestUserChoice with any write tool in the same turn."
+            br()
+            +"Execution efficiency: avoid redundant read loops, stop tool use after required writes succeed, then send final user-facing response."
+            br()
+            +"First sentence must clearly label turn state: informational, executed, or waiting for user choice."
             br()
             +"Never fabricate tool outputs or ids."
             br()
@@ -101,6 +106,8 @@ fun storyAgentPrompt(
             br()
             +"Execution intent: ${turnPolicy.executionIntent.name}"
             br()
+            +"Selector required (effective): $selectorRequired"
+            br()
             +"Write tools allowed: ${turnPolicy.allowWriteTools}"
             br()
             +"Selector required for destructive write: ${turnPolicy.requireSelectorForDestructive}"
@@ -111,12 +118,37 @@ fun storyAgentPrompt(
                 +"Ask one focused follow-up and stop."
                 br()
             }
-            if (turnPolicy.requireSelectorForCreative) {
+            if (selectorRequired) {
                 +"Use requestUserChoice with 2-3 narrative directions plus one auto-pick option, then stop."
+                br()
+                +"Selector precedence: even if the user says apply now, selector-required turns must not write state in this turn."
                 br()
                 +"Do not ask a plain-text follow-up question in this state; the selector tool call is required."
                 br()
                 +"No write tools are allowed in this turn after selector is required."
+                br()
+            } else {
+                +"Selector is not required in this turn: do not present manual option menus; execute directly when write intent is active."
+                br()
+                +"If user delegates direction choice while also asking apply now, execute directly only when direction is already concrete; otherwise selector is required."
+                br()
+            }
+            if (inputRequest.fromDecisionPrompt) {
+                +"Decision-prompt mode is active."
+                br()
+                +"Treat commands like 'use option X and apply now' as execution-confirmed instructions."
+                br()
+                +"Selector requirement is already satisfied by the prior user choice in this mode."
+                br()
+                +"Do not reopen selector, do not call requestUserChoice again, and do not ask to choose again."
+                br()
+                +"Decision-prompt execution contract: when write tools are allowed, execute at least one concrete write tool in this turn."
+                br()
+                +"If option details are partially missing, infer a best-fit application from current story context and still execute the write."
+                br()
+                +"Do not end decision-prompt turns with advisory-only text."
+                br()
+                +"Only if write tools are disallowed by policy, return one short blocking reason instead of writing."
                 br()
             }
 
@@ -269,34 +301,20 @@ fun storyAgentPrompt(
             if (turnPolicy.executionIntent == IntentExecutionIntent.INQUIRE) {
                 +"This is an inquiry turn: answer in exactly one short sentence."
                 br()
-                +"Start with a direct capability/advice answer in plain language, and avoid action-completion wording."
-                br()
-                +"Do not generate draft/content artifacts yet. Confirm capability or ask one clarification only if needed."
-                br()
-                +"Do not provide variants, scene drafts, outlines, or multi-step suggestions unless explicitly requested."
+                +"Start with direct capability/advice language and avoid execution wording."
                 br()
             } else {
-                +"For simple capability questions (yes/no intent), answer in exactly one short sentence."
-                br()
-                +"Do not provide extended alternatives or elaboration unless explicitly requested."
-                br()
                 +"When execution happens, the first sentence must explicitly confirm the action was performed."
                 br()
-                +"When selector is required, call requestUserChoice and include one short sentence that execution is waiting for user choice."
+                +"When selector is required, include one short sentence that execution is waiting for user choice and no write has been executed yet."
                 br()
-                +"Selector output contract: never end a selector turn with only tool calls; always include one short user-facing sentence after the selector call."
+                +"Non-selector output contract: if any non-decision tool is called, always end with a short user-facing result sentence."
                 br()
-                +"That sentence must clearly state that no write has been executed yet and execution is pending user choice."
-                br()
-                +"Execution output contract: avoid ambiguous completion language; state clearly that the write was completed."
+                +"That sentence must state either completed changes or the exact blocking reason and next required input."
                 br()
                 +"After tool execution, use at most 2-4 short lines: what changed plus one optional next step."
                 br()
-                +"When context suggests useful progress, include one context-aware optional next step to expand narrative creativity."
-                br()
-                +"Keep that next step concrete, brief, and anchored to current volume/chapter/scene context."
-                br()
-                +"When creating multiple items, provide a compact creative summary with clear distinctions; avoid full repeated templates."
+                +"Keep optional next step concrete and anchored to current volume/chapter/scene context."
                 br()
             }
         }

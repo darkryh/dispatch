@@ -28,10 +28,11 @@ private val decisionToolNames = setOf(
 fun isStoryToolAllowedForTurn(policy: StoryTurnPolicy, toolName: String?): Boolean {
     if (isStoryDecisionToolName(toolName)) return true
 
+    // Selector turns are terminal choice turns: only decision tools are allowed.
+    if (policy.requireSelectorForDestructive || policy.requireSelectorForCreative) return false
+
     val writeTool = isStoryWriteToolName(toolName)
     if (writeTool && !policy.allowWriteTools) return false
-
-    if ((policy.requireSelectorForDestructive || policy.requireSelectorForCreative) && writeTool) return false
 
     return true
 }
