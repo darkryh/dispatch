@@ -27,6 +27,9 @@ internal enum class ChatEvalSeedProfile {
 internal enum class ChatEvalInjectedHistoryProfile {
     LIGHT,
     HEAVY,
+    IMPORTANT_FIT_LIGHT_REGRESSION,
+    IMPORTANT_FIT_HEAVY_REGRESSION,
+    PROTAGONIST_BEST_FIT_REGRESSION,
 }
 
 internal fun leanChatEvalCases(): List<ChatEvalCase> = listOf(
@@ -60,6 +63,38 @@ internal fun leanChatEvalCases(): List<ChatEvalCase> = listOf(
         id = "sel-1",
         prompt = "Create a new protagonist and choose the best role direction for the main story conflict before saving.",
         expectedBehavior = ExpectedChatBehavior.SELECTOR,
+    ),
+    ChatEvalCase(
+        id = "implicit-important-fit-light-regression",
+        prompt = "okay, can you create the stabilizer artifact and you can decide what's the best fit for it?",
+        expectedBehavior = ExpectedChatBehavior.SELECTOR,
+        injectedHistoryProfile = ChatEvalInjectedHistoryProfile.IMPORTANT_FIT_LIGHT_REGRESSION,
+    ),
+    ChatEvalCase(
+        id = "implicit-important-fit-light-control",
+        prompt = "Create and save a small dock token item traders use to mark paid storage.",
+        expectedBehavior = ExpectedChatBehavior.EXECUTE,
+        injectedHistoryProfile = ChatEvalInjectedHistoryProfile.IMPORTANT_FIT_LIGHT_REGRESSION,
+    ),
+    ChatEvalCase(
+        id = "implicit-important-fit-heavy-regression",
+        prompt = "okay, can you create the anchoring artifact and you can decide what's the best fit for it?",
+        expectedBehavior = ExpectedChatBehavior.SELECTOR,
+        seedProfile = ChatEvalSeedProfile.RICH_CONTEXT,
+        injectedHistoryProfile = ChatEvalInjectedHistoryProfile.IMPORTANT_FIT_HEAVY_REGRESSION,
+    ),
+    ChatEvalCase(
+        id = "implicit-important-fit-heavy-control",
+        prompt = "Create and save a small maintenance tool artifact for relay workers to carry in one scene.",
+        expectedBehavior = ExpectedChatBehavior.EXECUTE,
+        seedProfile = ChatEvalSeedProfile.RICH_CONTEXT,
+        injectedHistoryProfile = ChatEvalInjectedHistoryProfile.IMPORTANT_FIT_HEAVY_REGRESSION,
+    ),
+    ChatEvalCase(
+        id = "implicit-protagonist-best-fit-regression",
+        prompt = "okay, can you create another protagonist and you can decide what's the best fit for it?",
+        expectedBehavior = ExpectedChatBehavior.SELECTOR,
+        injectedHistoryProfile = ChatEvalInjectedHistoryProfile.PROTAGONIST_BEST_FIT_REGRESSION,
     ),
     ChatEvalCase(
         id = "implicit-light-sel-1",

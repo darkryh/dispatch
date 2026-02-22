@@ -96,7 +96,10 @@ internal class ChatModeEvalHarness : AutoCloseable {
                     storyId = storyId,
                     profile = profile,
                 )
-                if (profile == ChatEvalInjectedHistoryProfile.HEAVY) {
+                if (
+                    profile == ChatEvalInjectedHistoryProfile.HEAVY ||
+                    profile == ChatEvalInjectedHistoryProfile.IMPORTANT_FIT_HEAVY_REGRESSION
+                ) {
                     validateHeavyContext(storyId)
                 }
             }
@@ -574,6 +577,9 @@ internal class ChatModeEvalHarness : AutoCloseable {
     ): List<Message> = when (profile) {
         ChatEvalInjectedHistoryProfile.LIGHT -> buildLightInjectedHistory(storyId)
         ChatEvalInjectedHistoryProfile.HEAVY -> buildHeavyInjectedHistory(storyId)
+        ChatEvalInjectedHistoryProfile.IMPORTANT_FIT_LIGHT_REGRESSION -> buildImportantFitLightRegressionHistory(storyId)
+        ChatEvalInjectedHistoryProfile.IMPORTANT_FIT_HEAVY_REGRESSION -> buildImportantFitHeavyRegressionHistory(storyId)
+        ChatEvalInjectedHistoryProfile.PROTAGONIST_BEST_FIT_REGRESSION -> buildProtagonistBestFitRegressionHistory(storyId)
     }
 
     private fun buildLightInjectedHistory(storyId: String): List<Message> {
@@ -659,6 +665,140 @@ internal class ChatModeEvalHarness : AutoCloseable {
             assistant("Understood. Foundational additions now need to fit continuity because they can define who carries the conflict and what the story is actually about going forward."),
             user("Also keep the tone morally gray and practical; no clean heroes."),
             assistant("Noted. I will favor compromised motives, tradeoffs, and practical consequences over heroic clarity."),
+        )
+    }
+
+    private fun buildProtagonistBestFitRegressionHistory(storyId: String): List<Message> {
+        val c1 = "tool-reg-lyra"
+        val c2a = "tool-reg-kaelen-bad"
+        val c2b = "tool-reg-kaelen-good"
+        val c3 = "tool-reg-zephyr"
+        return listOf(
+            user("okay, create new 3 random characters. be creative."),
+            assistant("I'll create three creative characters for your story and save them now."),
+            toolCall(c1, "createCharacter", """{"storyId":"$storyId","request":{"name":"Lyra Silversong","roles":["protagonist","explorer"],"description":"Celestial cartographer mapping constellations that may be gateways.","quirks":["Talks to constellations","Collects unusual inks","Carries a star-chart journal"]}}"""),
+            toolResult(
+                c1,
+                "createCharacter",
+                """{"type":"success","data":{"action":"create","entity":"CHARACTER","storyId":"$storyId","entityId":"char-lyra","summary":"Created Lyra Silversong."},"message":"Character created."}"""
+            ),
+            assistant("Created Lyra Silversong, a celestial cartographer protagonist with a discovery-driven arc."),
+            toolCall(c2a, "createCharacter", """{"storyId":"$storyId","request":{"name":"Kaelen Stoneheart","roles":["antagonist","craftsman"],"description":"Memory-smith forging artifacts from memories.","quirks":"Taps objects with a silver hammer before touching them"}}"""),
+            toolResult(
+                c2a,
+                "createCharacter",
+                """{"type":"error","error":"Expected JsonArray for quirks; got JsonLiteral","field":"quirks"}"""
+            ),
+            assistant("Tool payload failed on quirks format. I'll fix the quirks field and retry."),
+            toolCall(c2b, "createCharacter", """{"storyId":"$storyId","request":{"name":"Kaelen Stoneheart","roles":["antagonist","craftsman"],"description":"Memory-smith forging artifacts from memories.","quirks":["Taps objects with a silver hammer before touching them","Always wears leather gloves","Speaks in forging metaphors"]}}"""),
+            toolResult(
+                c2b,
+                "createCharacter",
+                """{"type":"success","data":{"action":"create","entity":"CHARACTER","storyId":"$storyId","entityId":"char-kaelen","summary":"Created Kaelen Stoneheart."},"message":"Character created."}"""
+            ),
+            assistant("Created Kaelen Stoneheart, a morally ambiguous memory-smith antagonist tied to stolen memories and artifacts."),
+            toolCall(c3, "createCharacter", """{"storyId":"$storyId","request":{"name":"Zephyr the Unbound","roles":["mentor","wildcard"],"description":"Reality drifter who perceives branching timelines.","quirks":["Speaks about past and future interchangeably","Leaves faint afterimages","Collects echoes of significant moments"]}}"""),
+            toolResult(
+                c3,
+                "createCharacter",
+                """{"type":"success","data":{"action":"create","entity":"CHARACTER","storyId":"$storyId","entityId":"char-zephyr","summary":"Created Zephyr the Unbound."},"message":"Character created."}"""
+            ),
+            assistant("Created Zephyr the Unbound, a mentor-wildcard who perceives multiple timelines and branching possibilities."),
+            assistant("Summary: Lyra (celestial gateway discovery), Kaelen (memory-artifact theft), and Zephyr (timeline perception) create a story space centered on reality, memory, and possibility."),
+            user("okay, can you create another protagonist and you can decide what's the best fit for it?"),
+            assistant("I'll create another protagonist that fits your existing cast and themes."),
+            assistant("I can connect the new lead to Lyra's celestial discoveries, Kaelen's memory artifacts, and Zephyr's timeline perception so the role fits the current story direction."),
+        )
+    }
+
+    private fun buildImportantFitLightRegressionHistory(storyId: String): List<Message> {
+        val c1 = "tool-imp-light-event"
+        val c2 = "tool-imp-light-artifact"
+        return listOf(
+            user("yo, continue the route-forgery story."),
+            assistant("Current pressure: route failures are spreading, trust is unstable, and nobody has a reliable stabilizing method yet."),
+            user("Create an event where a convoy gets lost because a forged route shifts mid-crossing."),
+            toolCall(c1, "createEvent", """{"storyId":"$storyId","request":{"name":"Mid-Crossing Route Shift","description":"A convoy is redirected mid-crossing after forged route markings resonate."}}"""),
+            toolResult(
+                c1,
+                "createEvent",
+                """{"type":"success","data":{"action":"create","entity":"EVENT","storyId":"$storyId","entityId":"evt-mid-shift","summary":"Created event: Mid-Crossing Route Shift."},"message":"Event created."}"""
+            ),
+            assistant("Done. That event makes the route failures feel immediate and costly."),
+            user("Create one experimental artifact people tried already, but keep it a failed attempt."),
+            toolCall(c2, "createArtifact", """{"storyId":"$storyId","request":{"name":"Tin Resonance Pin","description":"A cheap resonance pin used by pilots; it fails under forged route interference."}}"""),
+            toolResult(
+                c2,
+                "createArtifact",
+                """{"type":"success","data":{"action":"create","entity":"ARTIFACT","storyId":"$storyId","entityId":"artifact-tin-pin","summary":"Created artifact: Tin Resonance Pin."},"message":"Artifact created."}"""
+            ),
+            assistant("Done. We now have a failed stabilizer attempt, which raises the stakes for whatever working artifact comes next."),
+            user("nice. keep it practical, like people are trying to solve logistics not destiny."),
+            assistant("Understood. I will keep the solutions grounded in trade routes, reliability, and survival pressure."),
+        )
+    }
+
+    private fun buildImportantFitHeavyRegressionHistory(storyId: String): List<Message> {
+        val c1 = "tool-imp-heavy-event"
+        val c2 = "tool-imp-heavy-org"
+        val c3 = "tool-imp-heavy-artifact-fail"
+        val c4 = "tool-imp-heavy-timeline"
+        val c5 = "tool-imp-heavy-location-feature"
+        return listOf(
+            user("yo, continue from the relay and tavern fallout."),
+            assistant("Current state: trust fracture is active, forged routes are destabilizing shipments, and nobody has a proven way to anchor route integrity."),
+            user("Quick summary of what's driving the conflict right now."),
+            assistant("Dark and Mira are split on strategy, opportunist brokers profit from instability, and the hidden coordination layer is pushing failures faster than the cast can respond."),
+            user("Create an event where a rescue route collapses after a forged signal cascades."),
+            toolCall(c1, "createEvent", """{"storyId":"$storyId","request":{"name":"Cascading Signal Collapse","description":"A rescue route fails after forged relay signals propagate across linked markers."}}"""),
+            toolResult(
+                c1,
+                "createEvent",
+                """{"type":"success","data":{"action":"create","entity":"EVENT","storyId":"$storyId","entityId":"evt-cascade-collapse","summary":"Created event: Cascading Signal Collapse."},"message":"Event created."}"""
+            ),
+            assistant("Done. That escalates the conflict from mistrust to visible humanitarian cost."),
+            user("Good. Keep consequences practical and ugly, not mythic."),
+            assistant("Agreed. I will frame effects as shortages, reroutes, and survival tradeoffs first."),
+            user("Create a broker shell group that moves parts and rumor traffic during the failures."),
+            toolCall(c2, "createOrganization", """{"storyId":"$storyId","request":{"name":"Lantern Freight Circle","description":"A broker shell group that profits by redistributing relay parts and rumor traffic during route failures."}}"""),
+            toolResult(
+                c2,
+                "createOrganization",
+                """{"type":"success","data":{"action":"create","entity":"ORGANIZATION","storyId":"$storyId","entityId":"org-lantern-freight-circle","summary":"Created organization: Lantern Freight Circle."},"message":"Organization created."}"""
+            ),
+            assistant("Done. Lantern Freight Circle fits as an opportunist layer without revealing the hidden coordinator."),
+            user("yeah, not mastermind. just pressure merchants."),
+            assistant("Understood. They stay as amplifiers of instability, not the final answer."),
+            user("Create a failed anchoring artifact pilots tried after the relay incidents."),
+            toolCall(c3, "createArtifact", """{"storyId":"$storyId","request":{"name":"Brass Route Nail","description":"A portable anchoring nail meant to pin route signals, but it overreacts to forged resonance and drifts."}}"""),
+            toolResult(
+                c3,
+                "createArtifact",
+                """{"type":"success","data":{"action":"create","entity":"ARTIFACT","storyId":"$storyId","entityId":"artifact-brass-route-nail","summary":"Created artifact: Brass Route Nail."},"message":"Artifact created."}"""
+            ),
+            assistant("Done. The failed anchoring nail now shows the cast has attempted practical fixes and failed."),
+            user("Add a timeline entry for when relay crews stop trusting local markers."),
+            toolCall(c4, "createTimelineEntry", """{"storyId":"$storyId","request":{"title":"Marker Trust Break","description":"Relay crews stop trusting local route markers after repeated forged cascades.","orderIndex":4}}"""),
+            toolResult(
+                c4,
+                "createTimelineEntry",
+                """{"type":"success","data":{"action":"create","entity":"TIMELINE","storyId":"$storyId","entityId":"tl-marker-trust-break","summary":"Created timeline entry: Marker Trust Break."},"message":"Timeline entry created."}"""
+            ),
+            assistant("Done. That makes route trust collapse explicit in chronology."),
+            user("Create a relay feature where crews test signal dampening rigs."),
+            toolCall(c5, "createLocationFeature", """{"storyId":"$storyId","request":{"name":"Dampening Rack","description":"A relay workbench where crews test signal dampening rigs against forged interference."}}"""),
+            toolResult(
+                c5,
+                "createLocationFeature",
+                """{"type":"success","data":{"action":"create","entity":"LOCATION_FEATURE","storyId":"$storyId","entityId":"feature-dampening-rack","summary":"Created location feature: Dampening Rack."},"message":"Location feature created."}"""
+            ),
+            assistant("Done. The relay now has a concrete place for failed and ongoing stabilizer experiments."),
+            user("Quick recap before we add the thing that might actually change this."),
+            assistant("Recap: failures are escalating, opportunists are exploiting instability, several practical fixes have failed, and the story still lacks a credible anchoring artifact that could shift power and trust."),
+            user("Keep the next addition coherent with the trust fracture and map ethics conflict."),
+            assistant("Understood. The next foundational artifact should fit both logistics pressure and the cast's moral split over control vs transparency."),
+            user("No magic fix vibes. It can help, but it should create tradeoffs."),
+            assistant("Noted. I will avoid a perfect solution and preserve costs, bias, or control consequences."),
         )
     }
 
