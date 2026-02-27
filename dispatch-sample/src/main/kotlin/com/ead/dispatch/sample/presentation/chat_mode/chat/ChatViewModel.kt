@@ -376,7 +376,7 @@ class ChatViewModel(
                 val assistantStreamingResponse = response.value
 
                 val metadataJob = viewModelScope.launch(Dispatchers.IO) {
-                    response.metadata.remainingPercentFlow().collect { remainingPercent ->
+                    response.telemetry.remainingPercentFlow().collect { remainingPercent ->
                         setContextRemainingPercent(mode, remainingPercent)
                     }
                 }
@@ -430,7 +430,7 @@ class ChatViewModel(
                     } finally {
 
                         metadataJob.cancelAndJoin()
-                        setContextRemainingPercent(mode, response.metadata.currentRemainingPercent())
+                        setContextRemainingPercent(mode, response.telemetry.currentRemainingPercent())
 
                         if (modeState(mode).contextRemainingPercent == null) {
                             refreshContextStatus(session.id, mode)

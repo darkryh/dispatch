@@ -13,7 +13,7 @@ import ai.koog.agents.memory.model.Fact
 import ai.koog.agents.memory.model.MultipleFacts
 import ai.koog.agents.memory.model.SingleFact
 import ai.koog.prompt.streaming.StreamFrame
-import com.ead.koog.context.orchestrator.api.ContextualResponse
+import com.ead.koog.context.orchestrator.api.ContextRunOutput
 import com.ead.dispatch.sample.domain.agents.chat_agent.MemorySubjects
 import com.ead.dispatch.sample.domain.agents.chat_agent.ChatRequest
 import com.ead.dispatch.sample.domain.agents.chat_agent.SelectorPreferencesMemory
@@ -53,7 +53,7 @@ fun AIAgentSubgraphBuilderBase<*, *>.nodeLoadChatPreferences(
 fun AIAgentSubgraphBuilderBase<*, *>.nodeSaveChatPreferences(
     name: String? = null,
     scope: MemoryScopeType = MemoryScopeType.PRODUCT,
-): AIAgentNodeDelegate<ContextualResponse<Flow<StreamFrame>>, ContextualResponse<Flow<StreamFrame>>> =
+): AIAgentNodeDelegate<ContextRunOutput<Flow<StreamFrame>>, ContextRunOutput<Flow<StreamFrame>>> =
     node(name ?: "save-chat-preferences") { response ->
         saveChatPreferencesOnce(response, scope)
     }
@@ -92,9 +92,9 @@ internal fun shouldLoadChatPreferences(@Suppress("UNUSED_PARAMETER") turnInput: 
 
 @OptIn(InternalAgentsApi::class)
 private suspend fun AIAgentGraphContextBase.saveChatPreferencesOnce(
-    response: ContextualResponse<Flow<StreamFrame>>,
+    response: ContextRunOutput<Flow<StreamFrame>>,
     scope: MemoryScopeType,
-): ContextualResponse<Flow<StreamFrame>> = kotlinx.coroutines.coroutineScope {
+): ContextRunOutput<Flow<StreamFrame>> = kotlinx.coroutines.coroutineScope {
     val policy = currentChatTurnPolicy()
     val request = currentChatTurnRequest()
     if (policy == null) {

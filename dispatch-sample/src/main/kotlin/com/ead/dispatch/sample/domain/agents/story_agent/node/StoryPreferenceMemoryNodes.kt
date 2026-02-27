@@ -23,7 +23,7 @@ import com.ead.dispatch.sample.domain.agents.story_agent.policy.currentStoryTurn
 import com.ead.dispatch.sample.domain.agents.story_agent.policy.storeLoadedStoryPreferencesContext
 import com.ead.dispatch.sample.domain.agents.story_agent.policy.storeStoryLastSavedPreferenceHash
 import com.ead.dispatch.sample.domain.agents.story_agent.policy.updateStoryTurnMetrics
-import com.ead.koog.context.orchestrator.api.ContextualResponse
+import com.ead.koog.context.orchestrator.api.ContextRunOutput
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -49,7 +49,7 @@ fun AIAgentSubgraphBuilderBase<*, *>.nodeLoadStoryPreferences(
 fun AIAgentSubgraphBuilderBase<*, *>.nodeSaveStoryPreferences(
     name: String? = null,
     scope: MemoryScopeType = MemoryScopeType.PRODUCT,
-): AIAgentNodeDelegate<ContextualResponse<Flow<StreamFrame>>, ContextualResponse<Flow<StreamFrame>>> =
+): AIAgentNodeDelegate<ContextRunOutput<Flow<StreamFrame>>, ContextRunOutput<Flow<StreamFrame>>> =
     node(name ?: "story-save-story-preferences") { response ->
         saveStoryPreferencesOnce(response, scope)
     }
@@ -91,9 +91,9 @@ private suspend fun AIAgentGraphContextBase.loadStoryPreferencesOnce(
 
 @OptIn(InternalAgentsApi::class)
 private suspend fun AIAgentGraphContextBase.saveStoryPreferencesOnce(
-    response: ContextualResponse<Flow<StreamFrame>>,
+    response: ContextRunOutput<Flow<StreamFrame>>,
     scope: MemoryScopeType,
-): ContextualResponse<Flow<StreamFrame>> = kotlinx.coroutines.coroutineScope {
+): ContextRunOutput<Flow<StreamFrame>> = kotlinx.coroutines.coroutineScope {
     val policy = currentStoryTurnPolicy() ?: return@coroutineScope response
     val request = currentStoryTurnRequest() ?: return@coroutineScope response
     val previousSavedHash = currentStoryLastSavedPreferenceHash()

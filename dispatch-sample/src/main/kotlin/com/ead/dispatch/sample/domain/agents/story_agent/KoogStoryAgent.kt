@@ -30,7 +30,7 @@ import com.ead.dispatch.sample.domain.agents.tools.StoryInfoTools
 import com.ead.dispatch.sample.domain.agents.tools.StoryStructureTools
 import com.ead.dispatch.sample.domain.embedding.RagContextService
 import com.ead.dispatch.sample.domain.model.session.Session
-import com.ead.koog.context.orchestrator.api.ContextualResponse
+import com.ead.koog.context.orchestrator.api.ContextRunOutput
 import kotlinx.coroutines.flow.Flow
 
 class KoogStoryAgent(
@@ -47,13 +47,13 @@ class KoogStoryAgent(
         tools(InteractionTools(repository).asTools())
     }
 
-    override suspend fun run(session: Session, input: StoryRequest): ContextualResponse<Flow<StreamFrame>> {
+    override suspend fun run(session: Session, input: StoryRequest): ContextRunOutput<Flow<StreamFrame>> {
         val agentName = AIProvider.getStoryAgentId(session.id)
 
-        val agent = AIAgent<StoryRequest, ContextualResponse<Flow<StreamFrame>>>(
+        val agent = AIAgent<StoryRequest, ContextRunOutput<Flow<StreamFrame>>>(
             promptExecutor = AIProvider.Sync.executor,
             llmModel = AIProvider.Story.main,
-            strategy = strategy<StoryRequest, ContextualResponse<Flow<StreamFrame>>>("story-mode.writer") {
+            strategy = strategy<StoryRequest, ContextRunOutput<Flow<StreamFrame>>>("story-mode.writer") {
                 val storyIntent by subgraphClassifyStoryIntent()
 
                 val loadStoryPreferences by nodeLoadStoryPreferences()

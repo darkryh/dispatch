@@ -39,10 +39,10 @@ fun AIAgentSubgraphBuilderBase<*, *>.nodeSetupAndStreamChatMode(
     repository: StructuredIndexRepository,
     ragContextService: RagContextService,
     contextOrchestrator: KoogContextOrchestrator? = null,
-): AIAgentNodeDelegate<ChatTurnInput, ContextualResponse<Flow<StreamFrame>>> =
+): AIAgentNodeDelegate<ChatTurnInput, ContextRunOutput<Flow<StreamFrame>>> =
     node(name) {
         turnInput ->
-        val snapshots = MutableStateFlow<ContextSnapshot?>(null)
+        val snapshots = MutableStateFlow(ContextRunTelemetry.initialSnapshot())
 
         val response = setupAndStreamChatMode(
             repository = repository,
@@ -52,10 +52,10 @@ fun AIAgentSubgraphBuilderBase<*, *>.nodeSetupAndStreamChatMode(
             onContextSnapshot = { snapshot -> snapshots.value = snapshot },
         )
 
-        ContextualResponse(
+        ContextRunOutput(
             value = response,
-            metadata = ContextualMetadata(
-                contextSnapshots = snapshots.asStateFlow(),
+            telemetry = ContextRunTelemetry(
+                snapshots = snapshots.asStateFlow(),
             )
         )
     }

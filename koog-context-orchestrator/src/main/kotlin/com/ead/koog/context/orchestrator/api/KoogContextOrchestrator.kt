@@ -1,6 +1,8 @@
 package com.ead.koog.context.orchestrator.api
 
 import ai.koog.agents.core.agent.context.AIAgentGraphContextBase
+import ai.koog.agents.core.agent.context.feature
+import ai.koog.agents.features.tokenizer.feature.MessageTokenizer
 import com.ead.koog.context.orchestrator.async.ContextCompactionJob
 import com.ead.koog.context.orchestrator.async.ContextCompactionWorkerRegistry
 import com.ead.koog.context.orchestrator.policy.AdaptiveContextBudgetManager
@@ -8,6 +10,7 @@ import com.ead.koog.context.orchestrator.policy.CompressionMode
 import com.ead.koog.context.orchestrator.state.ContinuityPacket
 import com.ead.koog.context.orchestrator.state.ContextSnapshot
 import com.ead.koog.context.orchestrator.telemetry.ContextTelemetry
+import ai.koog.prompt.tokenizer.SimpleRegexBasedTokenizer
 
 /**
  * KOOG-native context manager with explicit planning and async compaction scheduling.
@@ -15,6 +18,7 @@ import com.ead.koog.context.orchestrator.telemetry.ContextTelemetry
 class KoogContextOrchestrator(
     private val config: ContextManagementConfig,
 ) {
+    private val fallbackTokenizer = SimpleRegexBasedTokenizer()
     private val budgetManager = AdaptiveContextBudgetManager(config)
 
     private var turnCounter: Int = 0
@@ -207,7 +211,13 @@ class KoogContextOrchestrator(
     private suspend fun collectTelemetry(context: AIAgentGraphContextBase): ContextTelemetry {
         val latestModelUsage = context.llm.readSession { prompt.latestTokenUsage }
         val usageKnown = latestModelUsage > 0
-        val estimatedPromptTokens = latestModelUsage.coerceAtLeast(0)
+        val estimatedPromptTokens = if (usageKnown) {
+            latestModelUsage.coerceAtLeast(0)
+        } else if (config.requireModelTokenUsage) {
+            0
+        } else {
+            estimatePromptTokens(context)
+        }
 
         if (config.requireModelTokenUsage && !usageKnown) {
             val telemetry = budgetManager.telemetry(
@@ -235,6 +245,16 @@ class KoogContextOrchestrator(
 
         lastTelemetry = telemetry
         return telemetry
+    }
+
+    private suspend fun estimatePromptTokens(context: AIAgentGraphContextBase): Int {
+        val tokenizer = context.feature(MessageTokenizer.Feature)?.promptTokenizer
+        return context.llm.readSession {
+            val currentPrompt = prompt
+            val estimated = tokenizer?.tokenCountFor(currentPrompt)
+                ?: currentPrompt.messages.sumOf { message -> fallbackTokenizer.countTokens(message.content) }
+            estimated.coerceAtLeast(0)
+        }
     }
 
     private fun turnsSinceLastCompaction(): Int? {

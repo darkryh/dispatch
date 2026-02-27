@@ -13,7 +13,7 @@ import com.ead.dispatch.sample.domain.agents.context.defaultContextOrchestratorC
 import com.ead.dispatch.sample.domain.agents.story_agent.memory.service.StoryContinuityMemoryService
 import com.ead.dispatch.sample.domain.embedding.RagContextService
 import com.ead.koog.context.orchestrator.api.ContextHints
-import com.ead.koog.context.orchestrator.api.ContextualResponse
+import com.ead.koog.context.orchestrator.api.ContextRunOutput
 import com.ead.koog.context.orchestrator.api.TaskPhase
 import com.ead.koog.context.orchestrator.api.nodeManageContextAfterLlm
 import com.ead.koog.context.orchestrator.api.nodeApplyCompactedContext
@@ -44,7 +44,7 @@ fun AIAgentSubgraphBuilderBase<*, *>.subgraphSetupAndStreamStoryMode(
     ragContextService: RagContextService,
     continuityMemoryService: StoryContinuityMemoryService,
     name: String? = null,
-): AIAgentSubgraphDelegate<StoryTurnInput, ContextualResponse<Flow<StreamFrame>>> =
+): AIAgentSubgraphDelegate<StoryTurnInput, ContextRunOutput<Flow<StreamFrame>>> =
     subgraph(
         name = name ?: "story-streaming-flow",
         llmParams = LLMParams(temperature = 1.0)
@@ -80,17 +80,17 @@ fun AIAgentSubgraphBuilderBase<*, *>.subgraphSetupAndStreamStoryMode(
             continuityMemoryService = continuityMemoryService,
         )
 
-        val contextAfterLlm by nodeManageContextAfterLlm<ContextualResponse<Flow<StreamFrame>>>(
+        val contextAfterLlm by nodeManageContextAfterLlm<ContextRunOutput<Flow<StreamFrame>>>(
             configFactory = ::defaultContextOrchestratorConfig,
         )
 
-        val contextEndTurn by nodeManageContextEndTurn<ContextualResponse<Flow<StreamFrame>>>(
+        val contextEndTurn by nodeManageContextEndTurn<ContextRunOutput<Flow<StreamFrame>>>(
             configFactory = ::defaultContextOrchestratorConfig,
             hints = { response ->
-                val snapshot = response.metadata.latestSnapshot
+                val snapshot = response.telemetry.latest
                 ContextHints(
                     phase = TaskPhase.FINALIZATION,
-                    continuityPacket = snapshot?.continuityPacket,
+                    continuityPacket = snapshot.continuityPacket,
                 )
             }
         )

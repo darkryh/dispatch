@@ -7,6 +7,7 @@ import com.ead.koog.context.orchestrator.async.LlmAgentContextCompactorBackend
 fun defaultContextOrchestratorConfig(maxContextTokens: Int): ContextManagementConfig =
     ContextManagementConfig(
         maxContextTokens = maxContextTokens,
+        requireModelTokenUsage = false,
         compactorBackend = LlmAgentContextCompactorBackend(
             promptExecutor = AIProvider.Sync.executor,
             llmModel = AIProvider.SubAgent.agent,

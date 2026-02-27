@@ -41,9 +41,9 @@ fun AIAgentSubgraphBuilderBase<*, *>.nodeSetupAndStreamStoryMode(
     ragContextService: RagContextService,
     continuityMemoryService: StoryContinuityMemoryService,
     contextOrchestrator: KoogContextOrchestrator? = null,
-): AIAgentNodeDelegate<StoryTurnInput, ContextualResponse<Flow<StreamFrame>>> =
+): AIAgentNodeDelegate<StoryTurnInput, ContextRunOutput<Flow<StreamFrame>>> =
     node(name ?: "story-setup-and-stream") { turnInput ->
-        val snapshots = MutableStateFlow<ContextSnapshot?>(null)
+        val snapshots = MutableStateFlow(ContextRunTelemetry.initialSnapshot())
 
         val response = setupAndStreamStoryMode(
             repository = repository,
@@ -54,10 +54,10 @@ fun AIAgentSubgraphBuilderBase<*, *>.nodeSetupAndStreamStoryMode(
             onContextSnapshot = { snapshot -> snapshots.value = snapshot },
         )
 
-        ContextualResponse(
+        ContextRunOutput(
             value = response,
-            metadata = ContextualMetadata(
-                contextSnapshots = snapshots.asStateFlow(),
+            telemetry = ContextRunTelemetry(
+                snapshots = snapshots.asStateFlow(),
             ),
         )
     }

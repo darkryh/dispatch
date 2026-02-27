@@ -12,15 +12,15 @@ fun ContextSnapshot.remainingPercentRounded(): Int =
     telemetry.remainingPercent.toInt().coerceIn(0, 100)
 
 /**
- * Returns the latest known remaining-context percentage, if available.
+ * Returns the latest known remaining-context percentage.
  */
-fun ContextualMetadata.currentRemainingPercent(): Int? =
-    latestSnapshot?.remainingPercentRounded()
+fun ContextRunTelemetry.currentRemainingPercent(): Int =
+    latest.remainingPercentRounded()
 
 /**
  * Streams remaining-context percentage updates derived from live context snapshots.
  */
-fun ContextualMetadata.remainingPercentFlow(): Flow<Int?> =
-    contextSnapshots
-        .map { snapshot -> snapshot?.remainingPercentRounded() }
+fun ContextRunTelemetry.remainingPercentFlow(): Flow<Int> =
+    snapshots
+        .map { snapshot -> snapshot.remainingPercentRounded() }
         .distinctUntilChanged()

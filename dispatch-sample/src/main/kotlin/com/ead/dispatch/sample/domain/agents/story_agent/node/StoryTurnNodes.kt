@@ -12,7 +12,7 @@ import com.ead.dispatch.sample.domain.agents.story_agent.policy.classifyStoryTur
 import com.ead.dispatch.sample.domain.agents.story_agent.policy.storeStoryTurnRequest
 import com.ead.dispatch.sample.domain.agents.story_agent.policy.storeStoryTurnPolicy
 import com.ead.dispatch.sample.domain.agents.story_agent.policy.updateStoryTurnMetrics
-import com.ead.koog.context.orchestrator.api.ContextualResponse
+import com.ead.koog.context.orchestrator.api.ContextRunOutput
 import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.Serializable
 
@@ -60,7 +60,7 @@ fun AIAgentSubgraphBuilderBase<*, *>.nodeApplyStoryTurnPolicy(
 @AIAgentBuilderDslMarker
 fun AIAgentSubgraphBuilderBase<*, *>.nodeAuditStoryTurn(
     name: String? = null,
-): AIAgentNodeDelegate<ContextualResponse<Flow<StreamFrame>>, ContextualResponse<Flow<StreamFrame>>> =
+): AIAgentNodeDelegate<ContextRunOutput<Flow<StreamFrame>>, ContextRunOutput<Flow<StreamFrame>>> =
     node(name ?: "story-audit-turn") { response ->
         updateStoryTurnMetrics { metrics ->
             metrics.auditNodeVisited = true

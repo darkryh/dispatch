@@ -34,7 +34,7 @@ import com.ead.dispatch.sample.domain.embedding.RagContextService
 import com.ead.dispatch.sample.domain.model.session.Session
 import com.ead.koog.benchmark.core.JsonlBenchmarkRecorder
 import com.ead.koog.benchmark.koog.KoogBenchmark
-import com.ead.koog.context.orchestrator.api.ContextualResponse
+import com.ead.koog.context.orchestrator.api.ContextRunOutput
 import kotlinx.coroutines.flow.Flow
 
 class KoogChatAgent(
@@ -66,13 +66,13 @@ class KoogChatAgent(
      * The agent is configured with persistence, but checkpoints are saved manually
      * for the streaming flow.
      */
-    override suspend fun run(session: Session, input: ChatRequest): ContextualResponse<Flow<StreamFrame>> {
+    override suspend fun run(session: Session, input: ChatRequest): ContextRunOutput<Flow<StreamFrame>> {
         val agentName = AIProvider.getChatAgentId(session.id)
 
-        val agent = AIAgent<ChatRequest, ContextualResponse<Flow<StreamFrame>>>(
+        val agent = AIAgent<ChatRequest, ContextRunOutput<Flow<StreamFrame>>>(
             promptExecutor = AIProvider.Sync.executor,
             llmModel = AIProvider.Chat.main,
-            strategy = strategy<ChatRequest, ContextualResponse<Flow<StreamFrame>>>("chat-mode.planner") {
+            strategy = strategy<ChatRequest, ContextRunOutput<Flow<StreamFrame>>>("chat-mode.planner") {
                 val chatIntent by subgraphClassifyIntent()
 
                 val loadChatPreferences by nodeLoadChatPreferences()
