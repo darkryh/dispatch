@@ -13,15 +13,9 @@ import ai.koog.prompt.streaming.StreamFrame
 import com.ead.dispatch.sample.data.repositories.StructuredIndexRepository
 import com.ead.dispatch.sample.domain.AIProvider
 import com.ead.dispatch.sample.domain.agents.chat_agent.ChatRequest
-import com.ead.dispatch.sample.domain.agents.chat_agent.SelectorPreferencesMemory
 import com.ead.dispatch.sample.domain.agents.chat_agent.policy.ChatTurnInput
 import com.ead.dispatch.sample.domain.embedding.RagContextService
-import com.ead.koog.context.orchestrator.api.ContextHints
 import com.ead.koog.context.orchestrator.api.ContextualResponse
-import com.ead.koog.context.orchestrator.api.TaskPhase
-import com.ead.koog.context.orchestrator.api.nodeManageContextAfterLlm
-import com.ead.koog.context.orchestrator.api.nodeManageContextBeforeLlm
-import com.ead.koog.context.orchestrator.state.ContinuityPacket
 import kotlinx.coroutines.flow.Flow
 
 @AIAgentBuilderDslMarker
@@ -63,35 +57,10 @@ fun AIAgentSubgraphBuilderBase<*, *>.subgraphSetupAndStreamChatMode(
         llmParams = llmParams,
         responseProcessor = responseProcessor
     ) {
-        val contextBeforeLlm by nodeManageContextBeforeLlm<ChatTurnInput>(
-            hints = { turnInput ->
-                ContextHints(
-                    phase = TaskPhase.EXECUTION,
-                    factConcepts = SelectorPreferencesMemory.userConcepts,
-                    continuityPacket = ContinuityPacket(
-                        objective = "Follow chat turn policy: ${turnInput.policy.decisionPath.name}/${turnInput.policy.resolvedAction.name}.",
-                        constraints = listOf(
-                            "write_tools_allowed=${turnInput.policy.allowWriteTools}",
-                            "require_selector_for_destructive=${turnInput.policy.requireSelectorForDestructive}",
-                            "require_selector_for_creative=${turnInput.policy.requireSelectorForCreative}",
-                            "confidence_band=${turnInput.policy.confidenceBand.name}",
-                            "risk_class=${turnInput.policy.riskClass.name}",
-                        ),
-                        criticalReferences = listOf("storyId=${turnInput.request.storyId}"),
-                    )
-                )
-            }
-        )
-
         val chatAgentModel by nodeSetupAndStreamChatMode(
             repository = repository,
             ragContextService = ragContextService
         )
-
-        val contextAfterLlm by nodeManageContextAfterLlm<ContextualResponse<Flow<StreamFrame>>>()
-
-        edge(nodeStart forwardTo contextBeforeLlm)
-        edge(contextBeforeLlm forwardTo chatAgentModel)
-        edge(chatAgentModel forwardTo contextAfterLlm)
-        edge(contextAfterLlm forwardTo nodeFinish)
+        edge(nodeStart forwardTo chatAgentModel)
+        edge(chatAgentModel forwardTo nodeFinish)
     }

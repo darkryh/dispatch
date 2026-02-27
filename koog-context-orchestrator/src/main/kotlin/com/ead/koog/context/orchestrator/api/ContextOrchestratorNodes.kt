@@ -16,6 +16,7 @@ enum class ContextNodeStage {
     AFTER_LLM,
     BEFORE_TOOL_LOOP,
     AFTER_TOOL_LOOP,
+    END_TURN,
 }
 
 @AIAgentBuilderDslMarker
@@ -40,6 +41,7 @@ inline fun <reified T> AIAgentSubgraphBuilderBase<*, *>.nodeManageContext(
             ContextNodeStage.AFTER_LLM -> runtimeOrchestrator.afterLlmCall(this)
             ContextNodeStage.BEFORE_TOOL_LOOP -> runtimeOrchestrator.beforeToolLoop(this, resolvedHints)
             ContextNodeStage.AFTER_TOOL_LOOP -> runtimeOrchestrator.afterToolLoop(this)
+            ContextNodeStage.END_TURN -> runtimeOrchestrator.endTurn(this, resolvedHints)
         }
 
         input
@@ -109,10 +111,28 @@ inline fun <reified T> AIAgentSubgraphBuilderBase<*, *>.nodeManageContextAfterTo
         configFactory = configFactory,
     )
 
+@AIAgentBuilderDslMarker
+inline fun <reified T> AIAgentSubgraphBuilderBase<*, *>.nodeManageContextEndTurn(
+    orchestrator: KoogContextOrchestrator? = null,
+    name: String? = null,
+    noinline configFactory: (maxContextTokens: Int) -> ContextManagementConfig = { maxTokens ->
+        ContextManagementConfig(maxContextTokens = maxTokens)
+    },
+    crossinline hints: AIAgentGraphContextBase.(T) -> ContextHints = { ContextHints() },
+): AIAgentNodeDelegate<T, T> =
+    nodeManageContext(
+        orchestrator = orchestrator,
+        stage = ContextNodeStage.END_TURN,
+        name = name,
+        configFactory = configFactory,
+        hints = hints,
+    )
+
 @PublishedApi
 internal fun defaultNodeName(stage: ContextNodeStage): String = when (stage) {
     ContextNodeStage.BEFORE_LLM -> "context-before-llm"
     ContextNodeStage.AFTER_LLM -> "context-after-llm"
     ContextNodeStage.BEFORE_TOOL_LOOP -> "context-before-tool-loop"
     ContextNodeStage.AFTER_TOOL_LOOP -> "context-after-tool-loop"
+    ContextNodeStage.END_TURN -> "context-end-turn"
 }

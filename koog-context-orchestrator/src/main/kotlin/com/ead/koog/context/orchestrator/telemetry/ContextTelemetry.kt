@@ -5,6 +5,7 @@ import com.ead.koog.context.orchestrator.policy.ContextRiskZone
 
 data class ContextTelemetry(
     val estimatedPromptTokens: Int,
+    val tokenUsageKnown: Boolean,
     val maxContextTokens: Int,
     val usedPercent: Double,
     val remainingTokens: Int,

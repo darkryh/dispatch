@@ -1,6 +1,8 @@
 package com.ead.koog.context.orchestrator.policy
 
 import com.ead.koog.context.orchestrator.api.ContextHints
+import com.ead.koog.context.orchestrator.api.CompressionPlan
+import com.ead.koog.context.orchestrator.api.CompressionTiming
 import com.ead.koog.context.orchestrator.api.ContextManagementConfig
 import com.ead.koog.context.orchestrator.telemetry.ContextTelemetry
 import kotlin.math.roundToInt
@@ -17,13 +19,7 @@ class AdaptiveContextBudgetManager(
         }
     }
 
-    fun growthTokensPerTurn(): Int {
-        if (observedPromptTokenTotals.size < 2) return 0
-        val first = observedPromptTokenTotals.first()
-        val last = observedPromptTokenTotals.last()
-        val steps = (observedPromptTokenTotals.size - 1).coerceAtLeast(1)
-        return (last - first) / steps
-    }
+    fun growthTokensPerTurn(): Int = 0
 
     fun riskZone(usedPercent: Double): ContextRiskZone = when {
         usedPercent >= config.emergencyAtUsedPercent -> ContextRiskZone.EMERGENCY
@@ -33,57 +29,108 @@ class AdaptiveContextBudgetManager(
         else -> ContextRiskZone.HEALTHY
     }
 
-    fun decideMode(
+    fun decidePlan(
         messageCount: Int,
         turnsSinceLastCompression: Int?,
         zone: ContextRiskZone,
         hints: ContextHints,
-    ): CompressionMode {
-        if (messageCount < config.minMessagesForCompression) return CompressionMode.NONE
+    ): CompressionPlan {
+        if (messageCount < config.minMessagesForCompression) {
+            return CompressionPlan(
+                mode = CompressionMode.NONE,
+                timing = CompressionTiming.MANUAL,
+                reason = "Message count is below minimum compression threshold.",
+                riskZone = zone,
+                requiresLlmRoundtrip = false,
+            )
+        }
 
         val withinCooldown =
             turnsSinceLastCompression != null &&
                 turnsSinceLastCompression <= config.compressionCooldownTurns
 
-        val growth = growthTokensPerTurn()
-
-        if (zone == ContextRiskZone.EMERGENCY) return CompressionMode.EMERGENCY
-
         if (withinCooldown && zone <= ContextRiskZone.WARNING) {
-            return CompressionMode.NONE
+            return CompressionPlan(
+                mode = CompressionMode.NONE,
+                timing = CompressionTiming.MANUAL,
+                reason = "Compression cooldown is active.",
+                riskZone = zone,
+                requiresLlmRoundtrip = false,
+            )
         }
 
-        return when (zone) {
-            ContextRiskZone.CRITICAL -> {
-                if (config.enableFactFocusedCompression && hints.factConcepts.isNotEmpty()) {
-                    CompressionMode.FACT_FOCUSED
-                } else {
-                    CompressionMode.AGGRESSIVE
-                }
-            }
-
-            ContextRiskZone.WARNING -> {
-                if (config.enableFactFocusedCompression && hints.factConcepts.isNotEmpty() && hints.unresolvedCommitments > 0) {
-                    CompressionMode.FACT_FOCUSED
-                } else {
-                    CompressionMode.STRUCTURED
-                }
-            }
-
-            ContextRiskZone.WATCH -> {
-                if (growth >= config.highGrowthTokensPerTurn || hints.recentToolCalls > 0) {
-                    CompressionMode.LIGHT
-                } else {
-                    CompressionMode.NONE
-                }
-            }
-
-            else -> CompressionMode.NONE
+        val configuredPolicy = when (zone) {
+            ContextRiskZone.HEALTHY -> null
+            ContextRiskZone.WATCH -> config.watchPolicy
+            ContextRiskZone.WARNING -> config.warningPolicy
+            ContextRiskZone.CRITICAL -> config.criticalPolicy
+            ContextRiskZone.EMERGENCY -> config.emergencyPolicy
         }
+        if (configuredPolicy == null) {
+            return CompressionPlan(
+                mode = CompressionMode.NONE,
+                timing = CompressionTiming.MANUAL,
+                reason = "Context is healthy. No compression policy is applied.",
+                riskZone = zone,
+                requiresLlmRoundtrip = false,
+            )
+        }
+
+        if (hints.recentToolCalls < configuredPolicy.minRecentToolCalls) {
+            return CompressionPlan(
+                mode = CompressionMode.NONE,
+                timing = CompressionTiming.MANUAL,
+                reason = "Recent tool calls are below policy minimum for this zone.",
+                riskZone = zone,
+                requiresLlmRoundtrip = false,
+            )
+        }
+
+        val mode = resolveModeWithHints(zone, configuredPolicy.mode, hints)
+
+        val timing = if (mode == CompressionMode.NONE) CompressionTiming.MANUAL else configuredPolicy.timing
+        val reason = when (mode) {
+            CompressionMode.NONE -> "Context is within configured budget."
+            CompressionMode.LIGHT -> "Light compression requested by zone policy."
+            CompressionMode.STRUCTURED -> "Structured compression requested by zone policy."
+            CompressionMode.AGGRESSIVE -> "Aggressive compression requested by zone policy."
+            CompressionMode.FACT_FOCUSED -> "Fact-focused compression requested by zone policy."
+            CompressionMode.EMERGENCY -> "Emergency compression requested by zone policy."
+        }
+
+        return CompressionPlan(
+            mode = mode,
+            timing = timing,
+            reason = reason,
+            riskZone = zone,
+            requiresLlmRoundtrip = mode != CompressionMode.NONE,
+        )
+    }
+
+    private fun resolveModeWithHints(
+        zone: ContextRiskZone,
+        requested: CompressionMode,
+        hints: ContextHints,
+    ): CompressionMode {
+        if (requested != CompressionMode.FACT_FOCUSED) return requested
+        if (!config.enableFactFocusedCompression) {
+            return if (zone >= ContextRiskZone.CRITICAL) CompressionMode.AGGRESSIVE else CompressionMode.STRUCTURED
+        }
+        if (hints.factConcepts.isEmpty()) {
+            return if (zone >= ContextRiskZone.CRITICAL) CompressionMode.AGGRESSIVE else CompressionMode.STRUCTURED
+        }
+        if (zone == ContextRiskZone.WARNING &&
+            config.requireUnresolvedCommitmentsForWarningFactFocused &&
+            hints.unresolvedCommitments <= 0
+        ) {
+            return CompressionMode.STRUCTURED
+        }
+        return CompressionMode.FACT_FOCUSED
     }
 
     fun telemetry(
         estimatedPromptTokens: Int,
+        tokenUsageKnown: Boolean,
         compressionCount: Int,
         turnsSinceLastCompression: Int?,
         lastCompressionMode: CompressionMode?,
@@ -97,6 +144,7 @@ class AdaptiveContextBudgetManager(
 
         return ContextTelemetry(
             estimatedPromptTokens = safeEstimated,
+            tokenUsageKnown = tokenUsageKnown,
             maxContextTokens = config.maxContextTokens,
             usedPercent = (usedPercent * 100.0).roundToInt() / 100.0,
             remainingTokens = remainingTokens,
@@ -105,7 +153,7 @@ class AdaptiveContextBudgetManager(
             compressionCount = compressionCount,
             turnsSinceLastCompression = turnsSinceLastCompression,
             lastCompressionMode = lastCompressionMode,
-            growthTokensPerTurn = growthTokensPerTurn(),
+            growthTokensPerTurn = 0,
             continuityIntegrityScore = continuityIntegrityScore.coerceIn(0, 100),
         )
     }

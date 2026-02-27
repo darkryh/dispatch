@@ -4,8 +4,6 @@ import ai.koog.agents.core.agent.context.AIAgentGraphContextBase
 import ai.koog.agents.core.dsl.extension.HistoryCompressionStrategy
 import ai.koog.agents.core.dsl.extension.replaceHistoryWithTLDR
 import ai.koog.agents.memory.feature.history.RetrieveFactsFromHistory
-import com.ead.koog.context.orchestrator.compression.HeuristicTokenEstimator
-import com.ead.koog.context.orchestrator.compression.TokenEstimator
 import com.ead.koog.context.orchestrator.policy.AdaptiveContextBudgetManager
 import com.ead.koog.context.orchestrator.policy.CompressionMode
 import com.ead.koog.context.orchestrator.state.ContinuityPacket
@@ -13,15 +11,21 @@ import com.ead.koog.context.orchestrator.state.ContextSnapshot
 import com.ead.koog.context.orchestrator.telemetry.ContextTelemetry
 
 /**
- * KOOG-native context manager that applies adaptive compression and continuity rehydration.
+ * KOOG-native context manager with explicit planning and execution phases.
+ *
+ * Planning happens once per turn. Compression can be executed immediately or deferred to end of turn.
  */
 class KoogContextOrchestrator(
     private val config: ContextManagementConfig,
-    private val tokenEstimator: TokenEstimator = HeuristicTokenEstimator(),
 ) {
     private val budgetManager = AdaptiveContextBudgetManager(config)
 
     private var turnCounter: Int = 0
+    private var activeTurnId: Int? = null
+    private var plannedCompressionForTurn: CompressionPlan? = null
+    private var appliedCompressionsForTurn: Int = 0
+    private var pendingEndTurnPlan: CompressionPlan? = null
+
     private var lastCompressionTurn: Int? = null
     private var compressionCount: Int = 0
     private var lastCompressionMode: CompressionMode? = null
@@ -29,38 +33,55 @@ class KoogContextOrchestrator(
 
     private var lastTelemetry: ContextTelemetry = emptyTelemetry()
 
+    suspend fun beginTurn(
+        context: AIAgentGraphContextBase,
+        hints: ContextHints = ContextHints(),
+    ): CompressionPlan {
+        if (activeTurnId == null) {
+            activeTurnId = ++turnCounter
+            appliedCompressionsForTurn = 0
+            plannedCompressionForTurn = null
+            pendingEndTurnPlan = null
+        }
+
+        val existingPlan = plannedCompressionForTurn
+        if (existingPlan != null) return existingPlan
+
+        val telemetry = collectTelemetry(context)
+        val plan = budgetManager.decidePlan(
+            messageCount = context.llm.readSession { prompt.messages.size },
+            turnsSinceLastCompression = turnsSinceLastCompression(),
+            zone = telemetry.riskZone,
+            hints = hints,
+        )
+        plannedCompressionForTurn = plan
+        if (plan.shouldCompress && plan.timing == CompressionTiming.END_OF_TURN) {
+            pendingEndTurnPlan = plan
+        }
+        return plan
+    }
+
     suspend fun beforeLlmCall(
         context: AIAgentGraphContextBase,
         hints: ContextHints = ContextHints(),
     ): ContextDecision {
-        turnCounter += 1
-        val initialTelemetry = collectTelemetry(context)
-
-        val mode = budgetManager.decideMode(
-            messageCount = context.llm.readSession { prompt.messages.size },
-            turnsSinceLastCompression = turnsSinceLastCompression(),
-            zone = initialTelemetry.riskZone,
-            hints = hints,
-        )
-
-        if (mode != CompressionMode.NONE) {
-            compress(context, mode, hints)
+        val plan = beginTurn(context, hints)
+        if (plan.shouldCompress && plan.timing == CompressionTiming.BEFORE_NEXT_LLM) {
+            applyCompressionIfNeeded(
+                context = context,
+                plan = plan,
+                hints = hints,
+                stage = ContextLifecycleStage.BEFORE_LLM,
+            )
         }
 
         val updatedTelemetry = collectTelemetry(context)
-        val reason = when (mode) {
-            CompressionMode.NONE -> "Context is within budget for this turn."
-            CompressionMode.LIGHT -> "Applying light compression due to watch-zone growth."
-            CompressionMode.STRUCTURED -> "Applying structured compression for warning zone."
-            CompressionMode.AGGRESSIVE -> "Applying aggressive compression for critical zone."
-            CompressionMode.FACT_FOCUSED -> "Applying fact-focused compression for continuity-sensitive context."
-            CompressionMode.EMERGENCY -> "Applying emergency compression close to context limit."
-        }
-
         return ContextDecision(
-            mode = mode,
-            reason = reason,
+            mode = plan.mode,
+            timing = plan.timing,
+            reason = plan.reason,
             telemetry = updatedTelemetry,
+            stage = ContextLifecycleStage.BEFORE_LLM,
         )
     }
 
@@ -69,21 +90,82 @@ class KoogContextOrchestrator(
     suspend fun beforeToolLoop(
         context: AIAgentGraphContextBase,
         hints: ContextHints = ContextHints(),
-    ): ContextDecision = beforeLlmCall(context, hints)
+    ): ContextDecision {
+        val plan = beginTurn(context, hints)
+        if (plan.shouldCompress && plan.timing == CompressionTiming.BEFORE_NEXT_LLM) {
+            applyCompressionIfNeeded(
+                context = context,
+                plan = plan,
+                hints = hints,
+                stage = ContextLifecycleStage.BEFORE_TOOL_LOOP,
+            )
+        }
+        val updatedTelemetry = collectTelemetry(context)
+        return ContextDecision(
+            mode = plan.mode,
+            timing = plan.timing,
+            reason = plan.reason,
+            telemetry = updatedTelemetry,
+            stage = ContextLifecycleStage.BEFORE_TOOL_LOOP,
+        )
+    }
 
     suspend fun afterToolLoop(context: AIAgentGraphContextBase): ContextTelemetry = collectTelemetry(context)
+
+    suspend fun endTurn(
+        context: AIAgentGraphContextBase,
+        hints: ContextHints = ContextHints(),
+    ): ContextDecision {
+        val plan = pendingEndTurnPlan
+        if (plan != null && plan.shouldCompress) {
+            applyCompressionIfNeeded(
+                context = context,
+                plan = plan,
+                hints = hints,
+                stage = ContextLifecycleStage.END_TURN,
+            )
+        }
+        val telemetry = collectTelemetry(context)
+        val decision = ContextDecision(
+            mode = plan?.mode ?: CompressionMode.NONE,
+            timing = plan?.timing ?: CompressionTiming.MANUAL,
+            reason = plan?.reason ?: "No deferred compression for this turn.",
+            telemetry = telemetry,
+            stage = ContextLifecycleStage.END_TURN,
+        )
+        activeTurnId = null
+        plannedCompressionForTurn = null
+        pendingEndTurnPlan = null
+        appliedCompressionsForTurn = 0
+        return decision
+    }
 
     suspend fun forceCompaction(
         context: AIAgentGraphContextBase,
         reason: String,
         hints: ContextHints = ContextHints(),
     ): ContextDecision {
-        compress(context, CompressionMode.EMERGENCY, hints)
+        val plan = CompressionPlan(
+            mode = CompressionMode.EMERGENCY,
+            timing = CompressionTiming.BEFORE_NEXT_LLM,
+            reason = reason,
+            riskZone = lastTelemetry.riskZone,
+            requiresLlmRoundtrip = true,
+        )
+        applyCompressionIfNeeded(
+            context = context,
+            plan = plan,
+            hints = hints,
+            stage = ContextLifecycleStage.BEFORE_LLM,
+            allowBypassPerTurnLimit = true,
+        )
         val telemetry = collectTelemetry(context)
         return ContextDecision(
             mode = CompressionMode.EMERGENCY,
+            timing = CompressionTiming.BEFORE_NEXT_LLM,
             reason = reason,
             telemetry = telemetry,
+            stage = ContextLifecycleStage.BEFORE_LLM,
         )
     }
 
@@ -93,6 +175,24 @@ class KoogContextOrchestrator(
     )
 
     fun snapshotTelemetry(): ContextTelemetry = lastTelemetry
+
+    private suspend fun applyCompressionIfNeeded(
+        context: AIAgentGraphContextBase,
+        plan: CompressionPlan,
+        hints: ContextHints,
+        stage: ContextLifecycleStage,
+        allowBypassPerTurnLimit: Boolean = false,
+    ) {
+        if (plan.mode == CompressionMode.NONE) return
+        if (!allowBypassPerTurnLimit && appliedCompressionsForTurn >= config.maxCompressionsPerTurn) return
+        if (stage == ContextLifecycleStage.BEFORE_TOOL_LOOP && plan.timing == CompressionTiming.END_OF_TURN) return
+
+        compress(context, plan.mode, hints)
+        appliedCompressionsForTurn += 1
+        if (plan.timing == CompressionTiming.END_OF_TURN) {
+            pendingEndTurnPlan = null
+        }
+    }
 
     private suspend fun compress(
         context: AIAgentGraphContextBase,
@@ -162,15 +262,28 @@ class KoogContextOrchestrator(
     }
 
     private suspend fun collectTelemetry(context: AIAgentGraphContextBase): ContextTelemetry {
-        val messages = context.llm.readSession { prompt.messages }
-        val estimatedByHistory = tokenEstimator.estimate(messages)
         val latestModelUsage = context.llm.readSession { prompt.latestTokenUsage }
+        val usageKnown = latestModelUsage > 0
+        val estimatedPromptTokens = latestModelUsage.coerceAtLeast(0)
 
-        val estimatedPromptTokens = maxOf(estimatedByHistory, latestModelUsage)
+        if (config.requireModelTokenUsage && !usageKnown) {
+            val telemetry = budgetManager.telemetry(
+                estimatedPromptTokens = 0,
+                tokenUsageKnown = false,
+                compressionCount = compressionCount,
+                turnsSinceLastCompression = turnsSinceLastCompression(),
+                lastCompressionMode = lastCompressionMode,
+                continuityIntegrityScore = lastContinuityPacket?.integrityScore() ?: 0,
+            )
+            lastTelemetry = telemetry
+            return telemetry
+        }
+
         budgetManager.observe(estimatedPromptTokens)
 
         val telemetry = budgetManager.telemetry(
             estimatedPromptTokens = estimatedPromptTokens,
+            tokenUsageKnown = usageKnown,
             compressionCount = compressionCount,
             turnsSinceLastCompression = turnsSinceLastCompression(),
             lastCompressionMode = lastCompressionMode,
@@ -188,6 +301,7 @@ class KoogContextOrchestrator(
 
     private fun emptyTelemetry(): ContextTelemetry = budgetManager.telemetry(
         estimatedPromptTokens = 0,
+        tokenUsageKnown = false,
         compressionCount = 0,
         turnsSinceLastCompression = null,
         lastCompressionMode = null,

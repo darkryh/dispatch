@@ -75,6 +75,7 @@ private fun AIAgentGraphContextBase.setupAndStreamStoryMode(
         val agentContext = this@setupAndStreamStoryMode
         val runtimeOrchestrator = agentContext.resolveContextOrchestrator(contextOrchestrator)
         val request = turnInput.request
+        var previousToolCalls = 0
 
         fun publishSnapshot() {
             onContextSnapshot(runtimeOrchestrator.snapshot())
@@ -133,7 +134,6 @@ private fun AIAgentGraphContextBase.setupAndStreamStoryMode(
                 }
             }
 
-            var previousToolCalls = 0
             while (true) {
                 runtimeOrchestrator.beforeLlmCall(
                     context = agentContext,
@@ -231,6 +231,10 @@ private fun AIAgentGraphContextBase.setupAndStreamStoryMode(
                 if (decisionToolCall != null) break
             }
         } finally {
+            runtimeOrchestrator.endTurn(
+                context = agentContext,
+                hints = baseHints(turnInput, previousToolCalls),
+            )
             publishSnapshot()
             saveStoryCheckpointForHistory(
                 context = agentContext,

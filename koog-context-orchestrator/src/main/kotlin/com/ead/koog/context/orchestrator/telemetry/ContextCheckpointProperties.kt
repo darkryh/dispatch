@@ -14,6 +14,7 @@ import kotlinx.serialization.json.jsonPrimitive
 
 object ContextCheckpointProperties {
     const val USED_TOKENS_ESTIMATE = "koog.context.used_tokens_estimate"
+    const val TOKEN_USAGE_KNOWN = "koog.context.token_usage_known"
     const val MAX_TOKENS = "koog.context.max_tokens"
     const val USED_PERCENT = "koog.context.used_percent"
     const val REMAINING_TOKENS = "koog.context.remaining_tokens"
@@ -36,6 +37,7 @@ object ContextCheckpointProperties {
         val telemetry = snapshot.telemetry
 
         merged[USED_TOKENS_ESTIMATE] = JsonPrimitive(telemetry.estimatedPromptTokens)
+        merged[TOKEN_USAGE_KNOWN] = JsonPrimitive(telemetry.tokenUsageKnown)
         merged[MAX_TOKENS] = JsonPrimitive(telemetry.maxContextTokens)
         merged[USED_PERCENT] = JsonPrimitive(telemetry.usedPercent)
         merged[REMAINING_TOKENS] = JsonPrimitive(telemetry.remainingTokens)
