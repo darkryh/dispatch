@@ -104,7 +104,7 @@ class LlmAgentContextCompactorBackend(
                 resultVersion = job.sourceVersion,
                 mode = job.mode,
                 text = compacted,
-            ),
+            )
         )
     }
 
