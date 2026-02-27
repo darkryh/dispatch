@@ -12,6 +12,7 @@ import ai.koog.agents.core.dsl.builder.AIAgentSubgraphBuilderBase
  * similar to other Koog node helpers.
  */
 enum class ContextNodeStage {
+    APPLY_COMPACTED_CONTEXT,
     BEFORE_LLM,
     AFTER_LLM,
     BEFORE_TOOL_LOOP,
@@ -37,6 +38,7 @@ inline fun <reified T> AIAgentSubgraphBuilderBase<*, *>.nodeManageContext(
         val resolvedHints = hints(input)
 
         when (stage) {
+            ContextNodeStage.APPLY_COMPACTED_CONTEXT -> runtimeOrchestrator.applyLatestCompactedContext(this)
             ContextNodeStage.BEFORE_LLM -> runtimeOrchestrator.beforeLlmCall(this, resolvedHints)
             ContextNodeStage.AFTER_LLM -> runtimeOrchestrator.afterLlmCall(this)
             ContextNodeStage.BEFORE_TOOL_LOOP -> runtimeOrchestrator.beforeToolLoop(this, resolvedHints)
@@ -62,6 +64,21 @@ inline fun <reified T> AIAgentSubgraphBuilderBase<*, *>.nodeManageContextBeforeL
         name = name,
         configFactory = configFactory,
         hints = hints,
+    )
+
+@AIAgentBuilderDslMarker
+inline fun <reified T> AIAgentSubgraphBuilderBase<*, *>.nodeApplyCompactedContext(
+    orchestrator: KoogContextOrchestrator? = null,
+    name: String? = null,
+    noinline configFactory: (maxContextTokens: Int) -> ContextManagementConfig = { maxTokens ->
+        ContextManagementConfig(maxTokens)
+    },
+): AIAgentNodeDelegate<T, T> =
+    nodeManageContext(
+        orchestrator = orchestrator,
+        stage = ContextNodeStage.APPLY_COMPACTED_CONTEXT,
+        name = name,
+        configFactory = configFactory,
     )
 
 @AIAgentBuilderDslMarker
@@ -130,6 +147,7 @@ inline fun <reified T> AIAgentSubgraphBuilderBase<*, *>.nodeManageContextEndTurn
 
 @PublishedApi
 internal fun defaultNodeName(stage: ContextNodeStage): String = when (stage) {
+    ContextNodeStage.APPLY_COMPACTED_CONTEXT -> "context-apply-compacted"
     ContextNodeStage.BEFORE_LLM -> "context-before-llm"
     ContextNodeStage.AFTER_LLM -> "context-after-llm"
     ContextNodeStage.BEFORE_TOOL_LOOP -> "context-before-tool-loop"

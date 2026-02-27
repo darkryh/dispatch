@@ -113,16 +113,10 @@ class AdaptiveContextBudgetManager(
         hints: ContextHints,
     ): CompressionMode {
         if (requested != CompressionMode.FACT_FOCUSED) return requested
-        if (!config.enableFactFocusedCompression) {
-            return if (zone >= ContextRiskZone.CRITICAL) CompressionMode.AGGRESSIVE else CompressionMode.STRUCTURED
-        }
         if (hints.factConcepts.isEmpty()) {
             return if (zone >= ContextRiskZone.CRITICAL) CompressionMode.AGGRESSIVE else CompressionMode.STRUCTURED
         }
-        if (zone == ContextRiskZone.WARNING &&
-            config.requireUnresolvedCommitmentsForWarningFactFocused &&
-            hints.unresolvedCommitments <= 0
-        ) {
+        if (zone == ContextRiskZone.WARNING && hints.unresolvedCommitments <= 0) {
             return CompressionMode.STRUCTURED
         }
         return CompressionMode.FACT_FOCUSED
@@ -131,9 +125,9 @@ class AdaptiveContextBudgetManager(
     fun telemetry(
         estimatedPromptTokens: Int,
         tokenUsageKnown: Boolean,
-        compressionCount: Int,
-        turnsSinceLastCompression: Int?,
-        lastCompressionMode: CompressionMode?,
+        compactionCount: Int,
+        turnsSinceLastCompaction: Int?,
+        lastCompactionMode: CompressionMode?,
         continuityIntegrityScore: Int,
     ): ContextTelemetry {
         val safeEstimated = estimatedPromptTokens.coerceAtLeast(0)
@@ -150,9 +144,9 @@ class AdaptiveContextBudgetManager(
             remainingTokens = remainingTokens,
             remainingPercent = (remainingPercent * 100.0).roundToInt() / 100.0,
             riskZone = riskZone(usedPercent),
-            compressionCount = compressionCount,
-            turnsSinceLastCompression = turnsSinceLastCompression,
-            lastCompressionMode = lastCompressionMode,
+            compactionCount = compactionCount,
+            turnsSinceLastCompaction = turnsSinceLastCompaction,
+            lastCompactionMode = lastCompactionMode,
             growthTokensPerTurn = 0,
             continuityIntegrityScore = continuityIntegrityScore.coerceIn(0, 100),
         )

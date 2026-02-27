@@ -56,7 +56,7 @@ fun AIAgentSubgraphBuilderBase<*, *>.nodeSetupAndStreamChatMode(
             value = response,
             metadata = ContextualMetadata(
                 contextSnapshots = snapshots.asStateFlow(),
-            ),
+            )
         )
     }
 
@@ -77,7 +77,6 @@ private fun AIAgentGraphContextBase.setupAndStreamChatMode(
         val agentContext = this@setupAndStreamChatMode
         val runtimeOrchestrator = agentContext.resolveContextOrchestrator(contextOrchestrator)
         val request = turnInput.request
-        var previousToolCalls = 0
 
         fun publishSnapshot() {
             onContextSnapshot(runtimeOrchestrator.snapshot())
@@ -130,10 +129,6 @@ private fun AIAgentGraphContextBase.setupAndStreamChatMode(
             }
 
             while (true) {
-                runtimeOrchestrator.beforeLlmCall(
-                    context = agentContext,
-                    hints = baseHints(turnInput, previousToolCalls)
-                )
                 publishSnapshot()
 
                 val toolCalls = llm.writeSession {
@@ -175,17 +170,12 @@ private fun AIAgentGraphContextBase.setupAndStreamChatMode(
                     currentToolCalls
                 }
 
-                runtimeOrchestrator.afterLlmCall(agentContext)
                 publishSnapshot()
 
                 if (toolCalls.isEmpty()) break
                 val decisionToolCall = toolCalls.firstOrNull { isDecisionToolName(it.tool) }
                 val effectiveToolCalls = decisionToolCall?.let { listOf(it) } ?: toolCalls
 
-                runtimeOrchestrator.beforeToolLoop(
-                    context = agentContext,
-                    hints = baseHints(turnInput, effectiveToolCalls.size)
-                )
                 publishSnapshot()
 
                 agentContext.updateChatTurnMetrics { metrics ->
@@ -218,16 +208,10 @@ private fun AIAgentGraphContextBase.setupAndStreamChatMode(
                     }
                 }
 
-                previousToolCalls = effectiveToolCalls.size
-                runtimeOrchestrator.afterToolLoop(agentContext)
                 publishSnapshot()
                 if (decisionToolCall != null) break
             }
         } finally {
-            runtimeOrchestrator.endTurn(
-                context = agentContext,
-                hints = baseHints(turnInput, previousToolCalls),
-            )
             publishSnapshot()
             saveCheckpointForHistory(
                 context = agentContext,

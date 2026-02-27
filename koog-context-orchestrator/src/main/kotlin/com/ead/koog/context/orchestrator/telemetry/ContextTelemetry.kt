@@ -11,9 +11,9 @@ data class ContextTelemetry(
     val remainingTokens: Int,
     val remainingPercent: Double,
     val riskZone: ContextRiskZone,
-    val compressionCount: Int,
-    val turnsSinceLastCompression: Int?,
-    val lastCompressionMode: CompressionMode?,
+    val compactionCount: Int,
+    val turnsSinceLastCompaction: Int?,
+    val lastCompactionMode: CompressionMode?,
     val growthTokensPerTurn: Int,
     val continuityIntegrityScore: Int,
 )

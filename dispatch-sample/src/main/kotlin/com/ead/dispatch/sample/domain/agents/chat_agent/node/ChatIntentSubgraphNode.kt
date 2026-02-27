@@ -13,9 +13,18 @@ import ai.koog.prompt.streaming.StreamFrame
 import com.ead.dispatch.sample.data.repositories.StructuredIndexRepository
 import com.ead.dispatch.sample.domain.AIProvider
 import com.ead.dispatch.sample.domain.agents.chat_agent.ChatRequest
+import com.ead.dispatch.sample.domain.agents.chat_agent.SelectorPreferencesMemory
 import com.ead.dispatch.sample.domain.agents.chat_agent.policy.ChatTurnInput
+import com.ead.dispatch.sample.domain.agents.context.defaultContextOrchestratorConfig
 import com.ead.dispatch.sample.domain.embedding.RagContextService
+import com.ead.koog.context.orchestrator.api.ContextHints
 import com.ead.koog.context.orchestrator.api.ContextualResponse
+import com.ead.koog.context.orchestrator.api.TaskPhase
+import com.ead.koog.context.orchestrator.api.nodeManageContextAfterLlm
+import com.ead.koog.context.orchestrator.api.nodeApplyCompactedContext
+import com.ead.koog.context.orchestrator.api.nodeManageContextBeforeLlm
+import com.ead.koog.context.orchestrator.api.nodeManageContextEndTurn
+import com.ead.koog.context.orchestrator.state.ContinuityPacket
 import kotlinx.coroutines.flow.Flow
 
 @AIAgentBuilderDslMarker
@@ -57,10 +66,55 @@ fun AIAgentSubgraphBuilderBase<*, *>.subgraphSetupAndStreamChatMode(
         llmParams = llmParams,
         responseProcessor = responseProcessor
     ) {
+        val applyCompactedContext by nodeApplyCompactedContext<ChatTurnInput>(
+            configFactory = ::defaultContextOrchestratorConfig,
+        )
+
+        val contextBeforeLlm by nodeManageContextBeforeLlm<ChatTurnInput>(
+            configFactory = ::defaultContextOrchestratorConfig,
+            hints = { turnInput ->
+                ContextHints(
+                    phase = TaskPhase.EXECUTION,
+                    factConcepts = SelectorPreferencesMemory.userConcepts,
+                    continuityPacket = ContinuityPacket(
+                        objective = "Follow chat turn policy: ${turnInput.policy.decisionPath.name}/${turnInput.policy.resolvedAction.name}.",
+                        constraints = listOf(
+                            "write_tools_allowed=${turnInput.policy.allowWriteTools}",
+                            "require_selector_for_destructive=${turnInput.policy.requireSelectorForDestructive}",
+                            "require_selector_for_creative=${turnInput.policy.requireSelectorForCreative}",
+                            "confidence_band=${turnInput.policy.confidenceBand.name}",
+                            "risk_class=${turnInput.policy.riskClass.name}",
+                        ),
+                        criticalReferences = listOf("storyId=${turnInput.request.storyId}"),
+                    )
+                )
+            }
+        )
+
         val chatAgentModel by nodeSetupAndStreamChatMode(
             repository = repository,
             ragContextService = ragContextService
         )
-        edge(nodeStart forwardTo chatAgentModel)
-        edge(chatAgentModel forwardTo nodeFinish)
+
+        val contextAfterLlm by nodeManageContextAfterLlm<ContextualResponse<Flow<StreamFrame>>>(
+            configFactory = ::defaultContextOrchestratorConfig,
+        )
+
+        val contextEndTurn by nodeManageContextEndTurn<ContextualResponse<Flow<StreamFrame>>>(
+            configFactory = ::defaultContextOrchestratorConfig,
+            hints = { response ->
+                val snapshot = response.metadata.latestSnapshot
+                ContextHints(
+                    phase = TaskPhase.FINALIZATION,
+                    continuityPacket = snapshot?.continuityPacket,
+                )
+            }
+        )
+
+        edge(nodeStart forwardTo applyCompactedContext)
+        edge(applyCompactedContext forwardTo contextBeforeLlm)
+        edge(contextBeforeLlm forwardTo chatAgentModel)
+        edge(chatAgentModel forwardTo contextAfterLlm)
+        edge(contextAfterLlm forwardTo contextEndTurn)
+        edge(contextEndTurn forwardTo nodeFinish)
     }

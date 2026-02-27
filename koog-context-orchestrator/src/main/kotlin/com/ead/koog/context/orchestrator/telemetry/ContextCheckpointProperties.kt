@@ -20,12 +20,14 @@ object ContextCheckpointProperties {
     const val REMAINING_TOKENS = "koog.context.remaining_tokens"
     const val REMAINING_PERCENT = "koog.context.remaining_percent"
     const val RISK_ZONE = "koog.context.risk_zone"
-    const val COMPRESSION_COUNT = "koog.context.compression_count"
-    const val TURNS_SINCE_LAST_COMPRESSION = "koog.context.turns_since_last_compression"
-    const val LAST_COMPRESSION_MODE = "koog.context.last_compression_mode"
+    const val COMPACTION_COUNT = "koog.context.compaction_count"
+    const val TURNS_SINCE_LAST_COMPACTION = "koog.context.turns_since_last_compaction"
+    const val LAST_COMPACTION_MODE = "koog.context.last_compaction_mode"
     const val GROWTH_TOKENS_PER_TURN = "koog.context.growth_tokens_per_turn"
     const val CONTINUITY_INTEGRITY_SCORE = "koog.context.continuity_integrity_score"
     const val CONTINUITY_PACKET = "koog.context.continuity_packet"
+    const val APPLIED_ARTIFACT_ID = "koog.context.applied_artifact_id"
+    const val APPLIED_ARTIFACT_VERSION = "koog.context.applied_artifact_version"
 
     fun merge(
         existing: Map<String, JsonElement>?,
@@ -43,9 +45,13 @@ object ContextCheckpointProperties {
         merged[REMAINING_TOKENS] = JsonPrimitive(telemetry.remainingTokens)
         merged[REMAINING_PERCENT] = JsonPrimitive(telemetry.remainingPercent)
         merged[RISK_ZONE] = JsonPrimitive(telemetry.riskZone.name)
-        merged[COMPRESSION_COUNT] = JsonPrimitive(telemetry.compressionCount)
-        telemetry.turnsSinceLastCompression?.let { merged[TURNS_SINCE_LAST_COMPRESSION] = JsonPrimitive(it) }
-        telemetry.lastCompressionMode?.let { merged[LAST_COMPRESSION_MODE] = JsonPrimitive(it.name) }
+        merged[COMPACTION_COUNT] = JsonPrimitive(telemetry.compactionCount)
+        telemetry.turnsSinceLastCompaction?.let {
+            merged[TURNS_SINCE_LAST_COMPACTION] = JsonPrimitive(it)
+        }
+        telemetry.lastCompactionMode?.let {
+            merged[LAST_COMPACTION_MODE] = JsonPrimitive(it.name)
+        }
         merged[GROWTH_TOKENS_PER_TURN] = JsonPrimitive(telemetry.growthTokensPerTurn)
         merged[CONTINUITY_INTEGRITY_SCORE] = JsonPrimitive(telemetry.continuityIntegrityScore)
 
@@ -53,6 +59,8 @@ object ContextCheckpointProperties {
         if (continuityPacket != null && continuityPacket.isMeaningful()) {
             merged[CONTINUITY_PACKET] = continuityPacket.toJsonObject()
         }
+        snapshot.latestAppliedArtifactId?.let { merged[APPLIED_ARTIFACT_ID] = JsonPrimitive(it) }
+        snapshot.latestAppliedArtifactVersion?.let { merged[APPLIED_ARTIFACT_VERSION] = JsonPrimitive(it) }
 
         return merged
     }
