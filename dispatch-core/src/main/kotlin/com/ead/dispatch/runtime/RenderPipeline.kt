@@ -2,6 +2,7 @@ package com.ead.dispatch.runtime
 
 import com.ead.dispatch.constraints.Constraints
 import com.ead.dispatch.layout.Measurable
+import com.ead.dispatch.layout.RenderRegionPlaceable
 import com.ead.dispatch.render.RenderDiagnostics
 import com.ead.dispatch.render.TerminalRenderer
 import java.util.concurrent.locks.ReentrantLock
@@ -54,7 +55,14 @@ internal class RenderPipeline(
                     committedLineCount = scrollingContentTracker.committedLineCount,
                 )
 
-            val currentFrame = RenderFrameSnapshot(scrollingLines = scrollingLines, activeLines = activeLines)
+            val currentFrame =
+                RenderFrameSnapshot(
+                    scrollingLines = scrollingLines,
+                    activeLines = activeLines,
+                    hasExplicitRenderRegions = placeable is RenderRegionPlaceable,
+                    scrollingContentStartLine =
+                        (placeable as? RenderRegionPlaceable)?.scrollingStartLine ?: 0,
+                )
             val update =
                 if (forceRewrite || screenTransition) {
                     RenderDecision(
@@ -62,6 +70,7 @@ internal class RenderPipeline(
                         scrollUpdate = ScrollUpdate.rewrite(scrollingLines),
                         confidencePercent = 100,
                         reason = if (forceRewrite) "terminal_resize" else "screen_transition",
+                        clearScrollback = true,
                     )
                 } else {
                     classifyRenderDecision(
@@ -99,7 +108,7 @@ internal class RenderPipeline(
                         // entire committed history would push it through the viewport again when
                         // an overlay changes the active-area boundary (palette, selector, prompt).
                         val renderedScrollingLines =
-                            if (forceRewrite || screenTransition) {
+                            if (update.clearScrollback) {
                                 scrollingLines
                             } else {
                                 viewportScrollingLines(scrollingLines, activeLines, height)
@@ -107,7 +116,7 @@ internal class RenderPipeline(
                         renderer.rewriteViewport(
                             scrollingLines = renderedScrollingLines,
                             activeLines = activeLines,
-                            clearScrollback = forceRewrite || screenTransition,
+                            clearScrollback = update.clearScrollback,
                         )
                         scrollingContentTracker.sync(scrollingLines)
                         true
@@ -126,6 +135,7 @@ internal class RenderPipeline(
                         "reason" to update.reason,
                         "forceRewrite" to forceRewrite,
                         "screenTransition" to screenTransition,
+                        "clearScrollback" to update.clearScrollback,
                         "terminalWidth" to width,
                         "terminalHeight" to height,
                         "scrollingLines" to scrollingLines.size,
@@ -143,6 +153,8 @@ internal class RenderPipeline(
 internal data class RenderFrameSnapshot(
     val scrollingLines: List<String>,
     val activeLines: List<String>,
+    val hasExplicitRenderRegions: Boolean = false,
+    val scrollingContentStartLine: Int = 0,
 )
 
 internal enum class RenderKind {
@@ -157,6 +169,7 @@ internal data class RenderDecision(
     val scrollUpdate: ScrollUpdate,
     val confidencePercent: Int,
     val reason: String,
+    val clearScrollback: Boolean = false,
 )
 
 internal fun classifyRenderDecision(
@@ -171,6 +184,34 @@ internal fun classifyRenderDecision(
             confidencePercent = 100,
             reason = "unchanged_frame",
         )
+    }
+
+    if (previous != null && current.scrollingLines.size < previous.scrollingLines.size) {
+        return RenderDecision(
+            kind = RenderKind.FULL_REWRITE,
+            scrollUpdate = ScrollUpdate.rewrite(current.scrollingLines),
+            confidencePercent = 100,
+            reason = "scrolling_content_reset",
+            clearScrollback = true,
+        )
+    }
+
+    if (
+        previous != null &&
+        current.hasExplicitRenderRegions &&
+        current.scrollingLines.size > previous.scrollingLines.size &&
+        scrollUpdate.kind == ScrollUpdateKind.REWRITE
+    ) {
+        val previousBody = previous.scrollingLines.drop(previous.scrollingContentStartLine)
+        val currentBody = current.scrollingLines.drop(current.scrollingContentStartLine)
+        if (currentBody.take(previousBody.size) == previousBody) {
+            return RenderDecision(
+                kind = RenderKind.APPEND_ONLY,
+                scrollUpdate = ScrollUpdate.append(currentBody.drop(previousBody.size)),
+                confidencePercent = 95,
+                reason = "structural_scrolling_growth",
+            )
+        }
     }
 
     if (scrollUpdate.kind == ScrollUpdateKind.REWRITE) {

@@ -46,6 +46,8 @@ internal data class TerminalReliabilityReport(
                     "non_prefix_scrolling_change",
                     "active_to_scrolling_boundary_shift",
                     "screen_transition",
+                    "scrolling_content_reset",
+                    "structural_scrolling_growth",
                 )
             val unexpected = full.count { line -> expectedReasons.none { line.contains("\"reason\":\"$it\"") } }
             val heapValues = diagnostics.mapNotNull { HEAP_REGEX.find(it)?.groupValues?.get(1)?.toLongOrNull() }

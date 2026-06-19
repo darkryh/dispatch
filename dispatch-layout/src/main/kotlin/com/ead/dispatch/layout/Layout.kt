@@ -104,20 +104,32 @@ internal class LayoutMeasurable(
         val result = measurePolicy.measure(children(), constraints)
 
         // Render children to lines
-        val lines = renderChildren(result, constraints)
+        val rendered = renderChildren(result, constraints)
 
-        return SimplePlaceable(
-            width = result.width,
-            height = result.height,
-            lines = lines,
-        )
+        val activeStartLine = result.activeStartLine ?: rendered.propagatedActiveStartLine
+        val scrollingStartLine = result.scrollingStartLine ?: rendered.propagatedScrollingStartLine
+        return if (activeStartLine == null) {
+            SimplePlaceable(
+                width = result.width,
+                height = result.height,
+                lines = rendered.lines,
+            )
+        } else {
+            RenderRegionSimplePlaceable(
+                width = result.width,
+                height = result.height,
+                lines = rendered.lines,
+                scrollingStartLine = (scrollingStartLine ?: 0).coerceIn(0, activeStartLine),
+                activeStartLine = activeStartLine.coerceIn(0, rendered.lines.size),
+            )
+        }
     }
 
     @Suppress("CognitiveComplexMethod", "LoopWithTooManyJumpStatements")
     private fun renderChildren(
         result: MeasureResult,
         constraints: Constraints,
-    ): List<String> {
+    ): RenderedChildren {
         // Execute placement to get child positions
         val scope = SimplePlacementScope()
         result.placementBlock(scope)
@@ -130,7 +142,7 @@ internal class LayoutMeasurable(
         // A width of 0 can still represent vertical space (e.g. `Spacer(Modifier.height(n))`).
         // Return `height` blank lines so parents like LazyColumn can include that spacing.
         if (height == 0) {
-            return emptyList()
+            return RenderedChildren(emptyList(), null, null)
         }
 
         // Initialize a canvas of fixed visible width.
@@ -150,7 +162,27 @@ internal class LayoutMeasurable(
             }
         }
 
-        return canvas.map { it.buildLine() }
+        val propagatedActiveStartLine =
+            placements
+                .mapNotNull { (placeable, position) ->
+                    val region = placeable as? RenderRegionPlaceable ?: return@mapNotNull null
+                    position.second + region.activeStartLine
+                }
+                .minOrNull()
+                ?.coerceIn(0, height)
+        val propagatedScrollingStartLine =
+            placements
+                .mapNotNull { (placeable, position) ->
+                    val region = placeable as? RenderRegionPlaceable ?: return@mapNotNull null
+                    position.second + region.scrollingStartLine
+                }
+                .minOrNull()
+                ?.coerceIn(0, height)
+        return RenderedChildren(
+            lines = canvas.map { it.buildLine() },
+            propagatedActiveStartLine = propagatedActiveStartLine,
+            propagatedScrollingStartLine = propagatedScrollingStartLine,
+        )
     }
 
     private fun paintLine(
@@ -249,6 +281,12 @@ internal class LayoutMeasurable(
             return 0
         }
     }
+
+    private data class RenderedChildren(
+        val lines: List<String>,
+        val propagatedActiveStartLine: Int?,
+        val propagatedScrollingStartLine: Int?,
+    )
 }
 
 /**

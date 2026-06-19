@@ -66,6 +66,16 @@ interface SegmentedPlaceable : Placeable {
 }
 
 /**
+ * A placeable with an explicit boundary between native-scrolling content and the active viewport.
+ * Lines before [activeStartLine] may enter terminal scrollback; lines at and after it are updated
+ * in place. Layout containers preserve this boundary when wrapping a terminal screen.
+ */
+interface RenderRegionPlaceable : Placeable {
+    val scrollingStartLine: Int
+    val activeStartLine: Int
+}
+
+/**
  * Simple implementation of Placeable.
  */
 @Suppress("DataClassShouldBeImmutable")
@@ -94,6 +104,17 @@ data class SegmentedSimplePlaceable(
     override var y: Int = 0,
 ) : SegmentedPlaceable
 
+@Suppress("DataClassShouldBeImmutable")
+data class RenderRegionSimplePlaceable(
+    override val width: Int,
+    override val height: Int,
+    override val lines: List<String>,
+    override val scrollingStartLine: Int = 0,
+    override val activeStartLine: Int,
+    override var x: Int = 0,
+    override var y: Int = 0,
+) : RenderRegionPlaceable
+
 /**
  * Result of measuring a layout.
  */
@@ -107,6 +128,12 @@ data class MeasureResult(
      * The measured height.
      */
     val height: Int,
+
+    /** Explicit active-region boundary for terminal-screen layouts. */
+    val activeStartLine: Int? = null,
+
+    /** First line of flowing content, after any mutable screen header. */
+    val scrollingStartLine: Int? = null,
 
     /**
      * Function to perform layout and placement.

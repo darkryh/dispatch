@@ -4,6 +4,7 @@ import androidx.compose.runtime.*
 import com.ead.dispatch.constraints.Constraints
 import com.ead.dispatch.layout.*
 import com.ead.dispatch.modifier.Modifier
+import com.ead.dispatch.render.RenderDiagnostics
 import com.ead.dispatch.render.TerminalRenderer
 import com.ead.dispatch.theme.DispatchTheme
 import com.ead.dispatch.viewmodel.ViewModelStore
@@ -354,6 +355,12 @@ internal class DispatchRuntimeEngine(
         }
 
         val consumed = keyboardInterceptor.tryIntercept(event)
+        if (event.key.length > 1) {
+            RenderDiagnostics.record(
+                event = "keyboard_event",
+                fields = mapOf("key" to event.key, "consumed" to consumed),
+            )
+        }
         if (!consumed) {
             keyEventHandler?.invoke(event)
         }
@@ -519,6 +526,8 @@ private class CompositionRootMeasurable(
         val lines = mutableListOf<String>()
         var width = constraints.minWidth
         var remainingHeight = constraints.maxHeight
+        var activeStartLine: Int? = null
+        var scrollingStartLine: Int? = null
         for (child in root.children) {
             if (remainingHeight == 0) break
             val childConstraints = Constraints(
@@ -528,6 +537,10 @@ private class CompositionRootMeasurable(
                 maxHeight = remainingHeight,
             )
             val placeable = child.measure(childConstraints)
+            if (activeStartLine == null && placeable is RenderRegionPlaceable) {
+                activeStartLine = lines.size + placeable.activeStartLine
+                scrollingStartLine = lines.size + placeable.scrollingStartLine
+            }
             lines += placeable.lines
             width = maxOf(width, placeable.width)
             if (remainingHeight != Int.MAX_VALUE) {
@@ -535,10 +548,19 @@ private class CompositionRootMeasurable(
             }
         }
         val height = constraints.constrainHeight(lines.size)
-        return SimplePlaceable(
+        val renderedLines = lines.take(height)
+        return activeStartLine?.let { boundary ->
+            RenderRegionSimplePlaceable(
+                width = constraints.constrainWidth(width),
+                height = height,
+                lines = renderedLines,
+                scrollingStartLine = (scrollingStartLine ?: 0).coerceIn(0, boundary),
+                activeStartLine = boundary.coerceIn(0, renderedLines.size),
+            )
+        } ?: SimplePlaceable(
             width = constraints.constrainWidth(width),
             height = height,
-            lines = lines.take(height),
+            lines = renderedLines,
         )
     }
 }
@@ -560,6 +582,12 @@ internal fun splitContentForRendering(
 ): Pair<List<String>, List<String>> {
     val allLines = placeable.lines
     if (allLines.isEmpty() || activeAreaHeight <= 0) return allLines to emptyList()
+
+    if (placeable is RenderRegionPlaceable) {
+        val boundary = placeable.activeStartLine.coerceIn(0, allLines.size)
+        val activeStartLine = maxOf(boundary, allLines.size - activeAreaHeight)
+        return allLines.take(boundary) to allLines.drop(activeStartLine)
+    }
 
     if (placeable is SegmentedPlaceable && isValidSegmentHeights(placeable.segmentHeights, allLines.size)) {
         return splitSegmentedContent(

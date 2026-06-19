@@ -53,7 +53,7 @@ fun ChatScreen(viewModel: ChatViewModel = viewModel()) {
     DisposableEffect(keyboardInterceptor, isStreaming) {
         val dispose =
             keyboardInterceptor.register(priority = 100) { event ->
-                if (isStreaming && (event.key == "Escape" || event.key == "Esc")) {
+                if (event.key == "Escape" || event.key == "Esc") {
                     viewModel.cancel()
                     true
                 } else {

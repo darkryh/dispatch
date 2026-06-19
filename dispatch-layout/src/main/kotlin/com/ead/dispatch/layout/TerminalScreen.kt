@@ -1,6 +1,7 @@
 package com.ead.dispatch.layout
 
 import androidx.compose.runtime.Composable
+import com.ead.dispatch.constraints.Constraints
 import com.ead.dispatch.modifier.Modifier
 import com.ead.dispatch.modifier.fillMaxSize
 import com.ead.dispatch.modifier.fillMaxWidth
@@ -19,12 +20,73 @@ fun TerminalScreen(
     footer: (@Composable () -> Unit)? = null,
     content: @Composable ColumnScope.() -> Unit,
 ) {
-    Column(modifier = modifier) {
-        header?.invoke()
+    Layout(
+        modifier = modifier,
+        measurePolicy = TerminalScreenMeasurePolicy,
+    ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
+            header?.invoke()
+        }
         Column(
             modifier = Modifier.fillMaxWidth().weight(1f),
             content = content,
         )
-        footer?.invoke()
+        Column(modifier = Modifier.fillMaxWidth()) {
+            footer?.invoke()
+        }
+    }
+}
+
+private object TerminalScreenMeasurePolicy : MeasurePolicy {
+    override fun measure(
+        measurables: List<Measurable>,
+        constraints: Constraints,
+    ): MeasureResult {
+        val header = measurables.getOrNull(0)
+        val body = measurables.getOrNull(1)
+        val footer = measurables.getOrNull(2)
+        val childConstraints =
+            Constraints(
+                minWidth = 0,
+                maxWidth = constraints.maxWidth,
+                minHeight = 0,
+                maxHeight = constraints.maxHeight,
+            )
+        val footerPlaceable = footer?.measure(childConstraints)
+        val headerPlaceable = header?.measure(childConstraints)
+        val mainMaxHeight =
+            if (constraints.hasBoundedHeight) {
+                (constraints.maxHeight - (footerPlaceable?.height ?: 0) - (headerPlaceable?.height ?: 0)).coerceAtLeast(0)
+            } else {
+                constraints.maxHeight
+            }
+        val bodyPlaceable =
+            body?.measure(
+                Constraints(
+                    minWidth = 0,
+                    maxWidth = constraints.maxWidth,
+                    minHeight = 0,
+                    maxHeight = mainMaxHeight,
+                ),
+            )
+        val headerHeight = headerPlaceable?.height ?: 0
+        val bodyHeight = bodyPlaceable?.height ?: 0
+        val mainHeight = headerHeight + bodyHeight
+        val footerHeight = footerPlaceable?.height ?: 0
+        val totalHeight = constraints.constrainHeight(mainHeight + footerHeight)
+        val width = constraints.constrainWidth(
+            maxOf(headerPlaceable?.width ?: 0, bodyPlaceable?.width ?: 0, footerPlaceable?.width ?: 0),
+        )
+
+        return MeasureResult(
+            width = width,
+            height = totalHeight,
+            activeStartLine = mainHeight.coerceAtMost(totalHeight),
+            scrollingStartLine = headerHeight.coerceAtMost(totalHeight),
+        ) {
+            headerPlaceable?.placeAt(0, 0)
+            bodyPlaceable?.placeAt(0, headerHeight)
+            footerPlaceable?.placeAt(0, mainHeight)
+        }
     }
 }

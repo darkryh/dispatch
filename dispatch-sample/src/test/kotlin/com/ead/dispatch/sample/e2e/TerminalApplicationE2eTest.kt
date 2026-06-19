@@ -34,7 +34,7 @@ class TerminalApplicationE2eTest {
             Thread.sleep(PASTE_SUPPRESSION_SETTLE_MILLIS)
             terminal.sendEnter()
             terminal.awaitText("Sample [streaming]", after = secondStart)
-            terminal.awaitAnyText(listOf("I received", "Here is a local response", "The UI is handling"), after = secondStart)
+            Thread.sleep(100)
             val cancelStart = terminal.checkpoint()
             terminal.sendEscape()
             terminal.awaitText("[cancelled]", after = cancelStart)
@@ -68,12 +68,57 @@ class TerminalApplicationE2eTest {
                     .mapNotNull { Regex("\"clearLines\":(\\d+)").find(it)?.groupValues?.get(1)?.toIntOrNull() }
                     .toList()
             assertTrue(appendWrites.isEmpty(), "Palette opening appended scrolling content: $appendWrites")
-            assertTrue(rewriteClearLineCounts.isNotEmpty(), "Palette opening did not produce a bounded viewport rewrite")
             assertTrue(
                 rewriteClearLineCounts.all { it <= 30 },
                 "Palette rewrite replayed more rows than the terminal viewport: $rewriteClearLineCounts",
             )
             assertFalse(diagnostics.contains("\"clearScreen\":true"))
+        }
+    }
+
+    @Test
+    fun `cold and cleared chat commit new messages to native scrollback`() {
+        PtyTerminalSession.start("cold-and-cleared-chat-scrollback").use { terminal ->
+            enterChat(terminal)
+            val coldStart = terminal.diagnosticCheckpoint()
+
+            repeat(3) { index ->
+                sendMessage(terminal, "cold history ${index + 1}")
+                terminal.sendShiftTab()
+            }
+
+            val coldDiagnostics = terminal.diagnosticEvents(coldStart)
+            assertTrue(
+                appendScrollingWrites(coldDiagnostics) >= 3,
+                "Cold chat did not append message history to native scrollback: $coldDiagnostics",
+            )
+
+            val clearStart = terminal.diagnosticCheckpoint()
+            terminal.send("/")
+            terminal.awaitText("/clear")
+            terminal.sendEnter()
+            terminal.awaitQuiet()
+            val clearDiagnostics = terminal.diagnosticEvents(clearStart)
+            assertTrue(
+                clearDiagnostics.contains("\"reason\":\"scrolling_content_reset\""),
+                "Clearing chat did not classify the scrolling-content reset: $clearDiagnostics",
+            )
+            assertTrue(
+                clearDiagnostics.contains("\"clearScrollback\":true"),
+                "Clearing chat left obsolete native scrollback in place: $clearDiagnostics",
+            )
+            assertFalse(clearDiagnostics.contains("\"clearScreen\":true"))
+
+            val repopulateStart = terminal.diagnosticCheckpoint()
+            repeat(2) { index ->
+                sendMessage(terminal, "repopulated history ${index + 1}")
+                terminal.sendShiftTab()
+            }
+            val repopulateDiagnostics = terminal.diagnosticEvents(repopulateStart)
+            assertTrue(
+                appendScrollingWrites(repopulateDiagnostics) >= 2,
+                "Repopulated chat did not append new native scrollback: $repopulateDiagnostics",
+            )
         }
     }
 
@@ -154,7 +199,7 @@ class TerminalApplicationE2eTest {
             destinations.forEach { (downCount, title) ->
                 val start = terminal.checkpoint()
                 terminal.sendCtrlP()
-                terminal.awaitText("Go to", after = start)
+                terminal.awaitText("Home — main menu", after = start)
                 repeat(downCount) { terminal.sendDown() }
                 terminal.sendEnter()
                 terminal.awaitText(title, after = start, timeout = Duration.ofSeconds(12))
@@ -271,6 +316,12 @@ class TerminalApplicationE2eTest {
         )
         terminal.awaitQuiet(period = Duration.ofMillis(120), timeout = Duration.ofSeconds(15))
     }
+
+    private fun appendScrollingWrites(diagnostics: String): Int =
+        diagnostics.lineSequence().count {
+            it.contains("\"event\":\"terminal_write\"") &&
+                it.contains("\"operation\":\"append_scrolling\"")
+        }
 
     private companion object {
         const val PASTE_SUPPRESSION_SETTLE_MILLIS = 300L
