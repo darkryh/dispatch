@@ -4,9 +4,11 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.launch
@@ -30,7 +32,7 @@ import java.security.MessageDigest
 import java.util.EnumSet
 
 interface WorkspaceWatcher {
-    val events: Flow<WorkspaceEvent>
+    val events: SharedFlow<WorkspaceEvent>
     fun start()
     fun stop()
 }
@@ -38,25 +40,35 @@ interface WorkspaceWatcher {
 class DefaultWorkspaceWatcher(
     private val config: WorkspaceWatchConfig,
     private val clock: () -> Long = System::currentTimeMillis,
-) : WorkspaceWatcher {
-    private val scope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-    private val channel = Channel<WorkspaceEvent>(config.maxEventBatchSize)
+) : WorkspaceWatcher, AutoCloseable {
+    private var scope: CoroutineScope = newScope()
     private val root = config.root.toAbsolutePath().normalize()
     private val includeMatchers = buildMatchers(config.includeGlobs)
     private val excludeMatchers = buildMatchers(config.excludeGlobs)
-    private val digest = MessageDigest.getInstance(config.hashAlgorithm)
+
+    // A SharedFlow lets multiple composables observe the same event stream without
+    // stealing events from one another (a single-consumer Channel would).
+    private val eventFlow = MutableSharedFlow<WorkspaceEvent>(
+        replay = config.maxEventBatchSize,
+        extraBufferCapacity = config.maxEventBatchSize,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST,
+    )
 
     private var job: Job? = null
     private var watchService: WatchService? = null
     private val keys = mutableMapOf<WatchKey, Path>()
     private var lastEmissionAt = 0L
 
-    override val events: Flow<WorkspaceEvent> = channel.receiveAsFlow()
+    override val events: SharedFlow<WorkspaceEvent> = eventFlow.asSharedFlow()
 
     override fun start() {
         if (job?.isActive == true) return
         require(Files.exists(root)) { "Workspace root does not exist: $root" }
         require(Files.isDirectory(root)) { "Workspace root is not a directory: $root" }
+
+        if (!scope.isActive) {
+            scope = newScope()
+        }
 
         watchService = FileSystems.getDefault().newWatchService()
         keys.clear()
@@ -71,7 +83,18 @@ class DefaultWorkspaceWatcher(
         keys.clear()
         watchService?.close()
         watchService = null
+        scope.cancel()
     }
+
+    override fun close() {
+        stop()
+    }
+
+    internal fun isScopeActiveForTest(): Boolean = scope.isActive
+
+    internal fun isWatchServiceOpenForTest(): Boolean = watchService != null
+
+    private fun newScope(): CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     private fun registerRoot() {
         if (config.recursive) {
@@ -185,7 +208,7 @@ class DefaultWorkspaceWatcher(
             }
         }
         lastEmissionAt = clock()
-        channel.trySend(WorkspaceEvent(path, type, lastEmissionAt, hash))
+        eventFlow.emit(WorkspaceEvent(path, type, lastEmissionAt, hash))
     }
 
     private fun shouldEmit(path: Path): Boolean {
@@ -196,21 +219,24 @@ class DefaultWorkspaceWatcher(
         return includeMatchers.any { it.matches(relative) }
     }
 
-    private fun hashFile(path: Path): String? {
+    internal fun hashFile(path: Path): String? {
         if (!Files.exists(path)) return null
         if (Files.isDirectory(path)) return null
         return try {
-            digest.reset()
+            // MessageDigest is not thread-safe; create a fresh instance per call so concurrent
+            // hashing from the watcher coroutine cannot corrupt shared digest state.
+            val digest = MessageDigest.getInstance(config.hashAlgorithm)
             Files.newInputStream(path).use { input ->
-                updateDigest(input)
+                updateDigest(digest, input)
             }
             digest.digest().joinToString("") { byte -> "%02x".format(byte) }
-        } catch (_: Exception) {
+        } catch (exception: Exception) {
+            WorkspaceLog.debug("hashFile failed for $path", exception)
             null
         }
     }
 
-    private fun updateDigest(input: InputStream) {
+    private fun updateDigest(digest: MessageDigest, input: InputStream) {
         val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
         var read = input.read(buffer)
         while (read >= 0) {

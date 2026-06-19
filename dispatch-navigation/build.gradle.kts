@@ -8,4 +8,6 @@ dependencies {
     api(projects.dispatchLayout)
     api(projects.dispatchViewmodel)
     api(projects.dispatchLifecycle)
+
+    testImplementation(projects.dispatchWidgets)
 }

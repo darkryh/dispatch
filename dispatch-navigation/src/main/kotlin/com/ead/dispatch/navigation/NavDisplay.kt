@@ -1,6 +1,8 @@
 package com.ead.dispatch.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.key
 import com.ead.dispatch.layout.Box
 import com.ead.dispatch.lifecycle.LifecycleState
@@ -28,13 +30,25 @@ fun <T : NavKey> NavDisplay(
     require(backStack.isNotEmpty()) { "NavDisplay backstack cannot be empty" }
 
     val localDecorator = rememberNavEntryLocalsDecorator<T>()
+    val decorators =
+        remember(localDecorator, entryDecorators) { listOf(localDecorator) + entryDecorators }
+    val store = rememberNavEntryStateStore<T>()
+
+    // Install a deterministic disposal hook so popped entries clear their
+    // ViewModel scopes immediately, not only when the diff next recomposes.
+    DisposableEffect(backStack, store) {
+        backStack.onEntriesRemoved = { remaining -> store.disposeRemoved(remaining) }
+        onDispose { backStack.onEntriesRemoved = null }
+    }
+
     val decoratedEntries =
         rememberDecoratedNavEntries(
             backStack = backStack,
-            entryDecorators = listOf(localDecorator) + entryDecorators,
+            entryDecorators = decorators,
             entryProvider = entryProvider,
             viewModelFactory = viewModelFactory,
             json = json,
+            store = store,
         )
 
     val currentEntry = decoratedEntries.lastOrNull() ?: return
@@ -52,18 +66,22 @@ fun <T : NavKey> NavDisplay(
             }
         }
 
-    // Update lifecycle states: current is STARTED, others STOPPED.
-    decoratedEntries.forEach { entry ->
-        val desired =
-            if (entry === currentEntry) {
-                LifecycleState.STARTED
-            } else {
-                LifecycleState.STOPPED
+    // Update lifecycle states: current is STARTED, others STOPPED. Run as a
+    // SideEffect so transitions fire once after a successful (re)composition
+    // rather than as a raw side effect in the composable body every frame.
+    SideEffect {
+        decoratedEntries.forEach { entry ->
+            val desired =
+                if (entry === currentEntry) {
+                    LifecycleState.STARTED
+                } else {
+                    LifecycleState.STOPPED
+                }
+            if (entry.lifecycleRegistry.currentState != desired &&
+                entry.lifecycleRegistry.currentState != LifecycleState.DESTROYED
+            ) {
+                entry.lifecycleRegistry.moveTo(desired)
             }
-        if (entry.lifecycleRegistry.currentState != desired &&
-            entry.lifecycleRegistry.currentState != LifecycleState.DESTROYED
-        ) {
-            entry.lifecycleRegistry.moveTo(desired)
         }
     }
 

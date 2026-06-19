@@ -20,11 +20,15 @@ fun LazyColumn(
     stickToEnd: Boolean = false,
     content: @Composable LazyListScope.() -> Unit,
 ) {
+    // The scope must be rebuilt each composition (the `content` closure captures fresh
+    // values), but this only collects keys + content providers — composition of an item's
+    // body is deferred until it is selected into the visible window below.
     val scope = LazyListScopeImpl()
     scope.content()
+    val entries = scope.entries
     val cache = remember { LazyItemHeightCache() }
     val viewportHeight = LocalTerminalHeight.current.coerceAtLeast(1)
-    val window = cache.window(scope.items, state.offset, viewportHeight, stickToEnd)
+    val window = cache.window(entries, state.offset, viewportHeight, stickToEnd)
 
     composableContainer(
         name = "LazyColumn",
@@ -33,7 +37,7 @@ fun LazyColumn(
             LazyColumnMeasurable(
                 modifier = modifier,
                 children = children,
-                visibleItems = window.items,
+                visibleKeys = window.keys,
                 startLine = window.startLine,
                 totalEstimatedHeight = window.totalEstimatedHeight,
                 state = state,
@@ -42,9 +46,11 @@ fun LazyColumn(
             )
         },
     ) {
-        window.items.forEach { item ->
-            key(item.key) {
-                Column { item.content() }
+        // Only the windowed entries have their @Composable content materialized.
+        for (index in window.startIndex until window.endExclusive) {
+            val entry = entries[index]
+            key(entry.key) {
+                Column { entry.content() }
             }
         }
     }
@@ -63,21 +69,24 @@ interface LazyListScope {
     )
 }
 
-private data class LazyItem(
+private class LazyEntry(
     val key: Any,
     val content: @Composable () -> Unit,
 )
 
 private class LazyListScopeImpl : LazyListScope {
-    val items = mutableListOf<LazyItem>()
+    val entries = mutableListOf<LazyEntry>()
+    private val seenKeys = HashSet<Any>()
 
     override fun item(
         key: Any?,
         content: @Composable () -> Unit,
     ) {
-        val resolvedKey = key ?: "item-${items.size}"
-        require(items.none { it.key == resolvedKey }) { "Duplicate lazy item key: $resolvedKey" }
-        items += LazyItem(resolvedKey, content)
+        val resolvedKey = key ?: "item-${entries.size}"
+        // O(1) membership check instead of an O(n) scan per item (which made adding all
+        // items O(n^2) on every recomposition).
+        require(seenKeys.add(resolvedKey)) { "Duplicate lazy item key: $resolvedKey" }
+        entries += LazyEntry(resolvedKey, content)
     }
 
     override fun <T> items(
@@ -86,28 +95,48 @@ private class LazyListScopeImpl : LazyListScope {
         itemContent: @Composable (T) -> Unit,
     ) {
         list.forEachIndexed { index, value ->
-            item(key?.invoke(value) ?: "item-${items.size}-$index") { itemContent(value) }
+            item(key?.invoke(value) ?: "item-${entries.size}-$index") { itemContent(value) }
         }
     }
 }
 
-private data class LazyWindow(
-    val items: List<LazyItem>,
+private class LazyWindow(
+    val keys: List<Any>,
+    val startIndex: Int,
+    val endExclusive: Int,
     val startLine: Int,
     val totalEstimatedHeight: Int,
 )
+
+/** Test-only hooks for inspecting [LazyColumn] internals. */
+internal object LazyColumnTestHooks {
+    @Volatile
+    var lastHeightCacheSize: Int = 0
+        private set
+
+    fun recordHeightCacheSize(size: Int) {
+        lastHeightCacheSize = size
+    }
+}
 
 private class LazyItemHeightCache {
     private val heights = mutableMapOf<Any, Int>()
 
     fun window(
-        items: List<LazyItem>,
+        entries: List<LazyEntry>,
         offset: Int,
         viewportHeight: Int,
         stickToEnd: Boolean,
     ): LazyWindow {
-        if (items.isEmpty()) return LazyWindow(emptyList(), 0, 0)
-        val totalHeight = items.sumOf { heightOf(it.key) }
+        // Prune stale heights for keys no longer present (otherwise the map only grows).
+        if (heights.size > entries.size) {
+            val currentKeys = HashSet<Any>(entries.size)
+            entries.forEach { currentKeys.add(it.key) }
+            heights.keys.retainAll(currentKeys)
+        }
+        LazyColumnTestHooks.recordHeightCacheSize(heights.size)
+        if (entries.isEmpty()) return LazyWindow(emptyList(), 0, 0, 0, 0)
+        val totalHeight = entries.sumOf { heightOf(it.key) }
         val resolvedOffset =
             if (stickToEnd) {
                 (totalHeight - viewportHeight).coerceAtLeast(0)
@@ -118,23 +147,25 @@ private class LazyItemHeightCache {
         val windowStart = (resolvedOffset - overscan).coerceAtLeast(0)
         val windowEnd = resolvedOffset + viewportHeight + overscan
         var line = 0
-        var first = items.size
+        var first = entries.size
         var lastExclusive = 0
         var startLine = 0
-        items.forEachIndexed { index, item ->
-            val height = heightOf(item.key)
+        entries.forEachIndexed { index, entry ->
+            val height = heightOf(entry.key)
             val itemEnd = line + height
-            if (first == items.size && itemEnd > windowStart) {
+            if (first == entries.size && itemEnd > windowStart) {
                 first = index
                 startLine = line
             }
             if (line < windowEnd) lastExclusive = index + 1
             line = itemEnd
         }
-        val resolvedFirst = if (first == items.size) items.lastIndex else first
-        val resolvedEnd = lastExclusive.coerceAtLeast(resolvedFirst + 1).coerceAtMost(items.size)
+        val resolvedFirst = if (first == entries.size) entries.lastIndex else first
+        val resolvedEnd = lastExclusive.coerceAtLeast(resolvedFirst + 1).coerceAtMost(entries.size)
         return LazyWindow(
-            items = items.subList(resolvedFirst, resolvedEnd),
+            keys = entries.subList(resolvedFirst, resolvedEnd).map { it.key },
+            startIndex = resolvedFirst,
+            endExclusive = resolvedEnd,
             startLine = startLine,
             totalEstimatedHeight = totalHeight,
         )
@@ -153,7 +184,7 @@ private class LazyItemHeightCache {
 private class LazyColumnMeasurable(
     override val modifier: Modifier,
     private val children: List<Measurable>,
-    private val visibleItems: List<LazyItem>,
+    private val visibleKeys: List<Any>,
     private val startLine: Int,
     private val totalEstimatedHeight: Int,
     private val state: ScrollState,
@@ -167,7 +198,7 @@ private class LazyColumnMeasurable(
             children.map { child ->
                 child.measure(Constraints(maxWidth = width, maxHeight = Int.MAX_VALUE))
             }
-        visibleItems.zip(placeables).forEach { (item, placeable) -> cache.update(item.key, placeable.height) }
+        visibleKeys.zip(placeables).forEach { (key, placeable) -> cache.update(key, placeable.height) }
         val rendered = placeables.flatMap { it.lines }
         state.contentHeight = totalEstimatedHeight
         state.viewportHeight = if (viewportHeight == Int.MAX_VALUE) rendered.size else viewportHeight

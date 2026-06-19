@@ -6,15 +6,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import com.ead.dispatch.layout.Column
-import com.ead.dispatch.layout.Spacer
-import com.ead.dispatch.layout.TerminalScreen
 import com.ead.dispatch.modifier.Modifier
 import com.ead.dispatch.modifier.fillMaxWidth
-import com.ead.dispatch.modifier.height
-import com.ead.dispatch.navigation.LocalNavigator
-import com.ead.dispatch.runtime.LocalTheme
 import com.ead.dispatch.sample.navigation.ComponentSections
 import com.ead.dispatch.sample.navigation.ComponentsRoute
+import com.ead.dispatch.sample.presentation.common.SampleScaffold
 import com.ead.dispatch.viewmodel.viewModel
 import com.ead.dispatch.widget.Button
 import com.ead.dispatch.widget.ButtonStyle
@@ -22,7 +18,6 @@ import com.ead.dispatch.widget.CycleButton
 import com.ead.dispatch.widget.IconButton
 import com.ead.dispatch.widget.InputTextField
 import com.ead.dispatch.widget.KeyHint
-import com.ead.dispatch.widget.KeyHintBar
 import com.ead.dispatch.widget.PasswordField
 import com.ead.dispatch.widget.RadioButton
 import com.ead.dispatch.widget.SectionHeader
@@ -102,24 +97,14 @@ internal fun GalleryScreen(
     subtitle: String,
     content: @Composable () -> Unit,
 ) {
-    val navigator = LocalNavigator.current
-    val theme = LocalTheme.current
-    TerminalScreen(
-        header = {
-            Text("$title widget gallery", style = theme.primary)
-            Text(subtitle, style = theme.muted)
-            Spacer(Modifier.height(1))
-        },
-        footer = {
-            Button("Back to catalogue", onClick = { navigator.popBackStack() })
-            KeyHintBar(
-                listOf(
-                    KeyHint("Tab", "next focus"),
-                    KeyHint("Shift+Q", "previous focus"),
-                    KeyHint("Enter/Space", "activate"),
-                ),
-            )
-        },
+    SampleScaffold(
+        title = "$title widget gallery",
+        subtitle = subtitle,
+        hints =
+            listOf(
+                KeyHint("Tab", "next field"),
+                KeyHint("Enter/Space", "activate"),
+            ),
     ) {
         Column(modifier = Modifier.fillMaxWidth()) { content() }
     }

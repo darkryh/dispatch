@@ -109,8 +109,27 @@ internal class CombinedModifier(
     override fun any(predicate: (Modifier.Element) -> Boolean): Boolean =
         outer.any(predicate) || inner.any(predicate)
 
-    override fun <T : Modifier.Element> allOf(type: Class<T>): List<T> =
-        outer.allOf(type) + inner.allOf(type)
+    @Suppress("UNCHECKED_CAST")
+    override fun <T : Modifier.Element> allOf(type: Class<T>): List<T> {
+        // Accumulate into a single list via foldIn instead of building an intermediate list per
+        // chain level (the previous `outer.allOf + inner.allOf` allocated O(depth) lists per call).
+        val result = mutableListOf<T>()
+        foldIn(Unit) { _, element ->
+            if (type.isInstance(element)) result.add(element as T)
+        }
+        return result
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    override fun <T : Modifier.Element> firstOrNull(type: Class<T>): T? {
+        // Fast path for the common single-match lookup: stop at the first matching element
+        // without materializing a list (used per child per frame by layout/focus code).
+        var found: T? = null
+        foldIn(Unit) { _, element ->
+            if (found == null && type.isInstance(element)) found = element as T
+        }
+        return found
+    }
 
     override fun then(other: Modifier): Modifier =
         if (other === Modifier) this else CombinedModifier(this, other)

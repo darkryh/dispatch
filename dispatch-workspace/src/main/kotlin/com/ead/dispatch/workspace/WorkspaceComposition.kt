@@ -9,7 +9,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.LaunchedEffect
-import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.collect
 
 val LocalWorkspaceWatcher = compositionLocalOf<WorkspaceWatcher?> { null }
@@ -50,7 +50,7 @@ fun rememberWorkspaceWatcher(config: WorkspaceWatchConfig): WorkspaceWatcher {
 }
 
 @Composable
-fun rememberWorkspaceEvents(config: WorkspaceWatchConfig): Flow<WorkspaceEvent> {
+fun rememberWorkspaceEvents(config: WorkspaceWatchConfig): SharedFlow<WorkspaceEvent> {
     return rememberWorkspaceWatcher(config).events
 }
 

@@ -13,6 +13,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
@@ -38,6 +39,8 @@ class DispatchComposition(
                 contentInstalled = true
                 composition.setContent { contentState.value?.invoke() }
             }
+            // Pump until the recomposer drains. A single round may leave follow-up invalidations
+            // (e.g. nested state writes during composition) pending; the second guards against them.
             Snapshot.sendApplyNotifications()
             recomposer.awaitIdle()
             Snapshot.sendApplyNotifications()
@@ -46,14 +49,16 @@ class DispatchComposition(
     }
 
     fun awaitIdle() {
-        Snapshot.sendApplyNotifications()
-        runBlocking(dispatcher) { recomposer.awaitIdle() }
+        runBlocking(dispatcher) {
+            Snapshot.sendApplyNotifications()
+            recomposer.awaitIdle()
+        }
     }
 
     override fun close() {
         composition.dispose()
         recomposer.close()
-        recomposerJob.cancel()
+        runBlocking(dispatcher) { recomposerJob.cancelAndJoin() }
         scope.cancel()
     }
 }

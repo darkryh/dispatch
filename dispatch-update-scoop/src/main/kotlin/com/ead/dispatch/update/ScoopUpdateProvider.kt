@@ -27,12 +27,16 @@ class ScoopUpdateProvider(
             if (trimmed.startsWith("---")) continue
             if (trimmed.contains("Installed Version", ignoreCase = true)) continue
 
-            val parts = trimmed.split(Regex("\\s+")).filter { it.isNotBlank() }
+            val parts = trimmed.split(WHITESPACE).filter { it.isNotBlank() }
             if (parts.size < 3) continue
             if (!parts[0].equals(app, ignoreCase = true)) continue
             return parts[2]
         }
 
         return null
+    }
+
+    private companion object {
+        private val WHITESPACE = Regex("\\s+")
     }
 }

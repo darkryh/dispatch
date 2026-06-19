@@ -51,7 +51,10 @@ internal class LayoutMeasurable(
         val width: Int,
     ) {
         private val chars: CharArray = CharArray(width) { ' ' }
-        private val inserts: Array<StringBuilder?> = arrayOfNulls(width + 1)
+
+        // Allocated lazily: most lines are plain text with no ANSI inserts, so this stays null
+        // and skips the (width + 1) array allocation on the common path.
+        private var inserts: Array<StringBuilder?>? = null
 
         private var hasAnsi: Boolean = false
 
@@ -68,7 +71,8 @@ internal class LayoutMeasurable(
             sequence: CharSequence,
         ) {
             val safeColumn = column.coerceIn(0, width)
-            val sb = inserts[safeColumn] ?: StringBuilder().also { inserts[safeColumn] = it }
+            val target = inserts ?: arrayOfNulls<StringBuilder?>(width + 1).also { inserts = it }
+            val sb = target[safeColumn] ?: StringBuilder().also { target[safeColumn] = it }
             sb.append(sequence)
             hasAnsi = true
         }
@@ -76,16 +80,20 @@ internal class LayoutMeasurable(
         fun buildLine(): String {
             if (width == 0) return ""
 
-            val extraLength = if (hasAnsi) inserts.sumOf { it?.length ?: 0 } else 0
+            // Fast path: no ANSI inserts, so the visible characters are the whole line.
+            if (!hasAnsi) return String(chars)
+
+            val currentInserts = inserts
+            val extraLength = currentInserts?.sumOf { it?.length ?: 0 } ?: 0
             val sb = StringBuilder(width + extraLength + 8)
             for (col in 0 until width) {
-                inserts[col]?.let(sb::append)
+                currentInserts?.get(col)?.let(sb::append)
                 sb.append(chars[col])
             }
-            inserts[width]?.let(sb::append)
+            currentInserts?.get(width)?.let(sb::append)
 
             // Ensure ANSI state doesn't leak to subsequent lines if any child output included ANSI.
-            if (hasAnsi) sb.append(ANSI_RESET)
+            sb.append(ANSI_RESET)
 
             return sb.toString()
         }

@@ -107,6 +107,14 @@ class KeyboardInterceptor(
      */
     fun hasInterceptors(): Boolean = interceptors.isNotEmpty() || parent?.hasInterceptors() == true
 
+    /**
+     * Release the retained last-event reference so a finished event can be garbage collected.
+     */
+    fun reset() {
+        lastEvent = null
+        lastEventConsumed = false
+    }
+
     private fun rebuildOrder() {
         orderedInterceptors = interceptors.sortedWith(
             compareByDescending<InterceptorEntry> { it.priority }

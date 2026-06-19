@@ -15,6 +15,10 @@ fun <T : NavKey> NavBackStack<T>.navigate(key: T) {
 fun <T : NavKey> NavBackStack<T>.popBackStack(): Boolean {
     if (size <= 1) return false
     removeAt(lastIndex)
+    // Deterministic disposal: tell the host (NavDisplay) which content keys
+    // survive so it can clear ViewModel scopes for popped entries immediately,
+    // without waiting for a recomposition diff. The diff remains a backstop.
+    onEntriesRemoved?.invoke(map { stableContentKey(it) }.toSet())
     return true
 }
 

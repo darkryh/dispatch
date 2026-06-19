@@ -1,6 +1,7 @@
 package com.ead.dispatch.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.RememberObserver
 import com.ead.dispatch.lifecycle.LifecycleState
 import com.ead.dispatch.runtime.SavedStateHandle
 import com.ead.dispatch.runtime.SavedStateRegistry
@@ -25,6 +26,24 @@ fun <T : NavKey> rememberDecoratedNavEntries(
     entryProvider: (key: T) -> NavEntry<T>,
     viewModelFactory: ViewModelFactory = DefaultViewModelFactory(),
     json: Json = DefaultRouteJson,
+): List<NavBackStackEntry<T>> =
+    rememberDecoratedNavEntries(
+        backStack = backStack,
+        entryDecorators = entryDecorators,
+        entryProvider = entryProvider,
+        viewModelFactory = viewModelFactory,
+        json = json,
+        store = rememberNavEntryStateStore(),
+    )
+
+@Composable
+internal fun <T : NavKey> rememberDecoratedNavEntries(
+    backStack: List<T>,
+    entryDecorators: List<NavEntryDecorator<T>>,
+    entryProvider: (key: T) -> NavEntry<T>,
+    viewModelFactory: ViewModelFactory,
+    json: Json,
+    store: NavEntryStateStore<T>,
 ): List<NavBackStackEntry<T>> {
     val entries =
         rememberNavEntries(
@@ -32,6 +51,7 @@ fun <T : NavKey> rememberDecoratedNavEntries(
             entryProvider = entryProvider,
             viewModelFactory = viewModelFactory,
             json = json,
+            store = store,
         )
     return rememberDecoratedNavEntries(entries, entryDecorators)
 }
@@ -42,18 +62,46 @@ fun <T : NavKey> rememberDecoratedNavEntries(
     entryDecorators: List<NavEntryDecorator<T>> = listOf(),
 ): List<NavBackStackEntry<T>> {
     val activeContentKeys = remember { mutableSetOf<Any>() }
-    val currentKeys = entries.map { it.contentKey }.toSet()
+    val currentKeys = LinkedHashSet<Any>(entries.size)
+    entries.forEach { currentKeys.add(it.contentKey) }
+
     val removedKeys = activeContentKeys - currentKeys
     if (removedKeys.isNotEmpty()) {
         removedKeys.forEach { key ->
             entryDecorators.forEach { decorator -> decorator.onPop(key) }
         }
     }
-    activeContentKeys.clear()
-    activeContentKeys.addAll(currentKeys)
+    if (activeContentKeys != currentKeys) {
+        activeContentKeys.clear()
+        activeContentKeys.addAll(currentKeys)
+    }
 
-    return entries.map { entry -> decorateEntry(entry, entryDecorators) }
+    // Memoize decorated entries keyed by (contentKey, source entry, decorators).
+    // Decorating wraps the entry once; recompositions that leave the back stack
+    // unchanged reuse the same NavBackStackEntry identities instead of rebuilding
+    // a fresh fold chain every frame.
+    val cache = remember { mutableMapOf<Any, DecoratedEntryCacheValue<T>>() }
+    val decorated =
+        entries.map { entry ->
+            val cached = cache[entry.contentKey]
+            if (cached != null && cached.source === entry && cached.decorators === entryDecorators) {
+                cached.decorated
+            } else {
+                val value = decorateEntry(entry, entryDecorators)
+                cache[entry.contentKey] = DecoratedEntryCacheValue(entry, entryDecorators, value)
+                value
+            }
+        }
+    // Drop cache entries for content keys no longer present.
+    if (cache.keys.retainAll(currentKeys)) Unit
+    return decorated
 }
+
+private class DecoratedEntryCacheValue<T : NavKey>(
+    val source: NavBackStackEntry<T>,
+    val decorators: List<NavEntryDecorator<T>>,
+    val decorated: NavBackStackEntry<T>,
+)
 
 private fun <T : NavKey> decorateEntry(
     entry: NavBackStackEntry<T>,
@@ -63,12 +111,69 @@ private fun <T : NavKey> decorateEntry(
         wrapped.wrap { decorator.decorate(wrapped) }
     }
 
-private data class NavEntryState(
+internal class NavEntryState<T : NavKey>(
     val savedStateRegistry: SavedStateRegistry,
     val savedStateHandle: SavedStateHandle,
     val viewModelProvider: ViewModelProvider,
     val lifecycleRegistry: com.ead.dispatch.lifecycle.LifecycleRegistry,
-)
+) {
+    // Cached rendered entry; invalidated when the source NavEntry changes.
+    var entry: NavBackStackEntry<T>? = null
+    var sourceEntry: NavEntry<T>? = null
+
+    fun dispose() {
+        if (lifecycleRegistry.currentState != LifecycleState.DESTROYED) {
+            lifecycleRegistry.moveTo(LifecycleState.DESTROYED)
+        }
+        viewModelProvider.clear()
+        savedStateRegistry.clear()
+        entry = null
+        sourceEntry = null
+    }
+}
+
+/**
+ * Owns the per-entry state store and anchors its cleanup to composition lifetime.
+ *
+ * As a [RememberObserver], [onForgotten]/[onAbandoned] fire when the host
+ * composable (NavDisplay) leaves composition, disposing every retained entry so
+ * the whole back stack's ViewModel scopes are cancelled on screen teardown
+ * (root leak fix). Cleanup of individually removed entries (pops) still happens
+ * eagerly during recomposition as a backstop.
+ */
+internal class NavEntryStateStore<T : NavKey> : RememberObserver {
+    val states = mutableMapOf<Any, NavEntryState<T>>()
+    val activeContentKeys = mutableSetOf<Any>()
+    val lastStableBackStack = mutableListOf<T>()
+
+    private fun disposeAll() {
+        states.values.forEach { it.dispose() }
+        states.clear()
+        activeContentKeys.clear()
+    }
+
+    /**
+     * Deterministically dispose any retained entry whose content key is no longer
+     * present in [remainingContentKeys] (used by NavDisplay on pop).
+     */
+    fun disposeRemoved(remainingContentKeys: Set<Any>) {
+        val removed = states.keys - remainingContentKeys
+        if (removed.isEmpty()) return
+        removed.forEach { key ->
+            states.remove(key)?.dispose()
+            activeContentKeys.remove(key)
+        }
+    }
+
+    override fun onRemembered() = Unit
+
+    override fun onForgotten() = disposeAll()
+
+    override fun onAbandoned() = disposeAll()
+}
+
+@Composable
+internal fun <T : NavKey> rememberNavEntryStateStore(): NavEntryStateStore<T> = remember { NavEntryStateStore() }
 
 @Composable
 private fun <T : NavKey> rememberNavEntries(
@@ -76,10 +181,11 @@ private fun <T : NavKey> rememberNavEntries(
     entryProvider: (key: T) -> NavEntry<T>,
     viewModelFactory: ViewModelFactory,
     json: Json,
+    store: NavEntryStateStore<T> = rememberNavEntryStateStore(),
 ): List<NavBackStackEntry<T>> {
-    val stateStore = remember { mutableMapOf<Any, NavEntryState>() }
-    val activeContentKeys = remember { mutableSetOf<Any>() }
-    val lastStableBackStack = remember { mutableListOf<T>() }
+    val stateStore = store.states
+    val activeContentKeys = store.activeContentKeys
+    val lastStableBackStack = store.lastStableBackStack
 
     val stableBackStack = snapshotBackStack(backStack, fallback = lastStableBackStack)
     lastStableBackStack.clear()
@@ -108,31 +214,40 @@ private fun <T : NavKey> rememberNavEntries(
 
             state.savedStateHandle[ROUTE_PAYLOAD_KEY] = encodeNavKeyPayload(key, json)
 
-            NavBackStackEntry(
-                key = entry.key,
-                contentKey = entry.contentKey,
-                metadata = entry.metadata,
-                content = { entry.content(entry.key) },
-                savedStateHandle = state.savedStateHandle,
-                viewModelProvider = state.viewModelProvider,
-                lifecycleRegistry = state.lifecycleRegistry,
-            )
+            // Reuse the cached NavBackStackEntry when the source NavEntry is
+            // unchanged so entries are not reconstructed on every frame.
+            val cached = state.entry
+            if (cached != null && state.sourceEntry === entry) {
+                cached
+            } else {
+                NavBackStackEntry(
+                    key = entry.key,
+                    contentKey = entry.contentKey,
+                    metadata = entry.metadata,
+                    content = { entry.content(entry.key) },
+                    savedStateHandle = state.savedStateHandle,
+                    viewModelProvider = state.viewModelProvider,
+                    lifecycleRegistry = state.lifecycleRegistry,
+                ).also {
+                    state.entry = it
+                    state.sourceEntry = entry
+                }
+            }
         }
 
-    val currentKeys = entries.map { it.contentKey }.toSet()
+    val currentKeys = LinkedHashSet<Any>(entries.size)
+    entries.forEach { currentKeys.add(it.contentKey) }
     val removed = activeContentKeys - currentKeys
     if (removed.isNotEmpty()) {
         removed.forEach { key ->
             val state = stateStore.remove(key) ?: return@forEach
-            if (state.lifecycleRegistry.currentState != LifecycleState.DESTROYED) {
-                state.lifecycleRegistry.moveTo(LifecycleState.DESTROYED)
-            }
-            state.viewModelProvider.clear()
-            state.savedStateRegistry.clear()
+            state.dispose()
         }
     }
-    activeContentKeys.clear()
-    activeContentKeys.addAll(currentKeys)
+    if (activeContentKeys != currentKeys) {
+        activeContentKeys.clear()
+        activeContentKeys.addAll(currentKeys)
+    }
 
     return entries
 }

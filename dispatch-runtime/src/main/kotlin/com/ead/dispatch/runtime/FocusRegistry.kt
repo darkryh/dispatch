@@ -29,12 +29,17 @@ class FocusRegistry {
     fun sync(root: LayoutNode?) {
         val newOrder = mutableListOf<Any>()
         if (root != null) {
-            collectFocusTargets(root, newOrder)
+            // Track seen tokens in a set so de-duplication stays O(1) per node instead of O(n)
+            // (the contains() check across the growing list made this O(n^2) per frame).
+            collectFocusTargets(root, newOrder, HashSet())
         }
         order.clear()
         order.addAll(newOrder)
         focusedToken = when {
-            order.isEmpty() -> null
+            order.isEmpty() -> {
+                lastEvent = null
+                null
+            }
             focusedToken != null && order.any { it == focusedToken } -> focusedToken
             else -> order.first()
         }
@@ -68,16 +73,16 @@ class FocusRegistry {
         focusedToken = order[previousIndex]
     }
 
-    private fun collectFocusTargets(node: LayoutNode, target: MutableList<Any>) {
+    private fun collectFocusTargets(node: LayoutNode, target: MutableList<Any>, seen: HashSet<Any>) {
         val modifiers = node.modifier.allOf<FocusTargetModifier>()
         for (modifier in modifiers) {
             val token = modifier.token ?: node
-            if (!target.contains(token)) {
+            if (seen.add(token)) {
                 target.add(token)
             }
         }
         node.children.forEach { child ->
-            collectFocusTargets(child, target)
+            collectFocusTargets(child, target, seen)
         }
     }
 }

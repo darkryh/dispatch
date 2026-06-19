@@ -17,20 +17,16 @@ fun rememberUpdateAdvice(
 ): UpdateAdvice? {
     val dispatchConfig = LocalDispatchConfig.current
     var advice by remember { mutableStateOf<UpdateAdvice?>(null) }
-    var lastCheckAt by remember { mutableStateOf<Long?>(null) }
 
-    LaunchedEffect(dispatchConfig.version, updateConfig, updateConfig.providers) {
+    // updateConfig is a data class that already contains providers; keying on both is redundant and
+    // would re-run the effect needlessly. The throttle timestamp lives outside composition so a
+    // remount does not reset it and re-trigger external commands / HTTP.
+    LaunchedEffect(dispatchConfig.version, updateConfig) {
         if (!updateConfig.enabled || !updateConfig.checkOnStartup) return@LaunchedEffect
-        val now = System.currentTimeMillis()
-        val lastCheck = lastCheckAt
-        if (lastCheck != null) {
-            val elapsed = now - lastCheck
-            if (elapsed < updateConfig.checkInterval.inWholeMilliseconds) {
-                return@LaunchedEffect
-            }
+        if (!UpdateCheckThrottle.shouldCheck(dispatchConfig.version.orEmpty(), updateConfig.checkInterval)) {
+            return@LaunchedEffect
         }
 
-        lastCheckAt = now
         val advisor = UpdateAdvisor(
             dispatchConfig = dispatchConfig,
             updateConfig = updateConfig,

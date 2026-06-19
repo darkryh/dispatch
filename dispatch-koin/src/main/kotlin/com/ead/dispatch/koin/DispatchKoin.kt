@@ -16,6 +16,9 @@ import kotlin.reflect.KClass
 
 private val shutdownHookInstalled = AtomicBoolean(false)
 
+@Volatile
+private var shutdownHookThread: Thread? = null
+
 /**
  * Configure Koin from a DispatchApplication config block.
  *
@@ -59,6 +62,7 @@ object DispatchKoin {
     fun stop() {
         stopKoin()
         DispatchKoinRegistry.clear()
+        removeShutdownHook()
     }
 
     fun koin(): Koin =
@@ -72,8 +76,19 @@ object DispatchKoin {
 
     fun installShutdownHook() {
         if (shutdownHookInstalled.compareAndSet(false, true)) {
-            Runtime.getRuntime().addShutdownHook(Thread { stop() })
+            val thread = Thread { stop() }
+            shutdownHookThread = thread
+            Runtime.getRuntime().addShutdownHook(thread)
         }
+    }
+
+    private fun removeShutdownHook() {
+        val thread = shutdownHookThread ?: return
+        // When stop() runs from within the hook itself (JVM shutting down), removal is illegal.
+        // Reset the flag regardless so an explicit stop allows a later reinstall.
+        runCatching { Runtime.getRuntime().removeShutdownHook(thread) }
+        shutdownHookThread = null
+        shutdownHookInstalled.set(false)
     }
 
     internal fun validateRegisteredViewModels(

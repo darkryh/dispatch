@@ -59,6 +59,13 @@ abstract class ViewModel : Closeable {
     val isCleared: Boolean get() = _isCleared.get()
 
     /**
+     * Lock guarding [closeables] and the clear transition so that
+     * [addCloseable] and [clear] cannot race (check-then-act on the
+     * cleared flag must be atomic with respect to the list mutation).
+     */
+    private val lock = Any()
+
+    /**
      * Closeable resources to clean up when the ViewModel is cleared.
      */
     private val closeables = mutableListOf<Closeable>()
@@ -75,14 +82,18 @@ abstract class ViewModel : Closeable {
      */
     fun clear() {
         if (_isCleared.compareAndSet(false, true)) {
-            closeables.forEach {
+            val toClose = synchronized(lock) {
+                val snapshot = closeables.toList()
+                closeables.clear()
+                snapshot
+            }
+            toClose.forEach {
                 try {
                     it.close()
                 } catch (e: Exception) {
                     // Ignore cleanup errors
                 }
             }
-            closeables.clear()
             viewModelScope.cancel()
             onCleared()
         }
@@ -96,10 +107,18 @@ abstract class ViewModel : Closeable {
      * Add a closeable to be closed when the ViewModel is cleared.
      */
     fun addCloseable(closeable: Closeable) {
-        if (isCleared) {
+        // Decide whether to register or close immediately inside the lock so the
+        // cleared flag and the closeables list stay consistent versus clear().
+        val closeNow = synchronized(lock) {
+            if (isCleared) {
+                true
+            } else {
+                closeables.add(closeable)
+                false
+            }
+        }
+        if (closeNow) {
             closeable.close()
-        } else {
-            closeables.add(closeable)
         }
     }
 

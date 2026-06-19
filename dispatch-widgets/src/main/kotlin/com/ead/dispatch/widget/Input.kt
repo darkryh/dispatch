@@ -38,14 +38,18 @@ import com.github.ajalt.mordant.rendering.Whitespace
  * )
  * ```
  *
+ * This is a pure display widget: it does not handle keyboard input. [onValueChange]
+ * is accepted only so the value-based form mirrors the [TextField] (state) and
+ * [InputTextField] signatures; this overload never invokes it. Use [InputTextField]
+ * for interactive editing.
+ *
  * @param value Current text value.
- * @param onValueChange Callback when text changes.
+ * @param onValueChange Display-only no-op kept for signature symmetry; never invoked here.
  * @param modifier Modifiers to apply.
  * @param icon Leading icon/prefix that is always shown (e.g. a prompt like `"> "`).
  * @param placeholder Placeholder text when empty.
  * @param enabled Whether the field is enabled.
  * @param singleLine Whether to restrict to a single line.
- * @param onSubmit Callback when Enter is pressed. Receives the current text value.
  * @param showCursor Whether to show a cursor at the end of text.
  * @param cursorChar Character to use for the cursor.
  * @param maxLines Optional maximum number of lines to render (null = no limit within constraints).
@@ -60,7 +64,6 @@ fun TextField(
     placeholder: String = "",
     enabled: Boolean = true,
     singleLine: Boolean = true,
-    onSubmit: ((String) -> Unit)? = null,
     showCursor: Boolean = true,
     cursorChar: String = "█",
     maxLines: Int? = null,
@@ -306,10 +309,10 @@ internal class TextFieldMeasurable(
     }
 }
 
-private fun List<String>.padEnd(target: Int): List<String> {
-    if (size >= target) return this
-    return this + List(target - size) { "" }
-}
+/** Minimal mutable cell for sharing the latest composed value with lazy editor providers. */
+private class Holder<T>(
+    var value: T,
+)
 
 /**
  * Input state for managing text field state.
@@ -476,7 +479,6 @@ fun TextField(
     placeholder: String = "",
     enabled: Boolean = true,
     singleLine: Boolean = true,
-    onSubmit: ((String) -> Unit)? = null,
     showCursor: Boolean = true,
     cursorChar: String = "█",
     textStyle: TextStyle? = null,
@@ -491,7 +493,6 @@ fun TextField(
         placeholder = placeholder,
         enabled = enabled,
         singleLine = singleLine,
-        onSubmit = onSubmit,
         showCursor = showCursor,
         cursorChar = cursorChar,
         cursorPosition = state.cursorPosition,
@@ -604,6 +605,13 @@ fun InputTextField(
         }
     val contentWidth = (terminalWidth - iconWidth).coerceAtLeast(1)
 
+    // Plain (non-snapshot) holders so the editor's lazy providers always read the latest
+    // composed values without re-wrapping closures or triggering recomposition.
+    val historyItemsHolder = remember { Holder(historyItems) }
+    historyItemsHolder.value = historyItems
+    val contentWidthHolder = remember { Holder(contentWidth) }
+    contentWidthHolder.value = contentWidth
+
     // Keep local value and cursor so we can handle edits even between recompositions.
     var latestValue by remember { mutableStateOf(value) }
     var cursorPositionState by remember { mutableStateOf(cursorPosition ?: value.length) }
@@ -614,23 +622,27 @@ fun InputTextField(
 
     // Track external value changes without making them the source of truth for rendering.
     // This avoids dropping keystrokes when `value` is backed by an async flow collector.
+    // Reconciliation runs in a SideEffect so it does not mutate snapshot state during the
+    // composable body, which would otherwise amplify recomposition.
     val externalValueTracker = remember { ExternalValueTracker(value) }
     val externalCursorTracker = remember { ExternalValueTracker(cursorPosition ?: value.length) }
-    if (value != externalValueTracker.value) {
-        externalValueTracker.value = value
-        if (!externalValueTracker.acknowledge(value) && value != latestValue) {
-            externalValueTracker.clearPending()
-            latestValue = value
-            cursorPositionState = (cursorPosition ?: value.length).coerceIn(0, value.length)
-        } else {
-            cursorPositionState = cursorPositionState.coerceIn(0, latestValue.length)
+    androidx.compose.runtime.SideEffect {
+        if (value != externalValueTracker.value) {
+            externalValueTracker.value = value
+            if (!externalValueTracker.acknowledge(value) && value != latestValue) {
+                externalValueTracker.clearPending()
+                latestValue = value
+                cursorPositionState = (cursorPosition ?: value.length).coerceIn(0, value.length)
+            } else {
+                cursorPositionState = cursorPositionState.coerceIn(0, latestValue.length)
+            }
         }
-    }
-    if (cursorPosition != null && cursorPosition != externalCursorTracker.value) {
-        externalCursorTracker.value = cursorPosition
-        if (!externalCursorTracker.acknowledge(cursorPosition)) {
-            externalCursorTracker.clearPending()
-            cursorPositionState = cursorPosition.coerceIn(0, latestValue.length)
+        if (cursorPosition != null && cursorPosition != externalCursorTracker.value) {
+            externalCursorTracker.value = cursorPosition
+            if (!externalCursorTracker.acknowledge(cursorPosition)) {
+                externalCursorTracker.clearPending()
+                cursorPositionState = cursorPosition.coerceIn(0, latestValue.length)
+            }
         }
     }
 
@@ -655,22 +667,39 @@ fun InputTextField(
                 pasteHeuristic = pasteHeuristic,
             )
         }
+    // Stable wrappers: the underlying callbacks are already rememberCallback'd, so these
+    // closures never need to be reallocated. Re-wrapping them every frame would defeat that.
+    val editorOnValueChange =
+        remember(editor, externalValueTracker, onValueChangeCallback) {
+            { nextValue: String ->
+                externalValueTracker.expect(nextValue)
+                onValueChangeCallback(nextValue)
+            }
+        }
+    val editorOnCursorPositionChange =
+        remember(editor, externalCursorTracker, onCursorPositionChangeCallback) {
+            { nextPosition: Int ->
+                externalCursorTracker.expect(nextPosition)
+                onCursorPositionChangeCallback?.invoke(nextPosition)
+                Unit
+            }
+        }
+    val historyItemsProvider = remember(historyItemsHolder) { { historyItemsHolder.value } }
+    val contentWidthProvider = remember(contentWidthHolder) { { contentWidthHolder.value } }
     editor.updateDependencies(
-        onValueChange = { nextValue ->
-            externalValueTracker.expect(nextValue)
-            onValueChangeCallback(nextValue)
-        },
+        onValueChange = editorOnValueChange,
         onSubmit = onSubmitCallback,
-        onCursorPositionChange = { nextPosition ->
-            externalCursorTracker.expect(nextPosition)
-            onCursorPositionChangeCallback?.invoke(nextPosition)
-        },
-        historyItems = { historyItems },
+        onCursorPositionChange = editorOnCursorPositionChange,
+        historyItems = historyItemsProvider,
         terminal = terminal,
-        contentWidth = { contentWidth },
+        contentWidth = contentWidthProvider,
     )
 
-    DisposableEffect(listOf(enabled, focusRegistry, historyItems, keyboardInterceptor)) {
+    // Keyed only on inputs that affect the registration itself. The editor reads
+    // `historyItems` lazily via its provider, so a fresh list identity each frame must
+    // NOT tear down and re-register the interceptor (that would churn the handler closure
+    // and risk a stale handler under input bursts).
+    DisposableEffect(enabled, focusRegistry, keyboardInterceptor) {
         if (!enabled) {
             return@DisposableEffect onDispose {}
         }
@@ -712,7 +741,6 @@ fun InputTextField(
         placeholder = placeholder,
         enabled = enabled,
         singleLine = false, // allow wrapping so height grows with content
-        onSubmit = onSubmit,
         showCursor = showCursor && isFocused,
         cursorChar = cursorChar,
         cursorPosition = cursorPositionState,

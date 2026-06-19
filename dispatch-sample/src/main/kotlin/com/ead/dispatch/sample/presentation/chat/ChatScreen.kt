@@ -6,57 +6,46 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import com.ead.dispatch.layout.Column
 import com.ead.dispatch.layout.Spacer
-import com.ead.dispatch.layout.TerminalScreen
 import com.ead.dispatch.modifier.Modifier
 import com.ead.dispatch.modifier.fillMaxWidth
 import com.ead.dispatch.modifier.height
 import com.ead.dispatch.navigation.LocalNavigator
+import com.ead.dispatch.navigation.Navigator
 import com.ead.dispatch.runtime.LocalKeyboardInterceptor
 import com.ead.dispatch.runtime.LocalTheme
 import com.ead.dispatch.sample.domain.ChatMessage
 import com.ead.dispatch.sample.domain.MessageAuthor
+import com.ead.dispatch.sample.navigation.ComponentsRoute
+import com.ead.dispatch.sample.navigation.HomeRoute
+import com.ead.dispatch.sample.presentation.common.SampleScaffold
 import com.ead.dispatch.theme.DispatchTheme
 import com.ead.dispatch.viewmodel.viewModel
 import com.ead.dispatch.widget.Button
 import com.ead.dispatch.widget.ButtonRow
-import com.ead.dispatch.widget.InputHistoryIndexState
+import com.ead.dispatch.widget.CommandOption
+import com.ead.dispatch.widget.CommandPalette
 import com.ead.dispatch.widget.InputTextField
 import com.ead.dispatch.widget.KeyHint
-import com.ead.dispatch.widget.KeyHintBar
-import com.ead.dispatch.widget.LazyColumn
 import com.ead.dispatch.widget.Panel
 import com.ead.dispatch.widget.Text
 import com.ead.dispatch.widget.rememberInputHistoryIndexState
-
-private data class ChatUiState(
-    val messages: List<ChatMessage>,
-    val input: String,
-    val isStreaming: Boolean,
-    val history: List<String>,
-    val historyState: InputHistoryIndexState,
-)
-
-private data class ChatActions(
-    val onInputChanged: (String) -> Unit,
-    val onSubmit: (String) -> Unit,
-    val onBack: () -> Unit,
-    val onCancel: () -> Unit,
-    val onClear: () -> Unit,
-)
 
 @Composable
 fun ChatScreen(viewModel: ChatViewModel = viewModel()) {
     val navigator = LocalNavigator.current
     val theme = LocalTheme.current
+    val keyboardInterceptor = LocalKeyboardInterceptor.current
+
     val messages by viewModel.messages.collectAsState()
     val input by viewModel.input.collectAsState()
     val isStreaming by viewModel.streamingState.collectAsState()
     val history = messages.filter { it.author == MessageAuthor.USER }.map { it.text }
     val historyState = rememberInputHistoryIndexState()
-    val keyboardInterceptor = LocalKeyboardInterceptor.current
 
+    // Esc stops an in-flight streaming response (higher priority than Esc-as-back).
     DisposableEffect(keyboardInterceptor, isStreaming) {
         val dispose =
             keyboardInterceptor.register(priority = 100) { event ->
@@ -70,98 +59,99 @@ fun ChatScreen(viewModel: ChatViewModel = viewModel()) {
         onDispose(dispose)
     }
 
-    val state =
-        ChatUiState(
-            messages = messages,
-            input = input,
-            isStreaming = isStreaming,
-            history = history,
-            historyState = historyState,
-        )
-    val actions =
-        ChatActions(
-            onInputChanged = viewModel::updateInput,
-            onSubmit = viewModel::submit,
-            onBack = { navigator.popBackStack() },
-            onCancel = viewModel::cancel,
-            onClear = viewModel::clearConversation,
-        )
-    ChatContent(
-        state = state,
-        theme = theme,
-        actions = actions,
-    )
-}
+    val status =
+        if (isStreaming) {
+            "Streaming… press Esc to stop. Type / for commands."
+        } else {
+            "Type a message, or / for commands. Ctrl+P jumps anywhere."
+        }
 
-@Composable
-private fun ChatContent(
-    state: ChatUiState,
-    theme: DispatchTheme,
-    actions: ChatActions,
-) {
-    TerminalScreen(
-        header = { ChatHeader(state.isStreaming, theme) },
+    SampleScaffold(
+        title = "Simulated streaming chat",
+        subtitle = status,
+        escGoesBack = false,
+        hints =
+            listOf(
+                KeyHint("/", "commands"),
+                KeyHint("Enter", "send"),
+                KeyHint("Esc", "stop stream"),
+            ),
         footer = {
-            ChatFooter(
-                state = state,
-                actions = actions,
+            ChatComposer(
+                input = input,
+                isStreaming = isStreaming,
+                history = history,
+                historyState = historyState,
+                theme = theme,
+                navigator = navigator,
+                onInputChanged = viewModel::updateInput,
+                onSubmit = viewModel::submit,
+                onCancel = viewModel::cancel,
+                onClear = viewModel::clearConversation,
             )
         },
     ) {
-        ChatMessages(state.messages, theme)
+        ChatMessages(messages, theme)
     }
 }
 
 @Composable
-private fun ChatHeader(
+private fun ChatComposer(
+    input: String,
     isStreaming: Boolean,
+    history: List<String>,
+    historyState: com.ead.dispatch.widget.InputHistoryIndexState,
     theme: DispatchTheme,
-) {
-    Text("Simulated streaming chat", style = theme.primary)
-    val status =
-        if (isStreaming) {
-            "Receiving irregular local chunks..."
-        } else {
-            "Ready - no network or agent runtime is used."
-        }
-    Text(status, style = if (isStreaming) theme.warning else theme.muted)
-    Spacer(Modifier.height(1))
-}
-
-@Composable
-private fun ChatFooter(
-    state: ChatUiState,
-    actions: ChatActions,
+    navigator: Navigator,
+    onInputChanged: (String) -> Unit,
+    onSubmit: (String) -> Unit,
+    onCancel: () -> Unit,
+    onClear: () -> Unit,
 ) {
     Spacer(Modifier.height(1))
     InputTextField(
-        value = state.input,
-        onValueChange = actions.onInputChanged,
+        value = input,
+        onValueChange = onInputChanged,
         modifier = Modifier.fillMaxWidth(),
         icon = "> ",
-        placeholder = "Ask the local response simulator...",
-        enabled = !state.isStreaming,
-        showCursor = !state.isStreaming,
+        placeholder = "Ask the local response simulator… (try \"/\")",
+        enabled = !isStreaming,
+        showCursor = !isStreaming,
         maxLines = 4,
-        onSubmit = actions.onSubmit,
-        historyItems = state.history,
-        historyIndexState = state.historyState,
+        onSubmit = onSubmit,
+        historyItems = history,
+        historyIndexState = historyState,
     )
+
+    // Slash-command palette: opens when the input begins with '/'. Arrow keys move, Enter runs.
+    val commands =
+        listOf(
+            CommandOption(label = "clear", description = "Clear the conversation", data = "clear"),
+            CommandOption(label = "cancel", description = "Stop the streaming response", data = "cancel", enabled = isStreaming),
+            CommandOption(label = "home", description = "Go to the main menu", data = "home"),
+            CommandOption(label = "components", description = "Open the widget galleries", data = "components"),
+        )
+    CommandPalette(
+        modifier = Modifier.fillMaxWidth(),
+        options = commands,
+        inputValue = input,
+        onOptionSelected = { option ->
+            when (option.data) {
+                "clear" -> onClear()
+                "cancel" -> onCancel()
+                "home" -> navigator.navigate(HomeRoute())
+                "components" -> navigator.navigate(ComponentsRoute())
+            }
+        },
+        onInputTransform = onInputChanged,
+    )
+
     Spacer(Modifier.height(1))
     ButtonRow {
-        Button("Back", onClick = actions.onBack)
-        Button("Cancel stream", onClick = actions.onCancel, enabled = state.isStreaming)
-        Button("Clear", onClick = actions.onClear)
+        Button("Back", onClick = { navigator.popBackStack() })
+        Button("Cancel stream", onClick = onCancel, enabled = isStreaming)
+        Button("Clear", onClick = onClear)
     }
-    KeyHintBar(
-        hints =
-            listOf(
-                KeyHint("Up/Down", "history or vertical cursor"),
-                KeyHint("Enter", "send"),
-                KeyHint("Esc", "cancel stream"),
-                KeyHint("Tab", "change focus"),
-            ),
-    )
 }
 
 @Composable
@@ -169,25 +159,31 @@ private fun ChatMessages(
     messages: List<ChatMessage>,
     theme: DispatchTheme,
 ) {
-    LazyColumn(modifier = Modifier.fillMaxWidth(), stickToEnd = true) {
-        items(messages, key = { it.id }) { message ->
-            val author = if (message.author == MessageAuthor.USER) "You" else "Sample"
-            val suffix = if (message.isStreaming) " [streaming]" else ""
-            val style =
-                if (message.author == MessageAuthor.USER) {
-                    theme.userMessage
-                } else {
-                    theme.assistantMessage
+    // Render every message as flowing content (NOT a bounded LazyColumn): the runtime measures the
+    // root unbounded and commits everything above the active area into the terminal's native
+    // scrollback, so the full history stays scrollable with the mouse wheel. Finalized messages have
+    // stable keys, so Compose skips re-rendering them as new ones stream in.
+    Column(modifier = Modifier.fillMaxWidth()) {
+        messages.forEach { message ->
+            key(message.id) {
+                val author = if (message.author == MessageAuthor.USER) "You" else "Sample"
+                val suffix = if (message.isStreaming) " [streaming]" else ""
+                val style =
+                    if (message.author == MessageAuthor.USER) {
+                        theme.userMessage
+                    } else {
+                        theme.assistantMessage
+                    }
+                Panel(modifier = Modifier.fillMaxWidth(), title = author + suffix) {
+                    Column {
+                        Text(
+                            text = message.text.ifEmpty { "Waiting for the first chunk..." },
+                            style = style,
+                        )
+                    }
                 }
-            Panel(modifier = Modifier.fillMaxWidth(), title = author + suffix) {
-                Column {
-                    Text(
-                        text = message.text.ifEmpty { "Waiting for the first chunk..." },
-                        style = style,
-                    )
-                }
+                Spacer(Modifier.height(1))
             }
-            Spacer(Modifier.height(1))
         }
     }
 }

@@ -31,6 +31,11 @@ class ViewModelProvider(
         if (existing != null && modelClass.isInstance(existing)) {
             return existing as T
         }
+        // Type mismatch on an existing key: the old instance is about to be
+        // displaced, so clear it first to cancel its scope and release resources.
+        if (existing != null) {
+            existing.clear()
+        }
 
         val viewModel = if (factory is SavedStateViewModelFactory && savedStateHandle != null) {
             factory.create(modelClass, savedStateHandle)

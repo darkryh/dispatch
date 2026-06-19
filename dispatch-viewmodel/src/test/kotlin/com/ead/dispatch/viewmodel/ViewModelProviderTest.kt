@@ -2,10 +2,16 @@ package com.ead.dispatch.viewmodel
 
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotSame
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 import com.ead.dispatch.runtime.SavedStateHandle
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 
 class ViewModelProviderTest {
     private class TestViewModel : ViewModel() {
@@ -14,6 +20,18 @@ class ViewModelProviderTest {
         override fun onCleared() {
             cleared = true
         }
+    }
+
+    private class OtherViewModel : ViewModel() {
+        var cleared = false
+
+        override fun onCleared() {
+            cleared = true
+        }
+    }
+
+    private class ScopedViewModel : ViewModel() {
+        val job: Job = viewModelScope.launch { delay(10_000) }
     }
 
     @Test
@@ -97,5 +115,36 @@ class ViewModelProviderTest {
         provider.get(TestViewModel::class)
 
         assertSame(handle, factory.lastHandle)
+    }
+
+    @Test
+    fun `clear cancels all child viewmodel scopes`() = runBlocking {
+        val provider = ViewModelProvider()
+        val first = provider.get(ScopedViewModel::class, "a")
+        val second = provider.get(ScopedViewModel::class, "b")
+
+        provider.clear()
+
+        assertTrue(first.isCleared)
+        assertTrue(second.isCleared)
+        withTimeout(1_000) {
+            first.job.join()
+            second.job.join()
+        }
+        assertTrue(first.job.isCancelled)
+        assertTrue(second.job.isCancelled)
+    }
+
+    @Test
+    fun `type mismatch on same key clears displaced instance`() {
+        val provider = ViewModelProvider()
+
+        val first = provider.get(TestViewModel::class, "shared")
+        // Request a different type under the same key -> displaces first.
+        val second = provider.get(OtherViewModel::class, "shared")
+
+        assertTrue(first.cleared, "displaced instance must be cleared")
+        assertFalse(second.cleared)
+        assertNotSame<Any>(first, second)
     }
 }

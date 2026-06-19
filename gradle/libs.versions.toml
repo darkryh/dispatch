@@ -44,6 +44,7 @@ compose-runtime-saveable = { module = "org.jetbrains.compose.runtime:runtime-sav
 # Ktor
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
 ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
+ktor-client-mock = { module = "io.ktor:ktor-client-mock", version.ref = "ktor" }
 
 # Dependency Injection
 koin-core = { module = "io.insert-koin:koin-core", version.ref = "koin" }

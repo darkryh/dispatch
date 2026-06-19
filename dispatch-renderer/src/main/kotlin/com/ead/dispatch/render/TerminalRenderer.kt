@@ -42,11 +42,6 @@ class TerminalRenderer(
     private var activeAreaInitialized = false
 
     /**
-     * Placeholder until cursor queries are implemented.
-     */
-    private val unavailableCursorPosition: Pair<Int, Int>? = null
-
-    /**
      * Append scrolling content to the terminal.
      * This content flows naturally with terminal scrollback.
      *
@@ -90,8 +85,8 @@ class TerminalRenderer(
             clearEntireViewportInto(buffer)
             buffer.append(AnsiCodes.CURSOR_HOME)
 
-            val viewportLines = scrollingLines + activeLines
-            appendViewportLinesWithoutTrailingNewline(buffer, viewportLines)
+            // Append the two line lists back-to-back instead of building an intermediate joined list.
+            appendViewportLinesWithoutTrailingNewline(buffer, scrollingLines, activeLines)
             flushBuffer(buffer)
 
             activeAreaLines = activeLines
@@ -102,7 +97,7 @@ class TerminalRenderer(
     private fun clearEntireViewportInto(buffer: StringBuilder) {
         val rows = terminalHeight.coerceAtLeast(1)
         for (row in 1..rows) {
-            buffer.append(AnsiCodes.moveTo(row, 1))
+            AnsiCodes.appendMoveTo(buffer, row, 1)
             buffer.append(AnsiCodes.CLEAR_LINE)
         }
     }
@@ -215,16 +210,32 @@ class TerminalRenderer(
 
     private fun appendViewportLinesWithoutTrailingNewline(
         buffer: StringBuilder,
-        lines: List<String>,
+        scrollingLines: List<String>,
+        activeLines: List<String>,
     ) {
-        if (lines.isEmpty()) return
-        for (index in lines.indices) {
-            buffer.append("\r")
-            buffer.append(AnsiCodes.CLEAR_LINE)
-            buffer.append(lines[index])
-            if (index < lines.lastIndex) {
-                buffer.append("\n")
-            }
+        val total = scrollingLines.size + activeLines.size
+        if (total == 0) return
+        var emitted = 0
+        for (line in scrollingLines) {
+            appendViewportLine(buffer, line, isLast = emitted == total - 1)
+            emitted++
+        }
+        for (line in activeLines) {
+            appendViewportLine(buffer, line, isLast = emitted == total - 1)
+            emitted++
+        }
+    }
+
+    private fun appendViewportLine(
+        buffer: StringBuilder,
+        line: String,
+        isLast: Boolean,
+    ) {
+        buffer.append("\r")
+        buffer.append(AnsiCodes.CLEAR_LINE)
+        buffer.append(line)
+        if (!isLast) {
+            buffer.append("\n")
         }
     }
 
@@ -397,13 +408,6 @@ class TerminalRenderer(
             visibleContentLineCount = lineCount.coerceAtLeast(0)
         }
     }
-
-    /**
-     * Get current cursor position (if supported).
-     *
-     * Note: This requires terminal cooperation and may not work in all environments.
-     */
-    fun getCursorPosition(): Pair<Int, Int>? = unavailableCursorPosition
 }
 
 private fun List<String>.trailingBlankLineCount(): Int {
@@ -418,13 +422,53 @@ private fun List<String>.trailingBlankLineCount(): Int {
     return count
 }
 
-private val ansiCsiRegex = Regex("\u001B\\[[0-?]*[ -/]*[@-~]")
-private val ansiOscRegex = Regex("\u001B\\][^\\u0007\\u001B]*(\\u0007|\u001B\\\\)")
-
+/**
+ * A line is "display blank" if every visible character (ignoring ANSI escape runs) is whitespace.
+ *
+ * Implemented as a single linear scan that skips CSI/OSC/single-char escape sequences, replacing
+ * the previous two full-string regex `.replace` passes per line.
+ */
 private fun String.isDisplayBlank(): Boolean {
-    val withoutOsc = replace(ansiOscRegex, "")
-    val withoutAnsi = withoutOsc.replace(ansiCsiRegex, "")
-    return withoutAnsi.isBlank()
+    var index = 0
+    while (index < length) {
+        val c = this[index]
+        if (c == '\u001B') {
+            val skip = ansiEscapeLength(this, index)
+            if (skip > 0) {
+                index += skip
+                continue
+            }
+        }
+        if (!c.isWhitespace()) return false
+        index++
+    }
+    return true
+}
+
+private fun ansiEscapeLength(text: String, start: Int): Int {
+    if (start + 1 >= text.length) return 0
+    return when (text[start + 1]) {
+        '[' -> {
+            // CSI: ESC [ ... <final byte 0x40..0x7E>
+            var i = start + 2
+            while (i < text.length) {
+                if (text[i] in '@'..'~') return i - start + 1
+                i++
+            }
+            0
+        }
+        ']' -> {
+            // OSC: ESC ] ... BEL or ESC backslash
+            var i = start + 2
+            while (i < text.length) {
+                if (text[i] == '\u0007') return i - start + 1
+                if (text[i] == '\u001B' && i + 1 < text.length && text[i + 1] == '\\') return i - start + 2
+                i++
+            }
+            0
+        }
+        else -> 2
+    }
 }
 
 /**
@@ -444,15 +488,31 @@ object AnsiCodes {
     const val CLEAR_LINE = "\u001B[2K"
     const val CLEAR_TO_END = "\u001B[J"
 
+    // Cached single-row moves: callers always pass 1, so avoid rebuilding these per frame.
+    private const val MOVE_UP_1 = "\u001B[1A"
+    private const val MOVE_DOWN_1 = "\u001B[1B"
+
     // Cursor movement
     fun moveTo(
         row: Int,
         col: Int,
     ) = "\u001B[$row;${col}H"
 
-    fun moveUp(n: Int = 1) = "\u001B[${n}A"
+    /**
+     * Append a cursor-move-to sequence directly into [buffer] instead of allocating a String per
+     * row (used on full-screen viewport clears that move to every line).
+     */
+    fun appendMoveTo(
+        buffer: StringBuilder,
+        row: Int,
+        col: Int,
+    ) {
+        buffer.append("\u001B[").append(row).append(';').append(col).append('H')
+    }
 
-    fun moveDown(n: Int = 1) = "\u001B[${n}B"
+    fun moveUp(n: Int = 1) = if (n == 1) MOVE_UP_1 else "\u001B[${n}A"
+
+    fun moveDown(n: Int = 1) = if (n == 1) MOVE_DOWN_1 else "\u001B[${n}B"
 
     fun moveRight(n: Int = 1) = "\u001B[${n}C"
 

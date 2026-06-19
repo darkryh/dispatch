@@ -81,7 +81,9 @@ data class Position(val x: Int, val y: Int)
  * This allows widgets like CommandPalette to intercept keyboard events
  * before InputTextField handles them.
  */
-val LocalKeyboardInterceptor = staticCompositionLocalOf { KeyboardInterceptor() }
+val LocalKeyboardInterceptor = staticCompositionLocalOf<KeyboardInterceptor> {
+    error("No KeyboardInterceptor provided. Ensure you're inside a DispatchApplication.")
+}
 
 /**
  * CompositionLocal providing the current exit prompt state.
@@ -91,4 +93,6 @@ val LocalExitPromptState = compositionLocalOf { ExitPromptState() }
 /**
  * CompositionLocal providing focus management for input fields.
  */
-val LocalFocusRegistry = staticCompositionLocalOf { FocusRegistry() }
+val LocalFocusRegistry = staticCompositionLocalOf<FocusRegistry> {
+    error("No FocusRegistry provided. Ensure you're inside a DispatchApplication.")
+}

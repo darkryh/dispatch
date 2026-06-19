@@ -16,8 +16,17 @@ data class NavEntry<T : NavKey>(
     val content: @Composable (T) -> Unit,
 )
 
+/**
+ * Cache of computed stable content keys. encodeNavKeyForSave runs full Json
+ * encoding, which is expensive to repeat for the same key value while NavEntries
+ * are (re)constructed across frames. Data-class / data-object keys with stable
+ * equals/hashCode hit this cache instead of re-encoding every time.
+ */
+private val stableContentKeyCache = java.util.concurrent.ConcurrentHashMap<NavKey, String>()
+
 @PublishedApi
-internal fun stableContentKey(key: NavKey): Any = encodeNavKeyForSave(key, DefaultRouteJson)
+internal fun stableContentKey(key: NavKey): Any =
+    stableContentKeyCache.getOrPut(key) { encodeNavKeyForSave(key, DefaultRouteJson) }
 
 /**
  * A stateful back stack entry used during rendering.

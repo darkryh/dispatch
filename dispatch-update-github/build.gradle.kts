@@ -7,4 +7,6 @@ dependencies {
     api(libs.coroutines.core)
     implementation(libs.ktor.client.core)
     implementation(libs.ktor.client.cio)
+
+    testImplementation(libs.ktor.client.mock)
 }

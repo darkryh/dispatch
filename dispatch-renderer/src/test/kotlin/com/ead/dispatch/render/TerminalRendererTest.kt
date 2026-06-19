@@ -310,7 +310,7 @@ class TerminalRendererTest {
     fun `handoffToShellPrompt trims ANSI-styled blank trailing rows`() {
         val (renderer, recorder) = createRenderer()
         val esc = "\u001B"
-        val styledBlank = "${esc}[48;2;54;60;70m    ${esc}[49m${esc}[0m"
+        val styledBlank = "$esc[48;2;54;60;70m    $esc[49m$esc[0m"
 
         renderer.updateActiveArea(listOf("Input", styledBlank, styledBlank))
         renderer.markVisibleContentHeight(10)

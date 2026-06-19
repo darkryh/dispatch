@@ -1,7 +1,10 @@
 package com.ead.dispatch.workspace
 
+import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import kotlinx.coroutines.withTimeoutOrNull
@@ -153,13 +156,16 @@ class DefaultWorkspaceWatcherTest {
             val firstPath = root.fileSystem.getPath("a.txt")
             val secondPath = root.fileSystem.getPath("b.txt")
 
+            // events is a hot SharedFlow (multi-consumer, no replay), so subscribe BEFORE emitting
+            // -- events emitted before a collector is attached are not buffered for it.
+            val collected = async { withTimeout(5.seconds) { watcher.events.take(2).toList() } }
+            delay(50) // let the collector subscribe before we emit
+
             watcher.processEventForTest(root, StandardWatchEventKinds.ENTRY_MODIFY, firstPath)
             watcher.processEventForTest(root, StandardWatchEventKinds.ENTRY_MODIFY, secondPath)
 
-            val first = withTimeout(5.seconds) { watcher.events.first() }
-            val second = withTimeout(5.seconds) { watcher.events.first() }
-
-            val delta = second.timestamp - first.timestamp
+            val events = collected.await()
+            val delta = events[1].timestamp - events[0].timestamp
             assertTrue(delta >= debounce.inWholeMilliseconds)
         } finally {
             watcher.stop()

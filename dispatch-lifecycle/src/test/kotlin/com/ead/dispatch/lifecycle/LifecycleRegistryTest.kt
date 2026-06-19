@@ -63,4 +63,46 @@ class LifecycleRegistryTest {
 
         assertTrue(events.isEmpty())
     }
+
+    @Test
+    fun `removeObserver stops notifications`() {
+        val registry = LifecycleRegistry()
+        val events = mutableListOf<LifecycleState>()
+        val observer: (LifecycleState) -> Unit = { events.add(it) }
+
+        registry.addObserver(observer)
+        registry.moveTo(LifecycleState.STARTED)
+        registry.removeObserver(observer)
+        registry.moveTo(LifecycleState.STOPPED)
+
+        assertEquals(listOf(LifecycleState.STARTED), events)
+    }
+
+    @Test
+    fun `addObserver handle removes observer on close`() {
+        val registry = LifecycleRegistry()
+        val events = mutableListOf<LifecycleState>()
+
+        val handle = registry.addObserver { events.add(it) }
+        registry.moveTo(LifecycleState.STARTED)
+        handle.close()
+        registry.moveTo(LifecycleState.STOPPED)
+
+        assertEquals(listOf(LifecycleState.STARTED), events)
+    }
+
+    @Test
+    fun `observers are cleared on DESTROYED and stale observer is not invoked`() {
+        val registry = LifecycleRegistry()
+        var invocations = 0
+
+        registry.addObserver { invocations++ }
+        registry.moveTo(LifecycleState.DESTROYED)
+        val afterDestroy = invocations
+
+        // A later transition must not invoke the (now released) observer.
+        registry.moveTo(LifecycleState.STARTED)
+
+        assertEquals(afterDestroy, invocations)
+    }
 }

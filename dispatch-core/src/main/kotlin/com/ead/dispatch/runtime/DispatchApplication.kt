@@ -31,10 +31,10 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.collections.set
 import kotlin.coroutines.coroutineContext
@@ -66,7 +66,10 @@ internal class DispatchRuntimeEngine(
     private val args: Array<String>,
 ) {
     private val config = DispatchConfig()
-    private var terminal: Terminal? = null
+    private lateinit var terminal: Terminal
+
+    @Volatile
+    private var initialized = false
 
     @Volatile
     private var exitRequested = false
@@ -93,7 +96,8 @@ internal class DispatchRuntimeEngine(
     private val parsedArguments = mutableMapOf<String, String>()
     private var dispatchArgs = DispatchArgs(emptyList(), emptySet(), emptyMap())
 
-    private val keyEventHandlers = CopyOnWriteArrayList<(KeyboardEvent) -> Unit>()
+    @Volatile
+    private var keyEventHandler: ((KeyboardEvent) -> Unit)? = null
 
     @Volatile
     private var mouseEventHandler: ((MouseEvent) -> Unit)? = null
@@ -122,11 +126,37 @@ internal class DispatchRuntimeEngine(
         try {
             executeApplication(content)
         } finally {
+            teardown()
             ViewModelStore.clear()
             appJob.cancelAndJoin()
             config.runExitActions()
         }
         return exitCode
+    }
+
+    /**
+     * Release engine resources on every exit path (including early returns and throws before the
+     * terminal session starts). Idempotent: [onBeforeShutdown] may have already torn parts down.
+     */
+    private suspend fun teardown() {
+        withContext(NonCancellable) {
+            cancelExitPromptReset()
+            keyEventHandler = null
+            mouseEventHandler = null
+            if (!initialized) return@withContext
+            if (::composition.isInitialized) {
+                runCatching { composition.dispose() }
+            }
+            if (::recomposer.isInitialized) {
+                runCatching { recomposer.close() }
+            }
+            if (::recomposerJob.isInitialized) {
+                runCatching { recomposerJob.cancelAndJoin() }
+            }
+            if (::snapshotManager.isInitialized) {
+                runCatching { snapshotManager.close() }
+            }
+        }
     }
 
     private fun initializeScopes() {
@@ -135,6 +165,7 @@ internal class DispatchRuntimeEngine(
         uiScope = CoroutineScope(uiDispatcher + appJob + DispatchFrameClock)
         snapshotManager = DispatchSnapshotManager(uiScope)
         backgroundScope = CoroutineScope(Dispatchers.Default + appJob)
+        initialized = true
     }
 
     private suspend fun executeApplication(content: DispatchScope.() -> Unit) {
@@ -161,7 +192,7 @@ internal class DispatchRuntimeEngine(
                     },
                 ansiLevel = AnsiLevel.TRUECOLOR,
             )
-        renderer = TerminalRenderer(terminal!!)
+        renderer = TerminalRenderer(terminal)
         renderer.hideCursor()
     }
 
@@ -181,7 +212,7 @@ internal class DispatchRuntimeEngine(
         parseArguments()
 
         if ("version" in parsedFlags) {
-            terminal?.println("${config.name} ${config.version}")
+            terminal.println("${config.name} ${config.version}")
             return false
         }
 
@@ -198,7 +229,7 @@ internal class DispatchRuntimeEngine(
 
     private fun initializeComposition() {
         val block = activeUIBlock ?: return
-        val t = terminal ?: return
+        val t = terminal
         compositionRoot = LayoutNode("CompositionRoot")
         compositionRoot.setDelegate(CompositionRootMeasurable(compositionRoot))
         rootMeasurable.set(compositionRoot)
@@ -227,9 +258,9 @@ internal class DispatchRuntimeEngine(
     }
 
     private suspend fun runTerminalSession() {
-        val terminalInstance = terminal ?: return
+        if (activeUIBlock == null) return
         TerminalSessionCoordinator(
-            terminal = terminalInstance,
+            terminal = terminal,
             config = config,
             uiScope = uiScope,
             backgroundScope = backgroundScope,
@@ -312,8 +343,9 @@ internal class DispatchRuntimeEngine(
         }
 
     private fun reportError(error: Throwable) {
-        terminal?.println("Error: ${error.message}")
-        terminal?.println(error.stackTraceToString())
+        if (!::terminal.isInitialized) return
+        terminal.println("Error: ${error.message}")
+        terminal.println(error.stackTraceToString())
     }
 
     private fun handleKeyboardEvent(
@@ -337,7 +369,7 @@ internal class DispatchRuntimeEngine(
 
         val consumed = keyboardInterceptor.tryIntercept(event)
         if (!consumed) {
-            keyEventHandlers.forEach { handler -> handler(event) }
+            keyEventHandler?.invoke(event)
         }
         return false
     }
@@ -426,7 +458,7 @@ internal class DispatchRuntimeEngine(
     }
 
     private fun applyWindowTitleIfNeeded() {
-        val t = terminal ?: return
+        val t = terminal
         val title = config.windowTitle ?: config.name
         if (title.isNullOrBlank()) return
         val now = System.nanoTime()
@@ -449,7 +481,7 @@ internal class DispatchRuntimeEngine(
     }
 
     private inner class DispatchScopeImpl : DispatchScope {
-        override val terminal: Terminal get() = this@DispatchRuntimeEngine.terminal!!
+        override val terminal: Terminal get() = this@DispatchRuntimeEngine.terminal
         override val theme: DispatchTheme get() = config.theme
         override val args: Array<String> get() = this@DispatchRuntimeEngine.args
         override val terminalWidth: Int get() = resizeCoordinator.width.coerceAtLeast(40)
@@ -475,8 +507,7 @@ internal class DispatchRuntimeEngine(
         }
 
         override fun onKeyEvent(handler: (KeyboardEvent) -> Unit) {
-            keyEventHandlers.clear()
-            keyEventHandlers.add(handler)
+            keyEventHandler = handler
         }
 
         override fun onMouseEvent(handler: (MouseEvent) -> Unit) {
