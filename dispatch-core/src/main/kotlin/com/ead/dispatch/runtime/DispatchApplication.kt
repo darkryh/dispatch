@@ -1,43 +1,20 @@
 package com.ead.dispatch.runtime
 
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.Composition
-import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.Recomposer
-import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.*
 import com.ead.dispatch.constraints.Constraints
-import com.ead.dispatch.layout.LayoutNode
-import com.ead.dispatch.layout.Measurable
-import com.ead.dispatch.layout.Placeable
-import com.ead.dispatch.layout.SegmentedPlaceable
-import com.ead.dispatch.layout.SimplePlaceable
+import com.ead.dispatch.layout.*
 import com.ead.dispatch.modifier.Modifier
 import com.ead.dispatch.render.TerminalRenderer
 import com.ead.dispatch.theme.DispatchTheme
 import com.ead.dispatch.viewmodel.ViewModelStore
 import com.github.ajalt.mordant.input.KeyboardEvent
 import com.github.ajalt.mordant.input.MouseEvent
-import com.github.ajalt.mordant.input.enterRawMode
 import com.github.ajalt.mordant.rendering.AnsiLevel
 import com.github.ajalt.mordant.rendering.TextColors.Companion.rgb
 import com.github.ajalt.mordant.rendering.Theme
 import com.github.ajalt.mordant.terminal.Terminal
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancelAndJoin
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.NonCancellable
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
 import java.util.concurrent.atomic.AtomicReference
-import kotlin.collections.set
-import kotlin.coroutines.coroutineContext
 import kotlin.system.exitProcess
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -120,6 +97,14 @@ internal class DispatchRuntimeEngine(
     private var lastWindowTitleApplied: String? = null
     private var lastWindowTitleAppliedAtNanos: Long = 0L
     private var exitArmDeadlineNanos: Long = 0L
+
+    @Volatile
+    private var screenTransitionPending: Boolean = false
+
+    private val screenTransitionObserver: () -> Unit = {
+        screenTransitionPending = true
+        if (::frameScheduler.isInitialized) frameScheduler.requestFrame()
+    }
 
     suspend fun run(content: DispatchScope.() -> Unit): Int {
         initializeScopes()
@@ -250,6 +235,7 @@ internal class DispatchRuntimeEngine(
                 LocalKeyboardInterceptor provides keyboardInterceptor,
                 LocalFocusRegistry provides focusRegistry,
                 LocalExitPromptState provides exitPromptState,
+                LocalScreenTransitionObserver provides screenTransitionObserver,
             ) {
                 block()
             }
@@ -291,7 +277,7 @@ internal class DispatchRuntimeEngine(
 
     private suspend fun runInputLoop(readEvent: suspend () -> Any?) {
         var consecutiveErrors = 0
-        while (coroutineContext.isActive && !exitRequested) {
+        while (currentCoroutineContext().isActive && !exitRequested) {
             val readResult = readInputEvent(readEvent, consecutiveErrors)
             consecutiveErrors = readResult.consecutiveErrors
             val event = readResult.event ?: continue
@@ -334,7 +320,7 @@ internal class DispatchRuntimeEngine(
         } catch (_: Exception) {
             val nextErrors = consecutiveErrors + 1
             val backoff = (10L * nextErrors).coerceAtMost(200L)
-            delay(backoff)
+            delay(backoff.milliseconds)
             InputReadResult(
                 event = null,
                 eventTimestampNanos = 0L,
@@ -421,6 +407,9 @@ internal class DispatchRuntimeEngine(
     private fun composeAndRender() {
         applyWindowTitleIfNeeded()
         resizeCoordinator.updateIfNeeded(terminal)
+        if (resizeCoordinator.isSettling()) return
+        val screenTransition = screenTransitionPending
+        screenTransitionPending = false
         terminalWidthState.intValue = resizeCoordinator.width.coerceAtLeast(40)
         terminalHeightState.intValue = resizeCoordinator.height.coerceAtLeast(10)
         focusRegistry.sync(compositionRoot)
@@ -430,6 +419,7 @@ internal class DispatchRuntimeEngine(
             terminalHeight = resizeCoordinator.height,
             activeAreaHeight = activeAreaHeight,
             forceRewrite = resizeCoordinator.consumePendingReset(),
+            screenTransition = screenTransition,
         )
     }
 

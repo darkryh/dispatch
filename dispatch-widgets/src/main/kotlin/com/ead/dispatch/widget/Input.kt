@@ -713,8 +713,8 @@ fun InputTextField(
                     return@register false
                 }
 
-                if (event.key == "Tab" && !event.shift && !event.ctrl && !event.alt) {
-                    focusRegistry.focusNext()
+                if (event.key == "Tab" && !event.ctrl && !event.alt) {
+                    if (event.shift) focusRegistry.focusPrevious() else focusRegistry.focusNext()
                     return@register true
                 }
 

@@ -9,6 +9,7 @@ import com.ead.dispatch.lifecycle.LifecycleState
 import com.ead.dispatch.modifier.Modifier
 import androidx.compose.runtime.CompositionLocalProvider
 import com.ead.dispatch.runtime.LocalSavedStateHandle
+import com.ead.dispatch.runtime.LocalScreenTransitionObserver
 import androidx.compose.runtime.remember
 import com.ead.dispatch.viewmodel.DefaultViewModelFactory
 import com.ead.dispatch.viewmodel.LocalViewModelProvider
@@ -53,6 +54,14 @@ fun <T : NavKey> NavDisplay(
 
     val currentEntry = decoratedEntries.lastOrNull() ?: return
     val contentKey = currentEntry.contentKey
+    val screenTransitionObserver = LocalScreenTransitionObserver.current
+    val transitionTracker = remember { ScreenTransitionTracker(contentKey) }
+
+    SideEffect {
+        if (transitionTracker.update(contentKey)) {
+            screenTransitionObserver?.invoke()
+        }
+    }
 
     val navigator =
         remember(backStack) {
@@ -93,6 +102,16 @@ fun <T : NavKey> NavDisplay(
                 currentEntry.Content()
             }
         }
+    }
+}
+
+internal class ScreenTransitionTracker(initialContentKey: Any) {
+    private var contentKey: Any = initialContentKey
+
+    fun update(nextContentKey: Any): Boolean {
+        if (contentKey == nextContentKey) return false
+        contentKey = nextContentKey
+        return true
     }
 }
 

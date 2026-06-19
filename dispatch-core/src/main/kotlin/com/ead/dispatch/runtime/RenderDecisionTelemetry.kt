@@ -1,5 +1,6 @@
 package com.ead.dispatch.runtime
 
+import com.ead.dispatch.render.RenderDiagnostics
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
@@ -13,9 +14,6 @@ internal object RenderDecisionTelemetry {
     private val appendOnlyCount = AtomicInteger(0)
     private val fullRewriteCount = AtomicInteger(0)
 
-    private val loggingEnabled: Boolean
-        get() = System.getProperty("dispatch.debug.render.decisions") == "true"
-
     fun record(decision: RenderDecision) {
         when (decision.kind) {
             RenderKind.NOOP -> noopCount.incrementAndGet()
@@ -24,12 +22,16 @@ internal object RenderDecisionTelemetry {
             RenderKind.FULL_REWRITE -> fullRewriteCount.incrementAndGet()
         }
 
-        if (loggingEnabled) {
-            println(
-                "dispatch.render decision=${decision.kind} reason=${decision.reason} " +
-                    "conf=${decision.confidencePercent}"
-            )
-        }
+        RenderDiagnostics.record(
+            event = "render_decision",
+            fields =
+                mapOf(
+                    "kind" to decision.kind,
+                    "reason" to decision.reason,
+                    "confidencePercent" to decision.confidencePercent,
+                    "scrollLines" to decision.scrollUpdate.lines.size,
+                ),
+        )
     }
 
     fun snapshot(): Map<String, Int> =

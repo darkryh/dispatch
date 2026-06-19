@@ -5,6 +5,21 @@ import kotlin.test.Test
 
 class TerminalResizeUpdateTest {
     @Test
+    fun `resize waits until signal burst settles`() {
+        resizeHasSettled(
+            lastSignalNanos = 1_000_000_000,
+            nowNanos = 1_149_999_999,
+            settleNanos = ResizeCoordinator.DEFAULT_RESIZE_SETTLE_NANOS,
+        ) shouldBe false
+
+        resizeHasSettled(
+            lastSignalNanos = 1_000_000_000,
+            nowNanos = 1_150_000_000,
+            settleNanos = ResizeCoordinator.DEFAULT_RESIZE_SETTLE_NANOS,
+        ) shouldBe true
+    }
+
+    @Test
     fun `no update when size is not dirty`() {
         val update =
             computeTerminalSizeUpdate(
@@ -74,6 +89,20 @@ class TerminalResizeUpdateTest {
             )
 
         visible shouldBe listOf("s3", "s4", "s5")
+    }
+
+    @Test
+    fun `overlay rewrite cannot replay more rows than viewport`() {
+        val visible =
+            viewportScrollingLines(
+                scrollingLines = List(32) { "history-$it" },
+                activeLines = List(12) { "overlay-$it" },
+                terminalHeight = 30,
+            )
+
+        visible.size shouldBe 18
+        visible.first() shouldBe "history-14"
+        visible.last() shouldBe "history-31"
     }
 
     @Test

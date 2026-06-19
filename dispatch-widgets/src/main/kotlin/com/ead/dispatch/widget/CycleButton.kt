@@ -70,8 +70,18 @@ fun CycleButton(
                     return@register false
                 }
 
-                if (event.key == "Tab" && !event.shift && !event.ctrl && !event.alt) {
+                if (event.key == "Tab" && !event.ctrl && !event.alt) {
+                    if (event.shift) focusRegistry.focusPrevious() else focusRegistry.focusNext()
+                    return@register true
+                }
+
+                if (event.key == "ArrowDown" || event.key == "Down") {
                     focusRegistry.focusNext()
+                    return@register true
+                }
+
+                if (event.key == "ArrowUp" || event.key == "Up") {
+                    focusRegistry.focusPrevious()
                     return@register true
                 }
 

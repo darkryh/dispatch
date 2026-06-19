@@ -23,15 +23,19 @@ import com.ead.dispatch.sample.navigation.HomeRoute
 import com.ead.dispatch.sample.presentation.common.SampleScaffold
 import com.ead.dispatch.theme.DispatchTheme
 import com.ead.dispatch.viewmodel.viewModel
+import com.ead.dispatch.widget.Background
+import com.ead.dispatch.widget.BackgroundStyle
 import com.ead.dispatch.widget.Button
 import com.ead.dispatch.widget.ButtonRow
 import com.ead.dispatch.widget.CommandOption
 import com.ead.dispatch.widget.CommandPalette
+import com.ead.dispatch.widget.InputHistoryIndexState
 import com.ead.dispatch.widget.InputTextField
 import com.ead.dispatch.widget.KeyHint
 import com.ead.dispatch.widget.Panel
 import com.ead.dispatch.widget.Text
 import com.ead.dispatch.widget.rememberInputHistoryIndexState
+import com.github.ajalt.mordant.rendering.TextColors.Companion.rgb
 
 @Composable
 fun ChatScreen(viewModel: ChatViewModel = viewModel()) {
@@ -82,7 +86,6 @@ fun ChatScreen(viewModel: ChatViewModel = viewModel()) {
                 isStreaming = isStreaming,
                 history = history,
                 historyState = historyState,
-                theme = theme,
                 navigator = navigator,
                 onInputChanged = viewModel::updateInput,
                 onSubmit = viewModel::submit,
@@ -100,8 +103,7 @@ private fun ChatComposer(
     input: String,
     isStreaming: Boolean,
     history: List<String>,
-    historyState: com.ead.dispatch.widget.InputHistoryIndexState,
-    theme: DispatchTheme,
+    historyState: InputHistoryIndexState,
     navigator: Navigator,
     onInputChanged: (String) -> Unit,
     onSubmit: (String) -> Unit,
@@ -109,19 +111,21 @@ private fun ChatComposer(
     onClear: () -> Unit,
 ) {
     Spacer(Modifier.height(1))
-    InputTextField(
-        value = input,
-        onValueChange = onInputChanged,
-        modifier = Modifier.fillMaxWidth(),
-        icon = "> ",
-        placeholder = "Ask the local response simulator… (try \"/\")",
-        enabled = !isStreaming,
-        showCursor = !isStreaming,
-        maxLines = 4,
-        onSubmit = onSubmit,
-        historyItems = history,
-        historyIndexState = historyState,
-    )
+    Background(style = BackgroundStyle.Fill(rgb("#303846"))) {
+        InputTextField(
+            value = input,
+            onValueChange = onInputChanged,
+            modifier = Modifier.fillMaxWidth(),
+            icon = "> ",
+            placeholder = "Ask the local response simulator… (try \"/\")",
+            enabled = !isStreaming,
+            showCursor = !isStreaming,
+            maxLines = 4,
+            onSubmit = onSubmit,
+            historyItems = history,
+            historyIndexState = historyState,
+        )
+    }
 
     // Slash-command palette: opens when the input begins with '/'. Arrow keys move, Enter runs.
     val commands =

@@ -96,3 +96,9 @@ val LocalExitPromptState = compositionLocalOf { ExitPromptState() }
 val LocalFocusRegistry = staticCompositionLocalOf<FocusRegistry> {
     error("No FocusRegistry provided. Ensure you're inside a DispatchApplication.")
 }
+
+/**
+ * Optional callback used by navigation hosts to mark a complete screen-content transition.
+ * The terminal engine uses this signal to replace the viewport and clear obsolete scrollback.
+ */
+val LocalScreenTransitionObserver = staticCompositionLocalOf<(() -> Unit)?> { null }

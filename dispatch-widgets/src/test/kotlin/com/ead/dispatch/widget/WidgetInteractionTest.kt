@@ -148,6 +148,36 @@ class WidgetInteractionTest {
     }
 
     @Test
+    fun `arrow keys traverse actions but remain inside text input`() {
+        val harness = FocusHarness()
+
+        harness.render()
+        harness.press("ArrowDown")
+        harness.press("x")
+        assertEquals("x", harness.inputValue, "text input must consume ArrowDown instead of losing focus")
+
+        harness.press("Tab")
+        harness.press("ArrowDown")
+        harness.press("Enter")
+        assertEquals(1, harness.buttonClicks)
+
+        harness.press("ArrowUp")
+        harness.press("Enter")
+        assertEquals("Beta", harness.cycleValue)
+    }
+
+    @Test
+    fun `shift tab traverses focus backwards`() {
+        val harness = FocusHarness()
+
+        harness.render()
+        harness.press("Tab", shift = true)
+        harness.press("Enter")
+
+        assertEquals(1, harness.radioClicks)
+    }
+
+    @Test
     fun `disabled input is skipped in focus order`() {
         val harness = FocusHarness()
         harness.inputEnabled = false

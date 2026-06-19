@@ -2,6 +2,7 @@ package com.ead.dispatch.runtime
 
 import com.ead.dispatch.constraints.Constraints
 import com.ead.dispatch.layout.Measurable
+import com.ead.dispatch.render.RenderDiagnostics
 import com.ead.dispatch.render.TerminalRenderer
 import java.util.concurrent.locks.ReentrantLock
 import kotlin.concurrent.withLock
@@ -20,16 +21,19 @@ internal class RenderPipeline(
         }
     }
 
+    @Suppress("LongMethod")
     fun render(
         measurable: Measurable?,
         terminalWidth: Int,
         terminalHeight: Int,
         activeAreaHeight: Int,
         forceRewrite: Boolean,
+        screenTransition: Boolean,
     ) {
         if (measurable == null) return
 
         renderLock.withLock {
+            val startedAt = System.nanoTime()
             val width = terminalWidth.coerceAtLeast(40)
             val height = terminalHeight.coerceAtLeast(10)
             val effectiveActiveAreaHeight = minOf(activeAreaHeight, height)
@@ -52,12 +56,12 @@ internal class RenderPipeline(
 
             val currentFrame = RenderFrameSnapshot(scrollingLines = scrollingLines, activeLines = activeLines)
             val update =
-                if (forceRewrite) {
+                if (forceRewrite || screenTransition) {
                     RenderDecision(
                         kind = RenderKind.FULL_REWRITE,
                         scrollUpdate = ScrollUpdate.rewrite(scrollingLines),
                         confidencePercent = 100,
-                        reason = "terminal_resize",
+                        reason = if (forceRewrite) "terminal_resize" else "screen_transition",
                     )
                 } else {
                     classifyRenderDecision(
@@ -78,8 +82,12 @@ internal class RenderPipeline(
 
             val rewriteRendered =
                 when (update.kind) {
-                    RenderKind.NOOP -> false
-                    RenderKind.ACTIVE_ONLY -> false
+                    RenderKind.NOOP -> {
+                        false
+                    }
+                    RenderKind.ACTIVE_ONLY -> {
+                        false
+                    }
                     RenderKind.APPEND_ONLY -> {
                         if (update.scrollUpdate.lines.isNotEmpty()) {
                             renderer.appendScrollingContent(update.scrollUpdate.lines)
@@ -87,12 +95,19 @@ internal class RenderPipeline(
                         false
                     }
                     RenderKind.FULL_REWRITE -> {
-                        // Hard rewrite is reserved for explicit reset flows (resize/clear).
-                        // Transition rewrites still use the same path today for deterministic cleanup.
+                        // Same-screen rewrites must repaint only the visible tail. Replaying the
+                        // entire committed history would push it through the viewport again when
+                        // an overlay changes the active-area boundary (palette, selector, prompt).
+                        val renderedScrollingLines =
+                            if (forceRewrite || screenTransition) {
+                                scrollingLines
+                            } else {
+                                viewportScrollingLines(scrollingLines, activeLines, height)
+                            }
                         renderer.rewriteViewport(
-                            scrollingLines = scrollingLines,
+                            scrollingLines = renderedScrollingLines,
                             activeLines = activeLines,
-                            clearScrollback = true,
+                            clearScrollback = forceRewrite || screenTransition,
                         )
                         scrollingContentTracker.sync(scrollingLines)
                         true
@@ -103,6 +118,24 @@ internal class RenderPipeline(
                 renderer.updateActiveArea(activeLines)
             }
             lastRenderedFrame = currentFrame
+            RenderDiagnostics.record(
+                event = "render_frame",
+                fields =
+                    mapOf(
+                        "kind" to update.kind,
+                        "reason" to update.reason,
+                        "forceRewrite" to forceRewrite,
+                        "screenTransition" to screenTransition,
+                        "terminalWidth" to width,
+                        "terminalHeight" to height,
+                        "scrollingLines" to scrollingLines.size,
+                        "visibleScrollingLines" to viewportScrollingLines(scrollingLines, activeLines, height).size,
+                        "activeLines" to activeLines.size,
+                        "frameHash" to currentFrame.hashCode(),
+                        "durationNanos" to System.nanoTime() - startedAt,
+                    ),
+            )
+            RenderDiagnostics.recordMemoryIfDue()
         }
     }
 }

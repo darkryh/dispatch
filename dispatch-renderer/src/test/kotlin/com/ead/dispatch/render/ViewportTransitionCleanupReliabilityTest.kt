@@ -4,6 +4,7 @@ import com.github.ajalt.mordant.rendering.AnsiLevel
 import com.github.ajalt.mordant.terminal.Terminal
 import com.github.ajalt.mordant.terminal.TerminalRecorder
 import kotlin.test.Test
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class ViewportTransitionCleanupReliabilityTest {
@@ -33,10 +34,12 @@ class ViewportTransitionCleanupReliabilityTest {
         )
         val delta = recorder.output().removePrefix(beforeShortScreen)
 
-        assertTrue(delta.contains(AnsiCodes.moveTo(1, 1)))
+        assertTrue(delta.contains(AnsiCodes.CURSOR_HOME))
         assertTrue(delta.contains(AnsiCodes.moveTo(40, 1)))
         assertTrue(delta.contains(AnsiCodes.CLEAR_LINE))
         assertTrue(delta.contains("story-anchor"))
         assertTrue(delta.contains("✦ story input"))
+        assertFalse(delta.contains(AnsiCodes.CLEAR_SCREEN))
+        assertTrue(delta.indexOf("story-anchor") < delta.indexOf(AnsiCodes.moveTo(40, 1)))
     }
 }

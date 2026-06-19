@@ -58,7 +58,7 @@ class TerminalRenderer(
             clearActiveAreaInto(buffer)
             appendLines(buffer, lines)
             restoreActiveAreaInto(buffer)
-            flushBuffer(buffer)
+            flushBuffer(buffer, "append_scrolling")
         }
     }
 
@@ -75,28 +75,30 @@ class TerminalRenderer(
         renderLock.withLock {
             val buffer = StringBuilder()
             if (clearScrollback) {
-                // Use a conservative clear sequence because some terminals only fully honor
-                // scrollback clearing when combined with screen clear + home repositioning.
-                buffer.append(AnsiCodes.CURSOR_HOME)
-                buffer.append(AnsiCodes.CLEAR_SCREEN)
+                // Keep the visible viewport intact. Rows are replaced below before obsolete
+                // trailing rows are erased, so the terminal never observes a blank frame.
                 buffer.append(AnsiCodes.CLEAR_SCROLLBACK)
             }
             buffer.append(AnsiCodes.CURSOR_HOME)
-            clearEntireViewportInto(buffer)
-            buffer.append(AnsiCodes.CURSOR_HOME)
-
-            // Append the two line lists back-to-back instead of building an intermediate joined list.
+            val contentLineCount = scrollingLines.size + activeLines.size
             appendViewportLinesWithoutTrailingNewline(buffer, scrollingLines, activeLines)
-            flushBuffer(buffer)
+            clearViewportRowsAfter(buffer, contentLineCount)
+            if (contentLineCount > 0) {
+                buffer.append(AnsiCodes.moveTo(contentLineCount.coerceAtMost(terminalHeight), 1))
+            }
+            flushBuffer(buffer, "rewrite_viewport")
 
             activeAreaLines = activeLines
             activeAreaInitialized = activeLines.isNotEmpty()
         }
     }
 
-    private fun clearEntireViewportInto(buffer: StringBuilder) {
-        val rows = terminalHeight.coerceAtLeast(1)
-        for (row in 1..rows) {
+    private fun clearViewportRowsAfter(
+        buffer: StringBuilder,
+        contentLineCount: Int,
+    ) {
+        val firstBlankRow = (contentLineCount + 1).coerceAtLeast(1)
+        for (row in firstBlankRow..terminalHeight.coerceAtLeast(1)) {
             AnsiCodes.appendMoveTo(buffer, row, 1)
             buffer.append(AnsiCodes.CLEAR_LINE)
         }
@@ -138,7 +140,7 @@ class TerminalRenderer(
                 forceRedraw = forceRedraw,
             )
             moveCursorAfterShrink(buffer, oldLineCount, newLineCount)
-            flushBuffer(buffer)
+            flushBuffer(buffer, "update_active_area")
 
             activeAreaLines = displayedLines
             activeAreaInitialized = true
@@ -154,7 +156,7 @@ class TerminalRenderer(
             if (activeAreaInitialized && activeAreaLines.isNotEmpty()) {
                 val buffer = StringBuilder()
                 clearActiveAreaInto(buffer)
-                flushBuffer(buffer)
+                flushBuffer(buffer, "clear_active_area")
             }
             activeAreaLines = emptyList()
             activeAreaInitialized = false
@@ -178,7 +180,7 @@ class TerminalRenderer(
             buffer.append(AnsiCodes.moveTo(targetRow, 1))
             buffer.append(AnsiCodes.CLEAR_LINE)
             buffer.append("\n")
-            flushBuffer(buffer)
+            flushBuffer(buffer, "shell_handoff")
 
             activeAreaLines = emptyList()
             activeAreaInitialized = false
@@ -316,11 +318,28 @@ class TerminalRenderer(
         }
     }
 
-    private fun flushBuffer(buffer: StringBuilder) {
+    private fun flushBuffer(
+        buffer: StringBuilder,
+        operation: String,
+    ) {
+        val startedAt = System.nanoTime()
         OutputCapture.suppress {
             terminal.rawPrint(buffer)
             System.out.flush()
         }
+        RenderDiagnostics.record(
+            event = "terminal_write",
+            fields =
+                mapOf(
+                    "operation" to operation,
+                    "bytes" to buffer.toString().toByteArray(Charsets.UTF_8).size,
+                    "chars" to buffer.length,
+                    "clearScreen" to buffer.contains(AnsiCodes.CLEAR_SCREEN),
+                    "clearScrollback" to buffer.contains(AnsiCodes.CLEAR_SCROLLBACK),
+                    "clearLines" to buffer.countOccurrences(AnsiCodes.CLEAR_LINE),
+                    "durationNanos" to System.nanoTime() - startedAt,
+                ),
+        )
     }
 
     /**
@@ -332,6 +351,7 @@ class TerminalRenderer(
                 terminal.cursor.show()
                 System.out.flush()
             }
+            RenderDiagnostics.record("cursor", mapOf("visible" to true))
         }
     }
 
@@ -344,6 +364,7 @@ class TerminalRenderer(
                 terminal.cursor.hide()
                 System.out.flush()
             }
+            RenderDiagnostics.record("cursor", mapOf("visible" to false))
         }
     }
 
@@ -384,6 +405,14 @@ class TerminalRenderer(
             }
             activeAreaLines = emptyList()
             activeAreaInitialized = false
+            RenderDiagnostics.record(
+                "terminal_write",
+                mapOf(
+                    "operation" to "clear_screen",
+                    "clearScreen" to true,
+                    "clearScrollback" to clearScrollback,
+                ),
+            )
         }
     }
 
@@ -408,6 +437,18 @@ class TerminalRenderer(
             visibleContentLineCount = lineCount.coerceAtLeast(0)
         }
     }
+}
+
+private fun CharSequence.countOccurrences(token: String): Int {
+    var count = 0
+    var index = 0
+    while (index <= length - token.length) {
+        val found = indexOf(token, index)
+        if (found < 0) break
+        count += 1
+        index = found + token.length
+    }
+    return count
 }
 
 private fun List<String>.trailingBlankLineCount(): Int {

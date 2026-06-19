@@ -31,9 +31,11 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform {
-        excludeTags("terminal-e2e")
+        excludeTags("terminal-e2e", "terminal-stress")
     }
 }
+
+val terminalReportDirectory = layout.buildDirectory.dir("reports/terminal-reliability")
 
 val terminalE2eTest by tasks.registering(Test::class) {
     description = "Runs the installed sample application through a real pseudo-terminal"
@@ -59,6 +61,53 @@ val terminalE2eTest by tasks.registering(Test::class) {
             .get()
             .asFile.absolutePath,
     )
+    systemProperty("dispatch.sample.reportDir", terminalReportDirectory.get().asFile.absolutePath)
+}
+
+val terminalStressTest by tasks.registering(Test::class) {
+    description = "Runs the full installed-sample PTY stress, memory, and render reliability workflow"
+    group = LifecycleBasePlugin.VERIFICATION_GROUP
+
+    testClassesDirs = sourceSets.test.get().output.classesDirs
+    classpath = sourceSets.test.get().runtimeClasspath
+    dependsOn(tasks.installDist)
+    shouldRunAfter(terminalE2eTest)
+    maxParallelForks = 1
+
+    useJUnitPlatform {
+        includeTags("terminal-stress")
+    }
+
+    systemProperty(
+        "dispatch.sample.binary",
+        layout.buildDirectory.file("install/dispatch-sample/bin/dispatch-sample").get().asFile.absolutePath,
+    )
+    systemProperty("dispatch.sample.reportDir", terminalReportDirectory.get().asFile.absolutePath)
+}
+
+val terminalDiagnosticsReport by tasks.registering {
+    description = "Builds an aggregate index for local terminal reliability reports"
+    group = LifecycleBasePlugin.VERIFICATION_GROUP
+    dependsOn(terminalE2eTest, terminalStressTest)
+    val reportDirectory = terminalReportDirectory
+    outputs.file(reportDirectory.map { it.file("index.txt") })
+    outputs.upToDateWhen { false }
+    doLast {
+        val root = reportDirectory.get().asFile
+        root.mkdirs()
+        val summaries = root.walkTopDown().filter { it.name == "summary.txt" }.sortedBy { it.path }.toList()
+        root.resolve("index.txt").writeText(
+            buildString {
+                appendLine("Dispatch terminal reliability report")
+                appendLine("scenarios=${summaries.size}")
+                summaries.forEach { summary ->
+                    appendLine()
+                    appendLine("[${summary.parentFile.name}]")
+                    append(summary.readText())
+                }
+            },
+        )
+    }
 }
 
 tasks.check {

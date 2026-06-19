@@ -200,15 +200,15 @@ class TerminalRendererTest {
         )
 
         val output = recorder.output()
-        assertTrue(output.contains(AnsiCodes.CLEAR_SCREEN))
         assertTrue(output.contains(AnsiCodes.CLEAR_SCROLLBACK))
+        assertFalse(output.contains(AnsiCodes.CLEAR_SCREEN))
         assertTrue(output.contains("History 1"))
         assertTrue(output.contains("> input"))
         assertFalse(output.endsWith("\n"))
     }
 
     @Test
-    fun `rewriteViewport clears entire terminal viewport before drawing`() {
+    fun `rewriteViewport draws content before clearing trailing viewport rows`() {
         val (renderer, recorder) = createRenderer()
 
         renderer.rewriteViewport(
@@ -217,9 +217,11 @@ class TerminalRendererTest {
         )
 
         val output = recorder.output()
-        assertTrue(output.contains(AnsiCodes.moveTo(1, 1)))
+        assertTrue(output.contains(AnsiCodes.CURSOR_HOME))
         assertTrue(output.contains(AnsiCodes.moveTo(24, 1)))
         assertTrue(output.contains(AnsiCodes.CLEAR_LINE))
+        assertTrue(output.indexOf("only line") < output.indexOf(AnsiCodes.moveTo(24, 1)))
+        assertFalse(output.contains(AnsiCodes.CLEAR_SCREEN))
     }
 
     @Test

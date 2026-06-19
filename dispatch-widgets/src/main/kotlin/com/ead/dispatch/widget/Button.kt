@@ -354,8 +354,16 @@ private fun focusableAction(
                     return@register false
                 }
                 when {
-                    event.key == "Tab" && !event.shift && !event.ctrl && !event.alt -> {
+                    event.key == "Tab" && !event.ctrl && !event.alt -> {
+                        if (event.shift) focusRegistry.focusPrevious() else focusRegistry.focusNext()
+                        true
+                    }
+                    event.key == "ArrowDown" || event.key == "Down" -> {
                         focusRegistry.focusNext()
+                        true
+                    }
+                    event.key == "ArrowUp" || event.key == "Up" -> {
+                        focusRegistry.focusPrevious()
                         true
                     }
                     event.shift && event.key.equals("q", ignoreCase = true) -> {

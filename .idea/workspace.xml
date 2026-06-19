@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="09adec4a-725e-47a4-af17-b0db55278204" name="Changes" comment="optimization, memory leaks fixes">
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-core/src/main/kotlin/com/ead/dispatch/runtime/DispatchApplication.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-core/src/main/kotlin/com/ead/dispatch/runtime/DispatchApplication.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-core/src/main/kotlin/com/ead/dispatch/runtime/RenderDecisionTelemetry.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-core/src/main/kotlin/com/ead/dispatch/runtime/RenderDecisionTelemetry.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-core/src/main/kotlin/com/ead/dispatch/runtime/RenderPipeline.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-core/src/main/kotlin/com/ead/dispatch/runtime/RenderPipeline.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-core/src/main/kotlin/com/ead/dispatch/runtime/ResizeCoordinator.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-core/src/main/kotlin/com/ead/dispatch/runtime/ResizeCoordinator.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-core/src/test/kotlin/com/ead/dispatch/runtime/TerminalResizeUpdateTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-core/src/test/kotlin/com/ead/dispatch/runtime/TerminalResizeUpdateTest.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-navigation/src/main/kotlin/com/ead/dispatch/navigation/NavDisplay.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-navigation/src/main/kotlin/com/ead/dispatch/navigation/NavDisplay.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-renderer/src/main/kotlin/com/ead/dispatch/render/TerminalRenderer.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-renderer/src/main/kotlin/com/ead/dispatch/render/TerminalRenderer.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-renderer/src/test/kotlin/com/ead/dispatch/render/TerminalRendererTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-renderer/src/test/kotlin/com/ead/dispatch/render/TerminalRendererTest.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-renderer/src/test/kotlin/com/ead/dispatch/render/ViewportTransitionCleanupReliabilityTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-renderer/src/test/kotlin/com/ead/dispatch/render/ViewportTransitionCleanupReliabilityTest.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-runtime/src/main/kotlin/com/ead/dispatch/runtime/CompositionLocals.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-runtime/src/main/kotlin/com/ead/dispatch/runtime/CompositionLocals.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-sample/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-sample/build.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-sample/src/main/kotlin/com/ead/dispatch/sample/presentation/chat/ChatScreen.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-sample/src/main/kotlin/com/ead/dispatch/sample/presentation/chat/ChatScreen.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-sample/src/test/kotlin/com/ead/dispatch/sample/e2e/PtyTerminalSession.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-sample/src/test/kotlin/com/ead/dispatch/sample/e2e/PtyTerminalSession.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-sample/src/test/kotlin/com/ead/dispatch/sample/e2e/TerminalApplicationE2eTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-sample/src/test/kotlin/com/ead/dispatch/sample/e2e/TerminalApplicationE2eTest.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-widgets/src/main/kotlin/com/ead/dispatch/widget/Button.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-widgets/src/main/kotlin/com/ead/dispatch/widget/Button.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-widgets/src/main/kotlin/com/ead/dispatch/widget/CycleButton.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-widgets/src/main/kotlin/com/ead/dispatch/widget/CycleButton.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-widgets/src/main/kotlin/com/ead/dispatch/widget/Input.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-widgets/src/main/kotlin/com/ead/dispatch/widget/Input.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-widgets/src/test/kotlin/com/ead/dispatch/widget/WidgetInteractionTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-widgets/src/test/kotlin/com/ead/dispatch/widget/WidgetInteractionTest.kt" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ExternalProjectsData">
+    <projectState path="$PROJECT_DIR$">
+      <ProjectState />
+    </projectState>
+  </component>
+  <component name="ExternalProjectsManager">
+    <system id="GRADLE">
+      <state>
+        <projects_view>
+          <tree_state>
+            <expand>
+              <path>
+                <item name="" type="6a2764b6:ExternalProjectsStructure$RootNode" />
+                <item name="dispatch" type="f1a62948:ProjectNode" />
+              </path>
+            </expand>
+            <select />
+          </tree_state>
+        </projects_view>
+      </state>
+    </system>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+  </component>
+  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
+  "lastFilter": {
+    "state": "OPEN",
+    "assignee": "darkryh"
+  }
+}]]></component>
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/darkryh/dispatch.git",
+    "accountId": "2a548676-c621-444d-9b5f-a638050724b7"
+  }
+}]]></component>
+  <component name="ProjectColorInfo"><![CDATA[{
+  "customColor": "",
+  "associatedIndex": 5
+}]]></component>
+  <component name="ProjectId" id="3FM8otsRq5gETinZjk0ipijwcBn" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252": "true",
+    "RunOnceActivity.cidr.known.project.marker": "true",
+    "RunOnceActivity.git.unshallow": "true",
+    "RunOnceActivity.readMode.enableVisualFormatting": "true",
+    "RunOnceActivity.typescript.service.memoryLimit.init": "true",
+    "Shell Script.build-execute.sh.executor": "Run",
+    "cidr.known.project.marker": "true",
+    "codeWithMe.voiceChat.enabledByDefault": "false",
+    "git-widget-placeholder": "master",
+    "kotlin-language-version-configured": "true"
+  }
+}]]></component>
+  <component name="RunManager">
+    <configuration default="true" type="AppleRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" IS_LOCATION_SIMULATION_SUPPORTED="false" IS_LOCATION_SIMULATION_ALLOWED="true" APPLICATION_LANGUAGE="IDELaunchSchemeLanguageUseSystemLanguage" APPLICATION_REGION="" DEVELOPMENT_TEAM="" MAKE_ACTIVE="TRUE" SHOULD_DEBUG_EXTENSIONS="false">
+      <embedded_app_extension_list />
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="build-execute.sh" type="ShConfigurationType" temporary="true">
+      <option name="SCRIPT_TEXT" value="" />
+      <option name="INDEPENDENT_SCRIPT_PATH" value="true" />
+      <option name="SCRIPT_PATH" value="$PROJECT_DIR$/build-execute.sh" />
+      <option name="SCRIPT_OPTIONS" value="" />
+      <option name="INDEPENDENT_SCRIPT_WORKING_DIRECTORY" value="true" />
+      <option name="SCRIPT_WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <option name="INDEPENDENT_INTERPRETER_PATH" value="true" />
+      <option name="INTERPRETER_PATH" value="/bin/bash" />
+      <option name="INTERPRETER_OPTIONS" value="" />
+      <option name="EXECUTE_IN_TERMINAL" value="true" />
+      <option name="EXECUTE_SCRIPT_FILE" value="true" />
+      <envs />
+      <method v="2" />
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Shell Script.build-execute.sh" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SharedIndexes">
+    <attachedChunks>
+      <set>
+        <option value="bundled-jdk-30f59d01ecdd-37e91769500f-intellij.indexing.shared.core-IU-261.25134.95" />
+        <option value="bundled-js-predefined-d6986cc7102b-31caf2ab9e3c-JavaScript-IU-261.25134.95" />
+      </set>
+    </attachedChunks>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="09adec4a-725e-47a4-af17-b0db55278204" name="Changes" comment="" />
+      <created>1781873756241</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1781873756241</updated>
+    </task>
+    <task id="LOCAL-00001" summary="optimization, memory leaks fixes">
+      <option name="closed" value="true" />
+      <created>1781874742650</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1781874742650</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="optimization, memory leaks fixes" />
+    <option name="LAST_COMMIT_MESSAGE" value="optimization, memory leaks fixes" />
+  </component>
+</project>
