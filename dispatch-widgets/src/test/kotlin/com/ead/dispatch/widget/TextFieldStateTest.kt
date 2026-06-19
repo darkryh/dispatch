@@ -7,7 +7,6 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class TextFieldStateTest {
-
     @Test
     fun `initial value is set correctly`() {
         val state = TextFieldState("Hello")

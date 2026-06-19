@@ -1,13 +1,13 @@
 package com.ead.dispatch.widget
 
-import com.ead.dispatch.annotation.Dispatchable
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.remember
 import com.ead.dispatch.layout.Column
 import com.ead.dispatch.layout.Row
 import com.ead.dispatch.modifier.Modifier
-import com.ead.dispatch.runtime.DisposableEffect
 import com.ead.dispatch.runtime.LocalKeyboardInterceptor
 import com.ead.dispatch.runtime.rememberCallback
-import com.ead.dispatch.state.remember
 import com.github.ajalt.mordant.input.KeyboardEvent
 import com.github.ajalt.mordant.rendering.TextColors.Companion.rgb
 import com.github.ajalt.mordant.rendering.TextStyle
@@ -40,10 +40,13 @@ data class SessionOption<T>(
 enum class SessionDisplayColumn {
     /** Relative time since last update */
     UPDATED_TIME,
+
     /** Unique conversation/session ID */
     CONVERSATION_ID,
+
     /** Session title or conversation preview */
     TITLE,
+
     /** Number of messages in the session */
     MESSAGE_COUNT,
 }
@@ -63,7 +66,9 @@ data class ColumnConfig(
  * Text alignment options for columns.
  */
 enum class ColumnAlignment {
-    LEFT, RIGHT, CENTER
+    LEFT,
+    RIGHT,
+    CENTER,
 }
 
 /**
@@ -208,13 +213,11 @@ class SessionSelectorState<T>(
 /**
  * Remember a session selector state.
  */
-@Dispatchable
+@Composable
 fun <T> rememberSessionSelectorState(
     initialVisible: Boolean = true,
     initialSelectedIndex: Int = 0,
-): SessionSelectorState<T> {
-    return remember { SessionSelectorState(initialVisible, initialSelectedIndex) }
-}
+): SessionSelectorState<T> = remember { SessionSelectorState(initialVisible, initialSelectedIndex) }
 
 /**
  * A session selector widget that displays filterable session options with keyboard navigation.
@@ -268,17 +271,18 @@ fun <T> rememberSessionSelectorState(
  * @param enabled Whether the selector responds to input.
  * @param state State holder for visibility, selection, and filtering.
  */
-@Dispatchable
+@Composable
 fun <T> SessionSelector(
     options: List<SessionOption<T>>,
     onOptionSelected: (SessionOption<T>) -> Unit,
     onExit: () -> Unit,
     modifier: Modifier = Modifier,
-    columns: List<SessionDisplayColumn> = listOf(
-        SessionDisplayColumn.UPDATED_TIME,
-        SessionDisplayColumn.CONVERSATION_ID,
-        SessionDisplayColumn.TITLE,
-    ),
+    columns: List<SessionDisplayColumn> =
+        listOf(
+            SessionDisplayColumn.UPDATED_TIME,
+            SessionDisplayColumn.CONVERSATION_ID,
+            SessionDisplayColumn.TITLE,
+        ),
     columnConfigs: Map<SessionDisplayColumn, ColumnConfig> = emptyMap(),
     selectionIndicator: String? = "> ",
     visibleCount: Int = 10,
@@ -298,52 +302,56 @@ fun <T> SessionSelector(
     val keyboardInterceptor = LocalKeyboardInterceptor.current
 
     // Filter options based on filter text
-    val filteredOptions = if (state.filterText.isEmpty()) {
-        options.filter { it.enabled }
-    } else {
-        options.filter { option ->
-            option.enabled && (
-                option.title.contains(state.filterText, ignoreCase = true) ||
-                option.conversationId.contains(state.filterText, ignoreCase = true) ||
-                option.id.contains(state.filterText, ignoreCase = true)
-            )
+    val filteredOptions =
+        if (state.filterText.isEmpty()) {
+            options.filter { it.enabled }
+        } else {
+            options.filter { option ->
+                option.enabled &&
+                    (
+                        option.title.contains(state.filterText, ignoreCase = true) ||
+                            option.conversationId.contains(state.filterText, ignoreCase = true) ||
+                            option.id.contains(state.filterText, ignoreCase = true)
+                    )
+            }
         }
-    }
     state.updateFilteredOptions(filteredOptions)
 
     // Calculate column widths based on content and headers
     val columnWidths = calculateColumnWidths(filteredOptions, columns, columnConfigs, headerLabels, showHeaders)
 
     fun handleKeyEvent(event: KeyboardEvent): Boolean {
-        val consumed = handleSelectorKeyEvent(
-            event,
-            SelectorKeyBindings(
-                onMoveUp = { state.moveUp() },
-                onMoveDown = { state.moveDown() },
-                onConfirm = {
-                    state.selectedOption?.let(onOptionSelectedCallback)
-                    true
-                },
-                onCancel = {
-                    onExitCallback()
-                    true
-                },
-                onBackspace = {
-                    if (showFilter) {
-                        state.removeLastFilter()
-                    }
-                    true
-                },
-                onCharacter = if (showFilter) {
-                    { char ->
-                        state.appendFilter(char)
+        val consumed =
+            handleSelectorKeyEvent(
+                event,
+                SelectorKeyBindings(
+                    onMoveUp = { state.moveUp() },
+                    onMoveDown = { state.moveDown() },
+                    onConfirm = {
+                        state.selectedOption?.let(onOptionSelectedCallback)
                         true
-                    }
-                } else {
-                    null
-                },
-            ),
-        )
+                    },
+                    onCancel = {
+                        onExitCallback()
+                        true
+                    },
+                    onBackspace = {
+                        if (showFilter) {
+                            state.removeLastFilter()
+                        }
+                        true
+                    },
+                    onCharacter =
+                        if (showFilter) {
+                            { char ->
+                                state.appendFilter(char)
+                                true
+                            }
+                        } else {
+                            null
+                        },
+                ),
+            )
 
         return consumed
     }
@@ -354,9 +362,10 @@ fun <T> SessionSelector(
             return@DisposableEffect onDispose {}
         }
 
-        val interceptorDispose = keyboardInterceptor.register { event ->
-            handleKeyEvent(event)
-        }
+        val interceptorDispose =
+            keyboardInterceptor.register { event ->
+                handleKeyEvent(event)
+            }
 
         onDispose {
             interceptorDispose()
@@ -424,47 +433,49 @@ private fun <T> calculateColumnWidths(
     columnConfigs: Map<SessionDisplayColumn, ColumnConfig>,
     headerLabels: Map<SessionDisplayColumn, String>,
     showHeaders: Boolean,
-): Map<SessionDisplayColumn, Int> {
-    return columns.associateWith { column ->
+): Map<SessionDisplayColumn, Int> =
+    columns.associateWith { column ->
         // Check if there's a configured width
         columnConfigs[column]?.width ?: run {
             // Get header width
-            val headerWidth = if (showHeaders) {
-                val headerText = headerLabels[column] ?: when (column) {
-                    SessionDisplayColumn.UPDATED_TIME -> SessionColumnHeaders.UPDATED_TIME
-                    SessionDisplayColumn.CONVERSATION_ID -> SessionColumnHeaders.CONVERSATION_ID
-                    SessionDisplayColumn.TITLE -> SessionColumnHeaders.TITLE
-                    SessionDisplayColumn.MESSAGE_COUNT -> SessionColumnHeaders.MESSAGE_COUNT
+            val headerWidth =
+                if (showHeaders) {
+                    val headerText =
+                        headerLabels[column] ?: when (column) {
+                            SessionDisplayColumn.UPDATED_TIME -> SessionColumnHeaders.UPDATED_TIME
+                            SessionDisplayColumn.CONVERSATION_ID -> SessionColumnHeaders.CONVERSATION_ID
+                            SessionDisplayColumn.TITLE -> SessionColumnHeaders.TITLE
+                            SessionDisplayColumn.MESSAGE_COUNT -> SessionColumnHeaders.MESSAGE_COUNT
+                        }
+                    headerText.length
+                } else {
+                    0
                 }
-                headerText.length
-            } else {
-                0
-            }
 
             // Get max content width
-            val contentWidth = if (options.isEmpty()) {
-                0
-            } else {
-                options.maxOf { option ->
-                    when (column) {
-                        SessionDisplayColumn.UPDATED_TIME -> option.updatedTime.length
-                        SessionDisplayColumn.CONVERSATION_ID -> option.conversationId.length
-                        SessionDisplayColumn.TITLE -> option.title.length.coerceAtMost(50) // Cap title width
-                        SessionDisplayColumn.MESSAGE_COUNT -> "${option.messageCount} msgs".length
+            val contentWidth =
+                if (options.isEmpty()) {
+                    0
+                } else {
+                    options.maxOf { option ->
+                        when (column) {
+                            SessionDisplayColumn.UPDATED_TIME -> option.updatedTime.length
+                            SessionDisplayColumn.CONVERSATION_ID -> option.conversationId.length
+                            SessionDisplayColumn.TITLE -> option.title.length.coerceAtMost(50) // Cap title width
+                            SessionDisplayColumn.MESSAGE_COUNT -> "${option.messageCount} msgs".length
+                        }
                     }
                 }
-            }
 
             // Use the larger of header or content width
             maxOf(headerWidth, contentWidth)
         }
     }
-}
 
 /**
  * Renders a single session selector item.
  */
-@Dispatchable
+@Composable
 private fun <T> SessionSelectorItem(
     option: SessionOption<T>,
     isSelected: Boolean,
@@ -473,9 +484,10 @@ private fun <T> SessionSelectorItem(
     textStyles: SessionSelectorTextStyles,
     selectionIndicator: String?,
 ) {
-    val prefixText = selectionIndicator?.takeIf { it.isNotEmpty() }?.let { indicator ->
-        if (isSelected) indicator else " ".repeat(indicator.length)
-    }
+    val prefixText =
+        selectionIndicator?.takeIf { it.isNotEmpty() }?.let { indicator ->
+            if (isSelected) indicator else " ".repeat(indicator.length)
+        }
     val prefixStyle = if (isSelected) textStyles.selectedPrefix else textStyles.prefix
 
     Row {
@@ -484,24 +496,25 @@ private fun <T> SessionSelectorItem(
         }
 
         columns.forEachIndexed { index, column ->
-            val (text, style) = when (column) {
-                SessionDisplayColumn.UPDATED_TIME -> {
-                    val s = if (isSelected) textStyles.selectedUpdatedTime else textStyles.updatedTime
-                    option.updatedTime to s
+            val (text, style) =
+                when (column) {
+                    SessionDisplayColumn.UPDATED_TIME -> {
+                        val s = if (isSelected) textStyles.selectedUpdatedTime else textStyles.updatedTime
+                        option.updatedTime to s
+                    }
+                    SessionDisplayColumn.CONVERSATION_ID -> {
+                        val s = if (isSelected) textStyles.selectedConversationId else textStyles.conversationId
+                        option.conversationId to s
+                    }
+                    SessionDisplayColumn.TITLE -> {
+                        val s = if (isSelected) textStyles.selectedTitle else textStyles.title
+                        option.title to s
+                    }
+                    SessionDisplayColumn.MESSAGE_COUNT -> {
+                        val s = if (isSelected) textStyles.selectedMessageCount else textStyles.messageCount
+                        "${option.messageCount} msgs" to s
+                    }
                 }
-                SessionDisplayColumn.CONVERSATION_ID -> {
-                    val s = if (isSelected) textStyles.selectedConversationId else textStyles.conversationId
-                    option.conversationId to s
-                }
-                SessionDisplayColumn.TITLE -> {
-                    val s = if (isSelected) textStyles.selectedTitle else textStyles.title
-                    option.title to s
-                }
-                SessionDisplayColumn.MESSAGE_COUNT -> {
-                    val s = if (isSelected) textStyles.selectedMessageCount else textStyles.messageCount
-                    "${option.messageCount} msgs" to s
-                }
-            }
 
             val width = columnWidths[column] ?: text.length
             val paddedText = text.take(width).padEnd(width)
@@ -509,7 +522,7 @@ private fun <T> SessionSelectorItem(
 
             // Add spacing between columns (except after last)
             if (index < columns.size - 1) {
-                Text(text = "  ")  // Column separator
+                Text(text = "  ") // Column separator
             }
         }
     }
@@ -518,7 +531,7 @@ private fun <T> SessionSelectorItem(
 /**
  * Renders the header row for the session selector.
  */
-@Dispatchable
+@Composable
 private fun SessionSelectorHeader(
     columns: List<SessionDisplayColumn>,
     columnWidths: Map<SessionDisplayColumn, Int>,
@@ -527,9 +540,10 @@ private fun SessionSelectorHeader(
     headerLabels: Map<SessionDisplayColumn, String>,
 ) {
     // Empty prefix space to align with selection indicator
-    val prefixSpace = selectionIndicator?.takeIf { it.isNotEmpty() }?.let { indicator ->
-        " ".repeat(indicator.length)
-    }
+    val prefixSpace =
+        selectionIndicator?.takeIf { it.isNotEmpty() }?.let { indicator ->
+            " ".repeat(indicator.length)
+        }
 
     Row {
         if (!prefixSpace.isNullOrEmpty()) {
@@ -537,12 +551,13 @@ private fun SessionSelectorHeader(
         }
 
         columns.forEachIndexed { index, column ->
-            val headerText = headerLabels[column] ?: when (column) {
-                SessionDisplayColumn.UPDATED_TIME -> SessionColumnHeaders.UPDATED_TIME
-                SessionDisplayColumn.CONVERSATION_ID -> SessionColumnHeaders.CONVERSATION_ID
-                SessionDisplayColumn.TITLE -> SessionColumnHeaders.TITLE
-                SessionDisplayColumn.MESSAGE_COUNT -> SessionColumnHeaders.MESSAGE_COUNT
-            }
+            val headerText =
+                headerLabels[column] ?: when (column) {
+                    SessionDisplayColumn.UPDATED_TIME -> SessionColumnHeaders.UPDATED_TIME
+                    SessionDisplayColumn.CONVERSATION_ID -> SessionColumnHeaders.CONVERSATION_ID
+                    SessionDisplayColumn.TITLE -> SessionColumnHeaders.TITLE
+                    SessionDisplayColumn.MESSAGE_COUNT -> SessionColumnHeaders.MESSAGE_COUNT
+                }
 
             val width = columnWidths[column] ?: headerText.length
             val paddedText = headerText.take(width).padEnd(width)
@@ -550,7 +565,7 @@ private fun SessionSelectorHeader(
 
             // Add spacing between columns (except after last)
             if (index < columns.size - 1) {
-                Text(text = "  ")  // Column separator
+                Text(text = "  ") // Column separator
             }
         }
     }

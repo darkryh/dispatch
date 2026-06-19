@@ -7,7 +7,6 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class FilterInputControllerTest {
-
     @Test
     fun `inserts characters and advances cursor`() {
         val state = TextFieldState()

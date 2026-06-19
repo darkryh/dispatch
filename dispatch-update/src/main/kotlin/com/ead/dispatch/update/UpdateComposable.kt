@@ -1,14 +1,14 @@
 package com.ead.dispatch.update
 
-import com.ead.dispatch.annotation.Dispatchable
-import com.ead.dispatch.runtime.LaunchedEffect
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import com.ead.dispatch.runtime.LocalDispatchConfig
-import com.ead.dispatch.state.getValue
-import com.ead.dispatch.state.mutableStateOf
-import com.ead.dispatch.state.remember
-import com.ead.dispatch.state.setValue
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 
-@Dispatchable
+@Composable
 fun rememberUpdateAdvice(
     updateConfig: UpdateConfig = UpdateConfig(),
     sourceResolver: UpdateSourceResolver = DefaultUpdateSourceResolver(),

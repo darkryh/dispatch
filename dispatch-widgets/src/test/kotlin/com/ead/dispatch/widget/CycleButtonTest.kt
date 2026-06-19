@@ -5,7 +5,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNull
 
 class CycleButtonTest {
-
     @Test
     fun `nextOption returns first when current missing`() {
         val options = listOf("STORY", "VOLUME", "CHAPTER")

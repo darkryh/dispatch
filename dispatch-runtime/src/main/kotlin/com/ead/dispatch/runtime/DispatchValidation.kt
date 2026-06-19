@@ -1,18 +1,18 @@
 package com.ead.dispatch.runtime
 
-import com.ead.dispatch.annotation.Dispatchable
+import androidx.compose.runtime.Composable
 
-@Dispatchable
+@Composable
 fun requireDispatchScope(): DispatchScope = LocalDispatchScope.current
 
-@Dispatchable
+@Composable
 fun requireDispatchArgs(): DispatchArgs = LocalDispatchArgs.current
 
-@Dispatchable
+@Composable
 fun requireDispatchContext(): DispatchContext = LocalDispatchContext.current
 
-@Dispatchable
+@Composable
 fun requireArgument(name: String): String = requireDispatchArgs().requireArgument(name)
 
-@Dispatchable
+@Composable
 fun requireFlag(name: String) = requireDispatchArgs().requireFlag(name)

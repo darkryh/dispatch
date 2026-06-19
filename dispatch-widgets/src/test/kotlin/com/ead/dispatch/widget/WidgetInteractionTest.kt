@@ -1,13 +1,12 @@
 package com.ead.dispatch.widget
 
-import com.ead.dispatch.annotation.Dispatchable
+import androidx.compose.runtime.CompositionLocalProvider
 import com.ead.dispatch.constraints.Constraints
-import com.ead.dispatch.layout.LayoutNode
 import com.ead.dispatch.layout.Column
+import com.ead.dispatch.layout.LayoutNode
 import com.ead.dispatch.modifier.Modifier
 import com.ead.dispatch.modifier.semantics
 import com.ead.dispatch.runtime.Composer
-import com.ead.dispatch.runtime.CompositionLocalProvider
 import com.ead.dispatch.runtime.FocusRegistry
 import com.ead.dispatch.runtime.KeyboardInterceptor
 import com.ead.dispatch.runtime.LocalFocusRegistry
@@ -26,18 +25,23 @@ import kotlin.test.assertTrue
 
 class WidgetInteractionTest {
     private class FocusHarness {
-        private val terminal = Terminal(
-            ansiLevel = AnsiLevel.NONE,
-            width = 80,
-            height = 20,
-            interactive = false,
-        )
+        private val terminal =
+            Terminal(
+                ansiLevel = AnsiLevel.NONE,
+                width = 80,
+                height = 20,
+                interactive = false,
+            )
         private val keyboardInterceptor = KeyboardInterceptor()
         private val focusRegistry = FocusRegistry()
         private val composer = Composer()
 
         var inputValue: String = ""
         var cycleValue: String = "Alpha"
+        var buttonClicks: Int = 0
+        var iconClicks: Int = 0
+        var checked: Boolean = false
+        var radioClicks: Int = 0
         var inputEnabled: Boolean = true
         var cycleEnabled: Boolean = true
         var headerText: String = "Header"
@@ -72,6 +76,16 @@ class WidgetInteractionTest {
                             enabled = cycleEnabled,
                             modifier = cycleModifier,
                         )
+                        Button("Run", onClick = { buttonClicks++ })
+                        IconButton("!", onClick = { iconClicks++ })
+                        ToggleButton(
+                            checked = checked,
+                            onCheckedChange = { checked = it },
+                        )
+                        RadioButton(
+                            selected = false,
+                            onClick = { radioClicks++ },
+                        )
                     }
                 }
 
@@ -86,10 +100,37 @@ class WidgetInteractionTest {
             return root
         }
 
-        fun press(key: String, ctrl: Boolean = false, alt: Boolean = false, shift: Boolean = false) {
+        fun press(
+            key: String,
+            ctrl: Boolean = false,
+            alt: Boolean = false,
+            shift: Boolean = false,
+        ) {
             keyboardInterceptor.tryIntercept(KeyboardEvent(key, ctrl = ctrl, alt = alt, shift = shift))
             render()
         }
+    }
+
+    @Test
+    fun `button family activates through focus and keyboard pipeline`() {
+        val harness = FocusHarness()
+        harness.render()
+
+        repeat(2) { harness.press("Tab") }
+        harness.press("Enter")
+        assertEquals(1, harness.buttonClicks)
+
+        harness.press("Tab")
+        harness.press("Space")
+        assertEquals(1, harness.iconClicks)
+
+        harness.press("Tab")
+        harness.press("Enter")
+        assertTrue(harness.checked)
+
+        harness.press("Tab")
+        harness.press("Enter")
+        assertEquals(1, harness.radioClicks)
     }
 
     @Test
@@ -137,10 +178,11 @@ class WidgetInteractionTest {
 
     @Test
     fun `semantics tags surface on widget nodes`() {
-        val harness = FocusHarness().apply {
-            inputModifier = Modifier.semantics("input-main")
-            cycleModifier = Modifier.semantics("cycle-main")
-        }
+        val harness =
+            FocusHarness().apply {
+                inputModifier = Modifier.semantics("input-main")
+                cycleModifier = Modifier.semantics("cycle-main")
+            }
 
         val root = harness.render()
         assertNotNull(root)
@@ -153,8 +195,12 @@ class WidgetInteractionTest {
         assertTrue(inputNodes.first().name.contains("TextField"))
     }
 
-    private fun findNodesWithTag(root: LayoutNode, tag: String): List<LayoutNode> {
+    private fun findNodesWithTag(
+        root: LayoutNode,
+        tag: String,
+    ): List<LayoutNode> {
         val matches = mutableListOf<LayoutNode>()
+
         fun visit(node: LayoutNode) {
             if (node.semanticsTags.contains(tag)) {
                 matches.add(node)

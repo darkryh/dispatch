@@ -6,9 +6,16 @@ import com.github.ajalt.mordant.rendering.Whitespace
 
 internal var inputNowNanos: () -> Long = { System.nanoTime() }
 
-internal data class TextInsertResult(val value: String, val cursorPosition: Int)
+internal data class TextInsertResult(
+    val value: String,
+    val cursorPosition: Int,
+)
 
-internal fun applyInsertion(value: String, cursorPosition: Int, text: String): TextInsertResult {
+internal fun applyInsertion(
+    value: String,
+    cursorPosition: Int,
+    text: String,
+): TextInsertResult {
     val safeCursor = cursorPosition.coerceIn(0, value.length)
     val before = value.substring(0, safeCursor)
     val after = value.substring(safeCursor)
@@ -31,6 +38,7 @@ internal class InputEditor(
     private var historyItemsProvider: () -> List<String> = { emptyList() }
     private var contentWidthProvider: () -> Int = { 1 }
     private lateinit var terminal: com.github.ajalt.mordant.terminal.Terminal
+    private var preferredVerticalColumn: Int? = null
 
     fun updateDependencies(
         onValueChange: (String) -> Unit,
@@ -50,6 +58,9 @@ internal class InputEditor(
 
     fun handleKeyEvent(event: KeyboardEvent) {
         setCursor(getCursor().coerceIn(0, getValue().length))
+        if (event.key != "ArrowUp" && event.key != "ArrowDown") {
+            preferredVerticalColumn = null
+        }
         when (event.key) {
             "PasteStart" -> {
                 pasteTracker.increment()
@@ -136,12 +147,15 @@ internal class InputEditor(
                     onValueChange(getValue())
                     return
                 }
-                val info = cursorLineInfo(
-                    terminal = terminal,
-                    text = getValue(),
-                    cursorPosition = getCursor(),
-                    wrapWidth = contentWidthProvider(),
-                )
+                val info =
+                    cursorLineInfo(
+                        terminal = terminal,
+                        text = getValue(),
+                        cursorPosition = getCursor(),
+                        wrapWidth = contentWidthProvider(),
+                    )
+                val targetColumn = preferredVerticalColumn ?: info.col
+                preferredVerticalColumn = targetColumn
                 if (info.line == 0 && getCursor() > 0) {
                     updateCursorPosition(0)
                     return
@@ -153,7 +167,8 @@ internal class InputEditor(
                         cursorPosition = getCursor(),
                         direction = -1,
                         wrapWidth = contentWidthProvider(),
-                    )
+                        desiredColumn = targetColumn,
+                    ),
                 )
             }
             "ArrowDown" -> {
@@ -163,23 +178,27 @@ internal class InputEditor(
                     if (historyIndexState.index < historyItems.size) {
                         historyIndexState.index =
                             (historyIndexState.index + 1).coerceIn(0, historyItems.size)
-                        val next = if (historyIndexState.index == historyItems.size) {
-                            historyIndexState.draft ?: ""
-                        } else {
-                            historyItems.getOrElse(historyIndexState.index) { "" }
-                        }
+                        val next =
+                            if (historyIndexState.index == historyItems.size) {
+                                historyIndexState.draft ?: ""
+                            } else {
+                                historyItems.getOrElse(historyIndexState.index) { "" }
+                            }
                         setValue(next)
                         updateCursorPosition(next.length)
                         onValueChange(getValue())
                         return
                     }
                 }
-                val info = cursorLineInfo(
-                    terminal = terminal,
-                    text = getValue(),
-                    cursorPosition = getCursor(),
-                    wrapWidth = contentWidthProvider(),
-                )
+                val info =
+                    cursorLineInfo(
+                        terminal = terminal,
+                        text = getValue(),
+                        cursorPosition = getCursor(),
+                        wrapWidth = contentWidthProvider(),
+                    )
+                val targetColumn = preferredVerticalColumn ?: info.col
+                preferredVerticalColumn = targetColumn
                 if (info.line == info.maxLine && getCursor() < getValue().length) {
                     updateCursorPosition(getValue().length)
                     return
@@ -191,7 +210,8 @@ internal class InputEditor(
                         cursorPosition = getCursor(),
                         direction = 1,
                         wrapWidth = contentWidthProvider(),
-                    )
+                        desiredColumn = targetColumn,
+                    ),
                 )
             }
             "Home" -> updateCursorPosition(0)
@@ -244,7 +264,9 @@ internal class PasteTracker {
     }
 }
 
-internal class PasteHeuristic(private val nowNanos: () -> Long) {
+internal class PasteHeuristic(
+    private val nowNanos: () -> Long,
+) {
     private var lastTextAtNanos = 0L
     private var recentInsertCount = 0
     private var suppressNextEnterUntilNanos = 0L
@@ -282,9 +304,16 @@ internal class PasteHeuristic(private val nowNanos: () -> Long) {
     }
 }
 
-private data class CursorVisual(val line: Int, val col: Int)
+private data class CursorVisual(
+    val line: Int,
+    val col: Int,
+)
 
-private data class CursorLineInfo(val line: Int, val maxLine: Int)
+private data class CursorLineInfo(
+    val line: Int,
+    val maxLine: Int,
+    val col: Int,
+)
 
 private fun moveCursorVertical(
     terminal: com.github.ajalt.mordant.terminal.Terminal,
@@ -292,6 +321,7 @@ private fun moveCursorVertical(
     cursorPosition: Int,
     direction: Int,
     wrapWidth: Int,
+    desiredColumn: Int,
 ): Int {
     if (direction == 0) return cursorPosition.coerceIn(0, text.length)
 
@@ -305,20 +335,23 @@ private fun moveCursorVertical(
         return cache.getOrPut(safePos) {
             val prefix = text.substring(0, safePos)
             val suffixSpan = spanSuffixFrom(text, safePos)
-            val rendered = terminal.render(
-                prefix + marker + suffixSpan,
-                whitespace = Whitespace.PRE_WRAP,
-                overflowWrap = OverflowWrap.BREAK_WORD,
-                width = width,
-            )
+            val rendered =
+                terminal.render(
+                    prefix + marker + suffixSpan,
+                    whitespace = Whitespace.PRE_WRAP,
+                    overflowWrap = OverflowWrap.BREAK_WORD,
+                    width = width,
+                )
             val lines = rendered.lines()
-            val markerLineIndex = lines.indexOfFirst { it.contains(marker) }.let { index ->
-                if (index == -1) lines.lastIndex.coerceAtLeast(0) else index
-            }
+            val markerLineIndex =
+                lines.indexOfFirst { it.contains(marker) }.let { index ->
+                    if (index == -1) lines.lastIndex.coerceAtLeast(0) else index
+                }
             val markerLine = lines.getOrNull(markerLineIndex).orEmpty()
-            val markerCol = markerLine.indexOf(marker).let { index ->
-                if (index == -1) markerLine.length else index
-            }
+            val markerCol =
+                markerLine.indexOf(marker).let { index ->
+                    if (index == -1) markerLine.length else index
+                }
 
             CursorVisual(line = markerLineIndex, col = markerCol)
         }
@@ -328,40 +361,17 @@ private fun moveCursorVertical(
     val maxLine = visualAt(text.length).line
     val targetLine = (current.line + direction).coerceIn(0, maxLine)
     if (targetLine == current.line) return clampedCursor
-    val desiredCol = current.col
+    val desiredCol = desiredColumn.coerceAtLeast(0)
 
-    fun lowerBoundLine(target: Int): Int {
-        var low = 0
-        var high = text.length + 1 // exclusive
-        while (low < high) {
-            val mid = (low + high) / 2
-            val line = visualAt(mid.coerceAtMost(text.length)).line
-            if (line < target) {
-                low = mid + 1
-            } else {
-                high = mid
-            }
-        }
-        return low.coerceIn(0, text.length)
-    }
-
-    val start = lowerBoundLine(targetLine)
-    val endExclusive = lowerBoundLine(targetLine + 1).coerceAtMost(text.length)
-    if (start >= endExclusive) return clampedCursor
-
-    var low = start
-    var high = endExclusive
-    while (low < high) {
-        val mid = (low + high) / 2
-        val v = visualAt(mid)
-        when {
-            v.line > targetLine -> high = mid
-            v.col <= desiredCol -> low = mid + 1
-            else -> high = mid
-        }
-    }
-
-    return (low - 1).coerceIn(start, endExclusive - 1)
+    return (0..text.length)
+        .asSequence()
+        .map { position -> position to visualAt(position) }
+        .filter { (_, visual) -> visual.line == targetLine }
+        .minWithOrNull(
+            compareBy<Pair<Int, CursorVisual>> { (_, visual) -> kotlin.math.abs(visual.col - desiredCol) }
+                .thenByDescending { (position, _) -> position },
+        )?.first
+        ?: clampedCursor
 }
 
 private fun cursorLineInfo(
@@ -380,27 +390,30 @@ private fun cursorLineInfo(
         return cache.getOrPut(safePos) {
             val prefix = text.substring(0, safePos)
             val suffixSpan = spanSuffixFrom(text, safePos)
-            val rendered = terminal.render(
-                prefix + marker + suffixSpan,
-                whitespace = Whitespace.PRE_WRAP,
-                overflowWrap = OverflowWrap.BREAK_WORD,
-                width = width,
-            )
+            val rendered =
+                terminal.render(
+                    prefix + marker + suffixSpan,
+                    whitespace = Whitespace.PRE_WRAP,
+                    overflowWrap = OverflowWrap.BREAK_WORD,
+                    width = width,
+                )
             val lines = rendered.lines()
-            val markerLineIndex = lines.indexOfFirst { it.contains(marker) }.let { index ->
-                if (index == -1) lines.lastIndex.coerceAtLeast(0) else index
-            }
+            val markerLineIndex =
+                lines.indexOfFirst { it.contains(marker) }.let { index ->
+                    if (index == -1) lines.lastIndex.coerceAtLeast(0) else index
+                }
             val markerLine = lines.getOrNull(markerLineIndex).orEmpty()
-            val markerCol = markerLine.indexOf(marker).let { index ->
-                if (index == -1) markerLine.length else index
-            }
+            val markerCol =
+                markerLine.indexOf(marker).let { index ->
+                    if (index == -1) markerLine.length else index
+                }
             CursorVisual(line = markerLineIndex, col = markerCol)
         }
     }
 
     val current = visualAt(clampedCursor)
     val maxLine = visualAt(text.length).line
-    return CursorLineInfo(line = current.line, maxLine = maxLine)
+    return CursorLineInfo(line = current.line, maxLine = maxLine, col = current.col)
 }
 
 private const val PASTE_BURST_NANOS: Long = 35_000_000
@@ -422,7 +435,10 @@ internal const val CURSOR_MARKER: String = "\u0001"
  * Including this suffix when measuring cursor position prevents incorrect wrapping when the cursor
  * is inside a word that would otherwise be wrapped as a whole.
  */
-internal fun spanSuffixFrom(text: String, start: Int): String {
+internal fun spanSuffixFrom(
+    text: String,
+    start: Int,
+): String {
     if (start >= text.length) return ""
 
     val type = cursorSpanType(text[start])

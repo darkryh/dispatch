@@ -1,6 +1,6 @@
 package com.ead.dispatch.navigation
 
-import com.ead.dispatch.annotation.Dispatchable
+import androidx.compose.runtime.Composable
 import kotlin.jvm.JvmSuppressWildcards
 import kotlin.reflect.KClass
 
@@ -28,7 +28,7 @@ class EntryProviderScope<T : NavKey>(
         key: K,
         contentKey: Any = stableContentKey(key),
         metadata: Map<String, Any> = emptyMap(),
-        content: @Dispatchable (K) -> Unit,
+        content: @Composable (K) -> Unit,
     ) {
         require(key !in providers) {
             "An `entry` with the key `key` has already been added: $key."
@@ -40,7 +40,7 @@ class EntryProviderScope<T : NavKey>(
         key: K,
         @Suppress("KotlinDefaultParameterOrder") contentKey: Any = stableContentKey(key),
         metadata: (K) -> Map<String, Any>,
-        content: @Dispatchable (K) -> Unit,
+        content: @Composable (K) -> Unit,
     ) {
         require(key !in providers) {
             "An `entry` with the key `key` has already been added: $key."
@@ -52,7 +52,7 @@ class EntryProviderScope<T : NavKey>(
         key: K,
         contentKey: Any = stableContentKey(key),
         metadata: Map<String, Any> = emptyMap(),
-        content: @Dispatchable (K) -> Unit,
+        content: @Composable (K) -> Unit,
     ) {
         addEntryProvider(key, contentKey, { metadata }, content)
     }
@@ -61,7 +61,7 @@ class EntryProviderScope<T : NavKey>(
         key: K,
         @Suppress("KotlinDefaultParameterOrder") contentKey: Any = stableContentKey(key),
         metadata: (K) -> Map<String, Any>,
-        content: @Dispatchable (K) -> Unit,
+        content: @Composable (K) -> Unit,
     ) {
         addEntryProvider(key, contentKey, metadata, content)
     }
@@ -70,7 +70,7 @@ class EntryProviderScope<T : NavKey>(
         clazz: KClass<out K>,
         clazzContentKey: (key: @JvmSuppressWildcards K) -> Any = { stableContentKey(it) },
         metadata: Map<String, Any> = emptyMap(),
-        content: @Dispatchable (K) -> Unit,
+        content: @Composable (K) -> Unit,
     ) {
         require(clazz !in clazzProviders) {
             "An `entry` with the same `clazz` has already been added: ${clazz.simpleName}."
@@ -83,7 +83,7 @@ class EntryProviderScope<T : NavKey>(
         @Suppress("KotlinDefaultParameterOrder")
         clazzContentKey: (key: @JvmSuppressWildcards K) -> Any = { stableContentKey(it) },
         metadata: (K) -> Map<String, Any>,
-        content: @Dispatchable (K) -> Unit,
+        content: @Composable (K) -> Unit,
     ) {
         require(clazz !in clazzProviders) {
             "An `entry` with the same `clazz` has already been added: ${clazz.simpleName}."
@@ -94,7 +94,7 @@ class EntryProviderScope<T : NavKey>(
     inline fun <reified K : T> entry(
         noinline clazzContentKey: (key: @JvmSuppressWildcards K) -> Any = { stableContentKey(it) },
         metadata: Map<String, Any> = emptyMap(),
-        noinline content: @Dispatchable (K) -> Unit,
+        noinline content: @Composable (K) -> Unit,
     ) {
         addEntryProvider(K::class, clazzContentKey, { metadata }, content)
     }
@@ -103,7 +103,7 @@ class EntryProviderScope<T : NavKey>(
         @Suppress("KotlinDefaultParameterOrder")
         noinline clazzContentKey: (key: @JvmSuppressWildcards K) -> Any = { stableContentKey(it) },
         noinline metadata: (K) -> Map<String, Any>,
-        noinline content: @Dispatchable (K) -> Unit,
+        noinline content: @Composable (K) -> Unit,
     ) {
         addEntryProvider(K::class, clazzContentKey, metadata, content)
     }
@@ -127,7 +127,7 @@ private data class EntryClassProvider<K : NavKey>(
     val clazz: KClass<K>,
     val clazzContentKey: (key: K) -> Any,
     val metadata: (K) -> Map<String, Any>,
-    val content: @Dispatchable (K) -> Unit,
+    val content: @Composable (K) -> Unit,
 )
 
 @Suppress("DataClassDefinition")
@@ -135,5 +135,5 @@ private data class EntryProvider<K : NavKey>(
     val key: K,
     val contentKey: Any,
     val metadata: (K) -> Map<String, Any>,
-    val content: @Dispatchable (K) -> Unit,
+    val content: @Composable (K) -> Unit,
 )

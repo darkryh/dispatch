@@ -1,14 +1,22 @@
 package com.ead.dispatch.widget
 
-import com.ead.dispatch.annotation.Dispatchable
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.remember
 import com.ead.dispatch.constraints.Constraints
 import com.ead.dispatch.layout.Measurable
 import com.ead.dispatch.layout.Placeable
 import com.ead.dispatch.layout.SimplePlaceable
 import com.ead.dispatch.modifier.Modifier
 import com.ead.dispatch.modifier.applyToConstraints
-import com.ead.dispatch.runtime.Composer
+import com.ead.dispatch.modifier.focusable
+import com.ead.dispatch.runtime.LocalFocusRegistry
+import com.ead.dispatch.runtime.LocalKeyboardInterceptor
+import com.ead.dispatch.runtime.LocalTheme
+import com.ead.dispatch.runtime.composableContainer
 import com.ead.dispatch.runtime.composableWidget
+import com.ead.dispatch.runtime.rememberCallback
+import com.github.ajalt.mordant.rendering.TextStyle
 
 /**
  * A clickable button.
@@ -27,20 +35,27 @@ import com.ead.dispatch.runtime.composableWidget
  * @param enabled Whether the button is enabled.
  * @param style Button visual style.
  */
-@Dispatchable
+@Composable
 fun Button(
     text: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     style: ButtonStyle = ButtonStyle.Outlined,
-) = composableWidget("Button") {
-    ButtonMeasurable(
-        text = text,
-        enabled = enabled,
-        style = style,
-        modifier = modifier,
-    )
+) {
+    val focus = focusableAction(modifier, enabled, onClick)
+    val theme = LocalTheme.current
+    composableWidget("Button") {
+        ButtonMeasurable(
+            text = text,
+            enabled = enabled,
+            style = style,
+            modifier = focus.modifier,
+            isFocused = focus.isFocused,
+            focusedStyle = theme.selection,
+            disabledStyle = theme.muted,
+        )
+    }
 }
 
 /**
@@ -78,33 +93,33 @@ internal class ButtonMeasurable(
     private val enabled: Boolean,
     private val style: ButtonStyle,
     override val modifier: Modifier,
+    private val isFocused: Boolean = false,
+    private val focusedStyle: TextStyle? = null,
+    private val disabledStyle: TextStyle? = null,
 ) : Measurable {
-
     override fun measure(constraints: Constraints): Placeable {
         val modifiedConstraints = modifier.applyToConstraints(constraints)
 
-        val (leftCap, rightCap) = when (style) {
-            ButtonStyle.Outlined -> "[ " to " ]"
-            ButtonStyle.Angled -> "<" to ">"
-            ButtonStyle.Text -> "" to ""
-            ButtonStyle.Filled -> "▌" to "▐"
-            ButtonStyle.Rounded -> "(" to ")"
-        }
+        val (leftCap, rightCap) =
+            when (style) {
+                ButtonStyle.Outlined -> "[ " to " ]"
+                ButtonStyle.Angled -> "<" to ">"
+                ButtonStyle.Text -> "" to ""
+                ButtonStyle.Filled -> "▌" to "▐"
+                ButtonStyle.Rounded -> "(" to ")"
+            }
 
         val display = "$leftCap$text$rightCap"
         val width = modifiedConstraints.constrainWidth(display.length)
 
         // In a real implementation, disabled buttons would be dimmed
-        val finalDisplay = if (!enabled) {
-            display // Would be styled differently
-        } else {
-            display
-        }
+        val visibleDisplay = display.take(width).padEnd(width)
+        val finalDisplay = styleActionDisplay(visibleDisplay, enabled, isFocused, focusedStyle, disabledStyle)
 
         return SimplePlaceable(
             width = width,
             height = 1,
-            lines = listOf(finalDisplay.take(width).padEnd(width)),
+            lines = listOf(finalDisplay),
         )
     }
 }
@@ -118,7 +133,7 @@ internal class ButtonMeasurable(
  * IconButton(icon = "✕", onClick = { cancel() })
  * ```
  */
-@Dispatchable
+@Composable
 fun IconButton(
     icon: String,
     onClick: () -> Unit,
@@ -126,18 +141,28 @@ fun IconButton(
     enabled: Boolean = true,
     bordered: Boolean = true,
 ) {
+    val focus = focusableAction(modifier, enabled, onClick)
+    val theme = LocalTheme.current
     val display = if (bordered) "[$icon]" else icon
     composableWidget("IconButton") {
         object : Measurable {
-            override val modifier: Modifier = modifier
+            override val modifier: Modifier = focus.modifier
 
-            override fun measure(constraints: Constraints): Placeable {
-                return SimplePlaceable(
+            override fun measure(constraints: Constraints): Placeable =
+                SimplePlaceable(
                     width = display.length,
                     height = 1,
-                    lines = listOf(display),
+                    lines =
+                        listOf(
+                            styleActionDisplay(
+                                display = display,
+                                enabled = enabled,
+                                isFocused = focus.isFocused,
+                                focusedStyle = theme.selection,
+                                disabledStyle = theme.muted,
+                            ),
+                        ),
                 )
-            }
         }
     }
 }
@@ -153,27 +178,18 @@ fun IconButton(
  * }
  * ```
  */
-@Dispatchable
+@Composable
 fun ButtonRow(
     modifier: Modifier = Modifier,
     spacing: Int = 2,
-    content: @Dispatchable () -> Unit,
+    content: @Composable () -> Unit,
 ) {
-    val composer = Composer.current
-    val node = composer.startNode("ButtonRow")
-
-    content()
-
-    val buttonMeasurables = node.children
-
-    val rowMeasurable = ButtonRowMeasurable(
+    composableContainer(
+        name = "ButtonRow",
         modifier = modifier,
-        buttons = buttonMeasurables,
-        spacing = spacing,
+        measurableFactory = { children -> ButtonRowMeasurable(modifier, children, spacing) },
+        content = content,
     )
-
-    composer.registerMeasurable(rowMeasurable)
-    composer.endNode()
 }
 
 internal class ButtonRowMeasurable(
@@ -181,16 +197,16 @@ internal class ButtonRowMeasurable(
     private val buttons: List<Measurable>,
     private val spacing: Int,
 ) : Measurable {
-
     override fun measure(constraints: Constraints): Placeable {
         val modifiedConstraints = modifier.applyToConstraints(constraints)
 
-        val buttonConstraints = Constraints(
-            minWidth = 0,
-            maxWidth = modifiedConstraints.maxWidth,
-            minHeight = 0,
-            maxHeight = 1,
-        )
+        val buttonConstraints =
+            Constraints(
+                minWidth = 0,
+                maxWidth = modifiedConstraints.maxWidth,
+                minHeight = 0,
+                maxHeight = 1,
+            )
 
         val placeables = buttons.map { it.measure(buttonConstraints) }
 
@@ -220,7 +236,7 @@ internal class ButtonRowMeasurable(
  * )
  * ```
  */
-@Dispatchable
+@Composable
 fun ToggleButton(
     checked: Boolean,
     onCheckedChange: (Boolean) -> Unit,
@@ -228,20 +244,30 @@ fun ToggleButton(
     label: String? = null,
     enabled: Boolean = true,
     style: ToggleStyle = ToggleStyle.Checkbox,
-) = composableWidget("ToggleButton") {
-    ToggleButtonMeasurable(
-        checked = checked,
-        label = label,
-        enabled = enabled,
-        style = style,
-        modifier = modifier,
-    )
+) {
+    val focus = focusableAction(modifier, enabled) { onCheckedChange(!checked) }
+    val theme = LocalTheme.current
+    composableWidget("ToggleButton") {
+        ToggleButtonMeasurable(
+            checked = checked,
+            label = label,
+            enabled = enabled,
+            style = style,
+            modifier = focus.modifier,
+            isFocused = focus.isFocused,
+            focusedStyle = theme.selection,
+            disabledStyle = theme.muted,
+        )
+    }
 }
 
 /**
  * Toggle button styles.
  */
-enum class ToggleStyle(val checkedChar: String, val uncheckedChar: String) {
+enum class ToggleStyle(
+    val checkedChar: String,
+    val uncheckedChar: String,
+) {
     Checkbox("[✓]", "[ ]"),
     Square("[■]", "[ ]"),
     Circle("(●)", "( )"),
@@ -255,8 +281,10 @@ internal class ToggleButtonMeasurable(
     private val enabled: Boolean,
     private val style: ToggleStyle,
     override val modifier: Modifier,
+    private val isFocused: Boolean = false,
+    private val focusedStyle: TextStyle? = null,
+    private val disabledStyle: TextStyle? = null,
 ) : Measurable {
-
     override fun measure(constraints: Constraints): Placeable {
         val indicator = if (checked) style.checkedChar else style.uncheckedChar
         val display = if (label != null) "$indicator $label" else indicator
@@ -264,7 +292,7 @@ internal class ToggleButtonMeasurable(
         return SimplePlaceable(
             width = display.length,
             height = 1,
-            lines = listOf(display),
+            lines = listOf(styleActionDisplay(display, enabled, isFocused, focusedStyle, disabledStyle)),
         )
     }
 }
@@ -272,7 +300,7 @@ internal class ToggleButtonMeasurable(
 /**
  * A radio button for single selection.
  */
-@Dispatchable
+@Composable
 fun RadioButton(
     selected: Boolean,
     onClick: () -> Unit,
@@ -280,19 +308,90 @@ fun RadioButton(
     label: String? = null,
     enabled: Boolean = true,
 ) {
+    val focus = focusableAction(modifier, enabled, onClick)
+    val theme = LocalTheme.current
     val indicator = if (selected) "(●)" else "( )"
     val display = if (label != null) "$indicator $label" else indicator
     composableWidget("RadioButton") {
         object : Measurable {
-            override val modifier: Modifier = modifier
+            override val modifier: Modifier = focus.modifier
 
-            override fun measure(constraints: Constraints): Placeable {
-                return SimplePlaceable(
+            override fun measure(constraints: Constraints): Placeable =
+                SimplePlaceable(
                     width = display.length,
                     height = 1,
-                    lines = listOf(display),
+                    lines =
+                        listOf(
+                            styleActionDisplay(
+                                display = display,
+                                enabled = enabled,
+                                isFocused = focus.isFocused,
+                                focusedStyle = theme.selection,
+                                disabledStyle = theme.muted,
+                            ),
+                        ),
                 )
-            }
         }
     }
 }
+
+@Composable
+private fun focusableAction(
+    modifier: Modifier,
+    enabled: Boolean,
+    onActivate: () -> Unit,
+): ActionFocus {
+    val focusRegistry = LocalFocusRegistry.current
+    val keyboardInterceptor = LocalKeyboardInterceptor.current
+    val focusToken = remember { Any() }
+    val activate = rememberCallback(onActivate)
+
+    DisposableEffect(enabled, focusRegistry, keyboardInterceptor) {
+        if (!enabled) return@DisposableEffect onDispose {}
+        val dispose =
+            keyboardInterceptor.register(priority = -1) { event ->
+                if (!focusRegistry.isFocused(focusToken) || !focusRegistry.claimEvent(event)) {
+                    return@register false
+                }
+                when {
+                    event.key == "Tab" && !event.shift && !event.ctrl && !event.alt -> {
+                        focusRegistry.focusNext()
+                        true
+                    }
+                    event.shift && event.key.equals("q", ignoreCase = true) -> {
+                        focusRegistry.focusPrevious()
+                        true
+                    }
+                    event.key == "Enter" || event.key == "Return" || event.key == "Space" || event.key == " " -> {
+                        activate()
+                        true
+                    }
+                    else -> false
+                }
+            }
+        onDispose { dispose() }
+    }
+
+    return ActionFocus(
+        modifier = if (enabled) modifier.focusable(focusToken) else modifier,
+        isFocused = enabled && focusRegistry.isFocused(focusToken),
+    )
+}
+
+private data class ActionFocus(
+    val modifier: Modifier,
+    val isFocused: Boolean,
+)
+
+private fun styleActionDisplay(
+    display: String,
+    enabled: Boolean,
+    isFocused: Boolean,
+    focusedStyle: TextStyle?,
+    disabledStyle: TextStyle?,
+): String =
+    when {
+        !enabled && disabledStyle != null -> disabledStyle(display)
+        isFocused && focusedStyle != null -> focusedStyle(display)
+        else -> display
+    }

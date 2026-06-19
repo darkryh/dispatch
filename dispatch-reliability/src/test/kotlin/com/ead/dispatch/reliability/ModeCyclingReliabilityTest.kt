@@ -1,10 +1,12 @@
 package com.ead.dispatch.reliability
 
-import com.ead.dispatch.annotation.Dispatchable
+import androidx.compose.runtime.Composable
 import com.ead.dispatch.layout.Row
 import com.ead.dispatch.layout.Spacer
+import com.ead.dispatch.layout.TerminalScreen
 import com.ead.dispatch.modifier.Modifier
 import com.ead.dispatch.modifier.fillMaxWidth
+import com.ead.dispatch.modifier.fillMaxSize
 import com.ead.dispatch.modifier.weight
 import com.ead.dispatch.reliability.harness.ReliabilityHarness
 import com.ead.dispatch.widget.LazyColumn
@@ -38,22 +40,23 @@ class ModeCyclingReliabilityTest {
     }
 }
 
-@Dispatchable
+@Composable
 private fun ModeCyclingScreen(
     history: List<String>,
     modeLabel: String,
     contextPercent: Int,
 ) {
-    LazyColumn(modifier = Modifier.fillMaxWidth()) {
-        items(history) { line ->
-            Text(line)
-        }
-        item {
+    TerminalScreen(
+        footer = {
             Row(modifier = Modifier.fillMaxWidth()) {
                 Text("  ⏸ $modeLabel (shift+tab to cycle)")
                 Spacer(modifier = Modifier.weight(1f))
                 Text("$contextPercent% context left")
             }
+        },
+    ) {
+        LazyColumn(modifier = Modifier.fillMaxSize()) {
+            items(history) { line -> Text(line) }
         }
     }
 }

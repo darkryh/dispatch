@@ -1,6 +1,6 @@
 package com.ead.dispatch.navigation
 
-import com.ead.dispatch.runtime.staticCompositionLocalOf
+import androidx.compose.runtime.staticCompositionLocalOf
 
 val LocalNavigator =
     staticCompositionLocalOf<Navigator> {

@@ -1,6 +1,6 @@
 package com.ead.dispatch.layout
 
-import com.ead.dispatch.annotation.Dispatchable
+import androidx.compose.runtime.Composable
 import com.ead.dispatch.constraints.Constraints
 import com.ead.dispatch.modifier.Modifier
 import com.ead.dispatch.modifier.WeightModifier
@@ -26,12 +26,12 @@ import com.ead.dispatch.modifier.applyToConstraints
  * @param verticalAlignment How to align children vertically.
  * @param content The content lambda containing children.
  */
-@Dispatchable
+@Composable
 fun Row(
     modifier: Modifier = Modifier,
     horizontalArrangement: Arrangement.Horizontal = Arrangement.Start,
     verticalAlignment: Alignment.Vertical = Alignment.Top,
-    content: @Dispatchable RowScope.() -> Unit,
+    content: @Composable RowScope.() -> Unit,
 ) {
     val scope = RowScopeInstance(verticalAlignment)
     Layout(

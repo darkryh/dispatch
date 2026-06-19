@@ -1,6 +1,6 @@
 package com.ead.dispatch.reliability
 
-import com.ead.dispatch.annotation.Dispatchable
+import androidx.compose.runtime.Composable
 import com.ead.dispatch.layout.Column
 import com.ead.dispatch.layout.Row
 import com.ead.dispatch.layout.Spacer
@@ -37,7 +37,7 @@ class ScrollStabilityReliabilityTest {
      * The real DispatchApplication uses unconstrained height for measurement,
      * but we use bounded here to test the virtualized rendering behavior.
      */
-    private fun renderWithBoundedHeight(content: () -> Unit): List<String> {
+    private fun renderWithBoundedHeight(content: @Composable () -> Unit): List<String> {
         return harness.render(boundedHeight = true, content = content)
     }
 
@@ -45,7 +45,7 @@ class ScrollStabilityReliabilityTest {
      * Render with UNBOUNDED height to test the scrollback splitting logic.
      * This is closer to how the real DispatchApplication works.
      */
-    private fun renderWithUnboundedHeight(content: () -> Unit): List<String> {
+    private fun renderWithUnboundedHeight(content: @Composable () -> Unit): List<String> {
         return harness.render(boundedHeight = false, content = content)
     }
 
@@ -339,7 +339,7 @@ class ScrollStabilityReliabilityTest {
 /**
  * Chat screen simulation with animation (processing spinner)
  */
-@Dispatchable
+@Composable
 private fun ChatScreenWithAnimation(
     messageCount: Int,
     isProcessing: Boolean,
@@ -405,7 +405,7 @@ private fun ChatScreenWithAnimation(
 /**
  * Chat screen simulation with command palette
  */
-@Dispatchable
+@Composable
 private fun ChatScreenWithCommandPalette(
     messageCount: Int,
     commandPaletteVisible: Boolean,

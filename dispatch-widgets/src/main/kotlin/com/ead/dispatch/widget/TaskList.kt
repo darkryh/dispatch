@@ -1,10 +1,9 @@
 package com.ead.dispatch.widget
 
-import com.ead.dispatch.annotation.Dispatchable
+import androidx.compose.runtime.Composable
 import com.ead.dispatch.layout.Column
 import com.ead.dispatch.layout.Row
 import com.ead.dispatch.modifier.Modifier
-import com.github.ajalt.mordant.rendering.TextColors
 import com.github.ajalt.mordant.rendering.TextColors.Companion.rgb
 import com.github.ajalt.mordant.rendering.TextStyle
 
@@ -39,7 +38,7 @@ data class TaskListTextStyles(
  * TaskList(tasks = tasks, status = status, spinnerFrame = animationFrame)
  * ```
  */
-@Dispatchable
+@Composable
 fun TaskList(
     tasks: List<String>,
     modifier: Modifier = Modifier,
@@ -68,13 +67,14 @@ fun TaskList(
                     }
                 }
 
-                val textStyle = when (taskStatus) {
-                    TaskStatus.Pending -> textStyles.pending
-                    TaskStatus.InProgress -> textStyles.inProgress
-                    TaskStatus.Completed -> textStyles.completed
-                    TaskStatus.Failed -> textStyles.failed
-                    TaskStatus.Skipped -> textStyles.skipped
-                }
+                val textStyle =
+                    when (taskStatus) {
+                        TaskStatus.Pending -> textStyles.pending
+                        TaskStatus.InProgress -> textStyles.inProgress
+                        TaskStatus.Completed -> textStyles.completed
+                        TaskStatus.Failed -> textStyles.failed
+                        TaskStatus.Skipped -> textStyles.skipped
+                    }
 
                 Text(taskDescription, style = textStyle)
             }
@@ -95,7 +95,7 @@ fun TaskList(
  * Use this overload when you already have a model type, but don't want to depend on a Dispatch
  * data class.
  */
-@Dispatchable
+@Composable
 fun <T> TaskList(
     tasks: List<T>,
     modifier: Modifier = Modifier,
@@ -125,13 +125,14 @@ fun <T> TaskList(
                     }
                 }
 
-                val textStyle = when (taskStatus) {
-                    TaskStatus.Pending -> textStyles.pending
-                    TaskStatus.InProgress -> textStyles.inProgress
-                    TaskStatus.Completed -> textStyles.completed
-                    TaskStatus.Failed -> textStyles.failed
-                    TaskStatus.Skipped -> textStyles.skipped
-                }
+                val textStyle =
+                    when (taskStatus) {
+                        TaskStatus.Pending -> textStyles.pending
+                        TaskStatus.InProgress -> textStyles.inProgress
+                        TaskStatus.Completed -> textStyles.completed
+                        TaskStatus.Failed -> textStyles.failed
+                        TaskStatus.Skipped -> textStyles.skipped
+                    }
 
                 Text(taskDescription, style = textStyle)
             }

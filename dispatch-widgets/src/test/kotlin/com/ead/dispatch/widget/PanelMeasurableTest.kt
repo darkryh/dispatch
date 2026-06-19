@@ -13,11 +13,13 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class PanelMeasurableTest {
-    private fun terminal(width: Int = 80, height: Int = 24): Terminal =
-        Terminal(ansiLevel = AnsiLevel.TRUECOLOR, width = width, height = height, interactive = false)
+    private fun terminal(
+        width: Int = 80,
+        height: Int = 24,
+    ): Terminal = Terminal(ansiLevel = AnsiLevel.TRUECOLOR, width = width, height = height, interactive = false)
 
-    private fun createTextMeasurable(text: String): TextMeasurable {
-        return TextMeasurable(
+    private fun createTextMeasurable(text: String): TextMeasurable =
+        TextMeasurable(
             text = text,
             modifier = Modifier,
             style = null,
@@ -25,9 +27,8 @@ class PanelMeasurableTest {
             maxLines = null,
             overflow = TextOverflow.Clip,
             markdown = false,
-            terminal = terminal()
+            terminal = terminal(),
         )
-    }
 
     private class CapturingMeasurable(
         private val onMeasure: (Constraints) -> Unit,
@@ -42,14 +43,15 @@ class PanelMeasurableTest {
 
     @Test
     fun `panel with no content has border dimensions`() {
-        val measurable = PanelMeasurable(
-            modifier = Modifier,
-            title = null,
-            borderStyle = BorderStyle.Rounded,
-            children = emptyList(),
-            terminal = terminal(),
-            titleTextStyle = null
-        )
+        val measurable =
+            PanelMeasurable(
+                modifier = Modifier,
+                title = null,
+                borderStyle = BorderStyle.Rounded,
+                children = emptyList(),
+                terminal = terminal(),
+                titleTextStyle = null,
+            )
 
         val placeable = measurable.measure(Constraints())
         assertTrue(placeable.height >= 2, "panel should have at least top and bottom border")
@@ -58,14 +60,15 @@ class PanelMeasurableTest {
 
     @Test
     fun `panel with title includes title in output`() {
-        val measurable = PanelMeasurable(
-            modifier = Modifier,
-            title = "Settings",
-            borderStyle = BorderStyle.Rounded,
-            children = emptyList(),
-            terminal = terminal(),
-            titleTextStyle = null
-        )
+        val measurable =
+            PanelMeasurable(
+                modifier = Modifier,
+                title = "Settings",
+                borderStyle = BorderStyle.Rounded,
+                children = emptyList(),
+                terminal = terminal(),
+                titleTextStyle = null,
+            )
 
         val placeable = measurable.measure(Constraints())
         val allLines = placeable.lines.joinToString("\n")
@@ -76,14 +79,15 @@ class PanelMeasurableTest {
     fun `panel with content includes content lines`() {
         val childMeasurable = createTextMeasurable("Hello World")
 
-        val measurable = PanelMeasurable(
-            modifier = Modifier,
-            title = null,
-            borderStyle = BorderStyle.Rounded,
-            children = listOf(childMeasurable),
-            terminal = terminal(),
-            titleTextStyle = null
-        )
+        val measurable =
+            PanelMeasurable(
+                modifier = Modifier,
+                title = null,
+                borderStyle = BorderStyle.Rounded,
+                children = listOf(childMeasurable),
+                terminal = terminal(),
+                titleTextStyle = null,
+            )
 
         val placeable = measurable.measure(Constraints())
         val allLines = placeable.lines.joinToString("\n")
@@ -92,14 +96,15 @@ class PanelMeasurableTest {
 
     @Test
     fun `BorderStyle Rounded uses rounded corners`() {
-        val measurable = PanelMeasurable(
-            modifier = Modifier,
-            title = null,
-            borderStyle = BorderStyle.Rounded,
-            children = emptyList(),
-            terminal = terminal(),
-            titleTextStyle = null
-        )
+        val measurable =
+            PanelMeasurable(
+                modifier = Modifier,
+                title = null,
+                borderStyle = BorderStyle.Rounded,
+                children = emptyList(),
+                terminal = terminal(),
+                titleTextStyle = null,
+            )
 
         val placeable = measurable.measure(Constraints())
         val firstLine = placeable.lines.firstOrNull() ?: ""
@@ -108,14 +113,15 @@ class PanelMeasurableTest {
 
     @Test
     fun `BorderStyle Square uses square corners`() {
-        val measurable = PanelMeasurable(
-            modifier = Modifier,
-            title = null,
-            borderStyle = BorderStyle.Square,
-            children = emptyList(),
-            terminal = terminal(),
-            titleTextStyle = null
-        )
+        val measurable =
+            PanelMeasurable(
+                modifier = Modifier,
+                title = null,
+                borderStyle = BorderStyle.Square,
+                children = emptyList(),
+                terminal = terminal(),
+                titleTextStyle = null,
+            )
 
         val placeable = measurable.measure(Constraints())
         val firstLine = placeable.lines.firstOrNull() ?: ""
@@ -124,14 +130,15 @@ class PanelMeasurableTest {
 
     @Test
     fun `BorderStyle Ascii uses ASCII characters`() {
-        val measurable = PanelMeasurable(
-            modifier = Modifier,
-            title = null,
-            borderStyle = BorderStyle.Ascii,
-            children = emptyList(),
-            terminal = terminal(),
-            titleTextStyle = null
-        )
+        val measurable =
+            PanelMeasurable(
+                modifier = Modifier,
+                title = null,
+                borderStyle = BorderStyle.Ascii,
+                children = emptyList(),
+                terminal = terminal(),
+                titleTextStyle = null,
+            )
 
         val placeable = measurable.measure(Constraints())
         assertTrue(placeable.lines.isNotEmpty(), "panel should have lines")
@@ -139,14 +146,15 @@ class PanelMeasurableTest {
 
     @Test
     fun `BorderStyle Heavy uses heavy lines`() {
-        val measurable = PanelMeasurable(
-            modifier = Modifier,
-            title = null,
-            borderStyle = BorderStyle.Heavy,
-            children = emptyList(),
-            terminal = terminal(),
-            titleTextStyle = null
-        )
+        val measurable =
+            PanelMeasurable(
+                modifier = Modifier,
+                title = null,
+                borderStyle = BorderStyle.Heavy,
+                children = emptyList(),
+                terminal = terminal(),
+                titleTextStyle = null,
+            )
 
         val placeable = measurable.measure(Constraints())
         assertTrue(placeable.lines.isNotEmpty(), "panel should have lines")
@@ -154,14 +162,15 @@ class PanelMeasurableTest {
 
     @Test
     fun `BorderStyle Double uses double lines`() {
-        val measurable = PanelMeasurable(
-            modifier = Modifier,
-            title = null,
-            borderStyle = BorderStyle.Double,
-            children = emptyList(),
-            terminal = terminal(),
-            titleTextStyle = null
-        )
+        val measurable =
+            PanelMeasurable(
+                modifier = Modifier,
+                title = null,
+                borderStyle = BorderStyle.Double,
+                children = emptyList(),
+                terminal = terminal(),
+                titleTextStyle = null,
+            )
 
         val placeable = measurable.measure(Constraints())
         assertTrue(placeable.lines.isNotEmpty(), "panel should have lines")
@@ -169,14 +178,15 @@ class PanelMeasurableTest {
 
     @Test
     fun `BorderStyle None renders without border`() {
-        val measurable = PanelMeasurable(
-            modifier = Modifier,
-            title = null,
-            borderStyle = BorderStyle.None,
-            children = emptyList(),
-            terminal = terminal(),
-            titleTextStyle = null
-        )
+        val measurable =
+            PanelMeasurable(
+                modifier = Modifier,
+                title = null,
+                borderStyle = BorderStyle.None,
+                children = emptyList(),
+                terminal = terminal(),
+                titleTextStyle = null,
+            )
 
         val placeable = measurable.measure(Constraints())
         assertTrue(placeable.height >= 0, "panel without border should still render")
@@ -186,14 +196,15 @@ class PanelMeasurableTest {
     fun `panel respects maxWidth constraint`() {
         val childMeasurable = createTextMeasurable("This is a long text that should wrap")
 
-        val measurable = PanelMeasurable(
-            modifier = Modifier,
-            title = null,
-            borderStyle = BorderStyle.Rounded,
-            children = listOf(childMeasurable),
-            terminal = terminal(width = 20),
-            titleTextStyle = null
-        )
+        val measurable =
+            PanelMeasurable(
+                modifier = Modifier,
+                title = null,
+                borderStyle = BorderStyle.Rounded,
+                children = listOf(childMeasurable),
+                terminal = terminal(width = 20),
+                titleTextStyle = null,
+            )
 
         val placeable = measurable.measure(Constraints(maxWidth = 20))
         assertTrue(placeable.width <= 20, "panel width should respect maxWidth")
@@ -203,14 +214,15 @@ class PanelMeasurableTest {
     fun `panel respects maxHeight constraint`() {
         val children = (1..10).map { createTextMeasurable("Line $it") }
 
-        val measurable = PanelMeasurable(
-            modifier = Modifier,
-            title = null,
-            borderStyle = BorderStyle.Rounded,
-            children = children,
-            terminal = terminal(),
-            titleTextStyle = null
-        )
+        val measurable =
+            PanelMeasurable(
+                modifier = Modifier,
+                title = null,
+                borderStyle = BorderStyle.Rounded,
+                children = children,
+                terminal = terminal(),
+                titleTextStyle = null,
+            )
 
         val placeable = measurable.measure(Constraints(maxHeight = 5))
         assertTrue(placeable.height <= 5, "panel height should respect maxHeight")
@@ -221,14 +233,15 @@ class PanelMeasurableTest {
         val child1 = createTextMeasurable("Line 1")
         val child2 = createTextMeasurable("Line 2")
 
-        val measurable = PanelMeasurable(
-            modifier = Modifier,
-            title = null,
-            borderStyle = BorderStyle.Rounded,
-            children = listOf(child1, child2),
-            terminal = terminal(),
-            titleTextStyle = null
-        )
+        val measurable =
+            PanelMeasurable(
+                modifier = Modifier,
+                title = null,
+                borderStyle = BorderStyle.Rounded,
+                children = listOf(child1, child2),
+                terminal = terminal(),
+                titleTextStyle = null,
+            )
 
         val placeable = measurable.measure(Constraints())
         val allLines = placeable.lines.joinToString("\n")
@@ -240,14 +253,15 @@ class PanelMeasurableTest {
     fun `panel with title and content`() {
         val childMeasurable = createTextMeasurable("Content")
 
-        val measurable = PanelMeasurable(
-            modifier = Modifier,
-            title = "Header",
-            borderStyle = BorderStyle.Rounded,
-            children = listOf(childMeasurable),
-            terminal = terminal(),
-            titleTextStyle = null
-        )
+        val measurable =
+            PanelMeasurable(
+                modifier = Modifier,
+                title = "Header",
+                borderStyle = BorderStyle.Rounded,
+                children = listOf(childMeasurable),
+                terminal = terminal(),
+                titleTextStyle = null,
+            )
 
         val placeable = measurable.measure(Constraints())
         val allLines = placeable.lines.joinToString("\n")
@@ -257,14 +271,15 @@ class PanelMeasurableTest {
 
     @Test
     fun `panel with empty title works`() {
-        val measurable = PanelMeasurable(
-            modifier = Modifier,
-            title = "",
-            borderStyle = BorderStyle.Rounded,
-            children = emptyList(),
-            terminal = terminal(),
-            titleTextStyle = null
-        )
+        val measurable =
+            PanelMeasurable(
+                modifier = Modifier,
+                title = "",
+                borderStyle = BorderStyle.Rounded,
+                children = emptyList(),
+                terminal = terminal(),
+                titleTextStyle = null,
+            )
 
         val placeable = measurable.measure(Constraints())
         assertTrue(placeable.lines.isNotEmpty(), "panel with empty title should render")
@@ -274,20 +289,22 @@ class PanelMeasurableTest {
     fun `panel does not bound unbounded height for children`() {
         var seen: Constraints? = null
 
-        val child = CapturingMeasurable(
-            onMeasure = { seen = it },
-            placeable = SimplePlaceable(width = 1, height = 1, lines = listOf("X")),
-        )
+        val child =
+            CapturingMeasurable(
+                onMeasure = { seen = it },
+                placeable = SimplePlaceable(width = 1, height = 1, lines = listOf("X")),
+            )
 
-        val measurable = PanelMeasurable(
-            modifier = Modifier,
-            title = null,
-            borderStyle = BorderStyle.Rounded,
-            children = listOf(child),
-            terminal = terminal(),
-            titleTextStyle = null,
-            expand = false,
-        )
+        val measurable =
+            PanelMeasurable(
+                modifier = Modifier,
+                title = null,
+                borderStyle = BorderStyle.Rounded,
+                children = listOf(child),
+                terminal = terminal(),
+                titleTextStyle = null,
+                expand = false,
+            )
 
         measurable.measure(
             Constraints(
@@ -295,7 +312,7 @@ class PanelMeasurableTest {
                 maxWidth = 20,
                 minHeight = 0,
                 maxHeight = Int.MAX_VALUE,
-            )
+            ),
         )
 
         assertEquals(Int.MAX_VALUE, seen?.maxHeight)

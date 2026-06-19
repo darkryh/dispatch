@@ -1,6 +1,6 @@
 package com.ead.dispatch.layout
 
-import com.ead.dispatch.annotation.Dispatchable
+import androidx.compose.runtime.Composable
 import com.ead.dispatch.constraints.Constraints
 import com.ead.dispatch.modifier.Modifier
 import com.ead.dispatch.modifier.applyToConstraints
@@ -30,12 +30,12 @@ import com.ead.dispatch.modifier.applyToConstraints
  * @param footer Optional footer content (fixed height).
  * @param body Main body content (takes remaining space).
  */
-@Dispatchable
+@Composable
 fun BannerLayout(
     modifier: Modifier = Modifier,
-    header: (@Dispatchable () -> Unit)? = null,
-    footer: (@Dispatchable () -> Unit)? = null,
-    body: @Dispatchable () -> Unit,
+    header: (@Composable () -> Unit)? = null,
+    footer: (@Composable () -> Unit)? = null,
+    body: @Composable () -> Unit,
 ) {
     Layout(
         modifier = modifier,
@@ -65,10 +65,10 @@ fun BannerLayout(
 /**
  * Internal wrapper for banner sections.
  */
-@Dispatchable
+@Composable
 private fun BannerSection(
     type: BannerSectionType,
-    content: @Dispatchable () -> Unit,
+    content: @Composable () -> Unit,
 ) {
     Layout(
         modifier = BannerSectionModifier(type),
@@ -238,11 +238,11 @@ internal class BannerLayoutMeasurePolicy : MeasurePolicy {
 /**
  * A simpler version with just header and body.
  */
-@Dispatchable
+@Composable
 fun HeaderLayout(
     modifier: Modifier = Modifier,
-    header: @Dispatchable () -> Unit,
-    body: @Dispatchable () -> Unit,
+    header: @Composable () -> Unit,
+    body: @Composable () -> Unit,
 ) {
     BannerLayout(
         modifier = modifier,
@@ -255,11 +255,11 @@ fun HeaderLayout(
 /**
  * A simpler version with just body and footer.
  */
-@Dispatchable
+@Composable
 fun FooterLayout(
     modifier: Modifier = Modifier,
-    footer: @Dispatchable () -> Unit,
-    body: @Dispatchable () -> Unit,
+    footer: @Composable () -> Unit,
+    body: @Composable () -> Unit,
 ) {
     BannerLayout(
         modifier = modifier,

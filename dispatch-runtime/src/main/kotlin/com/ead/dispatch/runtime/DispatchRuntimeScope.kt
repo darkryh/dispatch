@@ -1,7 +1,7 @@
 package com.ead.dispatch.runtime
 
 import com.ead.dispatch.annotation.DispatchRenderer
-import com.ead.dispatch.annotation.Dispatchable
+import androidx.compose.runtime.Composable
 import com.ead.dispatch.theme.DispatchTheme
 import com.github.ajalt.mordant.input.KeyboardEvent
 import com.github.ajalt.mordant.input.MouseEvent
@@ -33,6 +33,6 @@ interface DispatchScope {
      * Root dispatch content rendered by the runtime.
      */
     @DispatchRenderer
-    fun content(block: @Dispatchable () -> Unit)
+    fun content(block: @Composable () -> Unit)
 }
 

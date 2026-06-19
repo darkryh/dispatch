@@ -5,7 +5,6 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class GridLayoutTest {
-
     @Test
     fun `buildGridRows returns rows and cell width`() {
         val items = listOf("A", "B", "C", "D")

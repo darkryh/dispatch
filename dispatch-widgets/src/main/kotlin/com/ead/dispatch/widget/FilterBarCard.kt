@@ -1,6 +1,6 @@
 package com.ead.dispatch.widget
 
-import com.ead.dispatch.annotation.Dispatchable
+import androidx.compose.runtime.Composable
 import com.ead.dispatch.modifier.Modifier
 import com.ead.dispatch.modifier.fillMaxWidth
 import com.github.ajalt.mordant.rendering.TextColors.Companion.rgb
@@ -9,7 +9,7 @@ import com.github.ajalt.mordant.rendering.TextStyle
 /**
  * A filter bar wrapped in a filled background surface.
  */
-@Dispatchable
+@Composable
 fun FilterBarCard(
     state: TextFieldState,
     modifier: Modifier = Modifier,
@@ -26,11 +26,12 @@ fun FilterBarCard(
 ) {
     Background(
         modifier = modifier.fillMaxWidth(),
-        style = BackgroundStyle.Fill(
-            fill = backgroundFill,
-            paddingHorizontal = paddingHorizontal,
-            paddingVertical = paddingVertical,
-        ),
+        style =
+            BackgroundStyle.Fill(
+                fill = backgroundFill,
+                paddingHorizontal = paddingHorizontal,
+                paddingVertical = paddingVertical,
+            ),
     ) {
         FilterBar(
             state = state,

@@ -1,10 +1,10 @@
 package com.ead.dispatch.navigation
 
-import com.ead.dispatch.annotation.Dispatchable
+import androidx.compose.runtime.Composable
 import com.ead.dispatch.lifecycle.LifecycleState
 import com.ead.dispatch.runtime.SavedStateHandle
 import com.ead.dispatch.runtime.SavedStateRegistry
-import com.ead.dispatch.state.remember
+import androidx.compose.runtime.remember
 import com.ead.dispatch.viewmodel.DefaultViewModelFactory
 import com.ead.dispatch.viewmodel.ViewModelFactory
 import com.ead.dispatch.viewmodel.ViewModelProvider
@@ -15,10 +15,10 @@ import kotlinx.serialization.json.Json
  */
 open class NavEntryDecorator<T : NavKey>(
     internal val onPop: (key: Any) -> Unit = {},
-    internal val decorate: @Dispatchable (entry: NavBackStackEntry<T>) -> Unit,
+    internal val decorate: @Composable (entry: NavBackStackEntry<T>) -> Unit,
 )
 
-@Dispatchable
+@Composable
 fun <T : NavKey> rememberDecoratedNavEntries(
     backStack: List<T>,
     entryDecorators: List<NavEntryDecorator<T>> = listOf(),
@@ -36,7 +36,7 @@ fun <T : NavKey> rememberDecoratedNavEntries(
     return rememberDecoratedNavEntries(entries, entryDecorators)
 }
 
-@Dispatchable
+@Composable
 fun <T : NavKey> rememberDecoratedNavEntries(
     entries: List<NavBackStackEntry<T>>,
     entryDecorators: List<NavEntryDecorator<T>> = listOf(),
@@ -70,6 +70,7 @@ private data class NavEntryState(
     val lifecycleRegistry: com.ead.dispatch.lifecycle.LifecycleRegistry,
 )
 
+@Composable
 private fun <T : NavKey> rememberNavEntries(
     backStack: List<T>,
     entryProvider: (key: T) -> NavEntry<T>,

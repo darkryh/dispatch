@@ -1,6 +1,6 @@
 package com.ead.dispatch.widget
 
-import com.ead.dispatch.annotation.Dispatchable
+import androidx.compose.runtime.Composable
 import com.ead.dispatch.layout.Column
 import com.ead.dispatch.layout.Row
 import com.ead.dispatch.layout.Spacer
@@ -16,7 +16,7 @@ data class LabeledValue(
     val valueStyle: TextStyle? = null,
 )
 
-@Dispatchable
+@Composable
 fun LabeledValueList(
     items: List<LabeledValue>,
     modifier: Modifier = Modifier,

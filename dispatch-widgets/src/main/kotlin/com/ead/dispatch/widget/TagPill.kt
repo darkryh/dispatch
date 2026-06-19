@@ -1,6 +1,6 @@
 package com.ead.dispatch.widget
 
-import com.ead.dispatch.annotation.Dispatchable
+import androidx.compose.runtime.Composable
 import com.ead.dispatch.layout.Row
 import com.ead.dispatch.layout.Spacer
 import com.ead.dispatch.modifier.Modifier
@@ -8,7 +8,7 @@ import com.ead.dispatch.modifier.width
 import com.github.ajalt.mordant.rendering.TextColors.Companion.rgb
 import com.github.ajalt.mordant.rendering.TextStyle
 
-@Dispatchable
+@Composable
 fun TagPill(
     text: String,
     modifier: Modifier = Modifier,
@@ -20,17 +20,18 @@ fun TagPill(
     val appliedModifier = Modifier.width(contentWidth) then modifier
     Background(
         modifier = appliedModifier,
-        style = BackgroundStyle.Fill(
-            fill = fill,
-            paddingHorizontal = paddingHorizontal,
-            paddingVertical = 0,
-        )
+        style =
+            BackgroundStyle.Fill(
+                fill = fill,
+                paddingHorizontal = paddingHorizontal,
+                paddingVertical = 0,
+            ),
     ) {
         Text(text = text, style = textStyle)
     }
 }
 
-@Dispatchable
+@Composable
 fun TagList(
     tags: List<String>,
     modifier: Modifier = Modifier,

@@ -1,6 +1,6 @@
 package com.ead.dispatch.reliability
 
-import com.ead.dispatch.annotation.Dispatchable
+import androidx.compose.runtime.Composable
 import com.ead.dispatch.layout.Column
 import com.ead.dispatch.layout.Row
 import com.ead.dispatch.layout.Spacer
@@ -80,7 +80,7 @@ private sealed interface ReliabilityRoute : NavKey {
         }
 }
 
-@Dispatchable
+@Composable
 private fun ReliabilityNavSurface(backStack: NavBackStack<ReliabilityRoute>) {
     Column(modifier = Modifier.fillMaxWidth()) {
         NavDisplay(
@@ -105,7 +105,7 @@ private fun ReliabilityNavSurface(backStack: NavBackStack<ReliabilityRoute>) {
     }
 }
 
-@Dispatchable
+@Composable
 private fun ReliabilityHomeRoute() {
     Panel(modifier = Modifier.fillMaxWidth(), title = "Home") {
         Text("anchor::route_home")
@@ -114,7 +114,7 @@ private fun ReliabilityHomeRoute() {
     }
 }
 
-@Dispatchable
+@Composable
 private fun ReliabilityEditorRoute(revision: Int) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Text("anchor::route_editor")
@@ -129,7 +129,7 @@ private fun ReliabilityEditorRoute(revision: Int) {
     }
 }
 
-@Dispatchable
+@Composable
 private fun ReliabilityLibraryRoute() {
     LazyColumn(modifier = Modifier.fillMaxWidth()) {
         item { Text("anchor::route_library") }
@@ -139,7 +139,7 @@ private fun ReliabilityLibraryRoute() {
     }
 }
 
-@Dispatchable
+@Composable
 private fun ReliabilityInspectorRoute(entityId: String) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Text("anchor::route_inspector")

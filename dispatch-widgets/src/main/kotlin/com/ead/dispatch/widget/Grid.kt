@@ -1,6 +1,6 @@
 package com.ead.dispatch.widget
 
-import com.ead.dispatch.annotation.Dispatchable
+import androidx.compose.runtime.Composable
 import com.ead.dispatch.layout.Column
 import com.ead.dispatch.layout.Row
 import com.ead.dispatch.layout.Spacer
@@ -12,7 +12,7 @@ import com.ead.dispatch.runtime.LocalTerminalWidth
 /**
  * A simple adaptive grid that lays out items in rows based on available width.
  */
-@Dispatchable
+@Composable
 fun <T> Grid(
     items: List<T>,
     modifier: Modifier = Modifier,
@@ -20,15 +20,18 @@ fun <T> Grid(
     gap: Int = 2,
     leftPadding: Int = 2,
     enforceCellWidth: Boolean = true,
-    content: @Dispatchable (item: T, cellWidth: Int) -> Unit,
+    content: @Composable (item: T, cellWidth: Int) -> Unit,
 ) {
     if (items.isEmpty()) return
-    val layout = GridLayout(
-        items = items,
-        cells = cells,
-        gap = gap,
-        leftPadding = leftPadding,
-    )
+    val terminalWidth = LocalTerminalWidth.current
+    val layout =
+        GridLayout(
+            items = items,
+            cells = cells,
+            gap = gap,
+            leftPadding = leftPadding,
+            terminalWidth = terminalWidth,
+        )
 
     Column(modifier = modifier.fillMaxWidth()) {
         layout.rows.forEach { row ->
@@ -54,8 +57,13 @@ fun <T> Grid(
 }
 
 sealed class GridCells {
-    data class Fixed(val count: Int) : GridCells()
-    data class Adaptive(val minSize: Int) : GridCells()
+    data class Fixed(
+        val count: Int,
+    ) : GridCells()
+
+    data class Adaptive(
+        val minSize: Int,
+    ) : GridCells()
 }
 
 internal data class GridLayout<T>(
@@ -67,8 +75,9 @@ internal data class GridLayout<T>(
         cells: GridCells,
         gap: Int,
         leftPadding: Int,
+        terminalWidth: Int,
     ) : this(
-        result = buildGridRows(items, cells, gap, leftPadding),
+        result = buildGridRows(items, cells, gap, leftPadding, terminalWidth),
     )
 
     private constructor(result: GridResult<T>) : this(
@@ -87,26 +96,27 @@ internal fun <T> buildGridRows(
     cells: GridCells,
     gap: Int,
     leftPadding: Int,
+    terminalWidth: Int = 80,
 ): GridResult<T> {
-    val width = LocalTerminalWidth.current
-    val available = (width - leftPadding).coerceAtLeast(1)
-    val (perRow, cellWidth) = when (cells) {
-        is GridCells.Fixed -> {
-            val columns = cells.count.coerceAtLeast(1)
-            val totalGap = gap * (columns - 1)
-            val widthForCells = (available - totalGap).coerceAtLeast(columns)
-            val fixedWidth = (widthForCells / columns).coerceAtLeast(1)
-            columns to fixedWidth
+    val available = (terminalWidth - leftPadding).coerceAtLeast(1)
+    val (perRow, cellWidth) =
+        when (cells) {
+            is GridCells.Fixed -> {
+                val columns = cells.count.coerceAtLeast(1)
+                val totalGap = gap * (columns - 1)
+                val widthForCells = (available - totalGap).coerceAtLeast(columns)
+                val fixedWidth = (widthForCells / columns).coerceAtLeast(1)
+                columns to fixedWidth
+            }
+            is GridCells.Adaptive -> {
+                val minCellWidth = cells.minSize.coerceAtLeast(1)
+                val computedPerRow = ((available + gap) / (minCellWidth + gap)).coerceAtLeast(1)
+                val totalGap = gap * (computedPerRow - 1)
+                val widthForCells = (available - totalGap).coerceAtLeast(computedPerRow)
+                val adaptiveWidth = (widthForCells / computedPerRow).coerceAtLeast(1)
+                computedPerRow to adaptiveWidth
+            }
         }
-        is GridCells.Adaptive -> {
-            val minCellWidth = cells.minSize.coerceAtLeast(1)
-            val computedPerRow = ((available + gap) / (minCellWidth + gap)).coerceAtLeast(1)
-            val totalGap = gap * (computedPerRow - 1)
-            val widthForCells = (available - totalGap).coerceAtLeast(computedPerRow)
-            val adaptiveWidth = (widthForCells / computedPerRow).coerceAtLeast(1)
-            computedPerRow to adaptiveWidth
-        }
-    }
 
     val rows = mutableListOf<List<T>>()
     var index = 0

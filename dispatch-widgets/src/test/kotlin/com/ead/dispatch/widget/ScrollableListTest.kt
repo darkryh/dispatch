@@ -1,11 +1,11 @@
 package com.ead.dispatch.widget
 
-import com.ead.dispatch.annotation.Dispatchable
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import com.ead.dispatch.constraints.Constraints
 import com.ead.dispatch.modifier.Modifier
 import com.ead.dispatch.modifier.height
 import com.ead.dispatch.runtime.Composer
-import com.ead.dispatch.runtime.CompositionLocalProvider
 import com.ead.dispatch.runtime.FocusRegistry
 import com.ead.dispatch.runtime.KeyboardInterceptor
 import com.ead.dispatch.runtime.LocalFocusRegistry
@@ -21,16 +21,16 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class ScrollableListTest {
-
     @Test
     fun `renders all items in unbounded mode`() {
-        val lines = renderLines(width = 40) {
-            ScrollableList(
-                items = listOf("Alpha", "Beta", "Gamma"),
-            ) { item ->
-                Text(item)
+        val lines =
+            renderLines(width = 40) {
+                ScrollableList(
+                    items = listOf("Alpha", "Beta", "Gamma"),
+                ) { item ->
+                    Text(item)
+                }
             }
-        }
 
         assertEquals(3, lines.size)
         assertTrue(lines[0].contains("Alpha"))
@@ -40,18 +40,19 @@ class ScrollableListTest {
 
     @Test
     fun `clamps offset when content shrinks across recomposition`() {
-        val terminal = Terminal(
-            ansiLevel = AnsiLevel.NONE,
-            width = 40,
-            height = 5,
-            interactive = false,
-        )
+        val terminal =
+            Terminal(
+                ansiLevel = AnsiLevel.NONE,
+                width = 40,
+                height = 5,
+                interactive = false,
+            )
         val composer = Composer()
         val focusRegistry = FocusRegistry()
         val scrollState = ScrollState(initialOffset = 3)
-        var showFooter = true
+        val showFooter = androidx.compose.runtime.mutableStateOf(true)
 
-        fun render(content: @Dispatchable () -> Unit): List<String> {
+        fun render(content: @Composable () -> Unit): List<String> {
             withComposer(composer) {
                 composer.startComposition()
                 CompositionLocalProvider(
@@ -67,22 +68,23 @@ class ScrollableListTest {
             }
             val rootNode = composer.getRootNode() ?: return emptyList()
             focusRegistry.sync(rootNode)
-            return rootNode.measure(
-                Constraints(
-                    minWidth = 0,
-                    maxWidth = terminal.size.width,
-                    minHeight = 0,
-                    maxHeight = terminal.size.height,
-                )
-            ).lines
+            return rootNode
+                .measure(
+                    Constraints(
+                        minWidth = 0,
+                        maxWidth = terminal.size.width,
+                        minHeight = 0,
+                        maxHeight = terminal.size.height,
+                    ),
+                ).lines
         }
 
-        val content: @Dispatchable () -> Unit = {
+        val content: @Composable () -> Unit = {
             LazyColumn(state = scrollState) {
                 items((0 until 6).toList()) { item ->
                     Text("Item-$item")
                 }
-                if (showFooter) {
+                if (showFooter.value) {
                     item { Text("Loading...") }
                     item { Text("Please wait") }
                 }
@@ -90,7 +92,7 @@ class ScrollableListTest {
         }
 
         render(content)
-        showFooter = false
+        showFooter.value = false
         val linesAfterShrink = render(content)
 
         assertEquals(1, scrollState.offset)
@@ -100,14 +102,15 @@ class ScrollableListTest {
     @Test
     fun `bounded list with wrapped first item still renders following items`() {
         val longLine = "This is a long line that wraps across several visual rows in narrow width."
-        val lines = renderLines(width = 38, height = 20) {
-            ScrollableList(
-                items = listOf(longLine, "Second row", "Third row"),
-                modifier = Modifier.height(6),
-            ) { item ->
-                Text(item)
+        val lines =
+            renderLines(width = 38, height = 20) {
+                ScrollableList(
+                    items = listOf(longLine, "Second row", "Third row"),
+                    modifier = Modifier.height(6),
+                ) { item ->
+                    Text(item)
+                }
             }
-        }
 
         assertEquals(6, lines.size)
         assertTrue(lines.any { it.contains("Second row") })
@@ -135,14 +138,15 @@ class ScrollableListTest {
 
     @Test
     fun `bounded list pads viewport when content is shorter than viewport`() {
-        val lines = renderLines(width = 30, height = 20) {
-            ScrollableList(
-                items = listOf("One"),
-                modifier = Modifier.height(4),
-            ) { item ->
-                Text(item)
+        val lines =
+            renderLines(width = 30, height = 20) {
+                ScrollableList(
+                    items = listOf("One"),
+                    modifier = Modifier.height(4),
+                ) { item ->
+                    Text(item)
+                }
             }
-        }
 
         assertEquals(4, lines.size)
         assertTrue(lines.first().contains("One"))

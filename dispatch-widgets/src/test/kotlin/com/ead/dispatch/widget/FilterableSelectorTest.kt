@@ -6,13 +6,13 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class FilterableSelectorTest {
-
     @Test
     fun `selection clamps when options shrink`() {
-        val state = FilterableSelectorState<String>(
-            initialVisible = true,
-            initialSelectedIndex = 3,
-        )
+        val state =
+            FilterableSelectorState<String>(
+                initialVisible = true,
+                initialSelectedIndex = 3,
+            )
         state.updateFilteredOptions(listOf("A", "B"))
 
         assertEquals(1, state.selectedIndex)
@@ -26,14 +26,15 @@ class FilterableSelectorTest {
         var movedDown = false
         var captured: Char? = null
 
-        val bindings = SelectorKeyBindings(
-            onMoveUp = { movedUp = true },
-            onMoveDown = { movedDown = true },
-            onCharacter = {
-                captured = it
-                true
-            },
-        )
+        val bindings =
+            SelectorKeyBindings(
+                onMoveUp = { movedUp = true },
+                onMoveDown = { movedDown = true },
+                onCharacter = {
+                    captured = it
+                    true
+                },
+            )
 
         assertTrue(handleSelectorKeyEvent(KeyboardEvent("ArrowUp"), bindings))
         assertTrue(handleSelectorKeyEvent(KeyboardEvent("ArrowDown"), bindings))

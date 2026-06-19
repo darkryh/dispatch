@@ -38,9 +38,6 @@
             <option value="$PROJECT_DIR$/dispatch-viewmodel" />
             <option value="$PROJECT_DIR$/dispatch-widgets" />
             <option value="$PROJECT_DIR$/dispatch-workspace" />
-            <option value="$PROJECT_DIR$/koog-agent-benchmark-core" />
-            <option value="$PROJECT_DIR$/koog-agent-benchmark-koog" />
-            <option value="$PROJECT_DIR$/koog-context-orchestrator" />
           </set>
         </option>
       </GradleProjectSettings>

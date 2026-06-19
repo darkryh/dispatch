@@ -1,6 +1,11 @@
 package com.ead.dispatch.widget
 
-import com.ead.dispatch.annotation.Dispatchable
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import com.ead.dispatch.constraints.Constraints
 import com.ead.dispatch.layout.Measurable
 import com.ead.dispatch.layout.Placeable
@@ -8,17 +13,11 @@ import com.ead.dispatch.layout.SimplePlaceable
 import com.ead.dispatch.modifier.Modifier
 import com.ead.dispatch.modifier.applyToConstraints
 import com.ead.dispatch.modifier.focusable
-import com.ead.dispatch.runtime.Composer
-import com.ead.dispatch.runtime.DisposableEffect
 import com.ead.dispatch.runtime.LocalFocusRegistry
 import com.ead.dispatch.runtime.LocalKeyboardInterceptor
 import com.ead.dispatch.runtime.LocalTerminal
 import com.ead.dispatch.runtime.LocalTerminalWidth
 import com.ead.dispatch.runtime.composableWidget
-import com.ead.dispatch.state.getValue
-import com.ead.dispatch.state.mutableStateOf
-import com.ead.dispatch.state.remember
-import com.ead.dispatch.state.setValue
 import com.github.ajalt.mordant.rendering.OverflowWrap
 import com.github.ajalt.mordant.rendering.TextStyle
 import com.github.ajalt.mordant.rendering.Whitespace
@@ -52,7 +51,7 @@ import com.github.ajalt.mordant.rendering.Whitespace
  * @param maxLines Optional maximum number of lines to render (null = no limit within constraints).
  * @param cursorPosition Cursor position (character index) within [value].
  */
-@Dispatchable
+@Composable
 fun TextField(
     value: String,
     onValueChange: (String) -> Unit,
@@ -110,7 +109,6 @@ internal class TextFieldMeasurable(
     private val placeholderStyle: TextStyle? = null,
     private val iconStyle: TextStyle? = null,
 ) : Measurable {
-
     override fun measure(constraints: Constraints): Placeable {
         val modifiedConstraints = modifier.applyToConstraints(constraints)
 
@@ -119,37 +117,45 @@ internal class TextFieldMeasurable(
         val textForRender = baseText
         val cursorToken = cursorChar.ifEmpty { "█" }
 
-        val iconWidth = if (icon.isEmpty()) {
-            0
-        } else {
-            // Measure the display width in terminal cells (handles wide/combining chars).
-            com.github.ajalt.mordant.widgets.Text(
-                icon,
-                whitespace = Whitespace.PRE,
-            ).render(terminal, width = 1_000).width
-        }
+        val iconWidth =
+            if (icon.isEmpty()) {
+                0
+            } else {
+                // Measure the display width in terminal cells (handles wide/combining chars).
+                com.github.ajalt.mordant.widgets
+                    .Text(
+                        icon,
+                        whitespace = Whitespace.PRE,
+                    ).render(terminal, width = 1_000)
+                    .width
+            }
 
-        val renderWidth = if (modifiedConstraints.hasBoundedWidth) {
-            modifiedConstraints.maxWidth
-        } else {
-            (iconWidth + textForRender.length).coerceAtLeast(10)
-        }
+        val renderWidth =
+            if (modifiedConstraints.hasBoundedWidth) {
+                modifiedConstraints.maxWidth
+            } else {
+                (iconWidth + textForRender.length).coerceAtLeast(10)
+            }
 
         val contentWidth = (renderWidth - iconWidth).coerceAtLeast(1)
 
-        val renderedContent = terminal.render(
-            textForRender,
-            whitespace = Whitespace.PRE_WRAP,
-            overflowWrap = OverflowWrap.BREAK_WORD, // break long words to new lines
-            width = contentWidth,
-        )
+        val renderedContent =
+            terminal.render(
+                textForRender,
+                whitespace = Whitespace.PRE_WRAP,
+                overflowWrap = OverflowWrap.BREAK_WORD, // break long words to new lines
+                width = contentWidth,
+            )
 
         var contentLines = renderedContent.lines()
 
-        val cursorVisual = if (showCursor && !isPlaceholder) {
-            val clampedCursor = cursorPosition.coerceIn(0, baseText.length)
-            computeCursorVisual(baseText, clampedCursor, contentWidth)
-        } else null
+        val cursorVisual =
+            if (showCursor && !isPlaceholder) {
+                val clampedCursor = cursorPosition.coerceIn(0, baseText.length)
+                computeCursorVisual(baseText, clampedCursor, contentWidth)
+            } else {
+                null
+            }
 
         // Apply line limit, keeping cursor visible. `singleLine` implies a 1-line window.
         val maxByParam = if (singleLine) 1 else maxLines?.coerceAtLeast(1)
@@ -168,43 +174,47 @@ internal class TextFieldMeasurable(
         }
 
         if (cursorVisualInWindow != null) {
-            contentLines = applyCursorOverlay(
-                lines = contentLines,
-                cursor = cursorVisualInWindow,
-                cursorChar = cursorToken,
-                contentWidth = contentWidth,
-            )
+            contentLines =
+                applyCursorOverlay(
+                    lines = contentLines,
+                    cursor = cursorVisualInWindow,
+                    cursorChar = cursorToken,
+                    contentWidth = contentWidth,
+                )
         } else if (showCursor && isPlaceholder) {
-            contentLines = applyPlaceholderCursorPrefix(
-                lines = contentLines,
-                cursorChar = cursorToken,
-                contentWidth = contentWidth,
-            )
+            contentLines =
+                applyPlaceholderCursorPrefix(
+                    lines = contentLines,
+                    cursorChar = cursorToken,
+                    contentWidth = contentWidth,
+                )
         }
 
         val contentTextStyle = if (isPlaceholder) placeholderStyle else textStyle
-        val styledContentLines = if (contentTextStyle == null) {
-            contentLines
-        } else {
-            contentLines.mapIndexed { index, line ->
-                if (isPlaceholder && showCursor && cursorToken.isNotEmpty() && index == 0 && line.startsWith(cursorToken)) {
-                    cursorToken + contentTextStyle.invoke(line.removePrefix(cursorToken))
-                } else {
-                    contentTextStyle.invoke(line)
+        val styledContentLines =
+            if (contentTextStyle == null) {
+                contentLines
+            } else {
+                contentLines.mapIndexed { index, line ->
+                    if (isPlaceholder && showCursor && cursorToken.isNotEmpty() && index == 0 && line.startsWith(cursorToken)) {
+                        cursorToken + contentTextStyle.invoke(line.removePrefix(cursorToken))
+                    } else {
+                        contentTextStyle.invoke(line)
+                    }
                 }
             }
-        }
 
-        val lines = if (iconWidth == 0) {
-            styledContentLines
-        } else {
-            val styledIcon = iconStyle?.invoke(icon) ?: icon
-            val indent = " ".repeat(iconWidth)
-            val styledIndent = iconStyle?.invoke(indent) ?: indent
-            styledContentLines.mapIndexed { index, line ->
-                if (index == 0) styledIcon + line else styledIndent + line
+        val lines =
+            if (iconWidth == 0) {
+                styledContentLines
+            } else {
+                val styledIcon = iconStyle?.invoke(icon) ?: icon
+                val indent = " ".repeat(iconWidth)
+                val styledIndent = iconStyle?.invoke(indent) ?: indent
+                styledContentLines.mapIndexed { index, line ->
+                    if (index == 0) styledIcon + line else styledIndent + line
+                }
             }
-        }
 
         // For input fields, don't constrain by viewport maxHeight - use natural height
         // This allows the active area system to handle scrolling
@@ -217,27 +227,37 @@ internal class TextFieldMeasurable(
         )
     }
 
-    private data class CursorVisual(val line: Int, val col: Int)
+    private data class CursorVisual(
+        val line: Int,
+        val col: Int,
+    )
 
-    private fun computeCursorVisual(text: String, cursorPos: Int, width: Int): CursorVisual {
+    private fun computeCursorVisual(
+        text: String,
+        cursorPos: Int,
+        width: Int,
+    ): CursorVisual {
         val safePos = cursorPos.coerceIn(0, text.length)
         val prefixText = text.substring(0, safePos)
         val marker = CURSOR_MARKER
         val suffixSpan = spanSuffixFrom(text, safePos)
-        val renderedPrefix = terminal.render(
-            prefixText + marker + suffixSpan,
-            whitespace = Whitespace.PRE_WRAP,
-            overflowWrap = OverflowWrap.BREAK_WORD,
-            width = width,
-        )
+        val renderedPrefix =
+            terminal.render(
+                prefixText + marker + suffixSpan,
+                whitespace = Whitespace.PRE_WRAP,
+                overflowWrap = OverflowWrap.BREAK_WORD,
+                width = width,
+            )
         val prefixLines = renderedPrefix.lines()
-        val markerLineIndex = prefixLines.indexOfFirst { it.contains(marker) }.let { index ->
-            if (index == -1) prefixLines.lastIndex.coerceAtLeast(0) else index
-        }
+        val markerLineIndex =
+            prefixLines.indexOfFirst { it.contains(marker) }.let { index ->
+                if (index == -1) prefixLines.lastIndex.coerceAtLeast(0) else index
+            }
         val markerLine = prefixLines.getOrNull(markerLineIndex).orEmpty()
-        val markerCol = markerLine.indexOf(marker).let { index ->
-            if (index == -1) markerLine.length else index
-        }
+        val markerCol =
+            markerLine.indexOf(marker).let { index ->
+                if (index == -1) markerLine.length else index
+            }
 
         return CursorVisual(line = markerLineIndex, col = markerCol)
     }
@@ -276,11 +296,12 @@ internal class TextFieldMeasurable(
 
         val firstLine = mutable.first()
         val withCursor = cursorChar + firstLine
-        mutable[0] = if (withCursor.length > contentWidth) {
-            withCursor.take(contentWidth)
-        } else {
-            withCursor
-        }
+        mutable[0] =
+            if (withCursor.length > contentWidth) {
+                withCursor.take(contentWidth)
+            } else {
+                withCursor
+            }
         return mutable
     }
 }
@@ -293,7 +314,9 @@ private fun List<String>.padEnd(target: Int): List<String> {
 /**
  * Input state for managing text field state.
  */
-class TextFieldState(initialValue: String = "") {
+class TextFieldState(
+    initialValue: String = "",
+) {
     /**
      * Current text value.
      */
@@ -392,8 +415,7 @@ class TextFieldState(initialValue: String = "") {
     /**
      * Check if there's a selection.
      */
-    fun hasSelection(): Boolean =
-        selectionStart != null && selectionEnd != null && selectionStart != selectionEnd
+    fun hasSelection(): Boolean = selectionStart != null && selectionEnd != null && selectionStart != selectionEnd
 
     /**
      * Clear selection.
@@ -432,25 +454,21 @@ class TextFieldState(initialValue: String = "") {
 /**
  * Remember a text field state.
  */
-@Dispatchable
-fun rememberTextFieldState(initialValue: String = ""): TextFieldState {
-    return remember { TextFieldState(initialValue) }
-}
+@Composable
+fun rememberTextFieldState(initialValue: String = ""): TextFieldState = remember { TextFieldState(initialValue) }
 
 class InputHistoryIndexState {
     var index: Int by mutableStateOf(-1)
     var draft: String? by mutableStateOf(null)
 }
 
-@Dispatchable
-fun rememberInputHistoryIndexState(): InputHistoryIndexState {
-    return remember { InputHistoryIndexState() }
-}
+@Composable
+fun rememberInputHistoryIndexState(): InputHistoryIndexState = remember { InputHistoryIndexState() }
 
 /**
  * A text field that uses TextFieldState for full control.
  */
-@Dispatchable
+@Composable
 fun TextField(
     state: TextFieldState,
     modifier: Modifier = Modifier,
@@ -486,7 +504,7 @@ fun TextField(
 /**
  * A password input field.
  */
-@Dispatchable
+@Composable
 fun PasswordField(
     value: String,
     onValueChange: (String) -> Unit,
@@ -496,19 +514,16 @@ fun PasswordField(
     enabled: Boolean = true,
     maskChar: Char = '•',
 ) {
-    val terminal = LocalTerminal.current
-    val maskedValue = maskChar.toString().repeat(value.length)
-    composableWidget("PasswordField") {
-        TextFieldMeasurable(
-            value = maskedValue,
-            icon = icon,
-            placeholder = placeholder,
-            enabled = enabled,
-            singleLine = true,
-            modifier = modifier,
-            terminal = terminal,
-        )
-    }
+    InputTextField(
+        value = value,
+        onValueChange = onValueChange,
+        modifier = modifier,
+        icon = icon,
+        placeholder = placeholder,
+        enabled = enabled,
+        maxLines = 1,
+        maskChar = maskChar,
+    )
 }
 
 /**
@@ -541,7 +556,7 @@ fun PasswordField(
  * @param showCursor Whether to show a cursor at the end of text.
  * @param cursorChar Character to use for the cursor.
  */
-@Dispatchable
+@Composable
 fun InputTextField(
     value: String,
     onValueChange: (String) -> Unit,
@@ -560,23 +575,33 @@ fun InputTextField(
     onCursorPositionChange: ((Int) -> Unit)? = null,
     historyItems: List<String> = emptyList(),
     historyIndexState: InputHistoryIndexState? = null,
+    maskChar: Char? = null,
 ) {
-    val onValueChangeCallback = com.ead.dispatch.runtime.rememberCallback(onValueChange)
-    val onSubmitCallback = com.ead.dispatch.runtime.rememberCallback(onSubmit)
-    val onCursorPositionChangeCallback = com.ead.dispatch.runtime.rememberCallback(onCursorPositionChange)
+    val onValueChangeCallback =
+        com.ead.dispatch.runtime
+            .rememberCallback(onValueChange)
+    val onSubmitCallback =
+        com.ead.dispatch.runtime
+            .rememberCallback(onSubmit)
+    val onCursorPositionChangeCallback =
+        com.ead.dispatch.runtime
+            .rememberCallback(onCursorPositionChange)
 
     val terminal = LocalTerminal.current
     val terminalWidth = LocalTerminalWidth.current
-    val iconWidth = remember(icon) {
-        if (icon.isEmpty()) {
-            0
-        } else {
-            com.github.ajalt.mordant.widgets.Text(
-                icon,
-                whitespace = Whitespace.PRE,
-            ).render(terminal, width = 1_000).width
+    val iconWidth =
+        remember(icon) {
+            if (icon.isEmpty()) {
+                0
+            } else {
+                com.github.ajalt.mordant.widgets
+                    .Text(
+                        icon,
+                        whitespace = Whitespace.PRE,
+                    ).render(terminal, width = 1_000)
+                    .width
+            }
         }
-    }
     val contentWidth = (terminalWidth - iconWidth).coerceAtLeast(1)
 
     // Keep local value and cursor so we can handle edits even between recompositions.
@@ -593,16 +618,20 @@ fun InputTextField(
     val externalCursorTracker = remember { ExternalValueTracker(cursorPosition ?: value.length) }
     if (value != externalValueTracker.value) {
         externalValueTracker.value = value
-        if (value != latestValue) {
+        if (!externalValueTracker.acknowledge(value) && value != latestValue) {
+            externalValueTracker.clearPending()
             latestValue = value
             cursorPositionState = (cursorPosition ?: value.length).coerceIn(0, value.length)
         } else {
-            cursorPositionState = cursorPositionState.coerceIn(0, value.length)
+            cursorPositionState = cursorPositionState.coerceIn(0, latestValue.length)
         }
     }
     if (cursorPosition != null && cursorPosition != externalCursorTracker.value) {
         externalCursorTracker.value = cursorPosition
-        cursorPositionState = cursorPosition.coerceIn(0, latestValue.length)
+        if (!externalCursorTracker.acknowledge(cursorPosition)) {
+            externalCursorTracker.clearPending()
+            cursorPositionState = cursorPosition.coerceIn(0, latestValue.length)
+        }
     }
 
     // Set up keyboard handling via KeyboardInterceptor.
@@ -614,21 +643,28 @@ fun InputTextField(
 
     val isFocused = enabled && focusRegistry.isFocused(focusToken)
 
-    val editor = remember(resolvedHistoryIndexState) {
-        InputEditor(
-            getValue = { latestValue },
-            setValue = { latestValue = it },
-            getCursor = { cursorPositionState },
-            setCursor = { cursorPositionState = it },
-            historyIndexState = resolvedHistoryIndexState,
-            pasteTracker = pasteTracker,
-            pasteHeuristic = pasteHeuristic,
-        )
-    }
+    val editor =
+        remember(resolvedHistoryIndexState) {
+            InputEditor(
+                getValue = { latestValue },
+                setValue = { latestValue = it },
+                getCursor = { cursorPositionState },
+                setCursor = { cursorPositionState = it },
+                historyIndexState = resolvedHistoryIndexState,
+                pasteTracker = pasteTracker,
+                pasteHeuristic = pasteHeuristic,
+            )
+        }
     editor.updateDependencies(
-        onValueChange = onValueChangeCallback,
+        onValueChange = { nextValue ->
+            externalValueTracker.expect(nextValue)
+            onValueChangeCallback(nextValue)
+        },
         onSubmit = onSubmitCallback,
-        onCursorPositionChange = onCursorPositionChangeCallback,
+        onCursorPositionChange = { nextPosition ->
+            externalCursorTracker.expect(nextPosition)
+            onCursorPositionChangeCallback?.invoke(nextPosition)
+        },
         historyItems = { historyItems },
         terminal = terminal,
         contentWidth = { contentWidth },
@@ -639,27 +675,28 @@ fun InputTextField(
             return@DisposableEffect onDispose {}
         }
 
-        val dispose = keyboardInterceptor.register(priority = -1) { event ->
-            if (!focusRegistry.isFocused(focusToken)) {
-                return@register false
-            }
-            if (!focusRegistry.claimEvent(event)) {
-                return@register false
-            }
+        val dispose =
+            keyboardInterceptor.register(priority = -1) { event ->
+                if (!focusRegistry.isFocused(focusToken)) {
+                    return@register false
+                }
+                if (!focusRegistry.claimEvent(event)) {
+                    return@register false
+                }
 
-            if (event.key == "Tab" && !event.shift && !event.ctrl && !event.alt) {
-                focusRegistry.focusNext()
-                return@register true
-            }
+                if (event.key == "Tab" && !event.shift && !event.ctrl && !event.alt) {
+                    focusRegistry.focusNext()
+                    return@register true
+                }
 
-            if (event.shift && (event.key == "Q" || event.key == "q")) {
-                focusRegistry.focusPrevious()
-                return@register true
-            }
+                if (event.shift && (event.key == "Q" || event.key == "q")) {
+                    focusRegistry.focusPrevious()
+                    return@register true
+                }
 
-            editor.handleKeyEvent(event)
-            true
-        }
+                editor.handleKeyEvent(event)
+                true
+            }
 
         onDispose {
             dispose()
@@ -668,7 +705,7 @@ fun InputTextField(
 
     // Render the text field
     TextField(
-        value = latestValue,
+        value = maskChar?.toString()?.repeat(latestValue.length) ?: latestValue,
         onValueChange = onValueChangeCallback,
         modifier = focusableModifier,
         icon = icon,
@@ -686,7 +723,7 @@ fun InputTextField(
     )
 }
 
-@Dispatchable
+@Composable
 fun InputTextField(
     state: TextFieldState,
     modifier: Modifier = Modifier,
@@ -702,6 +739,7 @@ fun InputTextField(
     iconStyle: TextStyle? = null,
     historyItems: List<String> = emptyList(),
     historyIndexState: InputHistoryIndexState? = null,
+    maskChar: Char? = null,
 ) {
     InputTextField(
         value = state.value,
@@ -721,6 +759,7 @@ fun InputTextField(
         onCursorPositionChange = { state.cursorPosition = it },
         historyItems = historyItems,
         historyIndexState = historyIndexState,
+        maskChar = maskChar,
     )
 }
 
@@ -740,4 +779,24 @@ private fun syncHistoryState(
         }
     }
 }
-private class ExternalValueTracker<T>(var value: T)
+
+private class ExternalValueTracker<T>(
+    var value: T,
+) {
+    private val pending = ArrayDeque<T>()
+
+    fun expect(next: T) {
+        pending.addLast(next)
+    }
+
+    fun acknowledge(observed: T): Boolean {
+        val match = pending.indexOf(observed)
+        if (match < 0) return false
+        repeat(match + 1) { pending.removeFirst() }
+        return true
+    }
+
+    fun clearPending() {
+        pending.clear()
+    }
+}

@@ -1,6 +1,6 @@
 package com.ead.dispatch.widget
 
-import com.ead.dispatch.annotation.Dispatchable
+import androidx.compose.runtime.Composable
 import com.ead.dispatch.constraints.Constraints
 import com.ead.dispatch.layout.Measurable
 import com.ead.dispatch.layout.Placeable
@@ -28,7 +28,7 @@ import com.github.ajalt.mordant.rendering.TextStyle
  * @param style Visual style for the progress bar.
  * @param showPercentage Whether to show percentage text.
  */
-@Dispatchable
+@Composable
 fun ProgressBar(
     progress: Float,
     modifier: Modifier = Modifier,
@@ -66,33 +66,35 @@ internal class ProgressBarMeasurable(
     private val style: ProgressBarStyle,
     private val showPercentage: Boolean,
 ) : Measurable {
-
     override fun measure(constraints: Constraints): Placeable {
         val modifiedConstraints = modifier.applyToConstraints(constraints)
 
-        val percentageText = if (showPercentage) {
-            " ${(progress * 100).toInt()}%"
-        } else {
-            ""
-        }
+        val percentageText =
+            if (showPercentage) {
+                " ${(progress * 100).toInt()}%"
+            } else {
+                ""
+            }
 
-        val width = if (modifiedConstraints.hasBoundedWidth) {
-            modifiedConstraints.maxWidth
-        } else {
-            20 + percentageText.length
-        }
+        val width =
+            if (modifiedConstraints.hasBoundedWidth) {
+                modifiedConstraints.maxWidth
+            } else {
+                20 + percentageText.length
+            }
 
         val barWidth = (width - 2 - percentageText.length).coerceAtLeast(0) // -2 for caps
         val filledWidth = (barWidth * progress).toInt()
         val emptyWidth = barWidth - filledWidth
 
-        val bar = buildString {
-            append(style.leftCap)
-            repeat(filledWidth) { append(style.filled) }
-            repeat(emptyWidth) { append(style.empty) }
-            append(style.rightCap)
-            append(percentageText)
-        }
+        val bar =
+            buildString {
+                append(style.leftCap)
+                repeat(filledWidth) { append(style.filled) }
+                repeat(emptyWidth) { append(style.empty) }
+                append(style.rightCap)
+                append(percentageText)
+            }
 
         return SimplePlaceable(
             width = width,
@@ -114,7 +116,7 @@ internal class ProgressBarMeasurable(
  * @param modifier Modifiers to apply.
  * @param style Spinner style.
  */
-@Dispatchable
+@Composable
 fun Spinner(
     frame: Int,
     modifier: Modifier = Modifier,
@@ -132,7 +134,9 @@ fun Spinner(
 /**
  * Spinner animation styles.
  */
-enum class SpinnerStyle(val frames: List<String>) {
+enum class SpinnerStyle(
+    val frames: List<String>,
+) {
     Dots(listOf("⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏")),
     Circle(listOf("◐", "◓", "◑", "◒")),
     Growing(listOf("▁", "▃", "▄", "▅", "▆", "▇", "█", "▇", "▆", "▅", "▄", "▃")),
@@ -147,7 +151,6 @@ internal class SpinnerMeasurable(
     private val style: SpinnerStyle,
     private val textStyle: TextStyle? = null,
 ) : Measurable {
-
     override fun measure(constraints: Constraints): Placeable {
         val frameIndex = positiveModulo(frame, style.frames.size)
         val char = style.frames[frameIndex]
@@ -172,7 +175,7 @@ internal class SpinnerMeasurable(
  * )
  * ```
  */
-@Dispatchable
+@Composable
 fun LoadingIndicator(
     frame: Int,
     modifier: Modifier = Modifier,
@@ -193,7 +196,6 @@ internal class LoadingIndicatorMeasurable(
     override val modifier: Modifier,
     private val style: SpinnerStyle,
 ) : Measurable {
-
     override fun measure(constraints: Constraints): Placeable {
         val frameIndex = positiveModulo(frame, style.frames.size)
         val spinner = style.frames[frameIndex]
@@ -207,7 +209,10 @@ internal class LoadingIndicatorMeasurable(
     }
 }
 
-private fun positiveModulo(value: Int, modulus: Int): Int {
+private fun positiveModulo(
+    value: Int,
+    modulus: Int,
+): Int {
     if (modulus <= 0) return 0
     val result = value % modulus
     return if (result < 0) result + modulus else result
@@ -225,7 +230,7 @@ private fun positiveModulo(value: Int, modulus: Int): Int {
  * )
  * ```
  */
-@Dispatchable
+@Composable
 fun TransferProgress(
     progress: Float,
     bytesTransferred: Long,
@@ -249,15 +254,15 @@ internal class TransferProgressMeasurable(
     override val modifier: Modifier,
     private val style: ProgressBarStyle,
 ) : Measurable {
-
     override fun measure(constraints: Constraints): Placeable {
         val modifiedConstraints = modifier.applyToConstraints(constraints)
 
-        val width = if (modifiedConstraints.hasBoundedWidth) {
-            modifiedConstraints.maxWidth
-        } else {
-            50
-        }
+        val width =
+            if (modifiedConstraints.hasBoundedWidth) {
+                modifiedConstraints.maxWidth
+            } else {
+                50
+            }
 
         // Format bytes
         val transferred = formatBytes(bytesTransferred)
@@ -270,13 +275,14 @@ internal class TransferProgressMeasurable(
         val filledWidth = (barWidth * progress).toInt()
         val emptyWidth = barWidth - filledWidth
 
-        val bar = buildString {
-            append(style.leftCap)
-            repeat(filledWidth) { append(style.filled) }
-            repeat(emptyWidth) { append(style.empty) }
-            append(style.rightCap)
-            append(info)
-        }
+        val bar =
+            buildString {
+                append(style.leftCap)
+                repeat(filledWidth) { append(style.filled) }
+                repeat(emptyWidth) { append(style.empty) }
+                append(style.rightCap)
+                append(info)
+            }
 
         return SimplePlaceable(
             width = bar.length,
@@ -285,12 +291,11 @@ internal class TransferProgressMeasurable(
         )
     }
 
-    private fun formatBytes(bytes: Long): String {
-        return when {
+    private fun formatBytes(bytes: Long): String =
+        when {
             bytes >= 1_000_000_000 -> String.format("%.1fGB", bytes / 1_000_000_000.0)
             bytes >= 1_000_000 -> String.format("%.1fMB", bytes / 1_000_000.0)
             bytes >= 1_000 -> String.format("%.1fKB", bytes / 1_000.0)
             else -> "${bytes}B"
         }
-    }
 }

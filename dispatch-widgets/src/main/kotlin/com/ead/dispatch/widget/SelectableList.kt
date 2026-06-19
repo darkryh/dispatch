@@ -1,14 +1,14 @@
 package com.ead.dispatch.widget
 
-import com.ead.dispatch.annotation.Dispatchable
+import androidx.compose.runtime.Composable
 import com.ead.dispatch.layout.Column
 import com.ead.dispatch.layout.Row
 import com.ead.dispatch.layout.Spacer
 import com.ead.dispatch.modifier.Modifier
 import com.ead.dispatch.modifier.height
 import com.ead.dispatch.modifier.width
-import com.github.ajalt.mordant.rendering.TextStyle
 import com.ead.dispatch.widget.Text
+import com.github.ajalt.mordant.rendering.TextStyle
 
 data class SelectableListStyles(
     val prefix: TextStyle,
@@ -17,14 +17,14 @@ data class SelectableListStyles(
     val selectedPrefixText: String = "> ",
 )
 
-@Dispatchable
+@Composable
 fun <T> SelectableList(
     items: List<T>,
     selectedIndex: Int,
     styles: SelectableListStyles,
     modifier: Modifier = Modifier,
     itemSpacing: Int = 0,
-    itemContent: @Dispatchable (item: T, isSelected: Boolean) -> Unit,
+    itemContent: @Composable (item: T, isSelected: Boolean) -> Unit,
 ) {
     Column(modifier = modifier) {
         items.forEachIndexed { index, item ->

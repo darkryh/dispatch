@@ -22,8 +22,6 @@ internal class TerminalSessionCoordinator(
     private val backgroundScope: CoroutineScope,
     private val uiDispatcher: CoroutineDispatcher,
     private val frameScheduler: FrameScheduler,
-    private val recomposer: Recomposer,
-    private val compositionScopeToken: Any,
     private val renderer: TerminalRenderer,
     private val resizeCoordinator: ResizeCoordinator,
 ) {
@@ -45,10 +43,8 @@ internal class TerminalSessionCoordinator(
                 }
 
             frameScheduler.start()
-            recomposer.registerComposition(compositionScopeToken) { frameScheduler.requestFrame() }
             onFrameComposeAndRender()
             frameScheduler.markFrame()
-            val recomposerJob = recomposer.start()
 
             try {
                 awaitExitRequest(shouldExit)
@@ -56,7 +52,6 @@ internal class TerminalSessionCoordinator(
                 withContext(NonCancellable) {
                     shutdown(
                         inputJob = inputJob,
-                        recomposerJob = recomposerJob,
                         onBeforeShutdown = onBeforeShutdown,
                     )
                 }
@@ -72,15 +67,12 @@ internal class TerminalSessionCoordinator(
 
     private suspend fun shutdown(
         inputJob: Job,
-        recomposerJob: Job,
         onBeforeShutdown: suspend () -> Unit,
     ) {
         try {
             onBeforeShutdown()
             inputJob.cancelAndJoin()
             frameScheduler.stop()
-            recomposer.stop()
-            recomposerJob.cancelAndJoin()
             renderer.handoffToShellPrompt()
         } finally {
             renderer.showCursor()

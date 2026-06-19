@@ -1,23 +1,23 @@
 package com.ead.dispatch.widget
 
-import com.ead.dispatch.annotation.Dispatchable
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import com.ead.dispatch.modifier.Modifier
 import com.ead.dispatch.modifier.focusable
-import com.ead.dispatch.runtime.DisposableEffect
 import com.ead.dispatch.runtime.LocalFocusRegistry
 import com.ead.dispatch.runtime.LocalKeyboardInterceptor
 import com.ead.dispatch.runtime.rememberCallback
-import com.ead.dispatch.state.getValue
-import com.ead.dispatch.state.mutableStateOf
-import com.ead.dispatch.state.remember
-import com.ead.dispatch.state.setValue
 import com.github.ajalt.mordant.rendering.TextColors.Companion.rgb
 import com.github.ajalt.mordant.rendering.TextStyle
 
 /**
  * A focusable button that cycles through a list of options on Enter.
  */
-@Dispatchable
+@Composable
 fun CycleButton(
     value: String,
     options: List<String>,
@@ -43,50 +43,53 @@ fun CycleButton(
 
     val isFocused = enabled && focusRegistry.isFocused(focusToken)
     val fillStyle = if (isFocused) focusedFill else unfocusedFill
-    val displayValue = if (value.isBlank()) {
-        placeholder
-    } else {
-        formatOptionLabel(value)
-    }
-    val textStyle = when {
-        value.isBlank() -> placeholderStyle
-        isFocused -> focusedTextStyle
-        else -> unfocusedTextStyle
-    }
+    val displayValue =
+        if (value.isBlank()) {
+            placeholder
+        } else {
+            formatOptionLabel(value)
+        }
+    val textStyle =
+        when {
+            value.isBlank() -> placeholderStyle
+            isFocused -> focusedTextStyle
+            else -> unfocusedTextStyle
+        }
 
     DisposableEffect(listOf(enabled, focusRegistry, keyboardInterceptor, options)) {
         if (!enabled) {
             return@DisposableEffect onDispose {}
         }
 
-        val dispose = keyboardInterceptor.register(priority = -1) { event ->
-            if (!focusRegistry.isFocused(focusToken)) {
-                return@register false
-            }
-            if (!focusRegistry.claimEvent(event)) {
-                return@register false
-            }
-
-            if (event.key == "Tab" && !event.shift && !event.ctrl && !event.alt) {
-                focusRegistry.focusNext()
-                return@register true
-            }
-
-            if (event.shift && (event.key == "Q" || event.key == "q")) {
-                focusRegistry.focusPrevious()
-                return@register true
-            }
-
-            if (event.key == "Enter" || event.key == "Return") {
-                val next = nextOption(latestValue, options)
-                if (next != null) {
-                    onValueChangeCallback(next)
+        val dispose =
+            keyboardInterceptor.register(priority = -1) { event ->
+                if (!focusRegistry.isFocused(focusToken)) {
+                    return@register false
                 }
-                return@register true
-            }
+                if (!focusRegistry.claimEvent(event)) {
+                    return@register false
+                }
 
-            false
-        }
+                if (event.key == "Tab" && !event.shift && !event.ctrl && !event.alt) {
+                    focusRegistry.focusNext()
+                    return@register true
+                }
+
+                if (event.shift && (event.key == "Q" || event.key == "q")) {
+                    focusRegistry.focusPrevious()
+                    return@register true
+                }
+
+                if (event.key == "Enter" || event.key == "Return") {
+                    val next = nextOption(latestValue, options)
+                    if (next != null) {
+                        onValueChangeCallback(next)
+                    }
+                    return@register true
+                }
+
+                false
+            }
 
         onDispose {
             dispose()
@@ -95,17 +98,21 @@ fun CycleButton(
 
     Background(
         modifier = focusableModifier,
-        style = BackgroundStyle.Fill(
-            fill = fillStyle,
-            paddingHorizontal = paddingHorizontal,
-            paddingVertical = paddingVertical,
-        )
+        style =
+            BackgroundStyle.Fill(
+                fill = fillStyle,
+                paddingHorizontal = paddingHorizontal,
+                paddingVertical = paddingVertical,
+            ),
     ) {
         Text(text = displayValue, style = textStyle)
     }
 }
 
-internal fun nextOption(current: String, options: List<String>): String? {
+internal fun nextOption(
+    current: String,
+    options: List<String>,
+): String? {
     if (options.isEmpty()) return null
     val currentIndex = options.indexOf(current)
     val nextIndex = if (currentIndex < 0) 0 else (currentIndex + 1) % options.size

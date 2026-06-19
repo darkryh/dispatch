@@ -1,10 +1,10 @@
 package com.ead.dispatch.widget
 
-import com.ead.dispatch.annotation.Dispatchable
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import com.ead.dispatch.constraints.Constraints
 import com.ead.dispatch.layout.Column
 import com.ead.dispatch.runtime.Composer
-import com.ead.dispatch.runtime.CompositionLocalProvider
 import com.ead.dispatch.runtime.DispatchConfig
 import com.ead.dispatch.runtime.DispatchScope
 import com.ead.dispatch.runtime.KeyboardInterceptor
@@ -43,9 +43,13 @@ class InputTextFieldMultiInputTest {
         }
 
         override fun exit(code: Int) = Unit
+
         override fun hasFlag(name: String): Boolean = false
+
         override fun getArgument(name: String): String? = null
+
         override fun launch(block: suspend CoroutineScope.() -> Unit): Job = Job()
+
         override fun clearScreen(clearScrollback: Boolean) = Unit
 
         override fun onKeyEvent(handler: (KeyboardEvent) -> Unit) {
@@ -53,7 +57,8 @@ class InputTextFieldMultiInputTest {
         }
 
         override fun onMouseEvent(handler: (MouseEvent) -> Unit) = Unit
-        override fun content(block: @Dispatchable () -> Unit) = Unit
+
+        override fun content(block: @Composable () -> Unit) = Unit
 
         fun sendKey(event: KeyboardEvent) {
             if (keyboardInterceptor.tryIntercept(event)) return
@@ -62,14 +67,17 @@ class InputTextFieldMultiInputTest {
     }
 
     private class MultiInputHarness {
-        private val terminal = Terminal(
-            ansiLevel = AnsiLevel.NONE,
-            width = 80,
-            height = 20,
-            interactive = false,
-        )
+        private val terminal =
+            Terminal(
+                ansiLevel = AnsiLevel.NONE,
+                width = 80,
+                height = 20,
+                interactive = false,
+            )
         private val keyboardInterceptor = KeyboardInterceptor()
-        private val focusRegistry = com.ead.dispatch.runtime.FocusRegistry()
+        private val focusRegistry =
+            com.ead.dispatch.runtime
+                .FocusRegistry()
         private val dispatchScope = TestDispatchScope(terminal, DispatchTheme.Dark, keyboardInterceptor)
         private val composer = Composer()
 
@@ -120,7 +128,12 @@ class InputTextFieldMultiInputTest {
             rootNode.measure(Constraints.fixedWidth(80))
         }
 
-        fun press(key: String, ctrl: Boolean = false, alt: Boolean = false, shift: Boolean = false) {
+        fun press(
+            key: String,
+            ctrl: Boolean = false,
+            alt: Boolean = false,
+            shift: Boolean = false,
+        ) {
             dispatchScope.sendKey(KeyboardEvent(key, ctrl = ctrl, alt = alt, shift = shift))
             render()
         }

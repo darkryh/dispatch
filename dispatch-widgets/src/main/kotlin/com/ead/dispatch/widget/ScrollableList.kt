@@ -1,6 +1,10 @@
 package com.ead.dispatch.widget
 
-import com.ead.dispatch.annotation.Dispatchable
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import com.ead.dispatch.constraints.Constraints
 import com.ead.dispatch.layout.Measurable
 import com.ead.dispatch.layout.Placeable
@@ -10,11 +14,8 @@ import com.ead.dispatch.layout.SimplePlaceable
 import com.ead.dispatch.modifier.Modifier
 import com.ead.dispatch.modifier.applyToConstraints
 import com.ead.dispatch.modifier.weight
-import com.ead.dispatch.runtime.Composer
-import com.ead.dispatch.state.getValue
-import com.ead.dispatch.state.mutableStateOf
-import com.ead.dispatch.state.remember
-import com.ead.dispatch.state.setValue
+import com.ead.dispatch.runtime.composableContainer
+import com.ead.dispatch.runtime.composableWidget
 
 /**
  * A vertically scrollable list of items.
@@ -35,44 +36,36 @@ import com.ead.dispatch.state.setValue
  * @param scrollState State holder for scroll position.
  * @param itemContent Composable content for each item.
  */
-@Dispatchable
+@Composable
 fun <T> ScrollableList(
     items: List<T>,
     modifier: Modifier = Modifier,
     scrollState: ScrollState = rememberScrollState(),
-    itemContent: @Dispatchable (T) -> Unit,
+    itemContent: @Composable (T) -> Unit,
 ) {
-    val composer = Composer.current
-    val node = composer.startNode("ScrollableList")
-
-    for (item in items) {
-        itemContent(item)
-    }
-
-    val itemMeasurables = node.children
-
-    val listMeasurable = ScrollableListMeasurable(
+    composableContainer(
+        name = "ScrollableList",
         modifier = modifier,
-        itemMeasurables = itemMeasurables,
-        scrollState = scrollState,
-    )
-
-    composer.registerMeasurable(listMeasurable)
-    composer.endNode()
+        measurableFactory = { children ->
+            ScrollableListMeasurable(modifier, children, scrollState)
+        },
+    ) {
+        items.forEach { item -> itemContent(item) }
+    }
 }
 
 /**
  * Remember a scroll state.
  */
-@Dispatchable
-fun rememberScrollState(initialOffset: Int = 0): ScrollState {
-    return remember { ScrollState(initialOffset) }
-}
+@Composable
+fun rememberScrollState(initialOffset: Int = 0): ScrollState = remember { ScrollState(initialOffset) }
 
 /**
  * State holder for scroll position.
  */
-class ScrollState(initialOffset: Int = 0) {
+class ScrollState(
+    initialOffset: Int = 0,
+) {
     /**
      * Current scroll offset (in items/lines).
      */
@@ -117,8 +110,8 @@ class ScrollState(initialOffset: Int = 0) {
     }
 
     /**
-    * Scroll by one page (viewport height).
-    */
+     * Scroll by one page (viewport height).
+     */
     fun scrollByPage(direction: Int) {
         val page = viewportHeight.coerceAtLeast(1)
         scrollBy(page * direction)
@@ -148,7 +141,10 @@ class ScrollState(initialOffset: Int = 0) {
     /**
      * Scroll to make an index visible.
      */
-    fun scrollToItem(index: Int, itemHeights: List<Int>) {
+    fun scrollToItem(
+        index: Int,
+        itemHeights: List<Int>,
+    ) {
         if (index < 0 || itemHeights.isEmpty()) return
 
         // Calculate the Y position of the target item
@@ -178,13 +174,13 @@ internal class ScrollableListMeasurable(
     private val itemMeasurables: List<Measurable>,
     private val scrollState: ScrollState,
 ) : Measurable {
-
     override fun measure(constraints: Constraints): Placeable {
         val modifiedConstraints = modifier.applyToConstraints(constraints)
 
         // Check if height is unbounded (for terminal scrolling mode)
-        val isUnbounded = !modifiedConstraints.hasBoundedHeight ||
-                          modifiedConstraints.maxHeight == Int.MAX_VALUE
+        val isUnbounded =
+            !modifiedConstraints.hasBoundedHeight ||
+                modifiedConstraints.maxHeight == Int.MAX_VALUE
 
         if (isUnbounded) {
             // UNBOUNDED MODE: Measure all items, return full content (no virtualization)
@@ -196,14 +192,15 @@ internal class ScrollableListMeasurable(
         val viewportHeight = modifiedConstraints.maxHeight
 
         // Virtualize: measure only enough items to fill viewport plus small buffer
-        val itemConstraints = Constraints(
-            minWidth = 0,
-            maxWidth = modifiedConstraints.maxWidth,
-            minHeight = 0,
-            // Do not clamp item height to viewport: variable-height rows (like wrapped diff lines)
-            // must report their intrinsic height so virtualization can include subsequent items.
-            maxHeight = Int.MAX_VALUE,
-        )
+        val itemConstraints =
+            Constraints(
+                minWidth = 0,
+                maxWidth = modifiedConstraints.maxWidth,
+                minHeight = 0,
+                // Do not clamp item height to viewport: variable-height rows (like wrapped diff lines)
+                // must report their intrinsic height so virtualization can include subsequent items.
+                maxHeight = Int.MAX_VALUE,
+            )
 
         val itemHeights = mutableListOf<Int>()
         val itemPlaceables = mutableListOf<Placeable>()
@@ -220,13 +217,14 @@ internal class ScrollableListMeasurable(
         }
 
         // Calculate total content height (requires full heights; fall back to measured slice if partial)
-        val totalContentHeight = if (itemPlaceables.size == itemMeasurables.size) {
-            itemPlaceables.sumOf { it.height }
-        } else {
-            // Estimate using average height of measured items
-            val avg = itemHeights.average().toInt().coerceAtLeast(1)
-            avg * itemMeasurables.size
-        }
+        val totalContentHeight =
+            if (itemPlaceables.size == itemMeasurables.size) {
+                itemPlaceables.sumOf { it.height }
+            } else {
+                // Estimate using average height of measured items
+                val avg = itemHeights.average().toInt().coerceAtLeast(1)
+                avg * itemMeasurables.size
+            }
 
         // Update scroll state
         scrollState.contentHeight = totalContentHeight
@@ -257,9 +255,10 @@ internal class ScrollableListMeasurable(
         }
 
         // Pad to viewport height if needed
-        val width = modifiedConstraints.maxWidth.takeIf { it != Int.MAX_VALUE }
-            ?: visibleLines.maxOfOrNull { it.length }
-            ?: 0
+        val width =
+            modifiedConstraints.maxWidth.takeIf { it != Int.MAX_VALUE }
+                ?: visibleLines.maxOfOrNull { it.length }
+                ?: 0
 
         while (visibleLines.size < viewportHeight) {
             visibleLines.add(" ".repeat(width))
@@ -277,12 +276,13 @@ internal class ScrollableListMeasurable(
      */
     private fun measureUnbounded(constraints: Constraints): Placeable {
         // Measure ALL items with unbounded height
-        val itemConstraints = Constraints(
-            minWidth = 0,
-            maxWidth = constraints.maxWidth,
-            minHeight = 0,
-            maxHeight = Int.MAX_VALUE,
-        )
+        val itemConstraints =
+            Constraints(
+                minWidth = 0,
+                maxWidth = constraints.maxWidth,
+                minHeight = 0,
+                maxHeight = Int.MAX_VALUE,
+            )
 
         val itemPlaceables = itemMeasurables.map { it.measure(it.modifier.applyToConstraints(itemConstraints)) }
         val segmentHeights = itemPlaceables.map { it.height }
@@ -298,9 +298,10 @@ internal class ScrollableListMeasurable(
         scrollState.viewportHeight = allLines.size
         scrollState.offset = scrollState.offset.coerceIn(0, scrollState.maxOffset)
 
-        val width = constraints.maxWidth.takeIf { it != Int.MAX_VALUE }
-            ?: allLines.maxOfOrNull { it.length }
-            ?: 0
+        val width =
+            constraints.maxWidth.takeIf { it != Int.MAX_VALUE }
+                ?: allLines.maxOfOrNull { it.length }
+                ?: 0
 
         return SegmentedSimplePlaceable(
             width = width,
@@ -314,13 +315,13 @@ internal class ScrollableListMeasurable(
 /**
  * A scrollable column with indicator.
  */
-@Dispatchable
+@Composable
 fun <T> ScrollableListWithIndicator(
     items: List<T>,
     modifier: Modifier = Modifier,
     scrollState: ScrollState = rememberScrollState(),
     showScrollbar: Boolean = true,
-    itemContent: @Dispatchable (T) -> Unit,
+    itemContent: @Composable (T) -> Unit,
 ) {
     Row(modifier = modifier) {
         ScrollableList(
@@ -339,15 +340,9 @@ fun <T> ScrollableListWithIndicator(
 /**
  * A vertical scrollbar.
  */
-@Dispatchable
+@Composable
 private fun Scrollbar(scrollState: ScrollState) {
-    val composer = Composer.current
-    composer.startNode("Scrollbar")
-
-    val measurable = ScrollbarMeasurable(scrollState)
-    composer.registerMeasurable(measurable)
-
-    composer.endNode()
+    composableWidget("Scrollbar") { ScrollbarMeasurable(scrollState) }
 }
 
 internal class ScrollbarMeasurable(

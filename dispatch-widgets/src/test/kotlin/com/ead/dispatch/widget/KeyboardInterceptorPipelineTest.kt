@@ -1,8 +1,8 @@
 package com.ead.dispatch.widget
 
+import androidx.compose.runtime.CompositionLocalProvider
 import com.ead.dispatch.constraints.Constraints
 import com.ead.dispatch.runtime.Composer
-import com.ead.dispatch.runtime.CompositionLocalProvider
 import com.ead.dispatch.runtime.FocusRegistry
 import com.ead.dispatch.runtime.KeyboardInterceptor
 import com.ead.dispatch.runtime.LocalFocusRegistry
@@ -20,13 +20,16 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class KeyboardInterceptorPipelineTest {
-    private class InputHarness(initialValue: String = "hello") {
-        private val terminal = Terminal(
-            ansiLevel = AnsiLevel.NONE,
-            width = 80,
-            height = 20,
-            interactive = false,
-        )
+    private class InputHarness(
+        initialValue: String = "hello",
+    ) {
+        private val terminal =
+            Terminal(
+                ansiLevel = AnsiLevel.NONE,
+                width = 80,
+                height = 20,
+                interactive = false,
+            )
         private val keyboardInterceptor = KeyboardInterceptor()
         private val focusRegistry = FocusRegistry()
         private val composer = Composer()
@@ -60,7 +63,12 @@ class KeyboardInterceptorPipelineTest {
             rootNode.measure(Constraints.fixedWidth(80))
         }
 
-        fun press(key: String, ctrl: Boolean = false, alt: Boolean = false, shift: Boolean = false) {
+        fun press(
+            key: String,
+            ctrl: Boolean = false,
+            alt: Boolean = false,
+            shift: Boolean = false,
+        ) {
             keyboardInterceptor.tryIntercept(KeyboardEvent(key, ctrl = ctrl, alt = alt, shift = shift))
             render()
         }
@@ -79,14 +87,15 @@ class KeyboardInterceptorPipelineTest {
         harness.render()
         assertEquals(5, harness.state.cursorPosition)
 
-        val dispose = harness.registerInterceptor(priority = 1) { event ->
-            if (event.key == "ArrowLeft") {
-                consumedCount += 1
-                true
-            } else {
-                false
+        val dispose =
+            harness.registerInterceptor(priority = 1) { event ->
+                if (event.key == "ArrowLeft") {
+                    consumedCount += 1
+                    true
+                } else {
+                    false
+                }
             }
-        }
 
         harness.press("ArrowLeft")
         assertEquals(1, consumedCount)
@@ -107,14 +116,15 @@ class KeyboardInterceptorPipelineTest {
         harness.render()
         assertEquals(0, harness.state.cursorPosition)
 
-        val dispose = harness.registerInterceptor(priority = 1) { event ->
-            if (event.key == "Tab" && event.shift) {
-                shortcutCount += 1
-                true
-            } else {
-                false
+        val dispose =
+            harness.registerInterceptor(priority = 1) { event ->
+                if (event.key == "Tab" && event.shift) {
+                    shortcutCount += 1
+                    true
+                } else {
+                    false
+                }
             }
-        }
 
         harness.press("a")
         assertEquals("a", harness.state.value)

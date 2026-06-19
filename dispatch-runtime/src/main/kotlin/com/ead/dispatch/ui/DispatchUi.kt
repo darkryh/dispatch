@@ -15,12 +15,6 @@ package com.ead.dispatch.ui
  */
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// Annotations
-// ═══════════════════════════════════════════════════════════════════════════════
-
-typealias Dispatchable = com.ead.dispatch.annotation.Dispatchable
-
-// ═══════════════════════════════════════════════════════════════════════════════
 // Layout Components
 // ═══════════════════════════════════════════════════════════════════════════════
 
@@ -34,16 +28,3 @@ typealias Dispatchable = com.ead.dispatch.annotation.Dispatchable
 // ═══════════════════════════════════════════════════════════════════════════════
 
 typealias Modifier = com.ead.dispatch.modifier.Modifier
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// State Management
-// ═══════════════════════════════════════════════════════════════════════════════
-
-typealias State<T> = com.ead.dispatch.state.State<T>
-typealias MutableState<T> = com.ead.dispatch.state.MutableState<T>
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// CompositionLocals
-// ═══════════════════════════════════════════════════════════════════════════════
-
-typealias CompositionLocal<T> = com.ead.dispatch.runtime.CompositionLocal<T>

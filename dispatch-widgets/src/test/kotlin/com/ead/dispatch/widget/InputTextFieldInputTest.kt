@@ -1,9 +1,9 @@
 package com.ead.dispatch.widget
 
-import com.ead.dispatch.annotation.Dispatchable
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import com.ead.dispatch.constraints.Constraints
 import com.ead.dispatch.runtime.Composer
-import com.ead.dispatch.runtime.CompositionLocalProvider
 import com.ead.dispatch.runtime.DispatchConfig
 import com.ead.dispatch.runtime.DispatchScope
 import com.ead.dispatch.runtime.KeyboardInterceptor
@@ -51,9 +51,13 @@ class InputTextFieldInputTest {
         }
 
         override fun exit(code: Int) = Unit
+
         override fun hasFlag(name: String): Boolean = false
+
         override fun getArgument(name: String): String? = null
+
         override fun launch(block: suspend CoroutineScope.() -> Unit): Job = Job()
+
         override fun clearScreen(clearScrollback: Boolean) = Unit
 
         override fun onKeyEvent(handler: (KeyboardEvent) -> Unit) {
@@ -61,7 +65,8 @@ class InputTextFieldInputTest {
         }
 
         override fun onMouseEvent(handler: (MouseEvent) -> Unit) = Unit
-        override fun content(block: @Dispatchable () -> Unit) = Unit
+
+        override fun content(block: @Composable () -> Unit) = Unit
 
         fun sendKey(event: KeyboardEvent) {
             if (keyboardInterceptor.tryIntercept(event)) return
@@ -69,22 +74,35 @@ class InputTextFieldInputTest {
         }
     }
 
-    private class InputHarness {
-        private val terminal = Terminal(
-            ansiLevel = AnsiLevel.NONE,
-            width = 80,
-            height = 20,
-            interactive = false,
-        )
+    private class InputHarness(
+        initialValue: String = "",
+        private val width: Int = 80,
+        private val historyItems: List<String> = emptyList(),
+        private val maskChar: Char? = null,
+    ) {
+        private val terminal =
+            Terminal(
+                ansiLevel = AnsiLevel.NONE,
+                width = width,
+                height = 20,
+                interactive = false,
+            )
         private val keyboardInterceptor = KeyboardInterceptor()
-        private val focusRegistry = com.ead.dispatch.runtime.FocusRegistry()
+        private val focusRegistry =
+            com.ead.dispatch.runtime
+                .FocusRegistry()
         private val dispatchScope = TestDispatchScope(terminal, DispatchTheme.Dark, keyboardInterceptor)
         private val composer = Composer()
 
-        var inputValue: String = ""
+        var inputValue: String = initialValue
+            private set
+        var cursorPosition: Int = initialValue.length
             private set
         var submitted: String? = null
             private set
+        var delayValueUpdates: Boolean = false
+        private val pendingValues = mutableListOf<String>()
+        private val historyIndexState = InputHistoryIndexState()
 
         fun render(): List<String> {
             withComposer(composer) {
@@ -101,10 +119,18 @@ class InputTextFieldInputTest {
                 ) {
                     InputTextField(
                         value = inputValue,
-                        onValueChange = { inputValue = it },
+                        onValueChange = {
+                            pendingValues += it
+                            if (!delayValueUpdates) inputValue = it
+                        },
                         icon = "> ",
                         placeholder = "Type / for commands",
                         onSubmit = { submitted = it },
+                        cursorPosition = cursorPosition,
+                        onCursorPositionChange = { cursorPosition = it },
+                        historyItems = historyItems,
+                        historyIndexState = historyIndexState,
+                        maskChar = maskChar,
                     )
                 }
 
@@ -113,13 +139,138 @@ class InputTextFieldInputTest {
 
             val rootNode = composer.getRootNode() ?: return emptyList()
             focusRegistry.sync(rootNode)
-            return rootNode.measure(Constraints.fixedWidth(80)).lines
+            return rootNode.measure(Constraints.fixedWidth(width)).lines
         }
 
-        fun press(key: String, ctrl: Boolean = false, alt: Boolean = false, shift: Boolean = false) {
+        fun press(
+            key: String,
+            ctrl: Boolean = false,
+            alt: Boolean = false,
+            shift: Boolean = false,
+        ) {
             dispatchScope.sendKey(KeyboardEvent(key, ctrl = ctrl, alt = alt, shift = shift))
             render()
         }
+
+        fun pressWithoutRender(key: String) {
+            dispatchScope.sendKey(KeyboardEvent(key))
+        }
+
+        fun applyPendingValue(index: Int) {
+            inputValue = pendingValues[index]
+        }
+
+        fun latestPendingValue(): String = pendingValues.last()
+    }
+
+    @Test
+    fun `typing travels through focus and keyboard pipeline and renders cursor`() {
+        val harness = InputHarness()
+
+        harness.render()
+        harness.render()
+        val lines =
+            buildList {
+                harness.press("h")
+                harness.press("i")
+                addAll(harness.render())
+            }
+
+        assertEquals("hi", harness.inputValue)
+        assertEquals(2, harness.cursorPosition)
+        assertEquals(true, lines.any { it.contains("> hi█") })
+    }
+
+    @Test
+    fun `masked input edits raw value without rendering the secret`() {
+        val harness = InputHarness(maskChar = '*')
+
+        harness.render()
+        harness.press("s")
+        harness.press("e")
+        val lines = harness.render()
+
+        assertEquals("se", harness.inputValue)
+        assertEquals(true, lines.any { it.contains("> **█") })
+        assertEquals(false, lines.any { it.contains("se") })
+    }
+
+    @Test
+    fun `stale acknowledged value does not move cursor behind newer local edits`() {
+        val harness = InputHarness()
+
+        harness.render()
+        harness.delayValueUpdates = true
+        harness.pressWithoutRender("v")
+        harness.pressWithoutRender("l")
+
+        harness.applyPendingValue(0)
+        harness.render()
+        harness.pressWithoutRender("a")
+
+        assertEquals("vla", harness.latestPendingValue())
+    }
+
+    @Test
+    fun `up at first visual line reaches start then previous history record`() {
+        val harness =
+            InputHarness(
+                initialValue = "draft line",
+                historyItems = listOf("older", "newer"),
+            )
+
+        harness.render()
+        repeat(5) { harness.press("ArrowLeft") }
+        harness.press("ArrowUp")
+        assertEquals(0, harness.cursorPosition)
+        assertEquals("draft line", harness.inputValue)
+
+        harness.press("ArrowUp")
+        assertEquals("newer", harness.inputValue)
+        assertEquals(5, harness.cursorPosition)
+    }
+
+    @Test
+    fun `down at last visual line reaches end then next history record`() {
+        val harness =
+            InputHarness(
+                initialValue = "draft",
+                historyItems = listOf("older", "newer"),
+            )
+
+        harness.render()
+        repeat(5) { harness.press("ArrowLeft") }
+        harness.press("ArrowUp")
+        harness.press("ArrowUp")
+        assertEquals("newer", harness.inputValue)
+
+        repeat(3) { harness.press("ArrowLeft") }
+        harness.press("ArrowDown")
+        assertEquals(5, harness.cursorPosition)
+        assertEquals("newer", harness.inputValue)
+
+        harness.press("ArrowDown")
+        assertEquals("draft", harness.inputValue)
+        assertEquals(5, harness.cursorPosition)
+    }
+
+    @Test
+    fun `vertical movement preserves visual column across wrapped lines`() {
+        val harness =
+            InputHarness(
+                initialValue = "abcd\nefghij\nkl",
+                width = 8,
+            )
+
+        harness.render()
+        repeat(4) { harness.press("ArrowLeft") }
+        val middlePosition = harness.cursorPosition
+        harness.press("ArrowUp")
+        val upperPosition = harness.cursorPosition
+        harness.press("ArrowDown")
+
+        assertEquals(middlePosition, harness.cursorPosition)
+        assertEquals(true, upperPosition < middlePosition)
     }
 
     @Test

@@ -1,6 +1,6 @@
 package com.ead.dispatch.reliability
 
-import com.ead.dispatch.annotation.Dispatchable
+import androidx.compose.runtime.Composable
 import com.ead.dispatch.layout.Column
 import com.ead.dispatch.layout.Row
 import com.ead.dispatch.layout.Spacer
@@ -79,7 +79,7 @@ private data class FuzzState(
     val contextPercent: Int = 93,
 )
 
-@Dispatchable
+@Composable
 private fun FuzzApp(state: FuzzState) {
     val modeLabel = if (state.modeIndex == 0) "chat mode" else "story mode"
     Column(modifier = Modifier.fillMaxWidth()) {
@@ -106,7 +106,7 @@ private fun FuzzApp(state: FuzzState) {
     }
 }
 
-@Dispatchable
+@Composable
 private fun FuzzChatBody(state: FuzzState) {
     val paletteState = rememberCommandPaletteState<String>()
     Text("anchor::fuzz_chat")

@@ -3,12 +3,10 @@ package com.ead.dispatch.layout
 import com.ead.dispatch.constraints.Constraints
 import com.ead.dispatch.modifier.Modifier
 import com.ead.dispatch.modifier.semantics
-import com.ead.dispatch.runtime.Composer
+import com.ead.dispatch.runtime.DispatchComposition
 import com.ead.dispatch.runtime.composableWidget
-import com.ead.dispatch.runtime.withComposer
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertNotNull
 import kotlin.test.assertSame
 import kotlin.test.assertTrue
 
@@ -28,53 +26,46 @@ class LayoutNodeTest {
 
     @Test
     fun `node tree preserves parent-child relationships`() {
-        val composer = Composer()
-        withComposer(composer) {
-            composer.startComposition()
-            Column {
-                composableWidget("ChildA") { StubMeasurable() }
-                composableWidget("ChildB") { StubMeasurable() }
+        DispatchComposition().use { composition ->
+            composition.setContent {
+                Column {
+                    composableWidget("ChildA") { StubMeasurable() }
+                    composableWidget("ChildB") { StubMeasurable() }
+                }
             }
-            composer.endComposition()
+            val root = composition.root.children.single()
+            assertEquals("Layout", root.name)
+            assertEquals(2, root.children.size)
+            assertEquals(listOf("ChildA", "ChildB"), root.children.map { it.name })
+            assertSame(root, root.children.first().parent)
         }
-
-        val root = composer.getRootNode()
-        assertNotNull(root)
-        assertEquals("Layout", root.name)
-        assertEquals(2, root.children.size)
-        assertEquals(listOf("ChildA", "ChildB"), root.children.map { it.name })
-        assertSame(root, root.children.first().parent)
     }
 
     @Test
     fun `node modifier reflects leaf measurable modifier`() {
-        val composer = Composer()
         val modifier = TagModifier("leaf")
-
-        withComposer(composer) {
-            composer.startComposition()
-            composableWidget("Leaf") { StubMeasurable(modifier = modifier) }
-            composer.endComposition()
+        DispatchComposition().use { composition ->
+            composition.setContent { composableWidget("Leaf") { StubMeasurable(modifier = modifier) } }
+            assertTrue(
+                composition.root.children
+                    .single()
+                    .modifier
+                    .any { it is TagModifier },
+            )
         }
-
-        val root = composer.getRootNode()
-        assertNotNull(root)
-        assertTrue(root.modifier.any { it is TagModifier })
     }
 
     @Test
     fun `node exposes semantics tags from modifier`() {
-        val composer = Composer()
         val modifier = Modifier.semantics("alpha").semantics("beta")
-
-        withComposer(composer) {
-            composer.startComposition()
-            composableWidget("Leaf") { StubMeasurable(modifier = modifier) }
-            composer.endComposition()
+        DispatchComposition().use { composition ->
+            composition.setContent { composableWidget("Leaf") { StubMeasurable(modifier = modifier) } }
+            assertEquals(
+                listOf("alpha", "beta"),
+                composition.root.children
+                    .single()
+                    .semanticsTags,
+            )
         }
-
-        val root = composer.getRootNode()
-        assertNotNull(root)
-        assertEquals(listOf("alpha", "beta"), root.semanticsTags)
     }
 }

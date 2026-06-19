@@ -1,11 +1,11 @@
 package com.ead.dispatch.widget
 
-import com.ead.dispatch.annotation.Dispatchable
+import androidx.compose.runtime.Composable
 import com.ead.dispatch.modifier.Modifier
 import kotlin.math.max
 import kotlin.math.min
 
-@Dispatchable
+@Composable
 fun <T> SelectableWindowedList(
     items: List<T>,
     selectedIndex: Int,
@@ -13,7 +13,7 @@ fun <T> SelectableWindowedList(
     styles: SelectableListStyles,
     modifier: Modifier = Modifier,
     itemSpacing: Int = 0,
-    itemContent: @Dispatchable (item: T, isSelected: Boolean) -> Unit,
+    itemContent: @Composable (item: T, isSelected: Boolean) -> Unit,
 ) {
     if (items.isEmpty()) return
 

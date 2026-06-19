@@ -1,9 +1,17 @@
 package com.ead.dispatch.runtime
 
-import com.ead.dispatch.annotation.Dispatchable
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.Composition
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.Recomposer
+import androidx.compose.runtime.mutableIntStateOf
+import com.ead.dispatch.constraints.Constraints
+import com.ead.dispatch.layout.LayoutNode
 import com.ead.dispatch.layout.Measurable
 import com.ead.dispatch.layout.Placeable
 import com.ead.dispatch.layout.SegmentedPlaceable
+import com.ead.dispatch.layout.SimplePlaceable
+import com.ead.dispatch.modifier.Modifier
 import com.ead.dispatch.render.TerminalRenderer
 import com.ead.dispatch.theme.DispatchTheme
 import com.ead.dispatch.viewmodel.ViewModelStore
@@ -70,8 +78,11 @@ internal class DispatchRuntimeEngine(
     private lateinit var backgroundScope: CoroutineScope
     private lateinit var appJob: Job
     private lateinit var uiDispatcher: CoroutineDispatcher
-    private lateinit var composer: Composer
     private lateinit var recomposer: Recomposer
+    private lateinit var snapshotManager: DispatchSnapshotManager
+    private lateinit var composition: Composition
+    private lateinit var recomposerJob: Job
+    private lateinit var compositionRoot: LayoutNode
     private lateinit var renderer: TerminalRenderer
     private lateinit var resizeCoordinator: ResizeCoordinator
     private lateinit var renderPipeline: RenderPipeline
@@ -97,10 +108,11 @@ internal class DispatchRuntimeEngine(
      */
     private var activeAreaHeight: Int = 4
 
-    private var activeUIBlock: (@Dispatchable () -> Unit)? = null
+    private var activeUIBlock: (@Composable () -> Unit)? = null
+    private val terminalWidthState = mutableIntStateOf(40)
+    private val terminalHeightState = mutableIntStateOf(10)
 
     private lateinit var dispatchScopeInstance: DispatchScope
-    private val compositionScopeToken = Any()
     private var lastWindowTitleApplied: String? = null
     private var lastWindowTitleAppliedAtNanos: Long = 0L
     private var exitArmDeadlineNanos: Long = 0L
@@ -120,7 +132,8 @@ internal class DispatchRuntimeEngine(
     private fun initializeScopes() {
         uiDispatcher = Dispatchers.Default.limitedParallelism(1)
         appJob = SupervisorJob()
-        uiScope = CoroutineScope(uiDispatcher + appJob)
+        uiScope = CoroutineScope(uiDispatcher + appJob + DispatchFrameClock)
+        snapshotManager = DispatchSnapshotManager(uiScope)
         backgroundScope = CoroutineScope(Dispatchers.Default + appJob)
     }
 
@@ -155,9 +168,12 @@ internal class DispatchRuntimeEngine(
     private fun configureApplication(content: DispatchScope.() -> Unit): Boolean {
         val scope = DispatchScopeImpl()
         dispatchScopeInstance = scope
-        composer = Composer()
-        recomposer = Recomposer(uiScope)
-        resizeCoordinator = ResizeCoordinator(requestRecomposition = { recomposer.requestRecomposition() })
+        recomposer = Recomposer(uiScope.coroutineContext)
+        resizeCoordinator = ResizeCoordinator(
+            requestRecomposition = {
+                if (::frameScheduler.isInitialized) frameScheduler.requestFrame()
+            }
+        )
         resizeCoordinator.registerSignalHandler()
         renderPipeline = RenderPipeline(renderer)
 
@@ -176,7 +192,38 @@ internal class DispatchRuntimeEngine(
                 targetFps = config.targetFps,
                 onFrame = { composeAndRender() },
             )
+        initializeComposition()
         return true
+    }
+
+    private fun initializeComposition() {
+        val block = activeUIBlock ?: return
+        val t = terminal ?: return
+        compositionRoot = LayoutNode("CompositionRoot")
+        compositionRoot.setDelegate(CompositionRootMeasurable(compositionRoot))
+        rootMeasurable.set(compositionRoot)
+        composition = Composition(
+            DispatchNodeApplier(compositionRoot) { frameScheduler.requestFrame() },
+            recomposer,
+        )
+        composition.setContent {
+            CompositionLocalProvider(
+                LocalDispatchScope provides dispatchScopeInstance,
+                LocalDispatchArgs provides dispatchArgs,
+                LocalDispatchConfig provides config,
+                LocalDispatchContext provides DispatchContext(dispatchScopeInstance, dispatchArgs, config),
+                LocalTerminal provides t,
+                LocalTerminalWidth provides terminalWidthState.intValue,
+                LocalTerminalHeight provides terminalHeightState.intValue,
+                LocalTheme provides config.theme,
+                LocalKeyboardInterceptor provides keyboardInterceptor,
+                LocalFocusRegistry provides focusRegistry,
+                LocalExitPromptState provides exitPromptState,
+            ) {
+                block()
+            }
+        }
+        recomposerJob = uiScope.launch { recomposer.runRecomposeAndApplyChanges() }
     }
 
     private suspend fun runTerminalSession() {
@@ -188,15 +235,19 @@ internal class DispatchRuntimeEngine(
             backgroundScope = backgroundScope,
             uiDispatcher = uiDispatcher,
             frameScheduler = frameScheduler,
-            recomposer = recomposer,
-            compositionScopeToken = compositionScopeToken,
             renderer = renderer,
             resizeCoordinator = resizeCoordinator,
         ).run(
             onInputLoop = { readEvent -> runInputLoop(readEvent) },
             onFrameComposeAndRender = { composeAndRender() },
             shouldExit = { exitRequested },
-            onBeforeShutdown = { cancelExitPromptReset() },
+            onBeforeShutdown = {
+                cancelExitPromptReset()
+                if (::composition.isInitialized) composition.dispose()
+                recomposer.close()
+                if (::recomposerJob.isInitialized) recomposerJob.cancelAndJoin()
+                if (::snapshotManager.isInitialized) snapshotManager.close()
+            },
         )
     }
 
@@ -288,7 +339,6 @@ internal class DispatchRuntimeEngine(
         if (!consumed) {
             keyEventHandlers.forEach { handler -> handler(event) }
         }
-        recomposer.requestRecomposition()
         return false
     }
 
@@ -319,12 +369,10 @@ internal class DispatchRuntimeEngine(
                     delay(config.exitTimeoutOnDoublePress)
                     exitPromptState.isArmed = false
                     exitArmDeadlineNanos = 0L
-                    recomposer.requestRecomposition()
                 }
             } else {
                 null
             }
-        recomposer.requestRecomposition()
     }
 
     private fun disarmExitPrompt() {
@@ -336,13 +384,14 @@ internal class DispatchRuntimeEngine(
 
     private fun handleMouseEvent(event: MouseEvent) {
         mouseEventHandler?.invoke(event)
-        recomposer.requestRecomposition()
     }
 
     private fun composeAndRender() {
         applyWindowTitleIfNeeded()
         resizeCoordinator.updateIfNeeded(terminal)
-        composeActiveUI()
+        terminalWidthState.intValue = resizeCoordinator.width.coerceAtLeast(40)
+        terminalHeightState.intValue = resizeCoordinator.height.coerceAtLeast(10)
+        focusRegistry.sync(compositionRoot)
         renderPipeline.render(
             measurable = rootMeasurable.get(),
             terminalWidth = resizeCoordinator.width,
@@ -350,44 +399,6 @@ internal class DispatchRuntimeEngine(
             activeAreaHeight = activeAreaHeight,
             forceRewrite = resizeCoordinator.consumePendingReset(),
         )
-    }
-
-    private fun composeActiveUI() {
-        val block = activeUIBlock ?: return
-        val t = terminal ?: return
-
-        withComposer(composer) {
-            Recomposer.withRecomposer(recomposer) {
-                Recomposer.withScope(compositionScopeToken) {
-                    composer.startComposition()
-
-                    try {
-                        CompositionLocalProvider(
-                            LocalDispatchScope provides dispatchScopeInstance,
-                            LocalDispatchArgs provides dispatchArgs,
-                            LocalDispatchConfig provides config,
-                            LocalDispatchContext provides DispatchContext(dispatchScopeInstance, dispatchArgs, config),
-                            LocalTerminal provides t,
-                            LocalTerminalWidth provides resizeCoordinator.width.coerceAtLeast(40),
-                            LocalTerminalHeight provides resizeCoordinator.height.coerceAtLeast(10),
-                            LocalTheme provides config.theme,
-                            LocalKeyboardInterceptor provides keyboardInterceptor,
-                            LocalFocusRegistry provides focusRegistry,
-                            LocalExitPromptState provides exitPromptState,
-                        ) {
-                            block()
-                        }
-                    } finally {
-                        composer.endComposition()
-                        val rootNode = composer.getRootNode()
-                        rootMeasurable.set(rootNode)
-                        // Ensure focus order reflects the latest composed layout tree.
-                        focusRegistry.sync(rootNode)
-                        EffectRunner.runPendingEffects()
-                    }
-                }
-            }
-        }
     }
 
     private fun parseArguments() {
@@ -460,7 +471,7 @@ internal class DispatchRuntimeEngine(
         override fun clearScreen(clearScrollback: Boolean) {
             renderer.clearScreen(clearScrollback)
             renderPipeline.reset()
-            recomposer.requestRecomposition()
+            frameScheduler.requestFrame()
         }
 
         override fun onKeyEvent(handler: (KeyboardEvent) -> Unit) {
@@ -472,9 +483,42 @@ internal class DispatchRuntimeEngine(
             mouseEventHandler = handler
         }
 
-        override fun content(block: @Dispatchable () -> Unit) {
+        override fun content(block: @Composable () -> Unit) {
             activeUIBlock = block
         }
+    }
+}
+
+private class CompositionRootMeasurable(
+    private val root: LayoutNode,
+) : Measurable {
+    override val modifier: Modifier = Modifier
+
+    override fun measure(constraints: Constraints): Placeable {
+        val lines = mutableListOf<String>()
+        var width = constraints.minWidth
+        var remainingHeight = constraints.maxHeight
+        for (child in root.children) {
+            if (remainingHeight == 0) break
+            val childConstraints = Constraints(
+                minWidth = 0,
+                maxWidth = constraints.maxWidth,
+                minHeight = 0,
+                maxHeight = remainingHeight,
+            )
+            val placeable = child.measure(childConstraints)
+            lines += placeable.lines
+            width = maxOf(width, placeable.width)
+            if (remainingHeight != Int.MAX_VALUE) {
+                remainingHeight = (remainingHeight - placeable.height).coerceAtLeast(0)
+            }
+        }
+        val height = constraints.constrainHeight(lines.size)
+        return SimplePlaceable(
+            width = constraints.constrainWidth(width),
+            height = height,
+            lines = lines.take(height),
+        )
     }
 }
 

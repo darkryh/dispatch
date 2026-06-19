@@ -1,6 +1,6 @@
 package com.ead.dispatch.navigation
 
-import com.ead.dispatch.annotation.Dispatchable
+import androidx.compose.runtime.Composable
 import com.ead.dispatch.lifecycle.LifecycleOwner
 import com.ead.dispatch.lifecycle.LifecycleRegistry
 import com.ead.dispatch.runtime.SavedStateHandle
@@ -13,7 +13,7 @@ data class NavEntry<T : NavKey>(
     val key: T,
     val contentKey: Any = stableContentKey(key),
     val metadata: Map<String, Any> = emptyMap(),
-    val content: @Dispatchable (T) -> Unit,
+    val content: @Composable (T) -> Unit,
 )
 
 @PublishedApi
@@ -26,7 +26,7 @@ class NavBackStackEntry<T : NavKey>(
     val key: T,
     val contentKey: Any,
     val metadata: Map<String, Any>,
-    private val content: @Dispatchable () -> Unit,
+    private val content: @Composable () -> Unit,
     val savedStateHandle: SavedStateHandle,
     val viewModelProvider: ViewModelProvider,
     val lifecycleRegistry: LifecycleRegistry,
@@ -34,14 +34,14 @@ class NavBackStackEntry<T : NavKey>(
     override val lifecycle: LifecycleRegistry
         get() = lifecycleRegistry
 
-    @Dispatchable
+    @Composable
     fun Content() {
         content()
     }
 }
 
 @PublishedApi
-internal fun <T : NavKey> NavBackStackEntry<T>.wrap(content: @Dispatchable () -> Unit): NavBackStackEntry<T> =
+internal fun <T : NavKey> NavBackStackEntry<T>.wrap(content: @Composable () -> Unit): NavBackStackEntry<T> =
     NavBackStackEntry(
         key = key,
         contentKey = contentKey,

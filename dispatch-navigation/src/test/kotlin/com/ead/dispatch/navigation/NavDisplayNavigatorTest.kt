@@ -1,9 +1,9 @@
 package com.ead.dispatch.navigation
 
-import com.ead.dispatch.annotation.Dispatchable
+import androidx.compose.runtime.Composable
 import com.ead.dispatch.constraints.Constraints
 import com.ead.dispatch.runtime.Composer
-import com.ead.dispatch.runtime.CompositionLocalProvider
+import androidx.compose.runtime.CompositionLocalProvider
 import com.ead.dispatch.runtime.LocalTerminal
 import com.ead.dispatch.runtime.LocalTerminalHeight
 import com.ead.dispatch.runtime.LocalTerminalWidth
@@ -53,7 +53,7 @@ class NavDisplayNavigatorTest {
     }
 }
 
-private fun render(content: @Dispatchable () -> Unit) {
+private fun render(content: @Composable () -> Unit) {
     val terminal =
         Terminal(
             ansiLevel = AnsiLevel.NONE,

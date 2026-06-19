@@ -60,7 +60,7 @@ class LayoutAnsiRenderingTest {
                         size = 1 to 1,
                         placements = listOf(0 to 0),
                     ),
-                children = listOf(child),
+                children = { listOf(child) },
             )
 
         val placeable = measurable.measure(Constraints(maxWidth = 1, maxHeight = 1))
@@ -100,7 +100,7 @@ class LayoutAnsiRenderingTest {
                         size = 2 to 1,
                         placements = listOf(0 to 0, 1 to 0),
                     ),
-                children = listOf(leftPad, styled),
+                children = { listOf(leftPad, styled) },
             )
 
         val placeable = measurable.measure(Constraints(maxWidth = 2, maxHeight = 1))

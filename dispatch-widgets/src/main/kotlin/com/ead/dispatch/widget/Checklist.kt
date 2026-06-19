@@ -1,17 +1,19 @@
 package com.ead.dispatch.widget
 
-import com.ead.dispatch.annotation.Dispatchable
+import androidx.compose.runtime.Composable
 import com.ead.dispatch.layout.Column
 import com.ead.dispatch.layout.Row
 import com.ead.dispatch.modifier.Modifier
-import com.github.ajalt.mordant.rendering.TextColors
 import com.github.ajalt.mordant.rendering.TextColors.Companion.rgb
 import com.github.ajalt.mordant.rendering.TextStyle
 
 /**
  * Checklist style options.
  */
-enum class ChecklistStyle(val checkedChar: String, val uncheckedChar: String) {
+enum class ChecklistStyle(
+    val checkedChar: String,
+    val uncheckedChar: String,
+) {
     Checkbox("[✓]", "[ ]"),
     Square("[■]", "[ ]"),
     Circle("(●)", "( )"),
@@ -57,12 +59,11 @@ data class ChecklistTextStyles(
  * Checklist(items = items)
  * ```
  */
-@Dispatchable
+@Composable
 fun Checklist(
     items: List<ChecklistItem>,
     modifier: Modifier = Modifier,
     selectedIndex: Int = -1,
-    onItemToggle: (index: Int, item: ChecklistItem) -> Unit = { _, _ -> },
     style: ChecklistStyle = ChecklistStyle.Checkbox,
     textStyles: ChecklistTextStyles = ChecklistTextStyles(),
 ) {
@@ -76,18 +77,20 @@ fun Checklist(
 
             val prefixStyle = if (isSelected) textStyles.selectedPrefix ?: textStyles.prefix else textStyles.prefix
 
-            val indicatorStyle = when {
-                !isEnabled -> textStyles.disabledIndicator
-                isChecked -> textStyles.checkedIndicator
-                else -> textStyles.uncheckedIndicator
-            }
+            val indicatorStyle =
+                when {
+                    !isEnabled -> textStyles.disabledIndicator
+                    isChecked -> textStyles.checkedIndicator
+                    else -> textStyles.uncheckedIndicator
+                }
 
-            val nameStyle = when {
-                !isEnabled -> textStyles.disabledText
-                isChecked -> textStyles.checkedText
-                isSelected -> textStyles.selectedText
-                else -> textStyles.text
-            }
+            val nameStyle =
+                when {
+                    !isEnabled -> textStyles.disabledText
+                    isChecked -> textStyles.checkedText
+                    isSelected -> textStyles.selectedText
+                    else -> textStyles.text
+                }
 
             Row {
                 Text(prefix, style = prefixStyle)

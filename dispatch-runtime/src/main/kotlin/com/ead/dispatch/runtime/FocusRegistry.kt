@@ -3,9 +3,9 @@ package com.ead.dispatch.runtime
 import com.ead.dispatch.layout.LayoutNode
 import com.ead.dispatch.modifier.FocusTargetModifier
 import com.ead.dispatch.modifier.allOf
-import com.ead.dispatch.state.getValue
-import com.ead.dispatch.state.mutableStateOf
-import com.ead.dispatch.state.setValue
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import com.github.ajalt.mordant.input.KeyboardEvent
 
 /**

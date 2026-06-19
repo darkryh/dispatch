@@ -1,17 +1,20 @@
 package com.ead.dispatch.widget
 
-import com.ead.dispatch.annotation.Dispatchable
-import com.ead.dispatch.state.remember
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import com.github.ajalt.mordant.input.KeyboardEvent
 
-private val FILTER_TEXT_PARSE_CONFIG = KeyEventTextParseConfig(
-    mapSpaceKeyToSpace = true,
-    replaceNewlineWithSpace = true,
-    replaceTabWithSpace = true,
-    extraNonTextKeys = setOf("Up", "Down"),
-)
+private val FILTER_TEXT_PARSE_CONFIG =
+    KeyEventTextParseConfig(
+        mapSpaceKeyToSpace = true,
+        replaceNewlineWithSpace = true,
+        replaceTabWithSpace = true,
+        extraNonTextKeys = setOf("Up", "Down"),
+    )
 
-class FilterInputController(private val state: TextFieldState) {
+class FilterInputController(
+    private val state: TextFieldState,
+) {
     fun handleKeyEvent(event: KeyboardEvent): Boolean {
         when (event.key) {
             "ArrowUp", "ArrowDown", "Enter", "Escape", "Esc", "Tab" -> return false
@@ -88,8 +91,8 @@ class FilterInputController(private val state: TextFieldState) {
         }
     }
 
-    private fun handleCtrlShortcut(event: KeyboardEvent): Boolean {
-        return when (event.key.lowercase()) {
+    private fun handleCtrlShortcut(event: KeyboardEvent): Boolean =
+        when (event.key.lowercase()) {
             "a" -> {
                 state.selectionStart = 0
                 state.selectionEnd = state.value.length
@@ -106,7 +109,6 @@ class FilterInputController(private val state: TextFieldState) {
             }
             else -> false
         }
-    }
 
     private fun updateSelection(delta: Int) {
         val anchor = state.selectionStart ?: state.cursorPosition
@@ -164,7 +166,5 @@ class FilterInputController(private val state: TextFieldState) {
     }
 }
 
-@Dispatchable
-fun rememberFilterInputController(state: TextFieldState): FilterInputController {
-    return remember(state) { FilterInputController(state) }
-}
+@Composable
+fun rememberFilterInputController(state: TextFieldState): FilterInputController = remember(state) { FilterInputController(state) }

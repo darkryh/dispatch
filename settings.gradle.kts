@@ -1,6 +1,7 @@
 pluginManagement {
     includeBuild("build-logic")
     repositories {
+        google()
         mavenCentral()
         gradlePluginPortal()
     }
@@ -11,6 +12,7 @@ rootProject.name = "dispatch"
 dependencyResolutionManagement {
     @Suppress("UnstableApiUsage")
     repositories {
+        google()
         mavenCentral()
     }
 }
@@ -34,6 +36,3 @@ include(":dispatch-update-apt")
 include(":dispatch-update-github")
 include(":dispatch-workspace")
 include(":dispatch-sample")
-include(":koog-context-orchestrator")
-include(":koog-agent-benchmark-core")
-include(":koog-agent-benchmark-koog")

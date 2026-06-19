@@ -1,14 +1,13 @@
 package com.ead.dispatch.navigation
 
-import com.ead.dispatch.annotation.Dispatchable
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.key
 import com.ead.dispatch.layout.Box
 import com.ead.dispatch.lifecycle.LifecycleState
 import com.ead.dispatch.modifier.Modifier
-import com.ead.dispatch.runtime.Composer
-import com.ead.dispatch.runtime.CompositionLocalProvider
+import androidx.compose.runtime.CompositionLocalProvider
 import com.ead.dispatch.runtime.LocalSavedStateHandle
-import com.ead.dispatch.state.mutableStateOf
-import com.ead.dispatch.state.remember
+import androidx.compose.runtime.remember
 import com.ead.dispatch.viewmodel.DefaultViewModelFactory
 import com.ead.dispatch.viewmodel.LocalViewModelProvider
 import com.ead.dispatch.viewmodel.ViewModelFactory
@@ -17,7 +16,7 @@ import kotlinx.serialization.json.Json
 /**
  * A nav display that renders the current back stack entry.
  */
-@Dispatchable
+@Composable
 fun <T : NavKey> NavDisplay(
     backStack: NavBackStack<T>,
     entryProvider: (key: T) -> NavEntry<T>,
@@ -27,10 +26,6 @@ fun <T : NavKey> NavDisplay(
     json: Json = DefaultRouteJson,
 ) {
     require(backStack.isNotEmpty()) { "NavDisplay backstack cannot be empty" }
-
-    val composer = Composer.current
-    val lastContentKeyState = remember { mutableStateOf<Any?>(null) }
-    val screenSlotRange = remember { mutableStateOf<IntRange?>(null) }
 
     val localDecorator = rememberNavEntryLocalsDecorator<T>()
     val decoratedEntries =
@@ -57,13 +52,6 @@ fun <T : NavKey> NavDisplay(
             }
         }
 
-    if (lastContentKeyState.value != contentKey) {
-        screenSlotRange.value?.let { range ->
-            composer.clearSlotsInRange(range.first, range.last + 1)
-        }
-        lastContentKeyState.value = contentKey
-    }
-
     // Update lifecycle states: current is STARTED, others STOPPED.
     decoratedEntries.forEach { entry ->
         val desired =
@@ -82,16 +70,15 @@ fun <T : NavKey> NavDisplay(
     CompositionLocalProvider(
         LocalNavigator provides navigator,
     ) {
-        val screenSlotStart = composer.currentPositionKey()
-        Box(modifier = modifier) {
-            currentEntry.Content()
+        key(contentKey) {
+            Box(modifier = modifier) {
+                currentEntry.Content()
+            }
         }
-        val screenSlotEnd = composer.currentPositionKey()
-        screenSlotRange.value = screenSlotStart until screenSlotEnd
     }
 }
 
-@Dispatchable
+@Composable
 private fun <T : NavKey> rememberNavEntryLocalsDecorator(): NavEntryDecorator<T> =
     remember {
         NavEntryDecorator { entry ->

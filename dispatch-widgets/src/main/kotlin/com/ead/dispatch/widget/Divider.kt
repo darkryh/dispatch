@@ -1,6 +1,6 @@
 package com.ead.dispatch.widget
 
-import com.ead.dispatch.annotation.Dispatchable
+import androidx.compose.runtime.Composable
 import com.ead.dispatch.constraints.Constraints
 import com.ead.dispatch.layout.Measurable
 import com.ead.dispatch.layout.Placeable
@@ -24,7 +24,7 @@ import com.ead.dispatch.runtime.composableWidget
  * @param modifier Modifiers to apply.
  * @param char Character to use for the divider (default: ─).
  */
-@Dispatchable
+@Composable
 fun HorizontalDivider(
     modifier: Modifier = Modifier,
     char: Char = '─',
@@ -36,14 +36,14 @@ internal class HorizontalDividerMeasurable(
     override val modifier: Modifier,
     private val char: Char,
 ) : Measurable {
-
     override fun measure(constraints: Constraints): Placeable {
         val modifiedConstraints = modifier.applyToConstraints(constraints)
-        val width = if (modifiedConstraints.hasBoundedWidth) {
-            modifiedConstraints.maxWidth
-        } else {
-            1
-        }
+        val width =
+            if (modifiedConstraints.hasBoundedWidth) {
+                modifiedConstraints.maxWidth
+            } else {
+                1
+            }
 
         return SimplePlaceable(
             width = width,
@@ -68,7 +68,7 @@ internal class HorizontalDividerMeasurable(
  * @param modifier Modifiers to apply.
  * @param char Character to use for the divider (default: │).
  */
-@Dispatchable
+@Composable
 fun VerticalDivider(
     modifier: Modifier = Modifier,
     char: Char = '│',
@@ -80,14 +80,14 @@ internal class VerticalDividerMeasurable(
     override val modifier: Modifier,
     private val char: Char,
 ) : Measurable {
-
     override fun measure(constraints: Constraints): Placeable {
         val modifiedConstraints = modifier.applyToConstraints(constraints)
-        val height = if (modifiedConstraints.hasBoundedHeight) {
-            modifiedConstraints.maxHeight
-        } else {
-            1
-        }
+        val height =
+            if (modifiedConstraints.hasBoundedHeight) {
+                modifiedConstraints.maxHeight
+            } else {
+                1
+            }
 
         return SimplePlaceable(
             width = 1,
@@ -100,7 +100,10 @@ internal class VerticalDividerMeasurable(
 /**
  * Style options for dividers.
  */
-enum class DividerStyle(val horizontal: Char, val vertical: Char) {
+enum class DividerStyle(
+    val horizontal: Char,
+    val vertical: Char,
+) {
     Light('─', '│'),
     Heavy('━', '┃'),
     Double('═', '║'),
@@ -112,7 +115,7 @@ enum class DividerStyle(val horizontal: Char, val vertical: Char) {
 /**
  * Styled horizontal divider.
  */
-@Dispatchable
+@Composable
 fun HorizontalDivider(
     style: DividerStyle,
     modifier: Modifier = Modifier,
@@ -123,7 +126,7 @@ fun HorizontalDivider(
 /**
  * Styled vertical divider.
  */
-@Dispatchable
+@Composable
 fun VerticalDivider(
     style: DividerStyle,
     modifier: Modifier = Modifier,

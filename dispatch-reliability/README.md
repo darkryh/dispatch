@@ -5,6 +5,10 @@ Reliability-focused test module for Dispatch.
 This module is intended to stress the UI runtime with deterministic scenario tests across different
 screen archetypes and interaction patterns.
 
+These tests use an in-process terminal harness for fast deterministic runtime stress. Installed
+application coverage, raw terminal decoding, and ANSI transcript assertions live in the
+`dispatch-sample:terminalE2eTest` task; see `dispatch-sample/README.md`.
+
 Current suites:
 
 - `ModeCyclingReliabilityTest`: long-history mode switching stability checks.

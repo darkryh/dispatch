@@ -1,12 +1,16 @@
 package com.ead.dispatch.widget
 
-import com.ead.dispatch.annotation.Dispatchable
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import com.ead.dispatch.constraints.Constraints
 import com.ead.dispatch.layout.Row
 import com.ead.dispatch.modifier.Modifier
 import com.ead.dispatch.modifier.fillMaxWidth
 import com.ead.dispatch.runtime.Composer
-import com.ead.dispatch.runtime.CompositionLocalProvider
 import com.ead.dispatch.runtime.DispatchConfig
 import com.ead.dispatch.runtime.DispatchScope
 import com.ead.dispatch.runtime.KeyboardInterceptor
@@ -18,10 +22,6 @@ import com.ead.dispatch.runtime.LocalTerminalHeight
 import com.ead.dispatch.runtime.LocalTerminalWidth
 import com.ead.dispatch.runtime.LocalTheme
 import com.ead.dispatch.runtime.withComposer
-import com.ead.dispatch.state.getValue
-import com.ead.dispatch.state.mutableStateOf
-import com.ead.dispatch.state.remember
-import com.ead.dispatch.state.setValue
 import com.ead.dispatch.theme.DispatchTheme
 import com.github.ajalt.mordant.input.KeyboardEvent
 import com.github.ajalt.mordant.input.MouseEvent
@@ -49,12 +49,18 @@ class StructuralStabilityTest {
         }
 
         override fun exit(code: Int) = Unit
+
         override fun hasFlag(name: String): Boolean = false
+
         override fun getArgument(name: String): String? = null
+
         override fun launch(block: suspend CoroutineScope.() -> Unit): Job = Job()
+
         override fun clearScreen(clearScrollback: Boolean) = Unit
+
         override fun onMouseEvent(handler: (MouseEvent) -> Unit) = Unit
-        override fun content(block: @Dispatchable () -> Unit) = Unit
+
+        override fun content(block: @Composable () -> Unit) = Unit
 
         override fun onKeyEvent(handler: (KeyboardEvent) -> Unit) {
             keyHandler = handler
@@ -67,14 +73,17 @@ class StructuralStabilityTest {
     }
 
     private class Harness {
-        private val terminal = Terminal(
-            ansiLevel = AnsiLevel.NONE,
-            width = 80,
-            height = 20,
-            interactive = false,
-        )
+        private val terminal =
+            Terminal(
+                ansiLevel = AnsiLevel.NONE,
+                width = 80,
+                height = 20,
+                interactive = false,
+            )
         private val keyboardInterceptor = KeyboardInterceptor()
-        private val focusRegistry = com.ead.dispatch.runtime.FocusRegistry()
+        private val focusRegistry =
+            com.ead.dispatch.runtime
+                .FocusRegistry()
         private val dispatchScope = TestDispatchScope(terminal, DispatchTheme.Dark, keyboardInterceptor)
         private val composer = Composer()
 
@@ -101,11 +110,12 @@ class StructuralStabilityTest {
                                 Row(modifier = Modifier.fillMaxWidth()) {
                                     DecisionPrompt(
                                         question = "Choose next action",
-                                        options = listOf(
-                                            DecisionOption("Option A"),
-                                            DecisionOption("Option B"),
-                                            DecisionOption("Option C"),
-                                        ),
+                                        options =
+                                            listOf(
+                                                DecisionOption("Option A"),
+                                                DecisionOption("Option B"),
+                                                DecisionOption("Option C"),
+                                            ),
                                         placeholder = "tell the assistant how it should proceed...",
                                         enabled = false,
                                         onSubmit = {},
@@ -157,7 +167,7 @@ class StructuralStabilityTest {
     }
 }
 
-@Dispatchable
+@Composable
 private fun StatusTicker() {
     var tick by remember { mutableStateOf(0) }
     tick = (tick + 1) % 10

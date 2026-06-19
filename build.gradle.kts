@@ -10,6 +10,7 @@ allprojects {
     version = "1.0.0-SNAPSHOT"
 
     repositories {
+        google()
         mavenCentral()
         mavenLocal()
     }

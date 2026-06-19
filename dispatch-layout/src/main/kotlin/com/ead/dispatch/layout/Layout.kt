@@ -1,10 +1,11 @@
 package com.ead.dispatch.layout
 
-import com.ead.dispatch.annotation.Dispatchable
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ComposeNode
 import com.ead.dispatch.constraints.Constraints
 import com.ead.dispatch.modifier.Modifier
 import com.ead.dispatch.modifier.applyToConstraints
-import com.ead.dispatch.runtime.Composer
+import com.ead.dispatch.runtime.DispatchNodeApplier
 
 /**
  * Base layout component that measures and places children according to a policy.
@@ -15,40 +16,27 @@ import com.ead.dispatch.runtime.Composer
  * @param measurePolicy The policy for measuring and placing children.
  * @param content The content lambda containing children.
  */
-@Dispatchable
+@Composable
 fun Layout(
     modifier: Modifier = Modifier,
     measurePolicy: MeasurePolicy,
-    content: @Dispatchable () -> Unit,
+    content: @Composable () -> Unit,
 ) {
-    val composer = Composer.current
-
-    // Start a layout node
-    val node = composer.startNode("Layout")
-
-    // Run content to build child nodes
-    content()
-
-    val childMeasurables = node.children
-
-    // Get constraints from parent (or use unbounded)
-    val parentConstraints = composer.getCurrentConstraints()
-
-    // Apply modifiers to constraints
-    val constraints = modifier.applyToConstraints(parentConstraints)
-
-    // Create a measurable for this layout
-    val layoutMeasurable =
-        LayoutMeasurable(
-            modifier = modifier,
-            measurePolicy = measurePolicy,
-            children = childMeasurables,
-        )
-
-    // Register this measurable with parent
-    composer.registerMeasurable(layoutMeasurable)
-
-    composer.endNode()
+    ComposeNode<LayoutNode, DispatchNodeApplier>(
+        factory = { LayoutNode("Layout") },
+        update = {
+            set(modifier to measurePolicy) { (nextModifier, nextPolicy) ->
+                setDelegate(
+                    LayoutMeasurable(
+                        modifier = nextModifier,
+                        measurePolicy = nextPolicy,
+                        children = { children },
+                    )
+                )
+            }
+        },
+        content = content,
+    )
 }
 
 /**
@@ -57,7 +45,7 @@ fun Layout(
 internal class LayoutMeasurable(
     override val modifier: Modifier,
     private val measurePolicy: MeasurePolicy,
-    private val children: List<Measurable>,
+    private val children: () -> List<Measurable>,
 ) : Measurable {
     private class LineCanvas(
         val width: Int,
@@ -105,7 +93,7 @@ internal class LayoutMeasurable(
 
     override fun measure(constraints: Constraints): Placeable {
         // Measure all children and get result
-        val result = measurePolicy.measure(children, constraints)
+        val result = measurePolicy.measure(children(), constraints)
 
         // Render children to lines
         val lines = renderChildren(result, constraints)

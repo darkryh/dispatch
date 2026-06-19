@@ -1,6 +1,6 @@
 package com.ead.dispatch.layout
 
-import com.ead.dispatch.annotation.Dispatchable
+import androidx.compose.runtime.Composable
 import com.ead.dispatch.constraints.Constraints
 import com.ead.dispatch.modifier.Modifier
 import com.ead.dispatch.modifier.applyToConstraints
@@ -26,11 +26,11 @@ import com.ead.dispatch.modifier.applyToConstraints
  * @param contentAlignment Default alignment for children.
  * @param content The content lambda containing children.
  */
-@Dispatchable
+@Composable
 fun Box(
     modifier: Modifier = Modifier,
     contentAlignment: Alignment.Alignment2D = Alignment.TopStart,
-    content: @Dispatchable BoxScope.() -> Unit,
+    content: @Composable BoxScope.() -> Unit,
 ) {
     val scope = BoxScopeInstance(contentAlignment)
     Layout(
@@ -128,7 +128,7 @@ internal class BoxMeasurePolicy(
 /**
  * Empty Box - useful as a spacer.
  */
-@Dispatchable
+@Composable
 fun Spacer(modifier: Modifier = Modifier) {
     Box(modifier = modifier) {}
 }

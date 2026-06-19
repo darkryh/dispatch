@@ -1,9 +1,9 @@
 package com.ead.dispatch.reliability.harness
 
-import com.ead.dispatch.annotation.Dispatchable
+import androidx.compose.runtime.Composable
 import com.ead.dispatch.constraints.Constraints
 import com.ead.dispatch.runtime.Composer
-import com.ead.dispatch.runtime.CompositionLocalProvider
+import androidx.compose.runtime.CompositionLocalProvider
 import com.ead.dispatch.runtime.DispatchConfig
 import com.ead.dispatch.runtime.DispatchScope
 import com.ead.dispatch.runtime.FocusRegistry
@@ -44,7 +44,7 @@ internal class ReliabilityHarness(
     fun render(
         theme: DispatchTheme = activeTheme,
         boundedHeight: Boolean = false,
-        content: @Dispatchable () -> Unit,
+        content: @Composable () -> Unit,
     ): List<String> {
         activeTheme = theme
         withComposer(composer) {
@@ -112,7 +112,7 @@ private class TestDispatchScope(
     }
 
     override fun onMouseEvent(handler: (MouseEvent) -> Unit) = Unit
-    override fun content(block: @Dispatchable () -> Unit) = Unit
+    override fun content(block: @Composable () -> Unit) = Unit
 
     fun sendKey(event: KeyboardEvent) {
         if (keyboardInterceptor.tryIntercept(event)) return

@@ -1,22 +1,41 @@
 package com.ead.dispatch.widget
 
 import com.ead.dispatch.constraints.Constraints
-import com.ead.dispatch.layout.SimplePlaceable
 import com.ead.dispatch.modifier.Modifier
+import com.github.ajalt.mordant.rendering.TextStyle
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class ButtonMeasurableTest {
+    @Test
+    fun `focused button uses selection style without changing measured width`() {
+        val measurable =
+            ButtonMeasurable(
+                text = "OK",
+                enabled = true,
+                style = ButtonStyle.Outlined,
+                modifier = Modifier,
+                isFocused = true,
+                focusedStyle = TextStyle(inverse = true),
+            )
+
+        val placeable = measurable.measure(Constraints())
+
+        assertEquals(6, placeable.width)
+        assertTrue(placeable.lines.first().contains("\u001B["))
+        assertTrue(placeable.lines.first().contains("[ OK ]"))
+    }
 
     @Test
     fun `ButtonStyle Outlined renders with brackets`() {
-        val measurable = ButtonMeasurable(
-            text = "OK",
-            enabled = true,
-            style = ButtonStyle.Outlined,
-            modifier = Modifier
-        )
+        val measurable =
+            ButtonMeasurable(
+                text = "OK",
+                enabled = true,
+                style = ButtonStyle.Outlined,
+                modifier = Modifier,
+            )
 
         val placeable = measurable.measure(Constraints())
         assertEquals("[ OK ]", placeable.lines.first(), "Outlined style should have [ ] brackets")
@@ -26,12 +45,13 @@ class ButtonMeasurableTest {
 
     @Test
     fun `ButtonStyle Angled renders with angle brackets`() {
-        val measurable = ButtonMeasurable(
-            text = "OK",
-            enabled = true,
-            style = ButtonStyle.Angled,
-            modifier = Modifier
-        )
+        val measurable =
+            ButtonMeasurable(
+                text = "OK",
+                enabled = true,
+                style = ButtonStyle.Angled,
+                modifier = Modifier,
+            )
 
         val placeable = measurable.measure(Constraints())
         assertEquals("<OK>", placeable.lines.first(), "Angled style should have < > brackets")
@@ -40,12 +60,13 @@ class ButtonMeasurableTest {
 
     @Test
     fun `ButtonStyle Text renders without decoration`() {
-        val measurable = ButtonMeasurable(
-            text = "OK",
-            enabled = true,
-            style = ButtonStyle.Text,
-            modifier = Modifier
-        )
+        val measurable =
+            ButtonMeasurable(
+                text = "OK",
+                enabled = true,
+                style = ButtonStyle.Text,
+                modifier = Modifier,
+            )
 
         val placeable = measurable.measure(Constraints())
         assertEquals("OK", placeable.lines.first(), "Text style should have no decoration")
@@ -54,12 +75,13 @@ class ButtonMeasurableTest {
 
     @Test
     fun `ButtonStyle Filled renders with fill characters`() {
-        val measurable = ButtonMeasurable(
-            text = "OK",
-            enabled = true,
-            style = ButtonStyle.Filled,
-            modifier = Modifier
-        )
+        val measurable =
+            ButtonMeasurable(
+                text = "OK",
+                enabled = true,
+                style = ButtonStyle.Filled,
+                modifier = Modifier,
+            )
 
         val placeable = measurable.measure(Constraints())
         assertTrue(placeable.lines.first().contains("OK"), "Filled style should contain text")
@@ -68,12 +90,13 @@ class ButtonMeasurableTest {
 
     @Test
     fun `ButtonStyle Rounded renders with parentheses`() {
-        val measurable = ButtonMeasurable(
-            text = "OK",
-            enabled = true,
-            style = ButtonStyle.Rounded,
-            modifier = Modifier
-        )
+        val measurable =
+            ButtonMeasurable(
+                text = "OK",
+                enabled = true,
+                style = ButtonStyle.Rounded,
+                modifier = Modifier,
+            )
 
         val placeable = measurable.measure(Constraints())
         assertEquals("(OK)", placeable.lines.first(), "Rounded style should have ( ) brackets")
@@ -82,12 +105,13 @@ class ButtonMeasurableTest {
 
     @Test
     fun `disabled button still measures correctly`() {
-        val measurable = ButtonMeasurable(
-            text = "Submit",
-            enabled = false,
-            style = ButtonStyle.Outlined,
-            modifier = Modifier
-        )
+        val measurable =
+            ButtonMeasurable(
+                text = "Submit",
+                enabled = false,
+                style = ButtonStyle.Outlined,
+                modifier = Modifier,
+            )
 
         val placeable = measurable.measure(Constraints())
         assertEquals(1, placeable.height, "disabled button should still be single line")
@@ -96,12 +120,13 @@ class ButtonMeasurableTest {
 
     @Test
     fun `button respects maxWidth constraint`() {
-        val measurable = ButtonMeasurable(
-            text = "Very Long Button Text",
-            enabled = true,
-            style = ButtonStyle.Outlined,
-            modifier = Modifier
-        )
+        val measurable =
+            ButtonMeasurable(
+                text = "Very Long Button Text",
+                enabled = true,
+                style = ButtonStyle.Outlined,
+                modifier = Modifier,
+            )
 
         val placeable = measurable.measure(Constraints(maxWidth = 10))
         assertTrue(placeable.width <= 10, "button width should respect maxWidth")
@@ -109,12 +134,13 @@ class ButtonMeasurableTest {
 
     @Test
     fun `empty text button measures correctly`() {
-        val measurable = ButtonMeasurable(
-            text = "",
-            enabled = true,
-            style = ButtonStyle.Outlined,
-            modifier = Modifier
-        )
+        val measurable =
+            ButtonMeasurable(
+                text = "",
+                enabled = true,
+                style = ButtonStyle.Outlined,
+                modifier = Modifier,
+            )
 
         val placeable = measurable.measure(Constraints())
         assertEquals("[  ]", placeable.lines.first(), "empty button should show brackets with space")
@@ -122,13 +148,14 @@ class ButtonMeasurableTest {
 
     @Test
     fun `ToggleButton Checkbox checked shows checkmark`() {
-        val measurable = ToggleButtonMeasurable(
-            checked = true,
-            label = null,
-            enabled = true,
-            style = ToggleStyle.Checkbox,
-            modifier = Modifier
-        )
+        val measurable =
+            ToggleButtonMeasurable(
+                checked = true,
+                label = null,
+                enabled = true,
+                style = ToggleStyle.Checkbox,
+                modifier = Modifier,
+            )
 
         val placeable = measurable.measure(Constraints())
         assertEquals("[✓]", placeable.lines.first(), "checked Checkbox should show checkmark")
@@ -136,13 +163,14 @@ class ButtonMeasurableTest {
 
     @Test
     fun `ToggleButton Checkbox unchecked shows empty box`() {
-        val measurable = ToggleButtonMeasurable(
-            checked = false,
-            label = null,
-            enabled = true,
-            style = ToggleStyle.Checkbox,
-            modifier = Modifier
-        )
+        val measurable =
+            ToggleButtonMeasurable(
+                checked = false,
+                label = null,
+                enabled = true,
+                style = ToggleStyle.Checkbox,
+                modifier = Modifier,
+            )
 
         val placeable = measurable.measure(Constraints())
         assertEquals("[ ]", placeable.lines.first(), "unchecked Checkbox should show empty box")
@@ -150,13 +178,14 @@ class ButtonMeasurableTest {
 
     @Test
     fun `ToggleButton Square checked shows filled square`() {
-        val measurable = ToggleButtonMeasurable(
-            checked = true,
-            label = null,
-            enabled = true,
-            style = ToggleStyle.Square,
-            modifier = Modifier
-        )
+        val measurable =
+            ToggleButtonMeasurable(
+                checked = true,
+                label = null,
+                enabled = true,
+                style = ToggleStyle.Square,
+                modifier = Modifier,
+            )
 
         val placeable = measurable.measure(Constraints())
         assertEquals("[■]", placeable.lines.first(), "checked Square should show filled square")
@@ -164,13 +193,14 @@ class ButtonMeasurableTest {
 
     @Test
     fun `ToggleButton Circle checked shows filled circle`() {
-        val measurable = ToggleButtonMeasurable(
-            checked = true,
-            label = null,
-            enabled = true,
-            style = ToggleStyle.Circle,
-            modifier = Modifier
-        )
+        val measurable =
+            ToggleButtonMeasurable(
+                checked = true,
+                label = null,
+                enabled = true,
+                style = ToggleStyle.Circle,
+                modifier = Modifier,
+            )
 
         val placeable = measurable.measure(Constraints())
         assertEquals("(●)", placeable.lines.first(), "checked Circle should show filled circle")
@@ -178,13 +208,14 @@ class ButtonMeasurableTest {
 
     @Test
     fun `ToggleButton Circle unchecked shows empty circle`() {
-        val measurable = ToggleButtonMeasurable(
-            checked = false,
-            label = null,
-            enabled = true,
-            style = ToggleStyle.Circle,
-            modifier = Modifier
-        )
+        val measurable =
+            ToggleButtonMeasurable(
+                checked = false,
+                label = null,
+                enabled = true,
+                style = ToggleStyle.Circle,
+                modifier = Modifier,
+            )
 
         val placeable = measurable.measure(Constraints())
         assertEquals("( )", placeable.lines.first(), "unchecked Circle should show empty circle")
@@ -192,13 +223,14 @@ class ButtonMeasurableTest {
 
     @Test
     fun `ToggleButton Switch checked shows ON`() {
-        val measurable = ToggleButtonMeasurable(
-            checked = true,
-            label = null,
-            enabled = true,
-            style = ToggleStyle.Switch,
-            modifier = Modifier
-        )
+        val measurable =
+            ToggleButtonMeasurable(
+                checked = true,
+                label = null,
+                enabled = true,
+                style = ToggleStyle.Switch,
+                modifier = Modifier,
+            )
 
         val placeable = measurable.measure(Constraints())
         assertEquals("[ON ]", placeable.lines.first(), "checked Switch should show ON")
@@ -206,13 +238,14 @@ class ButtonMeasurableTest {
 
     @Test
     fun `ToggleButton Switch unchecked shows OFF`() {
-        val measurable = ToggleButtonMeasurable(
-            checked = false,
-            label = null,
-            enabled = true,
-            style = ToggleStyle.Switch,
-            modifier = Modifier
-        )
+        val measurable =
+            ToggleButtonMeasurable(
+                checked = false,
+                label = null,
+                enabled = true,
+                style = ToggleStyle.Switch,
+                modifier = Modifier,
+            )
 
         val placeable = measurable.measure(Constraints())
         assertEquals("[OFF]", placeable.lines.first(), "unchecked Switch should show OFF")
@@ -220,13 +253,14 @@ class ButtonMeasurableTest {
 
     @Test
     fun `ToggleButton Emoji checked shows checkmark emoji`() {
-        val measurable = ToggleButtonMeasurable(
-            checked = true,
-            label = null,
-            enabled = true,
-            style = ToggleStyle.Emoji,
-            modifier = Modifier
-        )
+        val measurable =
+            ToggleButtonMeasurable(
+                checked = true,
+                label = null,
+                enabled = true,
+                style = ToggleStyle.Emoji,
+                modifier = Modifier,
+            )
 
         val placeable = measurable.measure(Constraints())
         assertTrue(placeable.lines.first().contains("✅"), "checked Emoji should show checkmark emoji")
@@ -234,13 +268,14 @@ class ButtonMeasurableTest {
 
     @Test
     fun `ToggleButton Emoji unchecked shows empty square emoji`() {
-        val measurable = ToggleButtonMeasurable(
-            checked = false,
-            label = null,
-            enabled = true,
-            style = ToggleStyle.Emoji,
-            modifier = Modifier
-        )
+        val measurable =
+            ToggleButtonMeasurable(
+                checked = false,
+                label = null,
+                enabled = true,
+                style = ToggleStyle.Emoji,
+                modifier = Modifier,
+            )
 
         val placeable = measurable.measure(Constraints())
         assertTrue(placeable.lines.first().contains("⬜"), "unchecked Emoji should show empty square emoji")
@@ -248,13 +283,14 @@ class ButtonMeasurableTest {
 
     @Test
     fun `ToggleButton with label includes label text`() {
-        val measurable = ToggleButtonMeasurable(
-            checked = true,
-            label = "Enable feature",
-            enabled = true,
-            style = ToggleStyle.Checkbox,
-            modifier = Modifier
-        )
+        val measurable =
+            ToggleButtonMeasurable(
+                checked = true,
+                label = "Enable feature",
+                enabled = true,
+                style = ToggleStyle.Checkbox,
+                modifier = Modifier,
+            )
 
         val placeable = measurable.measure(Constraints())
         assertEquals("[✓] Enable feature", placeable.lines.first(), "should include label after indicator")
@@ -262,18 +298,20 @@ class ButtonMeasurableTest {
 
     @Test
     fun `ButtonRow with single button`() {
-        val buttonMeasurable = ButtonMeasurable(
-            text = "OK",
-            enabled = true,
-            style = ButtonStyle.Outlined,
-            modifier = Modifier
-        )
+        val buttonMeasurable =
+            ButtonMeasurable(
+                text = "OK",
+                enabled = true,
+                style = ButtonStyle.Outlined,
+                modifier = Modifier,
+            )
 
-        val rowMeasurable = ButtonRowMeasurable(
-            modifier = Modifier,
-            buttons = listOf(buttonMeasurable),
-            spacing = 2
-        )
+        val rowMeasurable =
+            ButtonRowMeasurable(
+                modifier = Modifier,
+                buttons = listOf(buttonMeasurable),
+                spacing = 2,
+            )
 
         val placeable = rowMeasurable.measure(Constraints())
         assertEquals(1, placeable.height, "row should be single line")
@@ -282,24 +320,27 @@ class ButtonMeasurableTest {
 
     @Test
     fun `ButtonRow with multiple buttons has spacing`() {
-        val button1 = ButtonMeasurable(
-            text = "A",
-            enabled = true,
-            style = ButtonStyle.Text,
-            modifier = Modifier
-        )
-        val button2 = ButtonMeasurable(
-            text = "B",
-            enabled = true,
-            style = ButtonStyle.Text,
-            modifier = Modifier
-        )
+        val button1 =
+            ButtonMeasurable(
+                text = "A",
+                enabled = true,
+                style = ButtonStyle.Text,
+                modifier = Modifier,
+            )
+        val button2 =
+            ButtonMeasurable(
+                text = "B",
+                enabled = true,
+                style = ButtonStyle.Text,
+                modifier = Modifier,
+            )
 
-        val rowMeasurable = ButtonRowMeasurable(
-            modifier = Modifier,
-            buttons = listOf(button1, button2),
-            spacing = 2
-        )
+        val rowMeasurable =
+            ButtonRowMeasurable(
+                modifier = Modifier,
+                buttons = listOf(button1, button2),
+                spacing = 2,
+            )
 
         val placeable = rowMeasurable.measure(Constraints())
         assertEquals("A  B", placeable.lines.first(), "buttons should have spacing between them")
@@ -308,24 +349,27 @@ class ButtonMeasurableTest {
 
     @Test
     fun `ButtonRow with zero spacing`() {
-        val button1 = ButtonMeasurable(
-            text = "X",
-            enabled = true,
-            style = ButtonStyle.Text,
-            modifier = Modifier
-        )
-        val button2 = ButtonMeasurable(
-            text = "Y",
-            enabled = true,
-            style = ButtonStyle.Text,
-            modifier = Modifier
-        )
+        val button1 =
+            ButtonMeasurable(
+                text = "X",
+                enabled = true,
+                style = ButtonStyle.Text,
+                modifier = Modifier,
+            )
+        val button2 =
+            ButtonMeasurable(
+                text = "Y",
+                enabled = true,
+                style = ButtonStyle.Text,
+                modifier = Modifier,
+            )
 
-        val rowMeasurable = ButtonRowMeasurable(
-            modifier = Modifier,
-            buttons = listOf(button1, button2),
-            spacing = 0
-        )
+        val rowMeasurable =
+            ButtonRowMeasurable(
+                modifier = Modifier,
+                buttons = listOf(button1, button2),
+                spacing = 0,
+            )
 
         val placeable = rowMeasurable.measure(Constraints())
         assertEquals("XY", placeable.lines.first(), "buttons should be adjacent with zero spacing")
@@ -333,11 +377,12 @@ class ButtonMeasurableTest {
 
     @Test
     fun `ButtonRow with empty buttons list`() {
-        val rowMeasurable = ButtonRowMeasurable(
-            modifier = Modifier,
-            buttons = emptyList(),
-            spacing = 2
-        )
+        val rowMeasurable =
+            ButtonRowMeasurable(
+                modifier = Modifier,
+                buttons = emptyList(),
+                spacing = 2,
+            )
 
         val placeable = rowMeasurable.measure(Constraints())
         assertEquals(0, placeable.width, "empty row should have zero width")

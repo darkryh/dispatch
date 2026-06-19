@@ -1,13 +1,14 @@
 package com.ead.dispatch.widget
 
-import com.ead.dispatch.annotation.Dispatchable
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.remember
 import com.ead.dispatch.layout.Column
 import com.ead.dispatch.layout.Row
 import com.ead.dispatch.modifier.Modifier
-import com.ead.dispatch.runtime.DisposableEffect
 import com.ead.dispatch.runtime.LocalKeyboardInterceptor
 import com.ead.dispatch.runtime.rememberCallback
-import com.ead.dispatch.state.remember
 import com.github.ajalt.mordant.rendering.TextColors.Companion.rgb
 import com.github.ajalt.mordant.rendering.TextStyle
 
@@ -113,6 +114,10 @@ class CommandPaletteState<T>(
         core.updateFilteredOptions(options)
     }
 
+    internal fun ensureSelectionInBounds() {
+        core.ensureSelectionInBounds()
+    }
+
     internal fun resetSelection() {
         core.resetSelection()
     }
@@ -129,13 +134,11 @@ class CommandPaletteState<T>(
 /**
  * Remember a command palette state.
  */
-@Dispatchable
+@Composable
 fun <T> rememberCommandPaletteState(
     initialVisible: Boolean = false,
     initialSelectedIndex: Int = 0,
-): CommandPaletteState<T> {
-    return remember { CommandPaletteState(initialVisible, initialSelectedIndex) }
-}
+): CommandPaletteState<T> = remember { CommandPaletteState(initialVisible, initialSelectedIndex) }
 
 /**
  * A command palette widget that displays filterable options with keyboard navigation.
@@ -182,7 +185,7 @@ fun <T> rememberCommandPaletteState(
  * @param enabled Whether the palette responds to input.
  * @param state State holder for visibility, selection, and filtering.
  */
-@Dispatchable
+@Composable
 fun <T> CommandPalette(
     options: List<CommandOption<T>>,
     inputValue: String,
@@ -214,103 +217,105 @@ fun <T> CommandPalette(
     val shouldShowPalette = hasTrigger && !textAfterTrigger.contains(' ')
     val filterText = if (shouldShowPalette) textAfterTrigger else ""
 
-    // Update visibility based on trigger detection
-    if (shouldShowPalette && !state.isVisible) {
-        state.isVisible = true
-        state.resetSelection()
-    } else if (!shouldShowPalette && state.isVisible) {
-        state.isVisible = false
-        state.resetSelection()
-    }
-
-    state.filterText = filterText
-
     // Filter options based on filter text
-    val filteredOptions = if (filterText.isEmpty()) {
-        options.filter { it.enabled }
-    } else {
-        options.filter { option ->
-            option.enabled && (
-                option.label.contains(filterText, ignoreCase = true) ||
-                option.description.contains(filterText, ignoreCase = true)
-            )
+    val filteredOptions =
+        if (filterText.isEmpty()) {
+            options.filter { it.enabled }
+        } else {
+            options.filter { option ->
+                option.enabled &&
+                    (
+                        option.label.contains(filterText, ignoreCase = true) ||
+                            option.description.contains(filterText, ignoreCase = true)
+                    )
+            }
         }
-    }
-    state.updateFilteredOptions(filteredOptions)
 
-    val labelWidth = if (filteredOptions.isEmpty()) {
-        0
-    } else {
-        filteredOptions.maxOf { option ->
-            commandLabelFor(option, commandPrefix).length
-        }
+    SideEffect {
+        if (state.isVisible != shouldShowPalette) state.resetSelection()
+        state.isVisible = shouldShowPalette
+        state.filterText = filterText
+        state.updateFilteredOptions(filteredOptions)
     }
+
+    val labelWidth =
+        if (filteredOptions.isEmpty()) {
+            0
+        } else {
+            filteredOptions.maxOf { option ->
+                commandLabelFor(option, commandPrefix).length
+            }
+        }
 
     // Register keyboard handler when visible
-    DisposableEffect(listOf(state.isVisible, enabled, keyboardInterceptor)) {
-        if (!state.isVisible || !enabled) {
+    DisposableEffect(listOf(shouldShowPalette, enabled, keyboardInterceptor)) {
+        if (!shouldShowPalette || !enabled) {
             return@DisposableEffect onDispose {}
         }
 
-        val dispose = keyboardInterceptor.register { event ->
-            handleSelectorKeyEvent(
-                event,
-                SelectorKeyBindings(
-                    onMoveUp = { state.moveUp() },
-                    onMoveDown = { state.moveDown() },
-                    onConfirm = {
-                        val selected = state.selectedOption
-                        if (selected == null) {
-                            false
-                        } else {
-                            val beforeTrigger = if (triggerIndex >= 0) {
-                                inputValue.substring(0, triggerIndex)
+        val dispose =
+            keyboardInterceptor.register { event ->
+                handleSelectorKeyEvent(
+                    event,
+                    SelectorKeyBindings(
+                        onMoveUp = { state.moveUp() },
+                        onMoveDown = { state.moveDown() },
+                        onConfirm = {
+                            val selected = state.selectedOption
+                            if (selected == null) {
+                                false
                             } else {
-                                inputValue
+                                val beforeTrigger =
+                                    if (triggerIndex >= 0) {
+                                        inputValue.substring(0, triggerIndex)
+                                    } else {
+                                        inputValue
+                                    }
+                                onInputTransformCallback(beforeTrigger)
+                                onOptionSelectedCallback(selected)
+                                state.isVisible = false
+                                state.resetSelection()
+                                true
                             }
-                            onInputTransformCallback(beforeTrigger)
-                            onOptionSelectedCallback(selected)
+                        },
+                        onTab = {
+                            val selected = state.selectedOption
+                            if (selected == null) {
+                                false
+                            } else {
+                                val beforeTrigger =
+                                    if (triggerIndex >= 0) {
+                                        inputValue.substring(0, triggerIndex)
+                                    } else {
+                                        inputValue
+                                    }
+                                val commandText = commandLabelFor(selected, commandPrefix)
+                                val completion =
+                                    if (commandText.endsWith(" ")) {
+                                        beforeTrigger + commandText
+                                    } else {
+                                        beforeTrigger + commandText + " "
+                                    }
+                                onInputTransformCallback(completion)
+                                state.isVisible = false
+                                state.resetSelection()
+                                true
+                            }
+                        },
+                        onCancel = {
                             state.isVisible = false
                             state.resetSelection()
                             true
-                        }
-                    },
-                    onTab = {
-                        val selected = state.selectedOption
-                        if (selected == null) {
-                            false
-                        } else {
-                            val beforeTrigger = if (triggerIndex >= 0) {
-                                inputValue.substring(0, triggerIndex)
-                            } else {
-                                inputValue
-                            }
-                            val commandText = commandLabelFor(selected, commandPrefix)
-                            val completion = if (commandText.endsWith(" ")) {
-                                beforeTrigger + commandText
-                            } else {
-                                beforeTrigger + commandText + " "
-                            }
-                            onInputTransformCallback(completion)
-                            state.isVisible = false
-                            state.resetSelection()
-                            true
-                        }
-                    },
-                    onCancel = {
-                        state.isVisible = false
-                        state.resetSelection()
-                        true
-                    },
-                ),
-            )
-        }
+                        },
+                    ),
+                )
+            }
 
         onDispose { dispose() }
     }
 
     // Only render if visible
-    if (!state.isVisible) return
+    if (!shouldShowPalette) return
 
     // Calculate visible window for scrolling
     val windowSlice = computeWindowSlice(filteredOptions, state.selectedIndex, visibleCount)
@@ -345,7 +350,7 @@ fun <T> CommandPalette(
 /**
  * Renders a single command palette option.
  */
-@Dispatchable
+@Composable
 private fun <T> CommandPaletteItem(
     option: CommandOption<T>,
     isSelected: Boolean,
@@ -356,29 +361,33 @@ private fun <T> CommandPaletteItem(
     commandPrefix: String?,
     labelWidth: Int,
 ) {
-    val prefixText = selectionIndicator?.takeIf { it.isNotEmpty() }?.let { indicator ->
-        if (isSelected) indicator else " ".repeat(indicator.length)
-    }
+    val prefixText =
+        selectionIndicator?.takeIf { it.isNotEmpty() }?.let { indicator ->
+            if (isSelected) indicator else " ".repeat(indicator.length)
+        }
     val prefixStyle = if (isSelected) textStyles.selectedPrefix else textStyles.prefix
 
-    val labelStyle = when {
-        !option.enabled -> textStyles.disabledLabel
-        isSelected -> textStyles.selectedLabel
-        else -> textStyles.label
-    }
+    val labelStyle =
+        when {
+            !option.enabled -> textStyles.disabledLabel
+            isSelected -> textStyles.selectedLabel
+            else -> textStyles.label
+        }
 
-    val descriptionStyle = if (isSelected) {
-        textStyles.selectedDescription
-    } else {
-        textStyles.description
-    }
+    val descriptionStyle =
+        if (isSelected) {
+            textStyles.selectedDescription
+        } else {
+            textStyles.description
+        }
 
     val displayLabel = commandLabelFor(option, commandPrefix)
-    val labelText = if (showDescription && option.description.isNotEmpty() && labelWidth > 0) {
-        displayLabel.padEnd(labelWidth)
-    } else {
-        displayLabel
-    }
+    val labelText =
+        if (showDescription && option.description.isNotEmpty() && labelWidth > 0) {
+            displayLabel.padEnd(labelWidth)
+        } else {
+            displayLabel
+        }
 
     Row {
         if (!prefixText.isNullOrEmpty()) {
@@ -401,10 +410,12 @@ private fun <T> CommandPaletteItem(
     }
 }
 
-private fun <T> commandLabelFor(option: CommandOption<T>, commandPrefix: String?): String {
-    return if (!commandPrefix.isNullOrEmpty() && !option.label.startsWith(commandPrefix)) {
+private fun <T> commandLabelFor(
+    option: CommandOption<T>,
+    commandPrefix: String?,
+): String =
+    if (!commandPrefix.isNullOrEmpty() && !option.label.startsWith(commandPrefix)) {
         commandPrefix + option.label
     } else {
         option.label
     }
-}

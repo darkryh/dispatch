@@ -1,6 +1,6 @@
 package com.ead.dispatch.widget
 
-import com.ead.dispatch.annotation.Dispatchable
+import androidx.compose.runtime.Composable
 import com.ead.dispatch.layout.Column
 import com.ead.dispatch.layout.Row
 import com.ead.dispatch.layout.Spacer
@@ -26,7 +26,7 @@ data class DiffReviewPanelState(
     val actionsFocused: Boolean = false,
 )
 
-@Dispatchable
+@Composable
 fun DiffReviewPanel(
     state: DiffReviewPanelState,
     maxVisibleRows: Int,
@@ -79,16 +79,19 @@ fun DiffReviewPanel(
             )
             Row(modifier = Modifier.fillMaxWidth()) {
                 val maxVisibleIndicators = 7
-                val startPage = (selectedPage - maxVisibleIndicators / 2).coerceAtLeast(0)
-                    .coerceAtMost((pageInfo.pageCount - maxVisibleIndicators).coerceAtLeast(0))
+                val startPage =
+                    (selectedPage - maxVisibleIndicators / 2)
+                        .coerceAtLeast(0)
+                        .coerceAtMost((pageInfo.pageCount - maxVisibleIndicators).coerceAtLeast(0))
                 val endPageExclusive = (startPage + maxVisibleIndicators).coerceAtMost(pageInfo.pageCount)
                 for (page in startPage until endPageExclusive) {
                     val isSelected = state.pagesFocused && page == selectedPage
-                    val style = if (isSelected) {
-                        rgb("#FFFFFF") + rgb("#1F3F6B").bg + TextStyle(bold = true)
-                    } else {
-                        rgb("#C3D1E6")
-                    }
+                    val style =
+                        if (isSelected) {
+                            rgb("#FFFFFF") + rgb("#1F3F6B").bg + TextStyle(bold = true)
+                        } else {
+                            rgb("#C3D1E6")
+                        }
                     val text = " ${page + 1} "
                     Text(text = text, style = style)
                     Text(text = " ", style = rgb("#8FA2B8"))
@@ -107,11 +110,12 @@ fun DiffReviewPanel(
                 Row(modifier = Modifier.fillMaxWidth()) {
                     state.actions.forEachIndexed { index, action ->
                         val isSelected = state.actionsFocused && index == state.selectedActionIndex
-                        val style = if (isSelected) {
-                            rgb("#FFFFFF") + rgb("#1F3F6B").bg + TextStyle(bold = true)
-                        } else {
-                            rgb("#C3D1E6")
-                        }
+                        val style =
+                            if (isSelected) {
+                                rgb("#FFFFFF") + rgb("#1F3F6B").bg + TextStyle(bold = true)
+                            } else {
+                                rgb("#C3D1E6")
+                            }
                         val text = if (isSelected) "> ${action.label} <" else "  ${action.label}  "
                         Text(text = text, style = style)
                         if (index < state.actions.lastIndex) {

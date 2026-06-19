@@ -7,13 +7,13 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class DividerMeasurableTest {
-
     @Test
     fun `HorizontalDivider with bounded width fills width`() {
-        val measurable = HorizontalDividerMeasurable(
-            modifier = Modifier,
-            char = '─'
-        )
+        val measurable =
+            HorizontalDividerMeasurable(
+                modifier = Modifier,
+                char = '─',
+            )
 
         val placeable = measurable.measure(Constraints(maxWidth = 20))
         assertEquals(20, placeable.width, "should fill available width")
@@ -23,10 +23,11 @@ class DividerMeasurableTest {
 
     @Test
     fun `HorizontalDivider with unbounded width has minimal width`() {
-        val measurable = HorizontalDividerMeasurable(
-            modifier = Modifier,
-            char = '─'
-        )
+        val measurable =
+            HorizontalDividerMeasurable(
+                modifier = Modifier,
+                char = '─',
+            )
 
         val placeable = measurable.measure(Constraints())
         assertEquals(1, placeable.width, "unbounded should have width 1")
@@ -35,10 +36,11 @@ class DividerMeasurableTest {
 
     @Test
     fun `HorizontalDivider uses custom character`() {
-        val measurable = HorizontalDividerMeasurable(
-            modifier = Modifier,
-            char = '*'
-        )
+        val measurable =
+            HorizontalDividerMeasurable(
+                modifier = Modifier,
+                char = '*',
+            )
 
         val placeable = measurable.measure(Constraints(maxWidth = 5))
         assertEquals("*****", placeable.lines.first(), "should use custom character")
@@ -46,10 +48,11 @@ class DividerMeasurableTest {
 
     @Test
     fun `VerticalDivider with bounded height fills height`() {
-        val measurable = VerticalDividerMeasurable(
-            modifier = Modifier,
-            char = '│'
-        )
+        val measurable =
+            VerticalDividerMeasurable(
+                modifier = Modifier,
+                char = '│',
+            )
 
         val placeable = measurable.measure(Constraints(maxHeight = 5))
         assertEquals(1, placeable.width, "should be single character wide")
@@ -60,10 +63,11 @@ class DividerMeasurableTest {
 
     @Test
     fun `VerticalDivider with unbounded height has minimal height`() {
-        val measurable = VerticalDividerMeasurable(
-            modifier = Modifier,
-            char = '│'
-        )
+        val measurable =
+            VerticalDividerMeasurable(
+                modifier = Modifier,
+                char = '│',
+            )
 
         val placeable = measurable.measure(Constraints())
         assertEquals(1, placeable.width, "should be single character wide")
@@ -72,10 +76,11 @@ class DividerMeasurableTest {
 
     @Test
     fun `VerticalDivider uses custom character`() {
-        val measurable = VerticalDividerMeasurable(
-            modifier = Modifier,
-            char = '|'
-        )
+        val measurable =
+            VerticalDividerMeasurable(
+                modifier = Modifier,
+                char = '|',
+            )
 
         val placeable = measurable.measure(Constraints(maxHeight = 3))
         assertTrue(placeable.lines.all { it == "|" }, "all lines should use custom character")
@@ -119,10 +124,11 @@ class DividerMeasurableTest {
 
     @Test
     fun `HorizontalDivider with zero width constraint`() {
-        val measurable = HorizontalDividerMeasurable(
-            modifier = Modifier,
-            char = '─'
-        )
+        val measurable =
+            HorizontalDividerMeasurable(
+                modifier = Modifier,
+                char = '─',
+            )
 
         val placeable = measurable.measure(Constraints(maxWidth = 0))
         assertEquals(0, placeable.width, "should have zero width")
@@ -131,10 +137,11 @@ class DividerMeasurableTest {
 
     @Test
     fun `VerticalDivider with zero height constraint`() {
-        val measurable = VerticalDividerMeasurable(
-            modifier = Modifier,
-            char = '│'
-        )
+        val measurable =
+            VerticalDividerMeasurable(
+                modifier = Modifier,
+                char = '│',
+            )
 
         val placeable = measurable.measure(Constraints(maxHeight = 0))
         assertEquals(1, placeable.width, "should still have width 1")
@@ -143,10 +150,11 @@ class DividerMeasurableTest {
 
     @Test
     fun `HorizontalDivider always has height 1`() {
-        val measurable = HorizontalDividerMeasurable(
-            modifier = Modifier,
-            char = '─'
-        )
+        val measurable =
+            HorizontalDividerMeasurable(
+                modifier = Modifier,
+                char = '─',
+            )
 
         val placeable = measurable.measure(Constraints(maxWidth = 100, maxHeight = 50))
         assertEquals(1, placeable.height, "horizontal divider should always be height 1")
@@ -154,10 +162,11 @@ class DividerMeasurableTest {
 
     @Test
     fun `VerticalDivider always has width 1`() {
-        val measurable = VerticalDividerMeasurable(
-            modifier = Modifier,
-            char = '│'
-        )
+        val measurable =
+            VerticalDividerMeasurable(
+                modifier = Modifier,
+                char = '│',
+            )
 
         val placeable = measurable.measure(Constraints(maxWidth = 100, maxHeight = 50))
         assertEquals(1, placeable.width, "vertical divider should always be width 1")

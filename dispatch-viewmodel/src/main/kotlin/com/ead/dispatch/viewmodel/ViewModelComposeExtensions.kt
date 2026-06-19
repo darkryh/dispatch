@@ -1,7 +1,7 @@
 package com.ead.dispatch.viewmodel
 
-import com.ead.dispatch.annotation.Dispatchable
-import com.ead.dispatch.state.remember
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 
 /**
  * Storage for ViewModels scoped to the application.
@@ -28,12 +28,12 @@ object ViewModelStore {
  *
  * The ViewModel is scoped to the application and survives recomposition.
  */
-@Dispatchable
+@Composable
 inline fun <reified T : ViewModel> viewModel(
     key: String = T::class.java.name,
     noinline factory: () -> T
 ): T {
-    val provider = runCatching { LocalViewModelProvider.current }.getOrNull()
+    val provider = LocalViewModelProvider.current
     return provider?.get(T::class, key) ?: remember(key) {
         ViewModelStore.getOrCreate(key, factory)
     }
@@ -42,10 +42,10 @@ inline fun <reified T : ViewModel> viewModel(
 /**
  * Returns an existing [ViewModel] or creates a new one using the default constructor.
  */
-@Dispatchable
+@Composable
 inline fun <reified T : ViewModel> viewModel(): T {
     val key = T::class.java.name
-    val provider = runCatching { LocalViewModelProvider.current }.getOrNull()
+    val provider = LocalViewModelProvider.current
     return provider?.get(T::class, key)
         ?: remember(key) {
             ViewModelStore.getOrCreate(key) {

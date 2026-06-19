@@ -73,4 +73,5 @@ internal class FrameScheduler(
         onFrame()
         lastFrameTime.set(timeProvider())
     }
+
 }

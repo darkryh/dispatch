@@ -1,6 +1,6 @@
 package com.ead.dispatch.reliability
 
-import com.ead.dispatch.annotation.Dispatchable
+import androidx.compose.runtime.Composable
 import com.ead.dispatch.layout.Column
 import com.ead.dispatch.layout.Row
 import com.ead.dispatch.layout.Spacer
@@ -112,7 +112,7 @@ private enum class ReliabilityScenario(val anchor: String) {
     TRANSFER_MONITOR("anchor::transfer_monitor"),
 }
 
-@Dispatchable
+@Composable
 private fun ScenarioScreen(scenario: ReliabilityScenario) {
     when (scenario) {
         ReliabilityScenario.CHAT_TRANSCRIPT -> ChatTranscriptScenario()
@@ -128,7 +128,7 @@ private fun ScenarioScreen(scenario: ReliabilityScenario) {
     }
 }
 
-@Dispatchable
+@Composable
 private fun ChatTranscriptScenario() {
     LazyColumn(modifier = Modifier.fillMaxWidth()) {
         item { Text("anchor::chat_transcript") }
@@ -155,7 +155,7 @@ private fun ChatTranscriptScenario() {
     }
 }
 
-@Dispatchable
+@Composable
 private fun AnalyticsDashboardScenario() {
     Column(modifier = Modifier.fillMaxWidth()) {
         Text("anchor::analytics_dashboard")
@@ -186,7 +186,7 @@ private fun AnalyticsDashboardScenario() {
     }
 }
 
-@Dispatchable
+@Composable
 private fun WorkflowChecklistScenario() {
     Column(modifier = Modifier.fillMaxWidth()) {
         Text("anchor::workflow_checklist")
@@ -207,7 +207,7 @@ private fun WorkflowChecklistScenario() {
     }
 }
 
-@Dispatchable
+@Composable
 private fun SelectorWorkbenchScenario() {
     val commandState = rememberCommandPaletteState<String>()
     val sessionState = rememberSessionSelectorState<String>()
@@ -246,7 +246,7 @@ private fun SelectorWorkbenchScenario() {
     }
 }
 
-@Dispatchable
+@Composable
 private fun FormDecisionScenario() {
     val filterState = rememberTextFieldState("villain")
     Column(modifier = Modifier.fillMaxWidth()) {
@@ -266,7 +266,7 @@ private fun FormDecisionScenario() {
     }
 }
 
-@Dispatchable
+@Composable
 private fun UnicodeMarkdownScenario() {
     Column(modifier = Modifier.fillMaxWidth()) {
         Text("anchor::unicode_markdown")
@@ -285,7 +285,7 @@ private fun UnicodeMarkdownScenario() {
     }
 }
 
-@Dispatchable
+@Composable
 private fun TagBackgroundScenario() {
     Column(modifier = Modifier.fillMaxWidth()) {
         Text("anchor::tag_background")
@@ -297,7 +297,7 @@ private fun TagBackgroundScenario() {
     }
 }
 
-@Dispatchable
+@Composable
 private fun GridInventoryScenario() {
     val cells = List(24) { index -> "entity-${index + 1}" }
     Column(modifier = Modifier.fillMaxWidth()) {
@@ -311,7 +311,7 @@ private fun GridInventoryScenario() {
     }
 }
 
-@Dispatchable
+@Composable
 private fun WindowedSelectableScenario() {
     val styles = SelectableListStyles(
         prefix = rgb("#6F7279"),
@@ -343,7 +343,7 @@ private fun WindowedSelectableScenario() {
     }
 }
 
-@Dispatchable
+@Composable
 private fun TransferMonitorScenario() {
     Column(modifier = Modifier.fillMaxWidth()) {
         Text("anchor::transfer_monitor")

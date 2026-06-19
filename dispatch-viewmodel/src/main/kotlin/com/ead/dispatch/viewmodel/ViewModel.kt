@@ -27,7 +27,7 @@ import kotlin.coroutines.CoroutineContext
  *     }
  * }
  *
- * @Dispatchable
+ * @Composable
  * fun CounterScreen(viewModel: CounterViewModel = viewModel()) {
  *     val count by viewModel.count.collectAsState()
  *     Column {

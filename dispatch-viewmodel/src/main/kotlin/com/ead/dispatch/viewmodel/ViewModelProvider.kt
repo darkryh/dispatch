@@ -1,10 +1,10 @@
 package com.ead.dispatch.viewmodel
 
-import com.ead.dispatch.annotation.Dispatchable
-import com.ead.dispatch.runtime.CompositionLocalProvider
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import com.ead.dispatch.runtime.SavedStateHandle
-import com.ead.dispatch.runtime.compositionLocalOf
-import com.ead.dispatch.state.remember
+import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.runtime.remember
 import kotlin.reflect.KClass
 
 /**
@@ -131,18 +131,16 @@ fun viewModelFactory(builder: LambdaViewModelFactory.Builder.() -> Unit): Lambda
 /**
  * CompositionLocal for the current ViewModelProvider.
  */
-val LocalViewModelProvider = compositionLocalOf<ViewModelProvider> {
-    error("No ViewModelProvider provided. Wrap your content with ViewModelProviderScope.")
-}
+val LocalViewModelProvider = compositionLocalOf<ViewModelProvider?> { null }
 
 /**
  * Scope that provides a ViewModelProvider.
  */
-@Dispatchable
+@Composable
 fun ViewModelProviderScope(
     factory: ViewModelFactory = DefaultViewModelFactory(),
     savedStateHandle: SavedStateHandle? = null,
-    content: @Dispatchable () -> Unit,
+    content: @Composable () -> Unit,
 ) {
     val provider = remember(factory, savedStateHandle) { ViewModelProvider(factory, savedStateHandle) }
     CompositionLocalProvider(LocalViewModelProvider provides provider) {
@@ -153,7 +151,7 @@ fun ViewModelProviderScope(
 /**
  * Remember a ViewModel with automatic cleanup.
  */
-@Dispatchable
+@Composable
 inline fun <reified T : ViewModel> rememberViewModel(
     key: String = T::class.qualifiedName ?: T::class.simpleName ?: "ViewModel",
     noinline factory: () -> T,

@@ -1,9 +1,9 @@
 package com.ead.dispatch.widget
 
-import com.ead.dispatch.annotation.Dispatchable
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import com.ead.dispatch.constraints.Constraints
 import com.ead.dispatch.runtime.Composer
-import com.ead.dispatch.runtime.CompositionLocalProvider
 import com.ead.dispatch.runtime.DispatchConfig
 import com.ead.dispatch.runtime.DispatchScope
 import com.ead.dispatch.runtime.LocalDispatchScope
@@ -40,9 +40,13 @@ class SessionSelectorTest {
         }
 
         override fun exit(code: Int) = Unit
+
         override fun hasFlag(name: String): Boolean = false
+
         override fun getArgument(name: String): String? = null
+
         override fun launch(block: suspend CoroutineScope.() -> Unit): Job = Job()
+
         override fun clearScreen(clearScrollback: Boolean) = Unit
 
         override fun onKeyEvent(handler: (KeyboardEvent) -> Unit) {
@@ -50,7 +54,8 @@ class SessionSelectorTest {
         }
 
         override fun onMouseEvent(handler: (MouseEvent) -> Unit) = Unit
-        override fun content(block: @Dispatchable () -> Unit) = Unit
+
+        override fun content(block: @Composable () -> Unit) = Unit
 
         fun sendKey(event: KeyboardEvent) {
             if (keyboardInterceptor.tryIntercept(event)) return
@@ -62,13 +67,16 @@ class SessionSelectorTest {
         options: List<SessionOption<String>>,
         private val visibleCount: Int = 10,
     ) {
-        private val terminal = Terminal(
-            ansiLevel = AnsiLevel.NONE,
-            width = 80,
-            height = 20,
-            interactive = false,
-        )
-        private val keyboardInterceptor = com.ead.dispatch.runtime.KeyboardInterceptor()
+        private val terminal =
+            Terminal(
+                ansiLevel = AnsiLevel.NONE,
+                width = 80,
+                height = 20,
+                interactive = false,
+            )
+        private val keyboardInterceptor =
+            com.ead.dispatch.runtime
+                .KeyboardInterceptor()
         private val dispatchScope = TestDispatchScope(terminal, DispatchTheme.Dark, keyboardInterceptor)
         private val composer = Composer()
 
@@ -79,21 +87,22 @@ class SessionSelectorTest {
         var exitCount = 0
             private set
 
-        private val plainStyles = SessionSelectorTextStyles(
-            prefix = null,
-            selectedPrefix = null,
-            updatedTime = null,
-            selectedUpdatedTime = null,
-            conversationId = null,
-            selectedConversationId = null,
-            title = null,
-            selectedTitle = null,
-            messageCount = null,
-            selectedMessageCount = null,
-            noResultsText = null,
-            filterPrompt = null,
-            header = null,
-        )
+        private val plainStyles =
+            SessionSelectorTextStyles(
+                prefix = null,
+                selectedPrefix = null,
+                updatedTime = null,
+                selectedUpdatedTime = null,
+                conversationId = null,
+                selectedConversationId = null,
+                title = null,
+                selectedTitle = null,
+                messageCount = null,
+                selectedMessageCount = null,
+                noResultsText = null,
+                filterPrompt = null,
+                header = null,
+            )
 
         fun render(): List<String> {
             withComposer(composer) {
@@ -131,8 +140,8 @@ class SessionSelectorTest {
         }
     }
 
-    private fun sampleOptions(): List<SessionOption<String>> {
-        return listOf(
+    private fun sampleOptions(): List<SessionOption<String>> =
+        listOf(
             SessionOption(
                 id = "s1",
                 title = "Alpha",
@@ -150,7 +159,6 @@ class SessionSelectorTest {
                 data = "beta",
             ),
         )
-    }
 
     @Test
     fun `keyboard navigation updates selection index`() {
@@ -193,7 +201,12 @@ class SessionSelectorTest {
 
         assertEquals("b", harness.state.filterText)
         assertEquals(1, harness.state.filteredOptions.size)
-        assertEquals("Beta", harness.state.filteredOptions.first().title)
+        assertEquals(
+            "Beta",
+            harness.state.filteredOptions
+                .first()
+                .title,
+        )
 
         harness.press("Backspace")
 

@@ -6,7 +6,6 @@ import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class ScrollStateTest {
-
     @Test
     fun `initial offset is zero by default`() {
         val state = ScrollState()

@@ -14,11 +14,12 @@ class KeyEventTextParserTest {
 
     @Test
     fun `single-line config normalizes spaces and newlines`() {
-        val config = KeyEventTextParseConfig(
-            mapSpaceKeyToSpace = true,
-            replaceNewlineWithSpace = true,
-            replaceTabWithSpace = true,
-        )
+        val config =
+            KeyEventTextParseConfig(
+                mapSpaceKeyToSpace = true,
+                replaceNewlineWithSpace = true,
+                replaceTabWithSpace = true,
+            )
 
         assertEquals(" ", parseTextFromKeyEvent(KeyboardEvent("Space"), config))
         assertEquals("a b", parseTextFromKeyEvent(KeyboardEvent("a\nb"), config))

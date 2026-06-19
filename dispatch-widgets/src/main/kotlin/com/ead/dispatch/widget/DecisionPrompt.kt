@@ -1,18 +1,18 @@
 package com.ead.dispatch.widget
 
-import com.ead.dispatch.annotation.Dispatchable
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import com.ead.dispatch.layout.Column
 import com.ead.dispatch.layout.Row
 import com.ead.dispatch.layout.Spacer
 import com.ead.dispatch.modifier.Modifier
 import com.ead.dispatch.modifier.fillMaxWidth
 import com.ead.dispatch.modifier.width
-import com.ead.dispatch.runtime.DisposableEffect
 import com.ead.dispatch.runtime.LocalKeyboardInterceptor
-import com.ead.dispatch.state.getValue
-import com.ead.dispatch.state.mutableStateOf
-import com.ead.dispatch.state.remember
-import com.ead.dispatch.state.setValue
 import com.github.ajalt.mordant.rendering.TextColors.Companion.rgb
 import com.github.ajalt.mordant.rendering.TextStyle
 
@@ -21,8 +21,13 @@ data class DecisionOption(
 )
 
 sealed interface DecisionSelection {
-    data class Option(val option: DecisionOption) : DecisionSelection
-    data class Custom(val text: String) : DecisionSelection
+    data class Option(
+        val option: DecisionOption,
+    ) : DecisionSelection
+
+    data class Custom(
+        val text: String,
+    ) : DecisionSelection
 }
 
 data class DecisionPromptTextStyles(
@@ -57,28 +62,29 @@ class DecisionPromptState(
     }
 }
 
-@Dispatchable
+@Composable
 fun rememberDecisionPromptState(
     initialSelectedIndex: Int = 0,
     initialCustomText: String = "",
-): DecisionPromptState = remember(
-    DecisionPromptStateKey(
-        initialSelectedIndex = initialSelectedIndex,
-        initialCustomText = initialCustomText,
-    )
-) {
-    DecisionPromptState(
-        initialSelectedIndex = initialSelectedIndex,
-        initialCustomText = initialCustomText,
-    )
-}
+): DecisionPromptState =
+    remember(
+        DecisionPromptStateKey(
+            initialSelectedIndex = initialSelectedIndex,
+            initialCustomText = initialCustomText,
+        ),
+    ) {
+        DecisionPromptState(
+            initialSelectedIndex = initialSelectedIndex,
+            initialCustomText = initialCustomText,
+        )
+    }
 
 private data class DecisionPromptStateKey(
     val initialSelectedIndex: Int,
     val initialCustomText: String,
 )
 
-@Dispatchable
+@Composable
 fun DecisionPrompt(
     question: String,
     options: List<DecisionOption>,
@@ -105,48 +111,50 @@ fun DecisionPrompt(
             return@DisposableEffect onDispose {}
         }
 
-        val interceptorDispose = keyboardInterceptor.register { event ->
-            handleSelectorKeyEvent(
-                event,
-                SelectorKeyBindings(
-                    onMoveUp = { state.moveUp(optionsCount) },
-                    onMoveDown = { state.moveDown(optionsCount) },
-                    onConfirm = {
-                        if (state.selectedIndex == customIndex) {
-                            val custom = state.customText.trim()
-                            if (custom.isEmpty()) {
-                                return@SelectorKeyBindings false
+        val interceptorDispose =
+            keyboardInterceptor.register { event ->
+                handleSelectorKeyEvent(
+                    event,
+                    SelectorKeyBindings(
+                        onMoveUp = { state.moveUp(optionsCount) },
+                        onMoveDown = { state.moveDown(optionsCount) },
+                        onConfirm = {
+                            if (state.selectedIndex == customIndex) {
+                                val custom = state.customText.trim()
+                                if (custom.isEmpty()) {
+                                    return@SelectorKeyBindings false
+                                }
+                                onSubmit(DecisionSelection.Custom(custom))
+                                state.customText = ""
+                                true
+                            } else {
+                                val option =
+                                    options.getOrNull(state.selectedIndex)
+                                        ?: return@SelectorKeyBindings false
+                                onSubmit(DecisionSelection.Option(option))
+                                true
                             }
-                            onSubmit(DecisionSelection.Custom(custom))
-                            state.customText = ""
+                        },
+                        onBackspace = {
+                            if (state.selectedIndex != customIndex) return@SelectorKeyBindings false
+                            if (state.customText.isNotEmpty()) {
+                                state.customText = state.customText.dropLast(1)
+                            }
                             true
-                        } else {
-                            val option = options.getOrNull(state.selectedIndex)
-                                ?: return@SelectorKeyBindings false
-                            onSubmit(DecisionSelection.Option(option))
+                        },
+                        onCharacter = { char ->
+                            if (state.selectedIndex != customIndex) return@SelectorKeyBindings false
+                            if (char.isISOControl()) return@SelectorKeyBindings false
+                            state.customText += char
                             true
-                        }
-                    },
-                    onBackspace = {
-                        if (state.selectedIndex != customIndex) return@SelectorKeyBindings false
-                        if (state.customText.isNotEmpty()) {
-                            state.customText = state.customText.dropLast(1)
-                        }
-                        true
-                    },
-                    onCharacter = { char ->
-                        if (state.selectedIndex != customIndex) return@SelectorKeyBindings false
-                        if (char.isISOControl()) return@SelectorKeyBindings false
-                        state.customText += char
-                        true
-                    },
-                    onTab = {
-                        state.selectedIndex = customIndex
-                        true
-                    },
-                ),
-            )
-        }
+                        },
+                        onTab = {
+                            state.selectedIndex = customIndex
+                            true
+                        },
+                    ),
+                )
+            }
 
         onDispose { interceptorDispose() }
     }
@@ -184,17 +192,19 @@ fun DecisionPrompt(
             )
             Spacer(modifier = Modifier.width(1))
             val hasCustomText = state.customText.isNotEmpty()
-            val renderedCustom = when {
-                hasCustomText && isCustomSelected -> "${state.customText}█"
-                hasCustomText -> state.customText
-                else -> placeholder
-            }
+            val renderedCustom =
+                when {
+                    hasCustomText && isCustomSelected -> "${state.customText}█"
+                    hasCustomText -> state.customText
+                    else -> placeholder
+                }
             Text(
                 text = renderedCustom,
-                style = when {
-                    hasCustomText -> textStyles.customText
-                    else -> textStyles.placeholder
-                },
+                style =
+                    when {
+                        hasCustomText -> textStyles.customText
+                        else -> textStyles.placeholder
+                    },
             )
         }
     }
@@ -209,7 +219,10 @@ internal fun decisionOptionMarker(index: Int): String {
     }
 }
 
-internal fun clampDecisionSelectionIndex(selectedIndex: Int, optionsCount: Int): Int {
+internal fun clampDecisionSelectionIndex(
+    selectedIndex: Int,
+    optionsCount: Int,
+): Int {
     require(optionsCount >= 0) { "optionsCount must be >= 0" }
     return selectedIndex.coerceIn(0, optionsCount)
 }

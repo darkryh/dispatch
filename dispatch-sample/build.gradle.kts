@@ -1,14 +1,14 @@
 plugins {
     id("dispatch.kotlin-application")
     id("dispatch.kotlin-serialization")
-    alias(libs.plugins.sqldelight)
 }
 
 application {
     mainClass.set("com.ead.dispatch.sample.MainKt")
-    applicationDefaultJvmArgs = listOf(
-        "-Dfile.encoding=utf-8"
-    )
+    applicationDefaultJvmArgs =
+        listOf(
+            "-Dfile.encoding=utf-8",
+        )
 }
 
 dependencies {
@@ -20,33 +20,47 @@ dependencies {
     implementation(projects.dispatchLifecycle)
     implementation(projects.dispatchNavigation)
     implementation(projects.dispatchKoin)
-    implementation(projects.koogContextOrchestrator)
-    implementation(projects.koogAgentBenchmarkKoog)
     implementation(libs.bundles.mordant)
     implementation(libs.coroutines.core)
-
-    implementation(libs.multiplatform.settings)
-    implementation(libs.multiplatform.settings.serialization)
-    implementation(libs.multiplatform.settings.coroutines)
-    implementation(libs.multiplatform.settings.make.observable)
-
-    implementation(libs.appdirs)
-    implementation(libs.bundles.koog)
-    implementation(libs.sqldelight.sqlite.driver)
-    implementation(libs.sqldelight.coroutines)
 
     // Prevent SLF4J's "no providers" warnings from printing to stderr and corrupting the TUI.
     runtimeOnly(libs.slf4j.nop)
 
-    testImplementation(libs.koog.agents.test)
-    testImplementation(libs.dokimos.koog)
-
+    testImplementation(libs.coroutines.test)
 }
 
-sqldelight {
-    databases {
-        create("DispatchDatabase") {
-            packageName.set("com.ead.dispatch.sample")
-        }
+tasks.test {
+    useJUnitPlatform {
+        excludeTags("terminal-e2e")
     }
+}
+
+val terminalE2eTest by tasks.registering(Test::class) {
+    description = "Runs the installed sample application through a real pseudo-terminal"
+    group = LifecycleBasePlugin.VERIFICATION_GROUP
+
+    testClassesDirs =
+        sourceSets.test
+            .get()
+            .output.classesDirs
+    classpath = sourceSets.test.get().runtimeClasspath
+    dependsOn(tasks.installDist)
+    shouldRunAfter(tasks.test)
+    maxParallelForks = 1
+
+    useJUnitPlatform {
+        includeTags("terminal-e2e")
+    }
+
+    systemProperty(
+        "dispatch.sample.binary",
+        layout.buildDirectory
+            .file("install/dispatch-sample/bin/dispatch-sample")
+            .get()
+            .asFile.absolutePath,
+    )
+}
+
+tasks.check {
+    dependsOn(terminalE2eTest)
 }

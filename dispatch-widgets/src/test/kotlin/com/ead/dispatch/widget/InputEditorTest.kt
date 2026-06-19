@@ -17,12 +17,13 @@ class InputEditorTest {
     }
 
     private class EditorHarness {
-        val terminal = Terminal(
-            ansiLevel = AnsiLevel.NONE,
-            width = 80,
-            height = 20,
-            interactive = false,
-        )
+        val terminal =
+            Terminal(
+                ansiLevel = AnsiLevel.NONE,
+                width = 80,
+                height = 20,
+                interactive = false,
+            )
         var value: String = ""
         var cursor: Int = 0
         var submitted: String? = null
@@ -31,15 +32,16 @@ class InputEditorTest {
         val historyState = InputHistoryIndexState()
         private val pasteTracker = PasteTracker()
         private val pasteHeuristic = PasteHeuristic(inputNowNanos)
-        val editor = InputEditor(
-            getValue = { value },
-            setValue = { value = it },
-            getCursor = { cursor },
-            setCursor = { cursor = it },
-            historyIndexState = historyState,
-            pasteTracker = pasteTracker,
-            pasteHeuristic = pasteHeuristic,
-        )
+        val editor =
+            InputEditor(
+                getValue = { value },
+                setValue = { value = it },
+                getCursor = { cursor },
+                setCursor = { cursor = it },
+                historyIndexState = historyState,
+                pasteTracker = pasteTracker,
+                pasteHeuristic = pasteHeuristic,
+            )
 
         init {
             editor.updateDependencies(
@@ -52,7 +54,12 @@ class InputEditorTest {
             )
         }
 
-        fun press(key: String, ctrl: Boolean = false, alt: Boolean = false, shift: Boolean = false) {
+        fun press(
+            key: String,
+            ctrl: Boolean = false,
+            alt: Boolean = false,
+            shift: Boolean = false,
+        ) {
             editor.handleKeyEvent(KeyboardEvent(key, ctrl = ctrl, alt = alt, shift = shift))
         }
     }

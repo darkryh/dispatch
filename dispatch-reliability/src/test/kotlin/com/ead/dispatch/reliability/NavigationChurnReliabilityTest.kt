@@ -1,6 +1,6 @@
 package com.ead.dispatch.reliability
 
-import com.ead.dispatch.annotation.Dispatchable
+import androidx.compose.runtime.Composable
 import com.ead.dispatch.layout.Column
 import com.ead.dispatch.layout.Row
 import com.ead.dispatch.layout.Spacer
@@ -65,7 +65,7 @@ private enum class ChurnRoute(val anchor: String) {
         }
 }
 
-@Dispatchable
+@Composable
 private fun ReliabilityApp(
     route: ChurnRoute,
     chatInput: String,
@@ -87,7 +87,7 @@ private fun ReliabilityApp(
     }
 }
 
-@Dispatchable
+@Composable
 private fun HomeScreen() {
     Panel(modifier = Modifier.fillMaxWidth()) {
         Text("anchor::home")
@@ -96,7 +96,7 @@ private fun HomeScreen() {
     }
 }
 
-@Dispatchable
+@Composable
 private fun ChatScreen(
     chatInput: String,
     onChatInputChange: (String) -> Unit,
@@ -118,7 +118,7 @@ private fun ChatScreen(
     }
 }
 
-@Dispatchable
+@Composable
 private fun LibraryScreen() {
     Row(modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.weight(1f)) {

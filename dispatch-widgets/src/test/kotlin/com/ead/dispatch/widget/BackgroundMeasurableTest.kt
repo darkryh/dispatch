@@ -14,14 +14,17 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class BackgroundMeasurableTest {
-    private fun terminal(width: Int = 20, height: Int = 10): Terminal =
-        Terminal(ansiLevel = AnsiLevel.TRUECOLOR, width = width, height = height, interactive = false)
+    private fun terminal(
+        width: Int = 20,
+        height: Int = 10,
+    ): Terminal = Terminal(ansiLevel = AnsiLevel.TRUECOLOR, width = width, height = height, interactive = false)
 
-    private fun normalizeFillStyle(fillStyle: TextStyle): TextStyle = when {
-        fillStyle.bgColor != null -> fillStyle
-        fillStyle.color != null -> fillStyle.bg
-        else -> fillStyle
-    }
+    private fun normalizeFillStyle(fillStyle: TextStyle): TextStyle =
+        when {
+            fillStyle.bgColor != null -> fillStyle
+            fillStyle.color != null -> fillStyle.bg
+            else -> fillStyle
+        }
 
     private fun splitStyleWrapper(style: TextStyle): Pair<String, String> {
         val sentinel = "§§DISPATCH_BG_SENTINEL§§"
@@ -40,20 +43,23 @@ class BackgroundMeasurableTest {
 
     @Test
     fun `adds top and bottom rules`() {
-        val child = StubMeasurable(
-            placeable = SimplePlaceable(
-                width = 3,
-                height = 1,
-                lines = listOf("> █"),
-            ),
-        )
+        val child =
+            StubMeasurable(
+                placeable =
+                    SimplePlaceable(
+                        width = 3,
+                        height = 1,
+                        lines = listOf("> █"),
+                    ),
+            )
 
-        val measurable = BackgroundMeasurable(
-            modifier = Modifier,
-            style = BackgroundStyle.lines(char = '─', style = null),
-            children = listOf(child),
-            terminal = terminal(),
-        )
+        val measurable =
+            BackgroundMeasurable(
+                modifier = Modifier,
+                style = BackgroundStyle.lines(char = '─', style = null),
+                children = listOf(child),
+                terminal = terminal(),
+            )
 
         val placeable = measurable.measure(Constraints(maxWidth = 10))
         assertEquals(3, placeable.height)
@@ -64,24 +70,28 @@ class BackgroundMeasurableTest {
 
     @Test
     fun `fill pads content to width`() {
-        val child = StubMeasurable(
-            placeable = SimplePlaceable(
-                width = 3,
-                height = 1,
-                lines = listOf("> █"),
-            ),
-        )
+        val child =
+            StubMeasurable(
+                placeable =
+                    SimplePlaceable(
+                        width = 3,
+                        height = 1,
+                        lines = listOf("> █"),
+                    ),
+            )
 
-        val measurable = BackgroundMeasurable(
-            modifier = Modifier,
-            style = BackgroundStyle.Fill(
-                fill = TextStyle(),
-                paddingHorizontal = 0,
-                paddingVertical = 0,
-            ),
-            children = listOf(child),
-            terminal = terminal(),
-        )
+        val measurable =
+            BackgroundMeasurable(
+                modifier = Modifier,
+                style =
+                    BackgroundStyle.Fill(
+                        fill = TextStyle(),
+                        paddingHorizontal = 0,
+                        paddingVertical = 0,
+                    ),
+                children = listOf(child),
+                terminal = terminal(),
+            )
 
         val placeable = measurable.measure(Constraints(maxWidth = 6))
         assertEquals(1, placeable.height)
@@ -90,24 +100,28 @@ class BackgroundMeasurableTest {
 
     @Test
     fun `fill treats foreground color as background`() {
-        val child = StubMeasurable(
-            placeable = SimplePlaceable(
-                width = 1,
-                height = 1,
-                lines = listOf("X"),
-            ),
-        )
+        val child =
+            StubMeasurable(
+                placeable =
+                    SimplePlaceable(
+                        width = 1,
+                        height = 1,
+                        lines = listOf("X"),
+                    ),
+            )
 
-        val measurable = BackgroundMeasurable(
-            modifier = Modifier,
-            style = BackgroundStyle.Fill(
-                fill = TextColors.red,
-                paddingHorizontal = 0,
-                paddingVertical = 0,
-            ),
-            children = listOf(child),
-            terminal = terminal(),
-        )
+        val measurable =
+            BackgroundMeasurable(
+                modifier = Modifier,
+                style =
+                    BackgroundStyle.Fill(
+                        fill = TextColors.red,
+                        paddingHorizontal = 0,
+                        paddingVertical = 0,
+                    ),
+                children = listOf(child),
+                terminal = terminal(),
+            )
 
         val placeable = measurable.measure(Constraints(maxWidth = 2))
         val line = placeable.lines.single()
@@ -117,24 +131,28 @@ class BackgroundMeasurableTest {
     @Test
     fun `fill reapplies after inner background resets`() {
         val childLine = TextColors.brightCyan.bg("X") + "Hello"
-        val child = StubMeasurable(
-            placeable = SimplePlaceable(
-                width = 6,
-                height = 1,
-                lines = listOf(childLine),
-            ),
-        )
+        val child =
+            StubMeasurable(
+                placeable =
+                    SimplePlaceable(
+                        width = 6,
+                        height = 1,
+                        lines = listOf(childLine),
+                    ),
+            )
 
-        val measurable = BackgroundMeasurable(
-            modifier = Modifier,
-            style = BackgroundStyle.Fill(
-                fill = TextColors.red,
-                paddingHorizontal = 2,
-                paddingVertical = 0,
-            ),
-            children = listOf(child),
-            terminal = terminal(),
-        )
+        val measurable =
+            BackgroundMeasurable(
+                modifier = Modifier,
+                style =
+                    BackgroundStyle.Fill(
+                        fill = TextColors.red,
+                        paddingHorizontal = 2,
+                        paddingVertical = 0,
+                    ),
+                children = listOf(child),
+                terminal = terminal(),
+            )
 
         val placeable = measurable.measure(Constraints(maxWidth = 20))
         val line = placeable.lines.single()
@@ -149,24 +167,28 @@ class BackgroundMeasurableTest {
     @Test
     fun `fill reapplies after combined fg+bg reset`() {
         val childLine = "\u001B[31;47mX\u001B[39;49mHello"
-        val child = StubMeasurable(
-            placeable = SimplePlaceable(
-                width = 6,
-                height = 1,
-                lines = listOf(childLine),
-            ),
-        )
+        val child =
+            StubMeasurable(
+                placeable =
+                    SimplePlaceable(
+                        width = 6,
+                        height = 1,
+                        lines = listOf(childLine),
+                    ),
+            )
 
-        val measurable = BackgroundMeasurable(
-            modifier = Modifier,
-            style = BackgroundStyle.Fill(
-                fill = TextColors.red,
-                paddingHorizontal = 2,
-                paddingVertical = 0,
-            ),
-            children = listOf(child),
-            terminal = terminal(),
-        )
+        val measurable =
+            BackgroundMeasurable(
+                modifier = Modifier,
+                style =
+                    BackgroundStyle.Fill(
+                        fill = TextColors.red,
+                        paddingHorizontal = 2,
+                        paddingVertical = 0,
+                    ),
+                children = listOf(child),
+                terminal = terminal(),
+            )
 
         val placeable = measurable.measure(Constraints(maxWidth = 20))
         val line = placeable.lines.single()
@@ -180,24 +202,28 @@ class BackgroundMeasurableTest {
 
     @Test
     fun `fill applies to padding`() {
-        val child = StubMeasurable(
-            placeable = SimplePlaceable(
-                width = 1,
-                height = 1,
-                lines = listOf("X"),
-            ),
-        )
+        val child =
+            StubMeasurable(
+                placeable =
+                    SimplePlaceable(
+                        width = 1,
+                        height = 1,
+                        lines = listOf("X"),
+                    ),
+            )
 
-        val measurable = BackgroundMeasurable(
-            modifier = Modifier,
-            style = BackgroundStyle.Fill(
-                fill = TextColors.red,
-                paddingHorizontal = 2,
-                paddingVertical = 0,
-            ),
-            children = listOf(child),
-            terminal = terminal(),
-        )
+        val measurable =
+            BackgroundMeasurable(
+                modifier = Modifier,
+                style =
+                    BackgroundStyle.Fill(
+                        fill = TextColors.red,
+                        paddingHorizontal = 2,
+                        paddingVertical = 0,
+                    ),
+                children = listOf(child),
+                terminal = terminal(),
+            )
 
         val placeable = measurable.measure(Constraints(maxWidth = 8))
         val line = placeable.lines.single()

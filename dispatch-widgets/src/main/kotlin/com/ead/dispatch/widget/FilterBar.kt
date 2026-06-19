@@ -1,14 +1,14 @@
 package com.ead.dispatch.widget
 
-import com.ead.dispatch.annotation.Dispatchable
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import com.ead.dispatch.layout.Row
 import com.ead.dispatch.layout.Spacer
 import com.ead.dispatch.modifier.Modifier
 import com.ead.dispatch.modifier.width
-import com.ead.dispatch.state.getValue
-import com.ead.dispatch.state.mutableStateOf
-import com.ead.dispatch.state.remember
-import com.ead.dispatch.state.setValue
 import com.github.ajalt.mordant.rendering.TextStyle
 
 /**
@@ -17,25 +17,25 @@ import com.github.ajalt.mordant.rendering.TextStyle
 @Deprecated(
     message = "Unused legacy state holder; use TextFieldState + rememberFilterInputController instead.",
 )
-class FilterState(initialActive: Boolean = false) {
+class FilterState(
+    initialActive: Boolean = false,
+) {
     var isActive: Boolean by mutableStateOf(initialActive)
 }
 
 /**
  * Remember a [FilterState] instance.
  */
-@Dispatchable
+@Composable
 @Deprecated(
     message = "Unused legacy state holder; use rememberTextFieldState + rememberFilterInputController instead.",
 )
-fun rememberFilterState(initialActive: Boolean = false): FilterState {
-    return remember { FilterState(initialActive) }
-}
+fun rememberFilterState(initialActive: Boolean = false): FilterState = remember { FilterState(initialActive) }
 
 /**
  * A compact filter input bar for list screens.
  */
-@Dispatchable
+@Composable
 fun FilterBar(
     state: TextFieldState,
     modifier: Modifier = Modifier,

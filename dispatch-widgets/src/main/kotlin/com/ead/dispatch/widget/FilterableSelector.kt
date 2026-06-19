@@ -1,8 +1,8 @@
 package com.ead.dispatch.widget
 
-import com.ead.dispatch.state.getValue
-import com.ead.dispatch.state.mutableStateOf
-import com.ead.dispatch.state.setValue
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import com.github.ajalt.mordant.input.KeyboardEvent
 
 internal class FilterableSelectorState<T>(
@@ -77,8 +77,11 @@ internal data class SelectorKeyBindings(
     },
 )
 
-internal fun handleSelectorKeyEvent(event: KeyboardEvent, bindings: SelectorKeyBindings): Boolean {
-    return when (event.key) {
+internal fun handleSelectorKeyEvent(
+    event: KeyboardEvent,
+    bindings: SelectorKeyBindings,
+): Boolean =
+    when (event.key) {
         "ArrowUp" -> {
             bindings.onMoveUp()
             true
@@ -100,4 +103,3 @@ internal fun handleSelectorKeyEvent(event: KeyboardEvent, bindings: SelectorKeyB
             }
         }
     }
-}

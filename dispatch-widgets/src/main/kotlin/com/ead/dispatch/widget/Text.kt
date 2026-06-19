@@ -1,23 +1,22 @@
 package com.ead.dispatch.widget
 
-import com.ead.dispatch.annotation.Dispatchable
+import androidx.compose.runtime.Composable
 import com.ead.dispatch.constraints.Constraints
 import com.ead.dispatch.layout.Measurable
 import com.ead.dispatch.layout.Placeable
 import com.ead.dispatch.layout.SimplePlaceable
 import com.ead.dispatch.modifier.Modifier
 import com.ead.dispatch.modifier.applyToConstraints
-import com.ead.dispatch.runtime.Composer
 import com.ead.dispatch.runtime.LocalTerminal
 import com.ead.dispatch.runtime.composableWidget
 import com.github.ajalt.mordant.markdown.Markdown
+import com.github.ajalt.mordant.rendering.Lines
+import com.github.ajalt.mordant.rendering.OverflowWrap
+import com.github.ajalt.mordant.rendering.Span
 import com.github.ajalt.mordant.rendering.TextAlign
 import com.github.ajalt.mordant.rendering.TextStyle
-import com.github.ajalt.mordant.rendering.OverflowWrap
 import com.github.ajalt.mordant.rendering.Whitespace
-import com.github.ajalt.mordant.rendering.Lines
 import com.github.ajalt.mordant.rendering.Line as MordantLine
-import com.github.ajalt.mordant.rendering.Span
 import com.github.ajalt.mordant.widgets.Text as MordantText
 
 /**
@@ -37,7 +36,7 @@ import com.github.ajalt.mordant.widgets.Text as MordantText
  * @param maxLines Maximum number of lines (null for unlimited).
  * @param overflow How to handle text that exceeds maxLines.
  */
-@Dispatchable
+@Composable
 fun Text(
     text: String,
     modifier: Modifier = Modifier,
@@ -95,7 +94,6 @@ internal class TextMeasurable(
     private val markdown: Boolean,
     private val terminal: com.github.ajalt.mordant.terminal.Terminal,
 ) : Measurable {
-
     override fun measure(constraints: Constraints): Placeable {
         val modifiedConstraints = modifier.applyToConstraints(constraints)
         val maxWidth = modifiedConstraints.maxWidth.takeIf { it != Int.MAX_VALUE }
@@ -107,36 +105,41 @@ internal class TextMeasurable(
 
         // Use Mordant's renderer to handle wide/combining chars, wrapping, and alignment.
         val renderedWidth = maxWidth ?: 10_000
-        val renderedLines = renderText(
-            maxWidth = maxWidth,
-            renderedWidth = renderedWidth,
-            align = effectiveAlign,
-        )
+        val renderedLines =
+            renderText(
+                maxWidth = maxWidth,
+                renderedWidth = renderedWidth,
+                align = effectiveAlign,
+            )
         val rendered = terminal.render(renderedLines)
 
-        val lines = rendered
-            .lines()
-            .map { it.replace(TRIM_SENTINEL.toString(), "") }
-            .let { list ->
-            val effectiveMaxLines = maxLines ?: modifiedConstraints.maxHeight.takeIf { it != Int.MAX_VALUE }
-            if (effectiveMaxLines != null && list.size > effectiveMaxLines) {
-                when (overflow) {
-                    TextOverflow.Clip -> list.take(effectiveMaxLines)
-                    TextOverflow.Ellipsis -> {
-                        val truncated = list.take(effectiveMaxLines).toMutableList()
-                        if (truncated.isNotEmpty()) {
-                            val lastLine = truncated.last()
-                            truncated[truncated.lastIndex] = when {
-                                lastLine.length > 3 -> lastLine.dropLast(3) + "..."
-                                else -> "..."
+        val lines =
+            rendered
+                .lines()
+                .map { it.replace(TRIM_SENTINEL.toString(), "") }
+                .let { list ->
+                    val effectiveMaxLines = maxLines ?: modifiedConstraints.maxHeight.takeIf { it != Int.MAX_VALUE }
+                    if (effectiveMaxLines != null && list.size > effectiveMaxLines) {
+                        when (overflow) {
+                            TextOverflow.Clip -> list.take(effectiveMaxLines)
+                            TextOverflow.Ellipsis -> {
+                                val truncated = list.take(effectiveMaxLines).toMutableList()
+                                if (truncated.isNotEmpty()) {
+                                    val lastLine = truncated.last()
+                                    truncated[truncated.lastIndex] =
+                                        when {
+                                            lastLine.length > 3 -> lastLine.dropLast(3) + "..."
+                                            else -> "..."
+                                        }
+                                }
+                                truncated
                             }
+                            TextOverflow.Visible -> list
                         }
-                        truncated
+                    } else {
+                        list
                     }
-                    TextOverflow.Visible -> list
                 }
-            } else list
-        }
 
         val width = modifiedConstraints.constrainWidth(renderedLines.width)
         val height = modifiedConstraints.constrainHeight(lines.size)
@@ -144,7 +147,7 @@ internal class TextMeasurable(
         return SimplePlaceable(
             width = width,
             height = height,
-            lines = lines
+            lines = lines,
         )
     }
 
@@ -157,13 +160,14 @@ internal class TextMeasurable(
             return renderPlainText(maxWidth = maxWidth, renderedWidth = renderedWidth, align = align)
         }
 
-        val markdownLines = try {
-            Markdown(text).render(terminal, width = renderedWidth)
-        } catch (_: Exception) {
-            // Streaming LLM output can contain transient malformed markdown (e.g., unfinished fences).
-            // Fall back to plain text so a parser failure can't crash the render loop.
-            return renderPlainText(maxWidth = maxWidth, renderedWidth = renderedWidth, align = align)
-        }
+        val markdownLines =
+            try {
+                Markdown(text).render(terminal, width = renderedWidth)
+            } catch (_: Exception) {
+                // Streaming LLM output can contain transient malformed markdown (e.g., unfinished fences).
+                // Fall back to plain text so a parser failure can't crash the render loop.
+                return renderPlainText(maxWidth = maxWidth, renderedWidth = renderedWidth, align = align)
+            }
 
         return style?.let { markdownLines.withBaseStyle(it) } ?: markdownLines
     }
@@ -174,10 +178,11 @@ internal class TextMeasurable(
         align: TextAlign,
     ): Lines {
         val styledText = style?.invoke(text) ?: text
-        val renderedText = styledText
-            // Whitespace.PRE_WRAP trims whitespace at EOL; preserve trailing spaces by ensuring a
-            // non-whitespace, zero-width sentinel is present at each explicit line end.
-            .replace("\n", "$TRIM_SENTINEL\n") + TRIM_SENTINEL
+        val renderedText =
+            styledText
+                // Whitespace.PRE_WRAP trims whitespace at EOL; preserve trailing spaces by ensuring a
+                // non-whitespace, zero-width sentinel is present at each explicit line end.
+                .replace("\n", "$TRIM_SENTINEL\n") + TRIM_SENTINEL
 
         return MordantText(
             renderedText,
@@ -191,23 +196,22 @@ internal class TextMeasurable(
     private companion object {
         private const val TRIM_SENTINEL = '\u0000'
 
-        private fun Lines.withBaseStyle(style: TextStyle): Lines {
-            return Lines(
+        private fun Lines.withBaseStyle(style: TextStyle): Lines =
+            Lines(
                 lines.map { line ->
                     MordantLine(
                         spans = line.spans.map { span -> Span.word(span.text, style + span.style) },
                         endStyle = style + line.endStyle,
                     )
-                }
+                },
             )
-        }
     }
 }
 
 /**
  * Display styled text with a builder pattern.
  */
-@Dispatchable
+@Composable
 fun StyledText(
     modifier: Modifier = Modifier,
     align: TextAlign = TextAlign.LEFT,

@@ -1,6 +1,6 @@
 package com.ead.dispatch.widget
 
-import com.ead.dispatch.annotation.Dispatchable
+import androidx.compose.runtime.Composable
 import com.ead.dispatch.layout.Row
 import com.ead.dispatch.layout.Spacer
 import com.ead.dispatch.modifier.Modifier
@@ -14,7 +14,7 @@ data class KeyHint(
     val description: String,
 )
 
-@Dispatchable
+@Composable
 fun KeyHintBar(
     hints: List<KeyHint>,
     modifier: Modifier = Modifier,

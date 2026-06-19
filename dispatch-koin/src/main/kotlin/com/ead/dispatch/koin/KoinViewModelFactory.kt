@@ -1,6 +1,6 @@
 package com.ead.dispatch.koin
 
-import com.ead.dispatch.annotation.Dispatchable
+import androidx.compose.runtime.Composable
 import com.ead.dispatch.runtime.SavedStateHandle
 import com.ead.dispatch.viewmodel.SavedStateViewModelFactory
 import com.ead.dispatch.viewmodel.ViewModel
@@ -28,10 +28,10 @@ class KoinViewModelFactory(
 /**
  * Scope that provides a Koin-backed ViewModelProvider.
  */
-@Dispatchable
+@Composable
 fun KoinViewModelProviderScope(
     koin: Koin = DispatchKoin.koin(),
-    content: @Dispatchable () -> Unit,
+    content: @Composable () -> Unit,
 ) {
     ViewModelProviderScope(factory = KoinViewModelFactory(koin), content = content)
 }

@@ -1,13 +1,13 @@
 package com.ead.dispatch.runtime.state
 
-import com.ead.dispatch.state.derivedStateOf
-import com.ead.dispatch.state.getValue
-import com.ead.dispatch.state.mutableStateListOf
-import com.ead.dispatch.state.mutableStateMapOf
-import com.ead.dispatch.state.mutableStateOf
-import com.ead.dispatch.state.referentialEqualityPolicy
-import com.ead.dispatch.state.setValue
-import com.ead.dispatch.state.structuralEqualityPolicy
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.referentialEqualityPolicy
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.structuralEqualityPolicy
 import io.kotest.matchers.shouldBe
 import kotlin.test.Test
 import kotlin.test.assertNotSame

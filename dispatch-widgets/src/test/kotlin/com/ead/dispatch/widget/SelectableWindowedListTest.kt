@@ -4,7 +4,6 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class SelectableWindowedListTest {
-
     @Test
     fun `window slice clamps selected index and count`() {
         val items = (0 until 10).toList()

@@ -1,6 +1,6 @@
 package com.ead.dispatch.widget
 
-import com.ead.dispatch.annotation.Dispatchable
+import androidx.compose.runtime.Composable
 import com.ead.dispatch.layout.Row
 import com.ead.dispatch.modifier.Modifier
 import com.github.ajalt.mordant.rendering.TextColors
@@ -11,7 +11,7 @@ data class CountTile(
     val count: Int,
 )
 
-@Dispatchable
+@Composable
 fun CountTileGrid(
     items: List<CountTile>,
     modifier: Modifier = Modifier,
@@ -33,15 +33,19 @@ fun CountTileGrid(
     }
 }
 
-private fun buildTile(item: CountTile, width: Int): String {
+private fun buildTile(
+    item: CountTile,
+    width: Int,
+): String {
     val countText = item.count.toString()
     val maxLabelLength = (width - countText.length - 4).coerceAtLeast(1)
-    val label = if (item.label.length > maxLabelLength) {
-        val cut = (maxLabelLength - 3).coerceAtLeast(1)
-        item.label.take(cut) + "..."
-    } else {
-        item.label
-    }
-    val raw = "[${label}] $countText"
+    val label =
+        if (item.label.length > maxLabelLength) {
+            val cut = (maxLabelLength - 3).coerceAtLeast(1)
+            item.label.take(cut) + "..."
+        } else {
+            item.label
+        }
+    val raw = "[$label] $countText"
     return if (raw.length >= width) raw.take(width) else raw.padEnd(width)
 }

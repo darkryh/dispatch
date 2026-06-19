@@ -1,10 +1,10 @@
 package com.ead.dispatch.widget
 
-import com.ead.dispatch.annotation.Dispatchable
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import com.ead.dispatch.constraints.Constraints
 import com.ead.dispatch.layout.Column
 import com.ead.dispatch.runtime.Composer
-import com.ead.dispatch.runtime.CompositionLocalProvider
 import com.ead.dispatch.runtime.DispatchConfig
 import com.ead.dispatch.runtime.DispatchScope
 import com.ead.dispatch.runtime.KeyboardInterceptor
@@ -45,9 +45,13 @@ class InputCommandPaletteIntegrationTest {
         }
 
         override fun exit(code: Int) = Unit
+
         override fun hasFlag(name: String): Boolean = false
+
         override fun getArgument(name: String): String? = null
+
         override fun launch(block: suspend CoroutineScope.() -> Unit): Job = Job()
+
         override fun clearScreen(clearScrollback: Boolean) = Unit
 
         override fun onKeyEvent(handler: (KeyboardEvent) -> Unit) {
@@ -55,7 +59,8 @@ class InputCommandPaletteIntegrationTest {
         }
 
         override fun onMouseEvent(handler: (MouseEvent) -> Unit) = Unit
-        override fun content(block: @Dispatchable () -> Unit) = Unit
+
+        override fun content(block: @Composable () -> Unit) = Unit
 
         fun sendKey(event: KeyboardEvent) {
             if (keyboardInterceptor.tryIntercept(event)) return
@@ -64,22 +69,26 @@ class InputCommandPaletteIntegrationTest {
     }
 
     private class InputPaletteHarness {
-        private val terminal = Terminal(
-            ansiLevel = AnsiLevel.NONE,
-            width = 80,
-            height = 20,
-            interactive = false,
-        )
+        private val terminal =
+            Terminal(
+                ansiLevel = AnsiLevel.NONE,
+                width = 80,
+                height = 20,
+                interactive = false,
+            )
         private val keyboardInterceptor = KeyboardInterceptor()
-        private val focusRegistry = com.ead.dispatch.runtime.FocusRegistry()
+        private val focusRegistry =
+            com.ead.dispatch.runtime
+                .FocusRegistry()
         private val dispatchScope = TestDispatchScope(terminal, DispatchTheme.Dark, keyboardInterceptor)
         private val composer = Composer()
 
         val paletteState = CommandPaletteState<String>()
-        val options = listOf(
-            CommandOption(label = "model", description = "desc", data = "model"),
-            CommandOption(label = "help", description = "desc", data = "help"),
-        )
+        val options =
+            listOf(
+                CommandOption(label = "model", description = "desc", data = "model"),
+                CommandOption(label = "help", description = "desc", data = "help"),
+            )
         var inputValue: String = ""
             private set
         var selected: CommandOption<String>? = null
@@ -110,16 +119,17 @@ class InputCommandPaletteIntegrationTest {
                             inputValue = inputValue,
                             onOptionSelected = { selected = it },
                             onInputTransform = { inputValue = it },
-                            textStyles = CommandPaletteTextStyles(
-                                prefix = null,
-                                selectedPrefix = null,
-                                label = null,
-                                selectedLabel = null,
-                                description = null,
-                                selectedDescription = null,
-                                disabledLabel = null,
-                                noResultsText = null,
-                            ),
+                            textStyles =
+                                CommandPaletteTextStyles(
+                                    prefix = null,
+                                    selectedPrefix = null,
+                                    label = null,
+                                    selectedLabel = null,
+                                    description = null,
+                                    selectedDescription = null,
+                                    disabledLabel = null,
+                                    noResultsText = null,
+                                ),
                             state = paletteState,
                         )
                     }

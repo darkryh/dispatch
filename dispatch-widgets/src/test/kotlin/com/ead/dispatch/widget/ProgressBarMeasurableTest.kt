@@ -7,15 +7,15 @@ import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class ProgressBarMeasurableTest {
-
     @Test
     fun `progress 0 shows empty bar`() {
-        val measurable = ProgressBarMeasurable(
-            progress = 0f,
-            modifier = Modifier,
-            style = ProgressBarStyle.Blocks,
-            showPercentage = false
-        )
+        val measurable =
+            ProgressBarMeasurable(
+                progress = 0f,
+                modifier = Modifier,
+                style = ProgressBarStyle.Blocks,
+                showPercentage = false,
+            )
 
         val placeable = measurable.measure(Constraints())
         val line = placeable.lines.first()
@@ -26,12 +26,13 @@ class ProgressBarMeasurableTest {
 
     @Test
     fun `progress 1 shows full bar`() {
-        val measurable = ProgressBarMeasurable(
-            progress = 1f,
-            modifier = Modifier,
-            style = ProgressBarStyle.Blocks,
-            showPercentage = false
-        )
+        val measurable =
+            ProgressBarMeasurable(
+                progress = 1f,
+                modifier = Modifier,
+                style = ProgressBarStyle.Blocks,
+                showPercentage = false,
+            )
 
         val placeable = measurable.measure(Constraints())
         val line = placeable.lines.first()
@@ -40,12 +41,13 @@ class ProgressBarMeasurableTest {
 
     @Test
     fun `progress 0_5 shows half filled bar`() {
-        val measurable = ProgressBarMeasurable(
-            progress = 0.5f,
-            modifier = Modifier,
-            style = ProgressBarStyle.Blocks,
-            showPercentage = false
-        )
+        val measurable =
+            ProgressBarMeasurable(
+                progress = 0.5f,
+                modifier = Modifier,
+                style = ProgressBarStyle.Blocks,
+                showPercentage = false,
+            )
 
         val placeable = measurable.measure(Constraints(maxWidth = 22))
         val line = placeable.lines.first()
@@ -55,12 +57,13 @@ class ProgressBarMeasurableTest {
 
     @Test
     fun `progress above 1 is clamped to 1`() {
-        val measurable = ProgressBarMeasurable(
-            progress = 1.5f,
-            modifier = Modifier,
-            style = ProgressBarStyle.Blocks,
-            showPercentage = false
-        )
+        val measurable =
+            ProgressBarMeasurable(
+                progress = 1.5f,
+                modifier = Modifier,
+                style = ProgressBarStyle.Blocks,
+                showPercentage = false,
+            )
 
         val placeable = measurable.measure(Constraints())
         assertEquals(1, placeable.height, "should still render")
@@ -68,12 +71,13 @@ class ProgressBarMeasurableTest {
 
     @Test
     fun `progress below 0 is clamped to 0`() {
-        val measurable = ProgressBarMeasurable(
-            progress = -0.5f,
-            modifier = Modifier,
-            style = ProgressBarStyle.Blocks,
-            showPercentage = false
-        )
+        val measurable =
+            ProgressBarMeasurable(
+                progress = -0.5f,
+                modifier = Modifier,
+                style = ProgressBarStyle.Blocks,
+                showPercentage = false,
+            )
 
         val placeable = measurable.measure(Constraints())
         assertEquals(1, placeable.height, "should still render")
@@ -81,12 +85,13 @@ class ProgressBarMeasurableTest {
 
     @Test
     fun `showPercentage true appends percentage text`() {
-        val measurable = ProgressBarMeasurable(
-            progress = 0.75f,
-            modifier = Modifier,
-            style = ProgressBarStyle.Blocks,
-            showPercentage = true
-        )
+        val measurable =
+            ProgressBarMeasurable(
+                progress = 0.75f,
+                modifier = Modifier,
+                style = ProgressBarStyle.Blocks,
+                showPercentage = true,
+            )
 
         val placeable = measurable.measure(Constraints())
         val line = placeable.lines.first()
@@ -95,12 +100,13 @@ class ProgressBarMeasurableTest {
 
     @Test
     fun `ProgressBarStyle Blocks uses block characters`() {
-        val measurable = ProgressBarMeasurable(
-            progress = 0.5f,
-            modifier = Modifier,
-            style = ProgressBarStyle.Blocks,
-            showPercentage = false
-        )
+        val measurable =
+            ProgressBarMeasurable(
+                progress = 0.5f,
+                modifier = Modifier,
+                style = ProgressBarStyle.Blocks,
+                showPercentage = false,
+            )
 
         val placeable = measurable.measure(Constraints())
         val line = placeable.lines.first()
@@ -109,12 +115,13 @@ class ProgressBarMeasurableTest {
 
     @Test
     fun `ProgressBarStyle Ascii uses hash and dash`() {
-        val measurable = ProgressBarMeasurable(
-            progress = 0.5f,
-            modifier = Modifier,
-            style = ProgressBarStyle.Ascii,
-            showPercentage = false
-        )
+        val measurable =
+            ProgressBarMeasurable(
+                progress = 0.5f,
+                modifier = Modifier,
+                style = ProgressBarStyle.Ascii,
+                showPercentage = false,
+            )
 
         val placeable = measurable.measure(Constraints())
         val line = placeable.lines.first()
@@ -123,12 +130,13 @@ class ProgressBarMeasurableTest {
 
     @Test
     fun `ProgressBarStyle Dots uses circle characters`() {
-        val measurable = ProgressBarMeasurable(
-            progress = 0.5f,
-            modifier = Modifier,
-            style = ProgressBarStyle.Dots,
-            showPercentage = false
-        )
+        val measurable =
+            ProgressBarMeasurable(
+                progress = 0.5f,
+                modifier = Modifier,
+                style = ProgressBarStyle.Dots,
+                showPercentage = false,
+            )
 
         val placeable = measurable.measure(Constraints())
         val line = placeable.lines.first()
@@ -137,12 +145,13 @@ class ProgressBarMeasurableTest {
 
     @Test
     fun `ProgressBarStyle Arrows uses arrow characters`() {
-        val measurable = ProgressBarMeasurable(
-            progress = 0.5f,
-            modifier = Modifier,
-            style = ProgressBarStyle.Arrows,
-            showPercentage = false
-        )
+        val measurable =
+            ProgressBarMeasurable(
+                progress = 0.5f,
+                modifier = Modifier,
+                style = ProgressBarStyle.Arrows,
+                showPercentage = false,
+            )
 
         val placeable = measurable.measure(Constraints())
         val line = placeable.lines.first()
@@ -151,12 +160,13 @@ class ProgressBarMeasurableTest {
 
     @Test
     fun `ProgressBarStyle Line uses line characters`() {
-        val measurable = ProgressBarMeasurable(
-            progress = 0.5f,
-            modifier = Modifier,
-            style = ProgressBarStyle.Line,
-            showPercentage = false
-        )
+        val measurable =
+            ProgressBarMeasurable(
+                progress = 0.5f,
+                modifier = Modifier,
+                style = ProgressBarStyle.Line,
+                showPercentage = false,
+            )
 
         val placeable = measurable.measure(Constraints())
         val line = placeable.lines.first()
@@ -165,12 +175,13 @@ class ProgressBarMeasurableTest {
 
     @Test
     fun `ProgressBarStyle Minimal uses minimal characters`() {
-        val measurable = ProgressBarMeasurable(
-            progress = 0.5f,
-            modifier = Modifier,
-            style = ProgressBarStyle.Minimal,
-            showPercentage = false
-        )
+        val measurable =
+            ProgressBarMeasurable(
+                progress = 0.5f,
+                modifier = Modifier,
+                style = ProgressBarStyle.Minimal,
+                showPercentage = false,
+            )
 
         val placeable = measurable.measure(Constraints())
         val line = placeable.lines.first()
@@ -179,12 +190,13 @@ class ProgressBarMeasurableTest {
 
     @Test
     fun `respects maxWidth constraint`() {
-        val measurable = ProgressBarMeasurable(
-            progress = 0.5f,
-            modifier = Modifier,
-            style = ProgressBarStyle.Blocks,
-            showPercentage = false
-        )
+        val measurable =
+            ProgressBarMeasurable(
+                progress = 0.5f,
+                modifier = Modifier,
+                style = ProgressBarStyle.Blocks,
+                showPercentage = false,
+            )
 
         val placeable = measurable.measure(Constraints(maxWidth = 30))
         assertEquals(30, placeable.width, "should respect maxWidth")
@@ -192,12 +204,13 @@ class ProgressBarMeasurableTest {
 
     @Test
     fun `unbounded width uses default width`() {
-        val measurable = ProgressBarMeasurable(
-            progress = 0.5f,
-            modifier = Modifier,
-            style = ProgressBarStyle.Blocks,
-            showPercentage = false
-        )
+        val measurable =
+            ProgressBarMeasurable(
+                progress = 0.5f,
+                modifier = Modifier,
+                style = ProgressBarStyle.Blocks,
+                showPercentage = false,
+            )
 
         val placeable = measurable.measure(Constraints())
         assertTrue(placeable.width > 0, "should have positive width")
@@ -205,12 +218,13 @@ class ProgressBarMeasurableTest {
 
     @Test
     fun `progress bar is always single line`() {
-        val measurable = ProgressBarMeasurable(
-            progress = 0.5f,
-            modifier = Modifier,
-            style = ProgressBarStyle.Blocks,
-            showPercentage = true
-        )
+        val measurable =
+            ProgressBarMeasurable(
+                progress = 0.5f,
+                modifier = Modifier,
+                style = ProgressBarStyle.Blocks,
+                showPercentage = true,
+            )
 
         val placeable = measurable.measure(Constraints())
         assertEquals(1, placeable.height, "progress bar should be single line")
@@ -219,12 +233,13 @@ class ProgressBarMeasurableTest {
 
     @Test
     fun `very small width with percentage does not throw`() {
-        val measurable = ProgressBarMeasurable(
-            progress = 0.5f,
-            modifier = Modifier,
-            style = ProgressBarStyle.Blocks,
-            showPercentage = true
-        )
+        val measurable =
+            ProgressBarMeasurable(
+                progress = 0.5f,
+                modifier = Modifier,
+                style = ProgressBarStyle.Blocks,
+                showPercentage = true,
+            )
 
         val placeable = measurable.measure(Constraints(maxWidth = 4))
         assertEquals(1, placeable.height)
@@ -232,12 +247,13 @@ class ProgressBarMeasurableTest {
 
     @Test
     fun `zero width constraint does not throw`() {
-        val measurable = ProgressBarMeasurable(
-            progress = 0.5f,
-            modifier = Modifier,
-            style = ProgressBarStyle.Blocks,
-            showPercentage = true
-        )
+        val measurable =
+            ProgressBarMeasurable(
+                progress = 0.5f,
+                modifier = Modifier,
+                style = ProgressBarStyle.Blocks,
+                showPercentage = true,
+            )
 
         val placeable = measurable.measure(Constraints(maxWidth = 0))
         assertEquals(1, placeable.height)

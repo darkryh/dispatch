@@ -1,17 +1,17 @@
 package com.ead.dispatch.widget
 
+import androidx.compose.runtime.CompositionLocalProvider
 import com.ead.dispatch.constraints.Constraints
 import com.ead.dispatch.runtime.Composer
-import com.ead.dispatch.runtime.CompositionLocalProvider
 import com.ead.dispatch.runtime.KeyboardInterceptor
 import com.ead.dispatch.runtime.LocalKeyboardInterceptor
 import com.ead.dispatch.runtime.LocalTerminal
 import com.ead.dispatch.runtime.LocalTerminalHeight
 import com.ead.dispatch.runtime.LocalTerminalWidth
 import com.ead.dispatch.runtime.withComposer
+import com.github.ajalt.mordant.input.KeyboardEvent
 import com.github.ajalt.mordant.rendering.AnsiLevel
 import com.github.ajalt.mordant.terminal.Terminal
-import com.github.ajalt.mordant.input.KeyboardEvent
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -22,18 +22,22 @@ class CommandPaletteTest {
         val lines: List<String>,
         val state: CommandPaletteState<String>,
         val keyboard: KeyboardInterceptor,
-    )
+        val composer: Composer,
+    ) : AutoCloseable {
+        override fun close() = composer.close()
+    }
 
-    private val plainStyles = CommandPaletteTextStyles(
-        prefix = null,
-        selectedPrefix = null,
-        label = null,
-        selectedLabel = null,
-        description = null,
-        selectedDescription = null,
-        disabledLabel = null,
-        noResultsText = null,
-    )
+    private val plainStyles =
+        CommandPaletteTextStyles(
+            prefix = null,
+            selectedPrefix = null,
+            label = null,
+            selectedLabel = null,
+            description = null,
+            selectedDescription = null,
+            disabledLabel = null,
+            noResultsText = null,
+        )
 
     private fun renderPalette(
         options: List<CommandOption<String>>,
@@ -46,12 +50,13 @@ class CommandPaletteTest {
         state: CommandPaletteState<String> = CommandPaletteState(),
         keyboardInterceptor: KeyboardInterceptor = KeyboardInterceptor(),
     ): PaletteRender {
-        val terminal = Terminal(
-            ansiLevel = AnsiLevel.NONE,
-            width = 80,
-            height = 20,
-            interactive = false,
-        )
+        val terminal =
+            Terminal(
+                ansiLevel = AnsiLevel.NONE,
+                width = 80,
+                height = 20,
+                interactive = false,
+            )
         val composer = Composer()
 
         withComposer(composer) {
@@ -84,7 +89,7 @@ class CommandPaletteTest {
         val rootNode = composer.getRootNode()
         val lines = rootNode?.measure(Constraints.fixedWidth(80))?.lines ?: emptyList()
 
-        return PaletteRender(lines, state, keyboardInterceptor)
+        return PaletteRender(lines, state, keyboardInterceptor, composer)
     }
 
     private fun renderPaletteLines(
@@ -95,8 +100,8 @@ class CommandPaletteTest {
         selectionIndicator: String? = null,
         showDescriptions: Boolean = true,
         visibleCount: Int = 6,
-    ): List<String> {
-        return renderPalette(
+    ): List<String> =
+        renderPalette(
             options = options,
             inputValue = inputValue,
             showIcons = showIcons,
@@ -105,16 +110,17 @@ class CommandPaletteTest {
             showDescriptions = showDescriptions,
             visibleCount = visibleCount,
         ).lines
-    }
 
     @Test
     fun `descriptions align and omit dash`() {
-        val lines = renderPaletteLines(
-            options = listOf(
-                CommandOption(label = "short", description = "first", data = "short"),
-                CommandOption(label = "longer", description = "second", data = "longer"),
-            ),
-        )
+        val lines =
+            renderPaletteLines(
+                options =
+                    listOf(
+                        CommandOption(label = "short", description = "first", data = "short"),
+                        CommandOption(label = "longer", description = "second", data = "longer"),
+                    ),
+            )
 
         assertEquals(2, lines.size)
         assertTrue(lines[0].startsWith("/short"))
@@ -130,13 +136,15 @@ class CommandPaletteTest {
 
     @Test
     fun `null icons are ignored when showIcons enabled`() {
-        val lines = renderPaletteLines(
-            options = listOf(
-                CommandOption(label = "model", description = "desc", icon = null, data = "model"),
-                CommandOption(label = "star", description = "desc", icon = "*", data = "star"),
-            ),
-            showIcons = true,
-        )
+        val lines =
+            renderPaletteLines(
+                options =
+                    listOf(
+                        CommandOption(label = "model", description = "desc", icon = null, data = "model"),
+                        CommandOption(label = "star", description = "desc", icon = "*", data = "star"),
+                    ),
+                showIcons = true,
+            )
 
         assertTrue(lines[0].startsWith("/model"))
         assertFalse(lines[0].contains("null"))
@@ -145,11 +153,13 @@ class CommandPaletteTest {
 
     @Test
     fun `command prefix is not duplicated when label already prefixed`() {
-        val lines = renderPaletteLines(
-            options = listOf(
-                CommandOption(label = "/model", description = "desc", data = "model"),
-            ),
-        )
+        val lines =
+            renderPaletteLines(
+                options =
+                    listOf(
+                        CommandOption(label = "/model", description = "desc", data = "model"),
+                    ),
+            )
 
         assertEquals(1, lines.size)
         assertTrue(lines[0].startsWith("/model"))
@@ -158,12 +168,13 @@ class CommandPaletteTest {
 
     @Test
     fun `palette visibility follows trigger`() {
-        val options = listOf(
-            CommandOption(label = "model", description = "desc", data = "model"),
-        )
+        val options =
+            listOf(
+                CommandOption(label = "model", description = "desc", data = "model"),
+            )
         val state = CommandPaletteState<String>()
 
-        renderPalette(options = options, inputValue = "/", state = state)
+        renderPalette(options = options, inputValue = "/", state = state).close()
         assertTrue(state.isVisible)
 
         renderPalette(options = options, inputValue = "hello/", state = state)
@@ -175,10 +186,11 @@ class CommandPaletteTest {
 
     @Test
     fun `keyboard navigation updates selected index`() {
-        val options = listOf(
-            CommandOption(label = "model", description = "desc", data = "model"),
-            CommandOption(label = "help", description = "desc", data = "help"),
-        )
+        val options =
+            listOf(
+                CommandOption(label = "model", description = "desc", data = "model"),
+                CommandOption(label = "help", description = "desc", data = "help"),
+            )
         val state = CommandPaletteState<String>()
         val keyboard = KeyboardInterceptor()
 
@@ -198,13 +210,14 @@ class CommandPaletteTest {
 
     @Test
     fun `selection clamps when filtered options shrink`() {
-        val options = listOf(
-            CommandOption(label = "model", description = "desc", data = "model"),
-            CommandOption(label = "help", description = "desc", data = "help"),
-        )
+        val options =
+            listOf(
+                CommandOption(label = "model", description = "desc", data = "model"),
+                CommandOption(label = "help", description = "desc", data = "help"),
+            )
         val state = CommandPaletteState<String>()
 
-        renderPalette(options = options, inputValue = "/", state = state)
+        renderPalette(options = options, inputValue = "/", state = state).close()
         state.selectedIndex = 1
 
         renderPalette(options = options, inputValue = "/m", state = state)
@@ -215,14 +228,16 @@ class CommandPaletteTest {
 
     @Test
     fun `selection indicator only shows on selected item`() {
-        val lines = renderPaletteLines(
-            options = listOf(
-                CommandOption(label = "model", description = "desc", data = "model"),
-                CommandOption(label = "help", description = "desc", data = "help"),
-            ),
-            selectionIndicator = "> ",
-            showDescriptions = false,
-        )
+        val lines =
+            renderPaletteLines(
+                options =
+                    listOf(
+                        CommandOption(label = "model", description = "desc", data = "model"),
+                        CommandOption(label = "help", description = "desc", data = "help"),
+                    ),
+                selectionIndicator = "> ",
+                showDescriptions = false,
+            )
 
         assertEquals(2, lines.size)
         assertTrue(lines[0].startsWith("> /"))
@@ -231,12 +246,14 @@ class CommandPaletteTest {
 
     @Test
     fun `no results text renders when filter has no matches`() {
-        val lines = renderPaletteLines(
-            options = listOf(
-                CommandOption(label = "model", description = "desc", data = "model"),
-            ),
-            inputValue = "/missing",
-        )
+        val lines =
+            renderPaletteLines(
+                options =
+                    listOf(
+                        CommandOption(label = "model", description = "desc", data = "model"),
+                    ),
+                inputValue = "/missing",
+            )
 
         assertEquals(1, lines.size)
         assertEquals("No matching commands", lines[0].trim())
@@ -247,10 +264,11 @@ class CommandPaletteTest {
         val state = CommandPaletteState<String>()
 
         renderPalette(
-            options = listOf(
-                CommandOption(label = "model", description = "desc", data = "model"),
-                CommandOption(label = "review", description = "desc", data = "review"),
-            ),
+            options =
+                listOf(
+                    CommandOption(label = "model", description = "desc", data = "model"),
+                    CommandOption(label = "review", description = "desc", data = "review"),
+                ),
             inputValue = "/re",
             state = state,
         )
@@ -261,13 +279,15 @@ class CommandPaletteTest {
 
     @Test
     fun `visibleCount zero does not crash`() {
-        val lines = renderPaletteLines(
-            options = listOf(
-                CommandOption(label = "model", description = "desc", data = "model"),
-                CommandOption(label = "help", description = "desc", data = "help"),
-            ),
-            visibleCount = 0,
-        )
+        val lines =
+            renderPaletteLines(
+                options =
+                    listOf(
+                        CommandOption(label = "model", description = "desc", data = "model"),
+                        CommandOption(label = "help", description = "desc", data = "help"),
+                    ),
+                visibleCount = 0,
+            )
 
         assertEquals(1, lines.size)
         assertTrue(lines.first().contains("/model"))
@@ -275,13 +295,15 @@ class CommandPaletteTest {
 
     @Test
     fun `visibleCount negative does not crash`() {
-        val lines = renderPaletteLines(
-            options = listOf(
-                CommandOption(label = "model", description = "desc", data = "model"),
-                CommandOption(label = "help", description = "desc", data = "help"),
-            ),
-            visibleCount = -3,
-        )
+        val lines =
+            renderPaletteLines(
+                options =
+                    listOf(
+                        CommandOption(label = "model", description = "desc", data = "model"),
+                        CommandOption(label = "help", description = "desc", data = "help"),
+                    ),
+                visibleCount = -3,
+            )
 
         assertEquals(1, lines.size)
         assertTrue(lines.first().contains("/model"))

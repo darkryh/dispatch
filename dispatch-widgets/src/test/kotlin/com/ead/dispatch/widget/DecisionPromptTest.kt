@@ -1,8 +1,8 @@
 package com.ead.dispatch.widget
 
+import androidx.compose.runtime.CompositionLocalProvider
 import com.ead.dispatch.constraints.Constraints
 import com.ead.dispatch.runtime.Composer
-import com.ead.dispatch.runtime.CompositionLocalProvider
 import com.ead.dispatch.runtime.KeyboardInterceptor
 import com.ead.dispatch.runtime.LocalKeyboardInterceptor
 import com.ead.dispatch.runtime.LocalTerminal
@@ -26,34 +26,35 @@ class DecisionPromptTest {
         val composer: Composer,
     )
 
-    private val plainStyles = DecisionPromptTextStyles(
-        question = null,
-        option = null,
-        selectedOption = null,
-        prefix = null,
-        selectedPrefix = null,
-        placeholder = null,
-        customText = null,
-    )
+    private val plainStyles =
+        DecisionPromptTextStyles(
+            question = null,
+            option = null,
+            selectedOption = null,
+            prefix = null,
+            selectedPrefix = null,
+            placeholder = null,
+            customText = null,
+        )
 
     private fun createHarness(
         options: List<DecisionOption> = defaultOptions(),
         state: DecisionPromptState = DecisionPromptState(),
-    ): PromptHarness {
-        return PromptHarness(
-            terminal = Terminal(
-                ansiLevel = AnsiLevel.NONE,
-                width = 80,
-                height = 20,
-                interactive = false,
-            ),
+    ): PromptHarness =
+        PromptHarness(
+            terminal =
+                Terminal(
+                    ansiLevel = AnsiLevel.NONE,
+                    width = 80,
+                    height = 20,
+                    interactive = false,
+                ),
             keyboard = KeyboardInterceptor(),
             state = state,
             submissions = mutableListOf(),
             options = options,
             composer = Composer(),
         )
-    }
 
     private fun render(harness: PromptHarness): List<String> {
         withComposer(harness.composer) {
@@ -75,13 +76,17 @@ class DecisionPromptTest {
             }
             harness.composer.endComposition()
         }
-        return harness.composer.getRootNode()
+        return harness.composer
+            .getRootNode()
             ?.measure(Constraints.fixedWidth(80))
             ?.lines
             ?: emptyList()
     }
 
-    private fun press(harness: PromptHarness, key: String) {
+    private fun press(
+        harness: PromptHarness,
+        key: String,
+    ) {
         harness.keyboard.tryIntercept(KeyboardEvent(key))
     }
 
@@ -140,10 +145,11 @@ class DecisionPromptTest {
         val harness = createHarness(state = state)
         render(harness)
 
-        harness.options = listOf(
-            DecisionOption("Keep existing"),
-            DecisionOption("Replace with new"),
-        )
+        harness.options =
+            listOf(
+                DecisionOption("Keep existing"),
+                DecisionOption("Replace with new"),
+            )
         render(harness)
 
         // Two options => custom row index is 2.
@@ -175,9 +181,10 @@ class DecisionPromptTest {
         assertEquals(2, clampDecisionSelectionIndex(2, 3))
     }
 
-    private fun defaultOptions(): List<DecisionOption> = listOf(
-        DecisionOption("Keep existing"),
-        DecisionOption("Replace with new"),
-        DecisionOption("Merge both"),
-    )
+    private fun defaultOptions(): List<DecisionOption> =
+        listOf(
+            DecisionOption("Keep existing"),
+            DecisionOption("Replace with new"),
+            DecisionOption("Merge both"),
+        )
 }

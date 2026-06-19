@@ -1,14 +1,14 @@
 package com.ead.dispatch.widget
 
-import com.ead.dispatch.annotation.Dispatchable
+import androidx.compose.runtime.Composable
 import com.ead.dispatch.constraints.Constraints
 import com.ead.dispatch.layout.Measurable
 import com.ead.dispatch.layout.Placeable
 import com.ead.dispatch.layout.SimplePlaceable
 import com.ead.dispatch.modifier.Modifier
 import com.ead.dispatch.modifier.applyToConstraints
-import com.ead.dispatch.runtime.Composer
 import com.ead.dispatch.runtime.LocalTerminal
+import com.ead.dispatch.runtime.composableContainer
 import com.github.ajalt.mordant.rendering.TextStyle
 import com.github.ajalt.mordant.rendering.Whitespace
 import com.github.ajalt.mordant.terminal.Terminal
@@ -44,48 +44,41 @@ data class BackgroundStyle(
         fun lines(
             char: Char = '─',
             style: TextStyle? = null,
-        ): BackgroundStyle = BackgroundStyle(
-            topRule = BackgroundRule(char = char, style = style),
-            bottomRule = BackgroundRule(char = char, style = style),
-        )
+        ): BackgroundStyle =
+            BackgroundStyle(
+                topRule = BackgroundRule(char = char, style = style),
+                bottomRule = BackgroundRule(char = char, style = style),
+            )
 
         fun Fill(
             fill: TextStyle,
             paddingHorizontal: Int = 1,
             paddingVertical: Int = 1,
-        ): BackgroundStyle = BackgroundStyle(
-            fill = fill,
-            box = BackgroundBox(
-                paddingHorizontal = paddingHorizontal,
-                paddingVertical = paddingVertical,
+        ): BackgroundStyle =
+            BackgroundStyle(
+                fill = fill,
+                box =
+                    BackgroundBox(
+                        paddingHorizontal = paddingHorizontal,
+                        paddingVertical = paddingVertical,
+                    ),
             )
-        )
     }
 }
 
-@Dispatchable
+@Composable
 fun Background(
     modifier: Modifier = Modifier,
     style: BackgroundStyle = BackgroundStyle.None,
-    content: @Dispatchable () -> Unit,
+    content: @Composable () -> Unit,
 ) {
-    val composer = Composer.current
     val terminal = LocalTerminal.current
-    val node = composer.startNode("Background")
-
-    content()
-
-    val childMeasurables = node.children
-
-    val backgroundMeasurable = BackgroundMeasurable(
+    composableContainer(
+        name = "Background",
         modifier = modifier,
-        style = style,
-        children = childMeasurables,
-        terminal = terminal,
+        measurableFactory = { children -> BackgroundMeasurable(modifier, style, children, terminal) },
+        content = content,
     )
-
-    composer.registerMeasurable(backgroundMeasurable)
-    composer.endNode()
 }
 
 internal class BackgroundMeasurable(
@@ -94,74 +87,81 @@ internal class BackgroundMeasurable(
     private val children: List<Measurable>,
     private val terminal: Terminal,
 ) : Measurable {
-
     override fun measure(constraints: Constraints): Placeable {
         val modifiedConstraints = modifier.applyToConstraints(constraints)
 
         val box = style.box
         val fillStyle = style.fill?.let { normalizeFillStyle(it) }
 
-        val childMaxWidth = if (box != null && modifiedConstraints.hasBoundedWidth) {
-            val innerWidth = modifiedConstraints.maxWidth.coerceAtLeast(0)
-            val paddingHorizontal = box.paddingHorizontal.coerceIn(0, innerWidth / 2)
-            (innerWidth - (paddingHorizontal * 2)).coerceAtLeast(0)
-        } else {
-            modifiedConstraints.maxWidth
-        }
-
-        val childMaxHeight = if (box != null && modifiedConstraints.hasBoundedHeight) {
-            val innerHeight = modifiedConstraints.maxHeight.coerceAtLeast(0)
-            val paddingVertical = box.paddingVertical.coerceIn(0, innerHeight / 2)
-            (innerHeight - (paddingVertical * 2)).coerceAtLeast(0)
-        } else {
-            modifiedConstraints.maxHeight
-        }
-
-        val childConstraints = Constraints(
-            minWidth = 0,
-            maxWidth = childMaxWidth,
-            minHeight = 0,
-            maxHeight = childMaxHeight,
-        )
-
-        val childPlaceables = children.map { measurable ->
-            measurable.measure(measurable.modifier.applyToConstraints(childConstraints))
-        }
-
-        val contentMaxWidth = childPlaceables
-            .flatMap { it.lines }
-            .maxOfOrNull { displayWidth(it) }
-            ?: 0
-
-        val width = if (modifiedConstraints.hasBoundedWidth) {
-            modifiedConstraints.maxWidth
-        } else {
-            val target = when {
-                box != null -> {
-                    val paddingHorizontal = box.paddingHorizontal.coerceAtLeast(0)
-                    contentMaxWidth + (paddingHorizontal * 2)
-                }
-                else -> contentMaxWidth
+        val childMaxWidth =
+            if (box != null && modifiedConstraints.hasBoundedWidth) {
+                val innerWidth = modifiedConstraints.maxWidth.coerceAtLeast(0)
+                val paddingHorizontal = box.paddingHorizontal.coerceIn(0, innerWidth / 2)
+                (innerWidth - (paddingHorizontal * 2)).coerceAtLeast(0)
+            } else {
+                modifiedConstraints.maxWidth
             }
-            modifiedConstraints.constrainWidth(target)
-        }
 
-        val lines = if (box != null) {
-            renderBox(
-                width = width,
-                box = box,
-                fillStyle = fillStyle,
-                contentLines = childPlaceables.flatMap { it.lines },
+        val childMaxHeight =
+            if (box != null && modifiedConstraints.hasBoundedHeight) {
+                val innerHeight = modifiedConstraints.maxHeight.coerceAtLeast(0)
+                val paddingVertical = box.paddingVertical.coerceIn(0, innerHeight / 2)
+                (innerHeight - (paddingVertical * 2)).coerceAtLeast(0)
+            } else {
+                modifiedConstraints.maxHeight
+            }
+
+        val childConstraints =
+            Constraints(
+                minWidth = 0,
+                maxWidth = childMaxWidth,
+                minHeight = 0,
+                maxHeight = childMaxHeight,
             )
-        } else {
-            renderRules(
-                width = width,
-                topRule = style.topRule,
-                bottomRule = style.bottomRule,
-                fillStyle = fillStyle,
-                contentLines = childPlaceables.flatMap { it.lines },
-            )
-        }
+
+        val childPlaceables =
+            children.map { measurable ->
+                measurable.measure(measurable.modifier.applyToConstraints(childConstraints))
+            }
+
+        val contentMaxWidth =
+            childPlaceables
+                .flatMap { it.lines }
+                .maxOfOrNull { displayWidth(it) }
+                ?: 0
+
+        val width =
+            if (modifiedConstraints.hasBoundedWidth) {
+                modifiedConstraints.maxWidth
+            } else {
+                val target =
+                    when {
+                        box != null -> {
+                            val paddingHorizontal = box.paddingHorizontal.coerceAtLeast(0)
+                            contentMaxWidth + (paddingHorizontal * 2)
+                        }
+                        else -> contentMaxWidth
+                    }
+                modifiedConstraints.constrainWidth(target)
+            }
+
+        val lines =
+            if (box != null) {
+                renderBox(
+                    width = width,
+                    box = box,
+                    fillStyle = fillStyle,
+                    contentLines = childPlaceables.flatMap { it.lines },
+                )
+            } else {
+                renderRules(
+                    width = width,
+                    topRule = style.topRule,
+                    bottomRule = style.bottomRule,
+                    fillStyle = fillStyle,
+                    contentLines = childPlaceables.flatMap { it.lines },
+                )
+            }
 
         val maxHeight = if (modifiedConstraints.hasBoundedHeight) modifiedConstraints.maxHeight else Int.MAX_VALUE
         val finalLines = lines.take(maxHeight)
@@ -216,11 +216,12 @@ internal class BackgroundMeasurable(
 
         val lines = mutableListOf<String>()
 
-        val innerLines = buildList {
-            repeat(paddingVertical) { add("") }
-            if (contentLines.isEmpty()) add("") else addAll(contentLines)
-            repeat(paddingVertical) { add("") }
-        }
+        val innerLines =
+            buildList {
+                repeat(paddingVertical) { add("") }
+                if (contentLines.isEmpty()) add("") else addAll(contentLines)
+                repeat(paddingVertical) { add("") }
+            }
 
         for ((_, line) in innerLines.withIndex()) {
             val padded = padToDisplayWidth(line, contentWidth)
@@ -234,13 +235,19 @@ internal class BackgroundMeasurable(
         return lines
     }
 
-    private fun renderRuleLine(rule: BackgroundRule, width: Int): String {
+    private fun renderRuleLine(
+        rule: BackgroundRule,
+        width: Int,
+    ): String {
         if (width <= 0) return ""
         val text = rule.char.toString().repeat(width)
         return rule.style?.invoke(text) ?: text
     }
 
-    private fun applyFillPreservingInnerStyles(fillStyle: TextStyle, text: String): String {
+    private fun applyFillPreservingInnerStyles(
+        fillStyle: TextStyle,
+        text: String,
+    ): String {
         val (prefix, suffix) = splitStyleWrapper(fillStyle)
         if (prefix.isEmpty() && suffix.isEmpty()) return text
 
@@ -255,7 +262,10 @@ internal class BackgroundMeasurable(
         return prefix + reapplyFillAfterBackgroundResets(prefix, text) + suffix
     }
 
-    private fun reapplyFillAfterBackgroundResets(fillPrefix: String, text: String): String {
+    private fun reapplyFillAfterBackgroundResets(
+        fillPrefix: String,
+        text: String,
+    ): String {
         val sb = StringBuilder(text.length + 16)
         var index = 0
         while (index < text.length) {
@@ -308,14 +318,16 @@ internal class BackgroundMeasurable(
         }
     }
 
-    private fun displayWidth(text: String): Int {
-        return MordantText(
+    private fun displayWidth(text: String): Int =
+        MordantText(
             text,
             whitespace = Whitespace.PRE,
         ).render(terminal, width = 10_000).width
-    }
 
-    private fun padToDisplayWidth(text: String, targetWidth: Int): String {
+    private fun padToDisplayWidth(
+        text: String,
+        targetWidth: Int,
+    ): String {
         if (targetWidth <= 0) return ""
 
         val renderedWidth = displayWidth(text)

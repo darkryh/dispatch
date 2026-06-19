@@ -34,6 +34,30 @@ class LayoutNode(
         _children.add(child)
     }
 
+    fun insertChild(index: Int, child: LayoutNode) {
+        child.parent = this
+        _children.add(index, child)
+    }
+
+    fun removeChildren(index: Int, count: Int) {
+        repeat(count) {
+            _children.removeAt(index).parent = null
+        }
+    }
+
+    fun moveChildren(from: Int, to: Int, count: Int) {
+        if (count == 0 || from == to) return
+        val moving = _children.subList(from, from + count).toList()
+        repeat(count) { _children.removeAt(from) }
+        val destination = if (to > from) to - count else to
+        _children.addAll(destination, moving)
+    }
+
+    fun clearChildren() {
+        _children.forEach { it.parent = null }
+        _children.clear()
+    }
+
     fun setDelegate(measurable: Measurable) {
         delegate = measurable
         modifier = measurable.modifier

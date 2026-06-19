@@ -1,10 +1,10 @@
 package com.ead.dispatch.navigation
 
-import com.ead.dispatch.annotation.Dispatchable
-import com.ead.dispatch.state.Saver
-import com.ead.dispatch.state.SnapshotStateList
-import com.ead.dispatch.state.mutableStateListOf
-import com.ead.dispatch.state.rememberSaveable
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.snapshots.SnapshotStateList
+import androidx.compose.runtime.mutableStateListOf
 import kotlinx.serialization.json.Json
 
 /**
@@ -27,27 +27,26 @@ class NavBackStack<T : NavKey> internal constructor(
 /**
  * Remember a NavBackStack that can be saved and restored.
  */
-@Dispatchable
+@Composable
 fun rememberNavBackStack(
     vararg elements: NavKey,
     json: Json = DefaultRouteJson,
 ): NavBackStack<NavKey> {
     val saver = navBackStackSaver(json)
-    return rememberSaveable(saver) {
+    return rememberSaveable(saver = saver) {
         NavBackStack<NavKey>().apply { addAll(elements) }
     }
 }
 
 private fun navBackStackSaver(json: Json): Saver<NavBackStack<NavKey>, Any> =
-    object : Saver<NavBackStack<NavKey>, Any> {
-        override fun save(value: NavBackStack<NavKey>): Any = value.map { encodeNavKeyForSave(it, json) }
-
-        override fun restore(value: Any): NavBackStack<NavKey>? {
-            val encoded = value as? List<*> ?: return null
+    Saver(
+        save = { value -> value.map { encodeNavKeyForSave(it, json) } },
+        restore = { value ->
+            val encoded = value as? List<*> ?: return@Saver null
             val entries = encoded.filterIsInstance<String>()
-            if (entries.size != encoded.size) return null
-            return NavBackStack<NavKey>().apply {
+            if (entries.size != encoded.size) return@Saver null
+            NavBackStack<NavKey>().apply {
                 addAll(entries.map { decodeNavKeyFromSave(it, json) })
             }
-        }
-    }
+        },
+    )

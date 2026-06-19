@@ -1,38 +1,29 @@
 package com.ead.dispatch.sample
 
-import com.ead.dispatch.runtime.DispatchApplication
-import com.ead.dispatch.theme.DispatchTheme
 import com.ead.dispatch.koin.koin
-import com.ead.dispatch.sample.di.module
-import com.ead.dispatch.sample.presentation.DispatchSampleApp
+import com.ead.dispatch.runtime.DispatchApplication
 import com.ead.dispatch.runtime.ExitKeyBinding
+import com.ead.dispatch.sample.di.sampleModule
+import com.ead.dispatch.sample.presentation.DispatchSampleApp
+import com.ead.dispatch.theme.DispatchTheme
 import kotlin.time.Duration.Companion.milliseconds
 
-fun main(args: Array<String>) = DispatchApplication(args) {
-    config {
-        name = "dispatch-sample"
-        windowTitle = "Dispatch"
-        enforceWindowTitle = true
-        version = "0.0.1"
-        description = "Dispatch Sample - Chat Interface"
-        theme = DispatchTheme.Dark
-        targetFps = 60
+fun main(args: Array<String>) =
+    DispatchApplication(args) {
+        config {
+            name = "dispatch-sample"
+            windowTitle = "Dispatch UI Sample"
+            enforceWindowTitle = true
+            version = "1.0.0"
+            description = "Offline terminal UI and navigation showcase"
+            theme = DispatchTheme.Dark
+            targetFps = 60
+            exitKeys(ExitKeyBinding.ctrl("C"))
+            requireExitDoublePress = true
+            exitTimeoutOnDoublePress = 1_500.milliseconds
 
-        argument(name = "start", shortName = 's', description = "Start screen route")
-        flag(name = "resume", shortName = 'r', description = "Start on session selector screen")
-
-        exitKeys(ExitKeyBinding.ctrl("C"))
-
-        requireExitDoublePress = true
-        exitTimeoutOnDoublePress = 1500.milliseconds
-
-        koin {
-            modules(module)
+            koin { modules(sampleModule) }
         }
-    }
 
-    // renderer section where to insert composables / dispatch widgets
-    content {
-        DispatchSampleApp()
+        content { DispatchSampleApp() }
     }
-}

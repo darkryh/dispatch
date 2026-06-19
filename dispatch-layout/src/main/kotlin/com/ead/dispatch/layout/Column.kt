@@ -1,6 +1,6 @@
 package com.ead.dispatch.layout
 
-import com.ead.dispatch.annotation.Dispatchable
+import androidx.compose.runtime.Composable
 import com.ead.dispatch.constraints.Constraints
 import com.ead.dispatch.modifier.Modifier
 import com.ead.dispatch.modifier.WeightModifier
@@ -27,12 +27,12 @@ import com.ead.dispatch.modifier.applyToConstraints
  * @param horizontalAlignment How to align children horizontally.
  * @param content The content lambda containing children.
  */
-@Dispatchable
+@Composable
 fun Column(
     modifier: Modifier = Modifier,
     verticalArrangement: Arrangement.Vertical = Arrangement.Top,
     horizontalAlignment: Alignment.Horizontal = Alignment.Start,
-    content: @Dispatchable ColumnScope.() -> Unit,
+    content: @Composable ColumnScope.() -> Unit,
 ) {
     val scope = ColumnScopeInstance(horizontalAlignment)
     Layout(

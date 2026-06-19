@@ -1,6 +1,6 @@
 package com.ead.dispatch.widget
 
-import com.ead.dispatch.annotation.Dispatchable
+import androidx.compose.runtime.Composable
 import com.ead.dispatch.layout.Column
 import com.ead.dispatch.layout.Row
 import com.ead.dispatch.modifier.Modifier
@@ -116,7 +116,7 @@ data class FileChangePreviewStyles(
  * - read-only preview
  * - line-level diff computed from [FileChangePreviewState.beforeText] and [FileChangePreviewState.afterText]
  */
-@Dispatchable
+@Composable
 fun FileChangePreview(
     state: FileChangePreviewState,
     modifier: Modifier = Modifier,
@@ -136,16 +136,18 @@ fun FileChangePreview(
     val focusedRows = resolveFocusedRows(state, allRows)
     val rows = resolveDisplayRows(state, focusedRows)
     val stats = calculateStats(allRows, state.afterText)
-    val oldDigits = rows
-        .mapNotNull { it.line?.oldLineNumber }
-        .maxOfOrNull { it.toString().length }
-        ?.coerceAtLeast(1)
-        ?: 1
-    val newDigits = rows
-        .mapNotNull { it.line?.newLineNumber }
-        .maxOfOrNull { it.toString().length }
-        ?.coerceAtLeast(1)
-        ?: 1
+    val oldDigits =
+        rows
+            .mapNotNull { it.line?.oldLineNumber }
+            .maxOfOrNull { it.toString().length }
+            ?.coerceAtLeast(1)
+            ?: 1
+    val newDigits =
+        rows
+            .mapNotNull { it.line?.newLineNumber }
+            .maxOfOrNull { it.toString().length }
+            ?.coerceAtLeast(1)
+            ?: 1
 
     Column(modifier = modifier.fillMaxWidth()) {
         if (showHeader) {
@@ -182,11 +184,12 @@ fun FileChangePreview(
             HorizontalDivider(modifier = Modifier.fillMaxWidth(), char = styles.dividerChar)
         }
 
-        val bodyModifier = if (maxVisibleRows != null) {
-            Modifier.fillMaxWidth().height(maxVisibleRows)
-        } else {
-            Modifier.fillMaxWidth()
-        }
+        val bodyModifier =
+            if (maxVisibleRows != null) {
+                Modifier.fillMaxWidth().height(maxVisibleRows)
+            } else {
+                Modifier.fillMaxWidth()
+            }
 
         ScrollableList(
             items = rows,
@@ -228,7 +231,7 @@ fun computeFileChangePageInfo(state: FileChangePreviewState): FileChangePageInfo
     return FileChangePageInfo(pageCount = totalPages, selectedPageIndex = selected)
 }
 
-@Dispatchable
+@Composable
 private fun DiffPreviewRow(
     line: FileChangeLine,
     lineDigits: Int,
@@ -239,11 +242,12 @@ private fun DiffPreviewRow(
 ) {
     val visibleLineNumber = line.newLineNumber ?: line.oldLineNumber
     val numberPart = visibleLineNumber?.toString()?.padStart(lineDigits) ?: " ".repeat(lineDigits)
-    val marker = when (line.kind) {
-        LineChangeKind.ADDED -> "+"
-        LineChangeKind.DELETED -> "-"
-        LineChangeKind.UNCHANGED -> " "
-    }
+    val marker =
+        when (line.kind) {
+            LineChangeKind.ADDED -> "+"
+            LineChangeKind.DELETED -> "-"
+            LineChangeKind.UNCHANGED -> " "
+        }
     val contentStyle = mergeStyles(styles.contentStyle, normalizeRowFill(rowBackground))
 
     Row(modifier = modifier) {
@@ -262,8 +266,7 @@ private fun DiffPreviewRow(
 /**
  * Compute [FileChangeStats] for this preview state.
  */
-fun FileChangePreviewState.computeStats(): FileChangeStats =
-    calculateStats(resolveRows(this), afterText)
+fun FileChangePreviewState.computeStats(): FileChangeStats = calculateStats(resolveRows(this), afterText)
 
 internal enum class LineChangeKind {
     UNCHANGED,
@@ -301,8 +304,9 @@ internal fun resolveRows(state: FileChangePreviewState): List<ResolvedFileChange
         if (targetLine == null) {
             return@map ResolvedFileChangeRow(line, RowApprovalState.NONE)
         }
-        val changedAt = newestPendingTimestampForLine(targetLine, approval.pendingRanges)
-            ?: return@map ResolvedFileChangeRow(line, RowApprovalState.NONE)
+        val changedAt =
+            newestPendingTimestampForLine(targetLine, approval.pendingRanges)
+                ?: return@map ResolvedFileChangeRow(line, RowApprovalState.NONE)
         val isExpired = state.nowEpochMillis - changedAt >= approval.expiryMillis
         if (isExpired) {
             ResolvedFileChangeRow(line, RowApprovalState.EXPIRED)
@@ -329,25 +333,27 @@ internal fun resolveFocusedRows(
     val hunks = extractHunks(allRows)
     if (hunks.isEmpty()) return allRows
 
-    val targetHunks = when (state.focusMode) {
-        ChangeFocusMode.ADDED_FIRST -> {
-            val preferred = hunks.filter { it.hasAdded }
-            if (preferred.isNotEmpty()) preferred else hunks
+    val targetHunks =
+        when (state.focusMode) {
+            ChangeFocusMode.ADDED_FIRST -> {
+                val preferred = hunks.filter { it.hasAdded }
+                if (preferred.isNotEmpty()) preferred else hunks
+            }
+            ChangeFocusMode.DELETED_ONLY -> {
+                val preferred = hunks.filter { it.hasDeleted && !it.hasAdded }
+                if (preferred.isNotEmpty()) preferred else hunks
+            }
+            ChangeFocusMode.FULL -> hunks
         }
-        ChangeFocusMode.DELETED_ONLY -> {
-            val preferred = hunks.filter { it.hasDeleted && !it.hasAdded }
-            if (preferred.isNotEmpty()) preferred else hunks
-        }
-        ChangeFocusMode.FULL -> hunks
-    }
 
     val mergedSegments = mutableListOf<IntRange>()
     targetHunks.sortedBy { it.startIndex }.forEach { hunk ->
-        val anchorIndex = when (state.focusMode) {
-            ChangeFocusMode.ADDED_FIRST -> hunk.firstAddedIndex ?: hunk.startIndex
-            ChangeFocusMode.DELETED_ONLY -> hunk.firstDeletedIndex ?: hunk.startIndex
-            ChangeFocusMode.FULL -> hunk.startIndex
-        }
+        val anchorIndex =
+            when (state.focusMode) {
+                ChangeFocusMode.ADDED_FIRST -> hunk.firstAddedIndex ?: hunk.startIndex
+                ChangeFocusMode.DELETED_ONLY -> hunk.firstDeletedIndex ?: hunk.startIndex
+                ChangeFocusMode.FULL -> hunk.startIndex
+            }
         val start = (anchorIndex - state.contextLines).coerceAtLeast(0)
         val end = (hunk.endIndex + state.contextLines).coerceAtMost(allRows.lastIndex)
         val candidate = start..end
@@ -422,19 +428,23 @@ private fun extractHunks(rows: List<ResolvedFileChangeRow>): List<DiffHunk> {
             }
             index++
         }
-        hunks += DiffHunk(
-            startIndex = start,
-            endIndex = index - 1,
-            hasAdded = hasAdded,
-            hasDeleted = hasDeleted,
-            firstAddedIndex = firstAddedIndex,
-            firstDeletedIndex = firstDeletedIndex,
-        )
+        hunks +=
+            DiffHunk(
+                startIndex = start,
+                endIndex = index - 1,
+                hasAdded = hasAdded,
+                hasDeleted = hasDeleted,
+                firstAddedIndex = firstAddedIndex,
+                firstDeletedIndex = firstDeletedIndex,
+            )
     }
     return hunks
 }
 
-internal fun diffLines(beforeText: String, afterText: String): List<FileChangeLine> {
+internal fun diffLines(
+    beforeText: String,
+    afterText: String,
+): List<FileChangeLine> {
     val before = splitFileLines(beforeText)
     val after = splitFileLines(afterText)
 
@@ -447,71 +457,80 @@ internal fun diffLines(beforeText: String, afterText: String): List<FileChangeLi
 
     while (i < before.size && j < after.size) {
         if (before[i] == after[j]) {
-            rows += FileChangeLine(
-                kind = LineChangeKind.UNCHANGED,
-                oldLineNumber = oldLine++,
-                newLineNumber = newLine++,
-                text = before[i],
-            )
+            rows +=
+                FileChangeLine(
+                    kind = LineChangeKind.UNCHANGED,
+                    oldLineNumber = oldLine++,
+                    newLineNumber = newLine++,
+                    text = before[i],
+                )
             i++
             j++
             continue
         }
 
         if (lcs[i + 1][j] >= lcs[i][j + 1]) {
-            rows += FileChangeLine(
-                kind = LineChangeKind.DELETED,
-                oldLineNumber = oldLine++,
-                newLineNumber = null,
-                text = before[i],
-            )
+            rows +=
+                FileChangeLine(
+                    kind = LineChangeKind.DELETED,
+                    oldLineNumber = oldLine++,
+                    newLineNumber = null,
+                    text = before[i],
+                )
             i++
         } else {
-            rows += FileChangeLine(
-                kind = LineChangeKind.ADDED,
-                oldLineNumber = null,
-                newLineNumber = newLine++,
-                text = after[j],
-            )
+            rows +=
+                FileChangeLine(
+                    kind = LineChangeKind.ADDED,
+                    oldLineNumber = null,
+                    newLineNumber = newLine++,
+                    text = after[j],
+                )
             j++
         }
     }
 
     while (i < before.size) {
-        rows += FileChangeLine(
-            kind = LineChangeKind.DELETED,
-            oldLineNumber = oldLine++,
-            newLineNumber = null,
-            text = before[i],
-        )
+        rows +=
+            FileChangeLine(
+                kind = LineChangeKind.DELETED,
+                oldLineNumber = oldLine++,
+                newLineNumber = null,
+                text = before[i],
+            )
         i++
     }
 
     while (j < after.size) {
-        rows += FileChangeLine(
-            kind = LineChangeKind.ADDED,
-            oldLineNumber = null,
-            newLineNumber = newLine++,
-            text = after[j],
-        )
+        rows +=
+            FileChangeLine(
+                kind = LineChangeKind.ADDED,
+                oldLineNumber = null,
+                newLineNumber = newLine++,
+                text = after[j],
+            )
         j++
     }
 
     return rows
 }
 
-internal fun lcsTable(before: List<String>, after: List<String>): Array<IntArray> {
+internal fun lcsTable(
+    before: List<String>,
+    after: List<String>,
+): Array<IntArray> {
     val rows = before.size
     val cols = after.size
     val table = Array(rows + 1) { IntArray(cols + 1) }
 
     for (i in rows - 1 downTo 0) {
         for (j in cols - 1 downTo 0) {
-            table[i][j] = if (before[i] == after[j]) {
-                table[i + 1][j + 1] + 1
-            } else {
-                maxOf(table[i + 1][j], table[i][j + 1])
-            }
+            table[i][j] =
+                if (before[i] == after[j]) {
+                    table[i + 1][j + 1] + 1
+                } else {
+                    maxOf(table[i + 1][j], table[i][j + 1])
+                }
         }
     }
 
@@ -601,24 +620,25 @@ internal fun normalizeRowFill(style: TextStyle?): TextStyle? {
     }
 }
 
-internal fun mergeStyles(base: TextStyle?, extra: TextStyle?): TextStyle? {
-    return when {
+internal fun mergeStyles(
+    base: TextStyle?,
+    extra: TextStyle?,
+): TextStyle? =
+    when {
         base == null -> extra
         extra == null -> base
         else -> base + extra
     }
-}
 
 internal fun resolveMarkerStyle(
     line: FileChangeLine,
     styles: FileChangePreviewStyles,
-): TextStyle? {
-    return when (line.kind) {
+): TextStyle? =
+    when (line.kind) {
         LineChangeKind.ADDED -> rgb("#699862") + TextStyle(bold = true)
         LineChangeKind.DELETED -> rgb("#6E3D37") + TextStyle(bold = true)
         LineChangeKind.UNCHANGED -> styles.gutterMarkerStyle
     }
-}
 
 internal fun formatDataRow(
     line: FileChangeLine,
@@ -627,15 +647,19 @@ internal fun formatDataRow(
 ): String {
     val visibleLineNumber = line.newLineNumber ?: line.oldLineNumber
     val numberPart = visibleLineNumber?.toString()?.padStart(lineDigits) ?: " ".repeat(lineDigits)
-    val marker = when (line.kind) {
-        LineChangeKind.ADDED -> "+"
-        LineChangeKind.DELETED -> "-"
-        LineChangeKind.UNCHANGED -> " "
-    }
+    val marker =
+        when (line.kind) {
+            LineChangeKind.ADDED -> "+"
+            LineChangeKind.DELETED -> "-"
+            LineChangeKind.UNCHANGED -> " "
+        }
     return "$numberPart $marker ${line.text}"
 }
 
 internal fun formatStats(stats: FileChangeStats): String =
     "lines=${stats.totalLines}  +${stats.addedLines}  -${stats.deletedLines}  ~${stats.modifiedLines}  pending=${stats.pendingLines}"
 
-internal fun applyStyle(text: String, style: TextStyle?): String = style?.invoke(text) ?: text
+internal fun applyStyle(
+    text: String,
+    style: TextStyle?,
+): String = style?.invoke(text) ?: text
