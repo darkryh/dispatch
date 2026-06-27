@@ -13,8 +13,19 @@
 plugins {
     id("dispatch.kotlin-library")
     id("dispatch.test-conventions")
-    id("dispatch.quality-conventions")
     application
+}
+
+val requestedTaskNames = gradle.startParameter.taskNames.map { it.substringAfterLast(":") }
+val qualityRequested =
+    requestedTaskNames.any {
+        it in setOf("check", "qualityCheck", "validateAll", "formatAll") ||
+            it.startsWith("detekt") ||
+            it.startsWith("ktlint")
+    }
+
+if (qualityRequested) {
+    apply(plugin = "dispatch.quality-conventions")
 }
 
 // Disable publishing tasks for applications

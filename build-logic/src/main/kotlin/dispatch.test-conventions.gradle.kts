@@ -9,10 +9,14 @@
  */
 plugins {
     kotlin("jvm")
-    id("org.jetbrains.kotlinx.kover")
 }
 
 val libs = the<org.gradle.accessors.dm.LibrariesForLibs>()
+val requestedTaskNames = gradle.startParameter.taskNames.map { it.substringAfterLast(":") }
+val koverRequested =
+    requestedTaskNames.any {
+        it == "validateAll" || it.startsWith("kover")
+    }
 
 dependencies {
     "testImplementation"(kotlin("test"))
@@ -34,11 +38,15 @@ tasks.withType<Test>().configureEach {
     }
 }
 
-kover {
-    reports {
-        filters {
-            excludes {
-                classes("*Test", "*Test$*", "*Spec", "*Spec$*")
+if (koverRequested) {
+    apply(plugin = "org.jetbrains.kotlinx.kover")
+
+    extensions.configure<kotlinx.kover.gradle.plugin.dsl.KoverProjectExtension>("kover") {
+        reports {
+            filters {
+                excludes {
+                    classes("*Test", "*Test$*", "*Spec", "*Spec$*")
+                }
             }
         }
     }

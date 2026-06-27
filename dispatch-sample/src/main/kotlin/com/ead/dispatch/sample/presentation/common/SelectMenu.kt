@@ -41,7 +41,7 @@ fun SelectMenu(
     val interceptor = LocalKeyboardInterceptor.current
     var selected by remember { mutableStateOf(0) }
     val count = items.size
-    if (count > 0 && selected >= count) selected = count - 1
+    if (count in 1..selected) selected = count - 1
 
     // The interceptor closure outlives a single composition; read the latest list through a ref.
     val itemsRef = remember { MutableRef(items) }.also { it.value = items }

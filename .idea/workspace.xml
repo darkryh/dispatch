@@ -4,39 +4,13 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="09adec4a-725e-47a4-af17-b0db55278204" name="Changes" comment="optimization, memory leaks fixes">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build-logic/src/main/kotlin/dispatch.kotlin-library.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/build-logic/src/main/kotlin/dispatch.kotlin-library.gradle.kts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build-logic/src/main/kotlin/dispatch.publishing-conventions.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/build-logic/src/main/kotlin/dispatch.publishing-conventions.gradle.kts" afterDir="false" />
+    <list default="true" id="09adec4a-725e-47a4-af17-b0db55278204" name="Changes" comment="upgrade dependencies and fixes">
+      <change beforePath="$PROJECT_DIR$/build-logic/src/main/kotlin/dispatch.kotlin-application.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/build-logic/src/main/kotlin/dispatch.kotlin-application.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build-logic/src/main/kotlin/dispatch.kotlin-library-conventions.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/build-logic/src/main/kotlin/dispatch.kotlin-library-conventions.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build-logic/src/main/kotlin/dispatch.quality-conventions.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/build-logic/src/main/kotlin/dispatch.quality-conventions.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build-logic/src/main/kotlin/dispatch.test-conventions.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/build-logic/src/main/kotlin/dispatch.test-conventions.gradle.kts" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/build.gradle.kts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/commonMain/com/github/ajalt/mordant/input/InputEvent.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/commonMain/com/github/ajalt/mordant/input/RawMode.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/commonMain/com/github/ajalt/mordant/input/ReceiveEvents.kt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/dispatch-core/src/main/kotlin/com/ead/dispatch/runtime/DispatchApplication.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-core/src/main/kotlin/com/ead/dispatch/runtime/DispatchApplication.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dispatch-navigation/src/main/kotlin/com/ead/dispatch/navigation/NavKeySerialization.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-navigation/src/main/kotlin/com/ead/dispatch/navigation/NavKeySerialization.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dispatch-navigation/src/test/kotlin/com/ead/dispatch/navigation/DecoratedEntryChurnTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-navigation/src/test/kotlin/com/ead/dispatch/navigation/DecoratedEntryChurnTest.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dispatch-navigation/src/test/kotlin/com/ead/dispatch/navigation/NavDisplayMemoryLeakTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-navigation/src/test/kotlin/com/ead/dispatch/navigation/NavDisplayMemoryLeakTest.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dispatch-renderer/src/main/kotlin/com/ead/dispatch/render/TerminalRenderer.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-renderer/src/main/kotlin/com/ead/dispatch/render/TerminalRenderer.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dispatch-runtime/src/main/kotlin/com/ead/dispatch/annotation/DispatchRenderer.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-runtime/src/main/kotlin/com/ead/dispatch/annotation/DispatchRenderer.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dispatch-runtime/src/main/kotlin/com/ead/dispatch/runtime/DispatchRuntimeScope.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-runtime/src/main/kotlin/com/ead/dispatch/runtime/DispatchRuntimeScope.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dispatch-runtime/src/test/kotlin/com/ead/dispatch/runtime/EngineMemoryTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-runtime/src/test/kotlin/com/ead/dispatch/runtime/EngineMemoryTest.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dispatch-sample/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-sample/build.gradle.kts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dispatch-sample/src/main/kotlin/com/ead/dispatch/sample/presentation/chat/ChatScreen.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-sample/src/main/kotlin/com/ead/dispatch/sample/presentation/chat/ChatScreen.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dispatch-sample/src/main/kotlin/com/ead/dispatch/sample/presentation/components/SurfacesGallery.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-sample/src/main/kotlin/com/ead/dispatch/sample/presentation/components/SurfacesGallery.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dispatch-sample/src/test/kotlin/com/ead/dispatch/sample/e2e/PtyTerminalSession.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-sample/src/test/kotlin/com/ead/dispatch/sample/e2e/PtyTerminalSession.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dispatch-sample/src/test/kotlin/com/ead/dispatch/sample/e2e/TerminalApplicationStressTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-sample/src/test/kotlin/com/ead/dispatch/sample/e2e/TerminalApplicationStressTest.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dispatch-sample/src/test/kotlin/com/ead/dispatch/sample/e2e/TerminalReliabilityReport.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-sample/src/test/kotlin/com/ead/dispatch/sample/e2e/TerminalReliabilityReport.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dispatch-viewmodel/src/main/kotlin/com/ead/dispatch/viewmodel/ViewModelComposeExtensions.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-viewmodel/src/main/kotlin/com/ead/dispatch/viewmodel/ViewModelComposeExtensions.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dispatch-viewmodel/src/test/kotlin/com/ead/dispatch/viewmodel/ViewModelProviderTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-viewmodel/src/test/kotlin/com/ead/dispatch/viewmodel/ViewModelProviderTest.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dispatch-widgets/src/main/kotlin/com/ead/dispatch/widget/Background.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-widgets/src/main/kotlin/com/ead/dispatch/widget/Background.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dispatch-widgets/src/main/kotlin/com/ead/dispatch/widget/CycleButton.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-widgets/src/main/kotlin/com/ead/dispatch/widget/CycleButton.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dispatch-widgets/src/main/kotlin/com/ead/dispatch/widget/FilterBarCard.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-widgets/src/main/kotlin/com/ead/dispatch/widget/FilterBarCard.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dispatch-widgets/src/main/kotlin/com/ead/dispatch/widget/TagPill.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-widgets/src/main/kotlin/com/ead/dispatch/widget/TagPill.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dispatch-widgets/src/test/kotlin/com/ead/dispatch/widget/BackgroundMeasurableTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-widgets/src/test/kotlin/com/ead/dispatch/widget/BackgroundMeasurableTest.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/gradle.properties" beforeDir="false" afterPath="$PROJECT_DIR$/gradle.properties" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/gradle/libs.versions.toml" beforeDir="false" afterPath="$PROJECT_DIR$/gradle/libs.versions.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/gradle/wrapper/gradle-wrapper.properties" beforeDir="false" afterPath="$PROJECT_DIR$/gradle/wrapper/gradle-wrapper.properties" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/gradlew.bat" beforeDir="false" afterPath="$PROJECT_DIR$/gradlew.bat" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-sample/src/main/kotlin/com/ead/dispatch/sample/presentation/common/SelectMenu.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-sample/src/main/kotlin/com/ead/dispatch/sample/presentation/common/SelectMenu.kt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -174,7 +148,15 @@
       <option name="project" value="LOCAL" />
       <updated>1781894578049</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="upgrade dependencies and fixes">
+      <option name="closed" value="true" />
+      <created>1782564433344</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1782564433344</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -182,6 +164,7 @@
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="optimization, memory leaks fixes" />
-    <option name="LAST_COMMIT_MESSAGE" value="optimization, memory leaks fixes" />
+    <MESSAGE value="upgrade dependencies and fixes" />
+    <option name="LAST_COMMIT_MESSAGE" value="upgrade dependencies and fixes" />
   </component>
 </project>

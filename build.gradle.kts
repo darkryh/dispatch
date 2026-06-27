@@ -1,5 +1,5 @@
 plugins {
-    alias(libs.plugins.kover)
+    alias(libs.plugins.kover) apply false
     alias(libs.plugins.dokka)
     alias(libs.plugins.kotlin.jvm) apply false
     alias(libs.plugins.kotlin.serialization) apply false
@@ -16,10 +16,20 @@ allprojects {
     }
 }
 
-// Aggregate Kover reports from all library modules (excluding sample)
-dependencies {
-    subprojects.filter { it.name != "dispatch-sample" }.forEach {
-        kover(dependencies.project(":${it.name}"))
+val requestedTaskNames = gradle.startParameter.taskNames.map { it.substringAfterLast(":") }
+val koverRequested =
+    requestedTaskNames.any {
+        it == "validateAll" || it.startsWith("kover")
+    }
+
+if (koverRequested) {
+    apply(plugin = libs.plugins.kover.get().pluginId)
+
+    // Aggregate Kover reports from all library modules (excluding sample)
+    dependencies {
+        subprojects.filter { it.name != "dispatch-sample" }.forEach {
+            add("kover", dependencies.project(":${it.name}"))
+        }
     }
 }
 
