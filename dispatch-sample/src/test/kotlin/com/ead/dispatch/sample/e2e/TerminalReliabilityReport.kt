@@ -66,12 +66,25 @@ internal data class TerminalReliabilityReport(
                 lastRssKb = rss.lastOrNull() ?: 0,
                 cursorHideCount = diagnostics.count { it.contains("\"event\":\"cursor\"") && it.contains("\"visible\":false") },
                 cursorShowCount = diagnostics.count { it.contains("\"event\":\"cursor\"") && it.contains("\"visible\":true") },
-                rawClearScreenSequences = raw.windowed(4).count { it == "\u001B[2J" },
+                rawClearScreenSequences = raw.countOccurrences("\u001B[2J"),
             )
         }
 
-        private val HEAP_REGEX = Regex("\\\"heapUsedBytes\\\":(\\d+)")
+        private val HEAP_REGEX = Regex("\"heapUsedBytes\":(\\d+)")
     }
 }
 
 private fun String.jsonEscape(): String = replace("\\", "\\\\").replace("\"", "\\\"")
+
+private fun String.countOccurrences(needle: String): Int {
+    if (needle.isEmpty()) return 0
+    var count = 0
+    var offset = 0
+    while (offset <= length - needle.length) {
+        val match = indexOf(needle, startIndex = offset)
+        if (match < 0) break
+        count++
+        offset = match + needle.length
+    }
+    return count
+}

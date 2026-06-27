@@ -1,7 +1,7 @@
 package com.ead.dispatch.viewmodel
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.currentCompositeKeyHash
+import androidx.compose.runtime.currentCompositeKeyHashCode
 import androidx.compose.runtime.remember
 
 /**
@@ -41,7 +41,7 @@ object ViewModelStore {
  */
 @Composable
 inline fun <reified T : ViewModel> viewModel(
-    key: String = "${T::class.java.name}#${currentCompositeKeyHash}",
+    key: String = "${T::class.java.name}#${currentCompositeKeyHashCode}",
     noinline factory: () -> T
 ): T {
     val provider = LocalViewModelProvider.current
@@ -57,7 +57,7 @@ inline fun <reified T : ViewModel> viewModel(
  */
 @Composable
 inline fun <reified T : ViewModel> viewModel(): T {
-    val key = "${T::class.java.name}#${currentCompositeKeyHash}"
+    val key = "${T::class.java.name}#${currentCompositeKeyHashCode}"
     val provider = LocalViewModelProvider.current
     return provider?.get(T::class, key)
         ?: remember(key) {

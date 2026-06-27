@@ -26,8 +26,7 @@ internal fun <T : Any> serializerFor(value: T): KSerializer<T> =
 @PublishedApi
 internal fun serializerForClass(className: String): KSerializer<Any> {
     val clazz = Class.forName(className)
-    @Suppress("UNCHECKED_CAST")
-    return serializer(clazz) as KSerializer<Any>
+    return serializer(clazz)
 }
 
 internal fun encodeNavKeyPayload(

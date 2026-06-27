@@ -38,17 +38,17 @@ class DecoratedEntryChurnTest {
 
                 // First render after a mutation.
                 harness.render(content)
-                val afterMutation = captured!!
+                val afterMutation = requireNotNull(captured)
 
                 // Second render WITHOUT any mutation: every decorated entry must
                 // be the SAME instance (no per-frame rebuild / fold churn).
                 harness.render(content)
-                val afterStableFrame = captured!!
+                val afterStableFrame = captured
 
                 afterMutation.indices.forEach { i ->
                     assertSame(
                         afterMutation[i],
-                        afterStableFrame[i],
+                        requireNotNull(afterStableFrame?.get(i)),
                         "decorated entry $i churned on unchanged recomposition at step=$step",
                     )
                 }

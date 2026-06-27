@@ -50,7 +50,7 @@ data class BackgroundStyle(
                 bottomRule = BackgroundRule(char = char, style = style),
             )
 
-        fun Fill(
+        fun fill(
             fill: TextStyle,
             paddingHorizontal: Int = 1,
             paddingVertical: Int = 1,
@@ -258,7 +258,7 @@ internal class BackgroundMeasurable(
         // Child widgets (e.g. `Text`) can emit SGR reset codes mid-line (especially when combining
         // multiple styled segments). If a segment resets the background, it would clear our fill
         // background for the remainder of the line (including padding/trailing spaces). Detect
-        // background resets and re-apply the fill afterwards.
+        // background resets and re-apply the fill afterward.
         return prefix + reapplyFillAfterBackgroundResets(prefix, text) + suffix
     }
 

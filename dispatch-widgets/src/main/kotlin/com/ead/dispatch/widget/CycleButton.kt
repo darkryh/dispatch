@@ -109,7 +109,7 @@ fun CycleButton(
     Background(
         modifier = focusableModifier,
         style =
-            BackgroundStyle.Fill(
+            BackgroundStyle.fill(
                 fill = fillStyle,
                 paddingHorizontal = paddingHorizontal,
                 paddingVertical = paddingVertical,

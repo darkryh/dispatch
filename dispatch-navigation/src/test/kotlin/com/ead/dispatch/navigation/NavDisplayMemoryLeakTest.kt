@@ -15,13 +15,14 @@ import kotlin.test.assertFalse
 import kotlin.test.assertNotSame
 import kotlin.test.assertNull
 import kotlin.test.assertTrue
+import kotlin.time.Duration.Companion.seconds
 
 @Serializable
 private data class LeakRoute(val id: Int) : NavKey
 
 // Public + no-arg ctor so the default reflective ViewModelFactory can instantiate it.
 class ProbeViewModel : ViewModel() {
-    val job: Job = viewModelScope.launch { delay(10_000) }
+    val job: Job = viewModelScope.launch { delay(10.seconds) }
 }
 
 class NavDisplayMemoryLeakTest {
@@ -79,7 +80,7 @@ class NavDisplayMemoryLeakTest {
             }
 
             assertTrue(captured.isCleared, "popped entry ViewModel should be cleared")
-            withTimeout(1_000) { captured.job.join() }
+            withTimeout(1.seconds) { captured.job.join() }
             assertTrue(captured.job.isCancelled, "popped entry scope should be cancelled")
         }
     }
@@ -108,7 +109,7 @@ class NavDisplayMemoryLeakTest {
         harness.render { /* nothing */ }
 
         assertTrue(captured.isCleared, "ViewModel must be cleared when NavDisplay leaves composition")
-        withTimeout(1_000) { captured.job.join() }
+        withTimeout(1.seconds) { captured.job.join() }
         assertTrue(captured.job.isCancelled, "scope must be cancelled on teardown")
 
         harness.close()
@@ -125,6 +126,7 @@ class NavDisplayMemoryLeakTest {
                 backStack = backStack,
                 entryProvider = { key ->
                     NavEntry(key = key) {
+                        @Suppress("UNCHECKED_CAST")
                         ref = WeakReference(LocalNavBackStackEntry.current as NavBackStackEntry<LeakRoute>)
                     }
                 },
@@ -164,7 +166,7 @@ class NavDisplayMemoryLeakTest {
 
             backStack.navigate(LeakRoute(2))
             harness.render(content)
-            val first = current!!
+            val first = requireNotNull(current)
 
             backStack.popBackStack()
             harness.render(content)
@@ -172,7 +174,7 @@ class NavDisplayMemoryLeakTest {
 
             backStack.navigate(LeakRoute(2))
             harness.render(content)
-            val second = current!!
+            val second = requireNotNull(current)
 
             assertNotSame(first, second, "re-pushed route must get a fresh ViewModel")
             assertFalse(second.isCleared, "fresh route state must not be cleared")

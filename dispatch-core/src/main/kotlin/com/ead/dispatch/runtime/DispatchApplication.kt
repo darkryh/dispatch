@@ -349,9 +349,7 @@ internal class DispatchRuntimeEngine(
                 armExitPrompt(eventTimestampNanos)
                 return false
             }
-            ExitAction.None -> {
-                Unit
-            }
+            ExitAction.None -> {}
         }
 
         val consumed = keyboardInterceptor.tryIntercept(event)

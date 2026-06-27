@@ -112,7 +112,7 @@ internal class PtyTerminalSession private constructor(
 
     fun requestGarbageCollection(): String {
         val handle = findApplicationProcess() ?: error("Could not resolve the sample JVM process")
-        val javaCommand = handle.info().command().orElse("")
+        val javaCommand = (handle.info().command().orElse("")) ?: ""
         val jcmd = runCatching { Path.of(javaCommand).parent.resolve("jcmd") }.getOrNull()
             ?.takeIf(Files::isExecutable)
             ?.toString()
@@ -144,7 +144,7 @@ internal class PtyTerminalSession private constructor(
     }
 
     fun latestHeapUsedBytes(): Long? =
-        Regex("\\\"heapUsedBytes\\\":(\\d+)")
+        Regex("\"heapUsedBytes\":(\\d+)")
             .findAll(diagnosticEvents())
             .lastOrNull()
             ?.groupValues
@@ -202,8 +202,8 @@ internal class PtyTerminalSession private constructor(
     private fun findApplicationProcess(): ProcessHandle? {
         val descendants = process.descendants().filter(ProcessHandle::isAlive).toList()
         return descendants.firstOrNull { handle ->
-            val command = handle.info().command().orElse("")
-            val arguments = handle.info().arguments().orElse(emptyArray()).joinToString(" ")
+            val command = (handle.info().command().orElse("")) ?: ""
+            val arguments = (handle.info().arguments().orElse(emptyArray()) ?: emptyArray()).joinToString(" ")
             command.contains("java", ignoreCase = true) || arguments.contains("dispatch-sample")
         } ?: descendants.lastOrNull()
     }
@@ -307,13 +307,18 @@ internal class PtyTerminalSession private constructor(
     private fun elapsedNanos(): Long = System.nanoTime() - startedAtNanos
 
     companion object {
-        private val oscPattern = Regex("""\u001B\][^\u0007]*(?:\u0007|\u001B\\)""")
+        private val oscPattern = Regex("""\u001B][^\u0007]*(?:\u0007|\u001B\\)""")
         private val csiPattern = Regex("\\u001B\\[[0-?]*[ -/]*[@-~]")
         private val borderPattern = Regex("[│╭╮╰╯─]+")
         private val whitespacePattern = Regex("\\s+")
         private val DEFAULT_TIMEOUT: Duration = Duration.ofSeconds(10)
 
-        fun start(scenario: String, columns: Int = 100, lines: Int = 30): PtyTerminalSession {
+        fun start(
+            scenario: String,
+            columns: Int = 100,
+            lines: Int = 30,
+            environment: Map<String, String> = emptyMap(),
+        ): PtyTerminalSession {
             val binary = System.getProperty("dispatch.sample.binary")
                 ?: error("Missing dispatch.sample.binary; run the Gradle terminalE2eTest task")
             require(Files.isExecutable(Path.of(binary))) { "Sample executable does not exist: $binary" }
@@ -346,6 +351,7 @@ internal class PtyTerminalSession private constructor(
                     "DISPATCH_SCENARIO" to scenario,
                 ),
             )
+            processBuilder.environment().putAll(environment)
             return PtyTerminalSession(scenario, processBuilder.start(), artifactDirectory, diagnostics)
         }
 

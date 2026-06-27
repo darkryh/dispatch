@@ -27,7 +27,7 @@ fun FilterBarCard(
     Background(
         modifier = modifier.fillMaxWidth(),
         style =
-            BackgroundStyle.Fill(
+            BackgroundStyle.fill(
                 fill = backgroundFill,
                 paddingHorizontal = paddingHorizontal,
                 paddingVertical = paddingVertical,

@@ -51,10 +51,12 @@ mavenPublishing {
     }
 }
 
-tasks.withType<org.jetbrains.dokka.gradle.DokkaTask>().configureEach {
+dokka {
+    dokkaPublications.configureEach {
+        suppressInheritedMembers.set(true)
+    }
     dokkaSourceSets {
         configureEach {
-            suppressInheritedMembers.set(true)
             skipDeprecated.set(true)
         }
     }

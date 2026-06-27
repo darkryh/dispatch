@@ -37,7 +37,7 @@ tasks.test {
 
 val terminalReportDirectory = layout.buildDirectory.dir("reports/terminal-reliability")
 
-val terminalE2eTest by tasks.registering(Test::class) {
+val terminalE2eTest = tasks.register<Test>("terminalE2eTest") {
     description = "Runs the installed sample application through a real pseudo-terminal"
     group = LifecycleBasePlugin.VERIFICATION_GROUP
 
@@ -64,7 +64,7 @@ val terminalE2eTest by tasks.registering(Test::class) {
     systemProperty("dispatch.sample.reportDir", terminalReportDirectory.get().asFile.absolutePath)
 }
 
-val terminalStressTest by tasks.registering(Test::class) {
+val terminalStressTest = tasks.register<Test>("terminalStressTest") {
     description = "Runs the full installed-sample PTY stress, memory, and render reliability workflow"
     group = LifecycleBasePlugin.VERIFICATION_GROUP
 
@@ -85,7 +85,7 @@ val terminalStressTest by tasks.registering(Test::class) {
     systemProperty("dispatch.sample.reportDir", terminalReportDirectory.get().asFile.absolutePath)
 }
 
-val terminalDiagnosticsReport by tasks.registering {
+val terminalDiagnosticsReport = tasks.register("terminalDiagnosticsReport") {
     description = "Builds an aggregate index for local terminal reliability reports"
     group = LifecycleBasePlugin.VERIFICATION_GROUP
     dependsOn(terminalE2eTest, terminalStressTest)

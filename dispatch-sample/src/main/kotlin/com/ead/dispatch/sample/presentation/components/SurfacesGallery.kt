@@ -49,7 +49,7 @@ internal fun SurfacesGallery() {
         }
         Background(
             modifier = Modifier.fillMaxWidth(),
-            style = BackgroundStyle.Fill(rgb("#303846"), paddingVertical = 0),
+            style = BackgroundStyle.fill(rgb("#303846"), paddingVertical = 0),
         ) {
             Text("Background fill")
         }

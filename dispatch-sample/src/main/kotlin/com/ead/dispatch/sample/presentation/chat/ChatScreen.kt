@@ -111,7 +111,7 @@ private fun ChatComposer(
     onClear: () -> Unit,
 ) {
     Spacer(Modifier.height(1))
-    Background(style = BackgroundStyle.Fill(rgb("#303846"))) {
+    Background(style = BackgroundStyle.fill(rgb("#303846"))) {
         InputTextField(
             value = input,
             onValueChange = onInputChanged,

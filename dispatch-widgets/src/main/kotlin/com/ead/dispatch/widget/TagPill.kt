@@ -21,7 +21,7 @@ fun TagPill(
     Background(
         modifier = appliedModifier,
         style =
-            BackgroundStyle.Fill(
+            BackgroundStyle.fill(
                 fill = fill,
                 paddingHorizontal = paddingHorizontal,
                 paddingVertical = 0,

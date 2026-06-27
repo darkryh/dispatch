@@ -32,7 +32,5 @@ interface DispatchScope {
     /**
      * Root dispatch content rendered by the runtime.
      */
-    @DispatchRenderer
-    fun content(block: @Composable () -> Unit)
+    fun content(block: @DispatchRenderer @Composable () -> Unit)
 }
-

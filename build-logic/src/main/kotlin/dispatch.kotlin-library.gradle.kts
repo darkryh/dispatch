@@ -13,9 +13,11 @@ plugins {
     `java-library`
 }
 
+val versionCatalog = extensions.getByType<org.gradle.api.artifacts.VersionCatalogsExtension>().named("libs")
+
 dependencies {
-    compileOnly("org.jetbrains.compose.runtime:runtime:1.11.1")
-    testCompileOnly("org.jetbrains.compose.runtime:runtime:1.11.1")
+    compileOnly(versionCatalog.findLibrary("compose-runtime").get())
+    testCompileOnly(versionCatalog.findLibrary("compose-runtime").get())
 }
 
 java {

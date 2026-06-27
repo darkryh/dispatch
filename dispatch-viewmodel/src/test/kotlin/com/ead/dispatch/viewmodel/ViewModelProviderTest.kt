@@ -12,6 +12,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import kotlin.time.Duration.Companion.seconds
 
 class ViewModelProviderTest {
     private class TestViewModel : ViewModel() {
@@ -31,7 +32,7 @@ class ViewModelProviderTest {
     }
 
     private class ScopedViewModel : ViewModel() {
-        val job: Job = viewModelScope.launch { delay(10_000) }
+        val job: Job = viewModelScope.launch { delay(10.seconds) }
     }
 
     @Test
@@ -98,10 +99,10 @@ class ViewModelProviderTest {
         val factory = object : SavedStateViewModelFactory {
             var lastHandle: SavedStateHandle? = null
 
-            override fun <T : ViewModel> create(modelClass: kotlin.reflect.KClass<T>): T {
-                return TestViewModel() as T
-            }
+            @Suppress("UNCHECKED_CAST")
+            override fun <T : ViewModel> create(modelClass: kotlin.reflect.KClass<T>): T = TestViewModel() as T
 
+            @Suppress("UNCHECKED_CAST")
             override fun <T : ViewModel> create(
                 modelClass: kotlin.reflect.KClass<T>,
                 savedStateHandle: SavedStateHandle,
@@ -127,7 +128,7 @@ class ViewModelProviderTest {
 
         assertTrue(first.isCleared)
         assertTrue(second.isCleared)
-        withTimeout(1_000) {
+        withTimeout(1.seconds) {
             first.job.join()
             second.job.join()
         }

@@ -84,7 +84,7 @@ class BackgroundMeasurableTest {
             BackgroundMeasurable(
                 modifier = Modifier,
                 style =
-                    BackgroundStyle.Fill(
+                    BackgroundStyle.fill(
                         fill = TextStyle(),
                         paddingHorizontal = 0,
                         paddingVertical = 0,
@@ -114,7 +114,7 @@ class BackgroundMeasurableTest {
             BackgroundMeasurable(
                 modifier = Modifier,
                 style =
-                    BackgroundStyle.Fill(
+                    BackgroundStyle.fill(
                         fill = TextColors.red,
                         paddingHorizontal = 0,
                         paddingVertical = 0,
@@ -145,7 +145,7 @@ class BackgroundMeasurableTest {
             BackgroundMeasurable(
                 modifier = Modifier,
                 style =
-                    BackgroundStyle.Fill(
+                    BackgroundStyle.fill(
                         fill = TextColors.red,
                         paddingHorizontal = 2,
                         paddingVertical = 0,
@@ -181,7 +181,7 @@ class BackgroundMeasurableTest {
             BackgroundMeasurable(
                 modifier = Modifier,
                 style =
-                    BackgroundStyle.Fill(
+                    BackgroundStyle.fill(
                         fill = TextColors.red,
                         paddingHorizontal = 2,
                         paddingVertical = 0,
@@ -216,7 +216,7 @@ class BackgroundMeasurableTest {
             BackgroundMeasurable(
                 modifier = Modifier,
                 style =
-                    BackgroundStyle.Fill(
+                    BackgroundStyle.fill(
                         fill = TextColors.red,
                         paddingHorizontal = 2,
                         paddingVertical = 0,

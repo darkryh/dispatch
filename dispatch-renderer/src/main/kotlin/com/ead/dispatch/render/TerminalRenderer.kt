@@ -298,9 +298,7 @@ class TerminalRenderer(
                 buffer.append(AnsiCodes.CLEAR_LINE)
                 buffer.append(newLine)
             }
-            else -> {
-                Unit
-            }
+            else -> {}
         }
 
         if (index < maxLineCount - 1) {
@@ -313,7 +311,7 @@ class TerminalRenderer(
         oldLineCount: Int,
         newLineCount: Int,
     ) {
-        if (oldLineCount > newLineCount && newLineCount > 0) {
+        if (newLineCount in 1..<oldLineCount) {
             buffer.append(AnsiCodes.moveUp(oldLineCount - newLineCount))
         }
     }

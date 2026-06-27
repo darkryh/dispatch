@@ -57,6 +57,7 @@ class EngineMemoryTest {
         }
 
         val ref = lastRootRef!!
+
         for (i in 0 until 10) {
             System.gc()
             Thread.sleep(20)
@@ -95,8 +96,8 @@ class EngineMemoryTest {
         root!!.addChild(focusNode!!)
 
         focusRegistry.sync(root)
-        assertTrue(focusRegistry.isFocused(focusNode!!), "node should be focused after sync")
-        val ref = WeakReference(focusNode!!)
+        assertTrue(focusRegistry.isFocused(focusNode), "node should be focused after sync")
+        val ref = WeakReference(focusNode)
 
         // Re-sync empty and drop the tree: the registry must hold no reference to the node.
         focusRegistry.sync(null)

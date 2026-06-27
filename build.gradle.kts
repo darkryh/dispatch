@@ -19,7 +19,7 @@ allprojects {
 // Aggregate Kover reports from all library modules (excluding sample)
 dependencies {
     subprojects.filter { it.name != "dispatch-sample" }.forEach {
-        kover(project(":${it.name}"))
+        kover(dependencies.project(":${it.name}"))
     }
 }
 
