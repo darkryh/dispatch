@@ -14,6 +14,11 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
+/**
+ * Unit tests for the MVI [ChatViewModel]. The view is never involved: tests drive the model purely
+ * through [ChatViewModel.sendIntent] and assert on the published [ChatViewModel.state]. The
+ * streaming/cancel mechanism is exercised against a deterministic in-memory [ResponseSimulator].
+ */
 class ChatViewModelTest {
     @Test
     fun `submit streams chunks into one completed response`(): Unit =
@@ -21,16 +26,20 @@ class ChatViewModelTest {
             val repository = ChatRepository()
             val viewModel = ChatViewModel(repository, ResponseSimulator { flowOf("one ", "two", " three") })
 
-            viewModel.updateInput("hello")
-            viewModel.submit()
-            withTimeout(2_000) { viewModel.streamingState.first { !it } }
+            viewModel.sendIntent(ChatIntent.UpdateInput("hello"))
+            viewModel.sendIntent(ChatIntent.Submit("hello"))
 
-            val messages = repository.messages.value
+            val finished =
+                withTimeout(2_000) {
+                    viewModel.state.first { !it.isStreaming && it.messages.last().text == "one two three" }
+                }
+
+            val messages = finished.messages
             assertEquals("hello", messages[messages.lastIndex - 1].text)
             assertEquals(MessageAuthor.USER, messages[messages.lastIndex - 1].author)
             assertEquals("one two three", messages.last().text)
             assertFalse(messages.last().isStreaming)
-            assertEquals("", viewModel.input.value)
+            assertEquals("", finished.input)
             viewModel.clear()
         }
 
@@ -47,22 +56,23 @@ class ChatViewModelTest {
                 }
             val viewModel = ChatViewModel(repository, simulator)
 
-            viewModel.submit("cancel this")
-            withTimeout(2_000) { repository.messages.first { it.last().text == "partial" } }
-            viewModel.cancel()
-            withTimeout(2_000) { viewModel.streamingState.first { !it } }
+            viewModel.sendIntent(ChatIntent.Submit("cancel this"))
+            withTimeout(2_000) { viewModel.state.first { it.messages.last().text == "partial" } }
+            viewModel.sendIntent(ChatIntent.Cancel)
 
-            assertEquals(
-                "partial\n[cancelled]",
-                repository.messages.value
-                    .last()
-                    .text,
-            )
-            assertFalse(
-                repository.messages.value
-                    .last()
-                    .isStreaming,
-            )
+            // Wait for the cancellation to be fully reflected (partial text marked + streaming ended).
+            val finished =
+                withTimeout(2_000) {
+                    viewModel.state.first {
+                        !it.isStreaming &&
+                            it.messages
+                                .last()
+                                .text
+                                .contains("[cancelled]")
+                    }
+                }
+            assertEquals("partial\n[cancelled]", finished.messages.last().text)
+            assertFalse(finished.messages.last().isStreaming)
             viewModel.clear()
         }
 
@@ -73,15 +83,18 @@ class ChatViewModelTest {
             val simulator = ResponseSimulator { flowOf("reply") }
             val first = ChatViewModel(repository, simulator)
 
-            first.submit("persist me")
-            withTimeout(2_000) { first.streamingState.first { !it } }
+            first.sendIntent(ChatIntent.Submit("persist me"))
+            withTimeout(2_000) { first.state.first { !it.isStreaming && it.messages.last().text == "reply" } }
             first.clear()
 
             val second = ChatViewModel(repository, simulator)
-            assertTrue(second.messages.value.any { it.text == "persist me" })
+            assertTrue(
+                second.state.value.messages
+                    .any { it.text == "persist me" },
+            )
             assertEquals(
                 "reply",
-                second.messages.value
+                second.state.value.messages
                     .last()
                     .text,
             )

@@ -20,22 +20,28 @@ internal data class TerminalReliabilityReport(
 ) {
     val blinkCandidates: Int get() = maxOf(clearScreenWrites, rawClearScreenSequences)
 
-    fun toText(): String = buildString {
-        appendLine("scenario=$scenario")
-        appendLine("renderFrames=$renderFrames terminalWrites=$terminalWrites")
-        appendLine("fullRewrites=$fullRewrites unexpectedFullRewrites=$unexpectedFullRewrites")
-        appendLine("clearScreenWrites=$clearScreenWrites rawClearScreenSequences=$rawClearScreenSequences")
-        appendLine("blinkCandidates=$blinkCandidates")
-        appendLine("heapPeakBytes=$maximumHeapUsedBytes")
-        appendLine("rssFirstKb=$firstRssKb rssPeakKb=$maximumRssKb rssLastKb=$lastRssKb")
-        appendLine("cursorHideCount=$cursorHideCount cursorShowCount=$cursorShowCount")
-    }
+    fun toText(): String =
+        buildString {
+            appendLine("scenario=$scenario")
+            appendLine("renderFrames=$renderFrames terminalWrites=$terminalWrites")
+            appendLine("fullRewrites=$fullRewrites unexpectedFullRewrites=$unexpectedFullRewrites")
+            appendLine("clearScreenWrites=$clearScreenWrites rawClearScreenSequences=$rawClearScreenSequences")
+            appendLine("blinkCandidates=$blinkCandidates")
+            appendLine("heapPeakBytes=$maximumHeapUsedBytes")
+            appendLine("rssFirstKb=$firstRssKb rssPeakKb=$maximumRssKb rssLastKb=$lastRssKb")
+            appendLine("cursorHideCount=$cursorHideCount cursorShowCount=$cursorShowCount")
+        }
 
     fun toJson(): String =
         """{"scenario":"${scenario.jsonEscape()}","renderFrames":$renderFrames,"terminalWrites":$terminalWrites,"fullRewrites":$fullRewrites,"unexpectedFullRewrites":$unexpectedFullRewrites,"clearScreenWrites":$clearScreenWrites,"blinkCandidates":$blinkCandidates,"maximumHeapUsedBytes":$maximumHeapUsedBytes,"firstRssKb":$firstRssKb,"maximumRssKb":$maximumRssKb,"lastRssKb":$lastRssKb,"cursorHideCount":$cursorHideCount,"cursorShowCount":$cursorShowCount,"rawClearScreenSequences":$rawClearScreenSequences}\n"""
 
     companion object {
-        fun analyze(scenario: String, raw: String, diagnosticsFile: Path, rssSamples: List<RssSample>): TerminalReliabilityReport {
+        fun analyze(
+            scenario: String,
+            raw: String,
+            diagnosticsFile: Path,
+            rssSamples: List<RssSample>,
+        ): TerminalReliabilityReport {
             val diagnostics = if (Files.exists(diagnosticsFile)) Files.readAllLines(diagnosticsFile) else emptyList()
             val decisions = diagnostics.filter { it.contains("\"event\":\"render_decision\"") }
             val full = decisions.filter { it.contains("\"kind\":\"FULL_REWRITE\"") }
@@ -50,7 +56,14 @@ internal data class TerminalReliabilityReport(
                     "structural_scrolling_growth",
                 )
             val unexpected = full.count { line -> expectedReasons.none { line.contains("\"reason\":\"$it\"") } }
-            val heapValues = diagnostics.mapNotNull { HEAP_REGEX.find(it)?.groupValues?.get(1)?.toLongOrNull() }
+            val heapValues =
+                diagnostics.mapNotNull {
+                    HEAP_REGEX
+                        .find(it)
+                        ?.groupValues
+                        ?.get(1)
+                        ?.toLongOrNull()
+                }
             val writes = diagnostics.filter { it.contains("\"event\":\"terminal_write\"") }
             val rss = rssSamples.map(RssSample::rssKb)
             return TerminalReliabilityReport(

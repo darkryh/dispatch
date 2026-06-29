@@ -75,6 +75,18 @@ class WidgetCatalogCoverageTest {
                 "ToggleButton",
                 "TransferProgress",
                 "VerticalDivider",
+                // Families the rebuilt sample additionally covers (previously undemonstrated):
+                "Tree",
+                "TreeNode",
+                "Table",
+                "FilterableTable",
+                "SelectMenu",
+                "MenuItem",
+                "MultiSelectList",
+                "FlowRow",
+                "Box",
+                "Layout",
+                "HeaderLayout",
             )
     }
 }

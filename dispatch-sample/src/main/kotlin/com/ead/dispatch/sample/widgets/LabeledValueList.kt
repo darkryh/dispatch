@@ -1,3 +1,5 @@
+@file:Suppress("ktlint:standard:function-naming")
+
 package com.ead.dispatch.sample.widgets
 
 import androidx.compose.runtime.Composable

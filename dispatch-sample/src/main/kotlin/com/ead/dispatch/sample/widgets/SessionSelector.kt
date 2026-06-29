@@ -1,3 +1,5 @@
+@file:Suppress("ktlint:standard:function-naming")
+
 package com.ead.dispatch.sample.widgets
 
 import androidx.compose.runtime.Composable
@@ -11,7 +13,6 @@ import com.ead.dispatch.runtime.rememberCallback
 import com.ead.dispatch.widget.FilterableSelectorState
 import com.ead.dispatch.widget.SelectorKeyBindings
 import com.ead.dispatch.widget.Text
-import com.ead.dispatch.widget.WindowSlice
 import com.ead.dispatch.widget.computeWindowSlice
 import com.ead.dispatch.widget.handleSelectorKeyEvent
 import com.github.ajalt.mordant.input.KeyboardEvent

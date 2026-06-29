@@ -34,18 +34,29 @@ internal class PtyTerminalSession private constructor(
     }
 
     fun sendEnter(): Unit = send("\r")
+
     fun sendTab(): Unit = send("\t")
+
     fun sendShiftTab(): Unit = send("\u001B[Z")
+
     fun sendSpace(): Unit = send(" ")
+
     fun sendEscape(): Unit = send("\u001B")
+
     fun sendUp(): Unit = send("\u001B[A")
+
     fun sendDown(): Unit = send("\u001B[B")
+
     fun sendLeft(): Unit = send("\u001B[D")
+
     fun sendRight(): Unit = send("\u001B[C")
+
     fun sendCtrlP(): Unit = send("\u0010")
 
     fun checkpoint(): Int = transcript().length
+
     fun rawCheckpoint(): Int = synchronized(transcriptLock) { rawTranscript.length }
+
     fun diagnosticCheckpoint(): Long = if (Files.exists(diagnosticsFile)) Files.size(diagnosticsFile) else 0L
 
     fun awaitRawRegex(
@@ -55,7 +66,11 @@ internal class PtyTerminalSession private constructor(
     ): MatchResult {
         var match: MatchResult? = null
         awaitRawCondition("pattern '$expected'", timeout) { output ->
-            expected.find(output, startIndex = after)?.also { match = it }?.range?.first
+            expected
+                .find(output, startIndex = after)
+                ?.also { match = it }
+                ?.range
+                ?.first
         }
         return checkNotNull(match)
     }
@@ -84,7 +99,10 @@ internal class PtyTerminalSession private constructor(
         return matched
     }
 
-    fun awaitQuiet(period: Duration = Duration.ofMillis(250), timeout: Duration = DEFAULT_TIMEOUT) {
+    fun awaitQuiet(
+        period: Duration = Duration.ofMillis(250),
+        timeout: Duration = DEFAULT_TIMEOUT,
+    ) {
         val deadline = System.nanoTime() + timeout.toNanos()
         var previousSize = -1
         var unchangedSince = System.nanoTime()
@@ -113,10 +131,12 @@ internal class PtyTerminalSession private constructor(
     fun requestGarbageCollection(): String {
         val handle = findApplicationProcess() ?: error("Could not resolve the sample JVM process")
         val javaCommand = (handle.info().command().orElse("")) ?: ""
-        val jcmd = runCatching { Path.of(javaCommand).parent.resolve("jcmd") }.getOrNull()
-            ?.takeIf(Files::isExecutable)
-            ?.toString()
-            ?: "jcmd"
+        val jcmd =
+            runCatching { Path.of(javaCommand).parent.resolve("jcmd") }
+                .getOrNull()
+                ?.takeIf(Files::isExecutable)
+                ?.toString()
+                ?: "jcmd"
         val command = ProcessBuilder(jcmd, handle.pid().toString(), "GC.run").redirectErrorStream(true).start()
         val output = command.inputStream.bufferedReader().readText()
         check(command.waitFor(10, TimeUnit.SECONDS) && command.exitValue() == 0) { "jcmd GC.run failed: $output" }
@@ -124,7 +144,10 @@ internal class PtyTerminalSession private constructor(
         return output
     }
 
-    fun resize(columns: Int, lines: Int) {
+    fun resize(
+        columns: Int,
+        lines: Int,
+    ) {
         require(columns > 0 && lines > 0)
         val handle = findApplicationProcess() ?: error("Could not resolve the sample process for resize")
         val tty = resolveTerminalDevice(handle)
@@ -151,7 +174,10 @@ internal class PtyTerminalSession private constructor(
             ?.get(1)
             ?.toLongOrNull()
 
-    fun recordMeasurement(name: String, value: Long) {
+    fun recordMeasurement(
+        name: String,
+        value: Long,
+    ) {
         synchronized(measurements) { measurements += "$name=$value" }
     }
 
@@ -211,7 +237,8 @@ internal class PtyTerminalSession private constructor(
     private fun readRssKb(handle: ProcessHandle): Long? {
         val procStatus = Path.of("/proc", handle.pid().toString(), "status")
         if (Files.isReadable(procStatus)) {
-            return Files.readAllLines(procStatus)
+            return Files
+                .readAllLines(procStatus)
                 .firstOrNull { it.startsWith("VmRSS:") }
                 ?.substringAfter("VmRSS:")
                 ?.trim()
@@ -277,7 +304,11 @@ internal class PtyTerminalSession private constructor(
         Files.writeString(artifactDirectory.resolve("summary.txt"), report.toText() + measurementText)
     }
 
-    private fun awaitCondition(description: String, timeout: Duration, condition: (String) -> Int?): Int {
+    private fun awaitCondition(
+        description: String,
+        timeout: Duration,
+        condition: (String) -> Int?,
+    ): Int {
         val deadline = System.nanoTime() + timeout.toNanos()
         while (System.nanoTime() < deadline) {
             val output = transcript()
@@ -288,7 +319,11 @@ internal class PtyTerminalSession private constructor(
         error("Timed out after ${timeout.toMillis()} ms waiting for $description:\n${tail()}")
     }
 
-    private fun awaitRawCondition(description: String, timeout: Duration, condition: (String) -> Int?): Int {
+    private fun awaitRawCondition(
+        description: String,
+        timeout: Duration,
+        condition: (String) -> Int?,
+    ): Int {
         val deadline = System.nanoTime() + timeout.toNanos()
         while (System.nanoTime() < deadline) {
             val output = synchronized(transcriptLock) { rawTranscript.toString() }
@@ -304,6 +339,7 @@ internal class PtyTerminalSession private constructor(
     }
 
     private fun tail(): String = transcript().takeLast(4_000)
+
     private fun elapsedNanos(): Long = System.nanoTime() - startedAtNanos
 
     companion object {
@@ -319,13 +355,16 @@ internal class PtyTerminalSession private constructor(
             lines: Int = 30,
             environment: Map<String, String> = emptyMap(),
         ): PtyTerminalSession {
-            val binary = System.getProperty("dispatch.sample.binary")
-                ?: error("Missing dispatch.sample.binary; run the Gradle terminalE2eTest task")
+            val binary =
+                System.getProperty("dispatch.sample.binary")
+                    ?: error("Missing dispatch.sample.binary; run the Gradle terminalE2eTest task")
             require(Files.isExecutable(Path.of(binary))) { "Sample executable does not exist: $binary" }
 
-            val reportRoot = System.getProperty("dispatch.sample.reportDir")
-                ?.let(Path::of)
-                ?: Path.of("build", "reports", "terminal-reliability")
+            val reportRoot =
+                System
+                    .getProperty("dispatch.sample.reportDir")
+                    ?.let(Path::of)
+                    ?: Path.of("build", "reports", "terminal-reliability")
             val artifactDirectory = reportRoot.resolve(scenario.replace(Regex("[^A-Za-z0-9._-]"), "_"))
             Files.createDirectories(artifactDirectory)
             val diagnostics = artifactDirectory.resolve("render-diagnostics.jsonl")
@@ -333,11 +372,12 @@ internal class PtyTerminalSession private constructor(
 
             val osName = System.getProperty("os.name").lowercase()
             val shellCommand = "stty cols $columns rows $lines; exec ${shellQuote(binary)}"
-            val command = if (osName.contains("mac")) {
-                listOf("/usr/bin/script", "-q", "/dev/null", "/bin/sh", "-c", shellCommand)
-            } else {
-                listOf("/usr/bin/script", "-qefc", shellCommand, "/dev/null")
-            }
+            val command =
+                if (osName.contains("mac")) {
+                    listOf("/usr/bin/script", "-q", "/dev/null", "/bin/sh", "-c", shellCommand)
+                } else {
+                    listOf("/usr/bin/script", "-qefc", shellCommand, "/dev/null")
+                }
             val processBuilder = ProcessBuilder(command).redirectErrorStream(true)
             processBuilder.environment().putAll(
                 mapOf(
@@ -355,30 +395,48 @@ internal class PtyTerminalSession private constructor(
             return PtyTerminalSession(scenario, processBuilder.start(), artifactDirectory, diagnostics)
         }
 
-        private fun normalize(raw: String): String = raw
-            .replace(oscPattern, "")
-            .replace(csiPattern, "")
-            .replace(borderPattern, " ")
-            .replace("\r", "")
-            .replace("\u0000", "")
-            .replace(whitespacePattern, " ")
+        private fun normalize(raw: String): String =
+            raw
+                .replace(oscPattern, "")
+                .replace(csiPattern, "")
+                .replace(borderPattern, " ")
+                .replace("\r", "")
+                .replace("\u0000", "")
+                .replace(whitespacePattern, " ")
 
         private fun shellQuote(value: String): String = "'${value.replace("'", "'\\''")}'"
-        private fun thread(name: String, block: () -> Unit): Thread = Thread(block, name).apply { isDaemon = true; start() }
+
+        private fun thread(
+            name: String,
+            block: () -> Unit,
+        ): Thread =
+            Thread(block, name).apply {
+                isDaemon = true
+                start()
+            }
     }
 }
 
-internal data class RssSample(val elapsedNanos: Long, val pid: Long, val rssKb: Long)
-private data class TimedChunk(val elapsedNanos: Long, val data: String)
+internal data class RssSample(
+    val elapsedNanos: Long,
+    val pid: Long,
+    val rssKb: Long,
+)
 
-private fun String.escapeControls(): String = buildString {
-    for (character in this@escapeControls) {
-        when (character) {
-            '\u001B' -> append("<ESC>")
-            '\r' -> append("<CR>")
-            '\n' -> append("<LF>")
-            '\t' -> append("<TAB>")
-            else -> append(character)
+private data class TimedChunk(
+    val elapsedNanos: Long,
+    val data: String,
+)
+
+private fun String.escapeControls(): String =
+    buildString {
+        for (character in this@escapeControls) {
+            when (character) {
+                '\u001B' -> append("<ESC>")
+                '\r' -> append("<CR>")
+                '\n' -> append("<LF>")
+                '\t' -> append("<TAB>")
+                else -> append(character)
+            }
         }
     }
-}

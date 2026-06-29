@@ -33,7 +33,7 @@ class TerminalApplicationE2eTest {
             terminal.send("cancel this response")
             Thread.sleep(PASTE_SUPPRESSION_SETTLE_MILLIS)
             terminal.sendEnter()
-            terminal.awaitText("Sample [streaming]", after = secondStart)
+            terminal.awaitText("streaming…", after = secondStart)
             Thread.sleep(100)
             val cancelStart = terminal.checkpoint()
             terminal.sendEscape()
@@ -53,20 +53,28 @@ class TerminalApplicationE2eTest {
             val diagnosticsStart = terminal.diagnosticCheckpoint()
 
             terminal.send("/")
-            terminal.awaitText("/clear")
+            terminal.awaitText("clear")
             terminal.awaitQuiet()
 
             val diagnostics = terminal.diagnosticEvents(diagnosticsStart)
             val appendWrites =
-                diagnostics.lineSequence().filter {
-                    it.contains("\"event\":\"terminal_write\"") &&
-                        it.contains("\"operation\":\"append_scrolling\"")
-                }.toList()
+                diagnostics
+                    .lineSequence()
+                    .filter {
+                        it.contains("\"event\":\"terminal_write\"") &&
+                            it.contains("\"operation\":\"append_scrolling\"")
+                    }.toList()
             val rewriteClearLineCounts =
-                diagnostics.lineSequence()
+                diagnostics
+                    .lineSequence()
                     .filter { it.contains("\"operation\":\"rewrite_viewport\"") }
-                    .mapNotNull { Regex("\"clearLines\":(\\d+)").find(it)?.groupValues?.get(1)?.toIntOrNull() }
-                    .toList()
+                    .mapNotNull {
+                        Regex("\"clearLines\":(\\d+)")
+                            .find(it)
+                            ?.groupValues
+                            ?.get(1)
+                            ?.toIntOrNull()
+                    }.toList()
             assertTrue(appendWrites.isEmpty(), "Palette opening appended scrolling content: $appendWrites")
             assertTrue(
                 rewriteClearLineCounts.all { it <= 30 },
@@ -95,7 +103,7 @@ class TerminalApplicationE2eTest {
 
             val clearStart = terminal.diagnosticCheckpoint()
             terminal.send("/")
-            terminal.awaitText("/clear")
+            terminal.awaitText("clear")
             terminal.sendEnter()
             terminal.awaitQuiet()
             val clearDiagnostics = terminal.diagnosticEvents(clearStart)
@@ -123,52 +131,46 @@ class TerminalApplicationE2eTest {
     }
 
     @Test
-    fun `text field owns arrows and tab transfers focus to arrow navigable actions`() {
-        PtyTerminalSession.start("text-focus-contract").use { terminal ->
-            terminal.awaitText("Dispatch UI Sample")
-            terminal.sendDown()
+    fun `inputs screen owns typing and tab transfers focus while masking the password`() {
+        PtyTerminalSession.start("inputs-focus-contract").use { terminal ->
+            terminal.awaitText(HOME_TITLE)
             val navigationStart = terminal.checkpoint()
+            // The launcher grid starts on the first card (Inputs), so Enter opens it directly.
             terminal.sendEnter()
-            terminal.awaitText("Controls widget gallery", after = navigationStart)
+            terminal.awaitText("$BANNER Inputs", after = navigationStart)
+            terminal.awaitText("PasswordField — masked input", after = navigationStart)
 
-            terminal.send("one")
-            terminal.awaitText("Name: one")
-            terminal.sendUp()
-            terminal.send("X")
-            terminal.awaitText("Name: Xone")
-            terminal.sendDown()
-            terminal.send("Y")
-            terminal.awaitText("Name: XoneY")
+            // The name field owns the keyboard; typed text is echoed inline and by the display-only renderer.
+            val typedName = "Grace"
+            val nameStart = terminal.checkpoint()
+            terminal.send(typedName)
+            terminal.awaitText(typedName, after = nameStart)
 
+            // Tab transfers focus to the password field, which masks every character.
             terminal.sendTab()
-            terminal.send("secret")
-            terminal.awaitText("Password length: 6")
-            assertFalse(terminal.transcript().contains("secret"), "Password value leaked into terminal output")
-
-            terminal.sendTab()
-            terminal.sendDown()
-            terminal.sendEnter()
-            terminal.awaitText("Count: 1")
-            terminal.sendUp()
-            terminal.sendEnter()
-            terminal.awaitText("Count: 2")
+            val secret = "Pa55phrase"
+            terminal.send(secret)
+            terminal.awaitText("●●●●●")
+            assertFalse(terminal.transcript().contains(secret), "Password value leaked into terminal output")
+            // The earlier name is still visible, proving focus actually moved off it.
+            assertTrue(terminal.transcript().contains(typedName), "Name field value disappeared after Tab")
         }
     }
 
     @Test
     fun `text editing never emits a blank screen rewrite`() {
         PtyTerminalSession.start("text-render-stability").use { terminal ->
-            terminal.awaitText("Dispatch UI Sample")
-            terminal.sendDown()
+            terminal.awaitText(HOME_TITLE)
+            val navigationStart = terminal.checkpoint()
             terminal.sendEnter()
-            terminal.awaitText("Controls widget gallery")
+            terminal.awaitText("$BANNER Inputs", after = navigationStart)
             val diagnosticsStart = terminal.diagnosticCheckpoint()
 
             "render without blinking".forEach { character ->
                 terminal.send(character.toString())
                 Thread.sleep(18)
             }
-            terminal.awaitText("Name: render without blinking")
+            terminal.awaitText("render without blinking")
             terminal.awaitQuiet()
 
             val diagnostics = terminal.diagnosticEvents(diagnosticsStart)
@@ -183,26 +185,32 @@ class TerminalApplicationE2eTest {
     @Test
     fun `global navigator reaches every sample screen through PTY keys`() {
         PtyTerminalSession.start("all-screen-navigation").use { terminal ->
-            terminal.awaitText("Dispatch UI Sample")
+            terminal.awaitText(HOME_TITLE)
+            // Palette index (number of Down presses from the reset top entry) to the screen title banner.
             val destinations =
                 listOf(
-                    1 to "Simulated streaming chat",
-                    2 to "Controls widget gallery",
-                    3 to "Surfaces widget gallery",
-                    4 to "Data widget gallery",
-                    5 to "Progress widget gallery",
-                    6 to "Lists widget gallery",
-                    7 to "Review widget gallery",
-                    8 to "Workflow widget gallery",
-                    0 to "Dispatch UI Sample",
+                    1 to "Inputs",
+                    2 to "Buttons & Selection",
+                    3 to "Lists",
+                    4 to "Tables & Grid",
+                    5 to "Hierarchy & Command",
+                    6 to "Checklist & Tasks",
+                    7 to "Progress",
+                    8 to "Surfaces & Dividers",
+                    9 to "Layout",
+                    10 to "Diff & Review",
+                    11 to "Simulated streaming chat",
+                    0 to HOME_TITLE,
                 )
             destinations.forEach { (downCount, title) ->
                 val start = terminal.checkpoint()
                 terminal.sendCtrlP()
-                terminal.awaitText("Home — main menu", after = start)
+                awaitPaletteOpen(terminal, after = start)
                 repeat(downCount) { terminal.sendDown() }
                 terminal.sendEnter()
-                terminal.awaitText(title, after = start, timeout = Duration.ofSeconds(12))
+                // The "▌ " title banner only appears on the screen itself, never in the palette list,
+                // so anchoring on it cannot accidentally match a palette entry of the same name.
+                terminal.awaitText("$BANNER $title", after = start, timeout = Duration.ofSeconds(12))
             }
         }
     }
@@ -210,20 +218,18 @@ class TerminalApplicationE2eTest {
     @Test
     fun `repeated navigation clears obsolete scrollback once per transition`() {
         PtyTerminalSession.start("navigation-scrollback-cleanup").use { terminal ->
-            terminal.awaitText("Dispatch UI Sample")
+            terminal.awaitText(HOME_TITLE)
             val diagnosticsStart = terminal.diagnosticCheckpoint()
 
             repeat(10) {
                 val forwardStart = terminal.checkpoint()
-                terminal.sendCtrlP()
-                terminal.awaitText("Go to", after = forwardStart)
-                repeat(2) { terminal.sendDown() }
+                // The launcher grid keeps the cursor on the first card (Inputs); Enter opens it.
                 terminal.sendEnter()
-                terminal.awaitText("Controls widget gallery", after = forwardStart)
+                terminal.awaitText("$BANNER Inputs", after = forwardStart)
 
                 val backStart = terminal.checkpoint()
                 terminal.sendEscape()
-                terminal.awaitText("Dispatch UI Sample", after = backStart)
+                terminal.awaitText("$BANNER $HOME_TITLE", after = backStart)
             }
 
             val diagnostics = terminal.diagnosticEvents(diagnosticsStart)
@@ -245,10 +251,8 @@ class TerminalApplicationE2eTest {
     fun `animated gallery remains non blanking at compact and wide PTY sizes`() {
         listOf(80 to 24, 160 to 50).forEach { (columns, lines) ->
             PtyTerminalSession.start("progress-${columns}x$lines", columns = columns, lines = lines).use { terminal ->
-                terminal.awaitText("Dispatch UI Sample")
-                repeat(4) { terminal.sendDown() }
-                terminal.sendEnter()
-                terminal.awaitText("Progress widget gallery")
+                terminal.awaitText(HOME_TITLE)
+                openProgress(terminal)
                 val diagnosticsStart = terminal.diagnosticCheckpoint()
                 Thread.sleep(700)
                 val diagnostics = terminal.diagnosticEvents(diagnosticsStart)
@@ -261,10 +265,8 @@ class TerminalApplicationE2eTest {
     @Test
     fun `continuous shrink applies only the settled PTY size`() {
         PtyTerminalSession.start("continuous-shrink", columns = 160, lines = 50).use { terminal ->
-            terminal.awaitText("Dispatch UI Sample")
-            repeat(4) { terminal.sendDown() }
-            terminal.sendEnter()
-            terminal.awaitText("Progress widget gallery")
+            terminal.awaitText(HOME_TITLE)
+            openProgress(terminal)
             val diagnosticsStart = terminal.diagnosticCheckpoint()
 
             listOf(150 to 46, 130 to 40, 110 to 34, 90 to 28, 80 to 24).forEach { (columns, lines) ->
@@ -296,19 +298,47 @@ class TerminalApplicationE2eTest {
     }
 
     private fun enterChat(terminal: PtyTerminalSession) {
-        terminal.awaitText("Dispatch UI Sample")
+        terminal.awaitText(HOME_TITLE)
         val start = terminal.checkpoint()
+        // Chat is the last palette entry (index 11 after the reset-to-top "Home").
+        terminal.sendCtrlP()
+        awaitPaletteOpen(terminal, after = start)
+        repeat(11) { terminal.sendDown() }
         terminal.sendEnter()
-        terminal.awaitText("Simulated streaming chat", after = start)
+        terminal.awaitText("$BANNER Simulated streaming chat", after = start)
     }
 
-    private fun sendMessage(terminal: PtyTerminalSession, text: String) {
+    /**
+     * Waits until the global "go to…" palette is open. The palette's panel title can scroll off the
+     * top of a small viewport when it overflows the launcher grid, so this gates on the always-visible
+     * last entry (Chat) instead — a line only the palette ever renders.
+     */
+    private fun awaitPaletteOpen(
+        terminal: PtyTerminalSession,
+        after: Int,
+    ) {
+        terminal.awaitText("Chat — Streaming", after = after)
+    }
+
+    private fun openProgress(terminal: PtyTerminalSession) {
+        val start = terminal.checkpoint()
+        // Three-column launcher grid: Progress is ordinal 6 (row 2, column 0) — two Down presses
+        // from the top-left card.
+        repeat(2) { terminal.sendDown() }
+        terminal.sendEnter()
+        terminal.awaitText("$BANNER Progress", after = start)
+    }
+
+    private fun sendMessage(
+        terminal: PtyTerminalSession,
+        text: String,
+    ) {
         val start = terminal.checkpoint()
         terminal.send(text)
         terminal.awaitText(text, after = start)
         Thread.sleep(PASTE_SUPPRESSION_SETTLE_MILLIS)
         terminal.sendEnter()
-        terminal.awaitText("Sample [streaming]", after = start)
+        terminal.awaitText("streaming…", after = start)
         terminal.awaitAnyText(
             expected = listOf("network stream.", "chunks are still arriving.", "active in this sample."),
             after = start,
@@ -325,5 +355,11 @@ class TerminalApplicationE2eTest {
 
     private companion object {
         const val PASTE_SUPPRESSION_SETTLE_MILLIS = 300L
+
+        /** The Home launcher title, used both as the start gate and the Home destination. */
+        const val HOME_TITLE = "Dispatch — Terminal UI Showcase"
+
+        /** The left-bar glyph the shared TitleBanner prefixes every screen title with. */
+        const val BANNER = "▌"
     }
 }
