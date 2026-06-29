@@ -21,16 +21,17 @@ internal class ScrollingContentTracker {
         }
 
         if (committedLines.isEmpty()) {
-            committedLines.clear()
             committedLines.addAll(scrollingLines)
             return ScrollUpdate.append(scrollingLines)
         }
 
         if (startsWithCommitted(scrollingLines)) {
-            val linesToAppend = scrollingLines.drop(committedLines.size)
-            committedLines.clear()
-            committedLines.addAll(scrollingLines)
-            if (linesToAppend.isEmpty()) return ScrollUpdate.none()
+            if (scrollingLines.size == committedLines.size) return ScrollUpdate.none()
+            // Append only the newly-grown tail instead of re-copying the entire history every
+            // frame (O(appended) instead of O(total)). committedLines already equals the common
+            // prefix, so appending the tail leaves it element-wise equal to scrollingLines.
+            val linesToAppend = scrollingLines.subList(committedLines.size, scrollingLines.size).toList()
+            committedLines.addAll(linesToAppend)
             return ScrollUpdate.append(linesToAppend)
         }
 

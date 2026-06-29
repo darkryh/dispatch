@@ -16,6 +16,19 @@ class TerminalRenderer(
     private val renderLock = ReentrantLock()
 
     /**
+     * Reused frame buffer. Every emitting method builds into this instead of allocating a fresh
+     * StringBuilder per call. Only ever touched while holding [renderLock], and [flushBuffer]
+     * consumes it synchronously before the lock is released, so it is never aliased across frames.
+     * It retains the largest frame's capacity (a deliberate steady-state memory tradeoff).
+     */
+    private val scratchBuffer = StringBuilder(256)
+
+    private fun scratch(): StringBuilder {
+        scratchBuffer.setLength(0)
+        return scratchBuffer
+    }
+
+    /**
      * Current terminal size - detected from Mordant Terminal.
      */
     val terminalWidth: Int
@@ -54,7 +67,7 @@ class TerminalRenderer(
         if (lines.isEmpty()) return
 
         renderLock.withLock {
-            val buffer = StringBuilder()
+            val buffer = scratch()
             clearActiveAreaInto(buffer)
             appendLines(buffer, lines)
             restoreActiveAreaInto(buffer)
@@ -73,7 +86,7 @@ class TerminalRenderer(
         clearScrollback: Boolean = true,
     ) {
         renderLock.withLock {
-            val buffer = StringBuilder()
+            val buffer = scratch()
             if (clearScrollback) {
                 // Keep the visible viewport intact. Rows are replaced below before obsolete
                 // trailing rows are erased, so the terminal never observes a blank frame.
@@ -131,7 +144,7 @@ class TerminalRenderer(
             val forceRedraw = oldLineCount != newLineCount || hasAnyContentChange
 
             // Build entire update in a buffer to send atomically (prevents flickering)
-            val buffer = StringBuilder()
+            val buffer = scratch()
             moveToActiveAreaTop(buffer, oldLineCount)
             appendActiveAreaUpdates(
                 buffer = buffer,
@@ -154,7 +167,7 @@ class TerminalRenderer(
     fun clearActiveArea() {
         renderLock.withLock {
             if (activeAreaInitialized && activeAreaLines.isNotEmpty()) {
-                val buffer = StringBuilder()
+                val buffer = scratch()
                 clearActiveAreaInto(buffer)
                 flushBuffer(buffer, "clear_active_area")
             }
@@ -171,7 +184,7 @@ class TerminalRenderer(
      */
     fun handoffToShellPrompt() {
         renderLock.withLock {
-            val buffer = StringBuilder()
+            val buffer = scratch()
             val trailingBlankLines = activeAreaLines.trailingBlankLineCount()
             val targetRow =
                 (visibleContentLineCount - trailingBlankLines)
@@ -320,24 +333,29 @@ class TerminalRenderer(
         buffer: StringBuilder,
         operation: String,
     ) {
-        val startedAt = System.nanoTime()
+        val startedAt = if (RenderDiagnostics.isEnabled) System.nanoTime() else 0L
         OutputCapture.suppress {
             terminal.rawPrint(buffer)
             System.out.flush()
         }
-        RenderDiagnostics.record(
-            event = "terminal_write",
-            fields =
-                mapOf(
-                    "operation" to operation,
-                    "bytes" to buffer.toString().toByteArray(Charsets.UTF_8).size,
-                    "chars" to buffer.length,
-                    "clearScreen" to buffer.contains(AnsiCodes.CLEAR_SCREEN),
-                    "clearScrollback" to buffer.contains(AnsiCodes.CLEAR_SCROLLBACK),
-                    "clearLines" to buffer.countOccurrences(AnsiCodes.CLEAR_LINE),
-                    "durationNanos" to System.nanoTime() - startedAt,
-                ),
-        )
+        // The field map below scans and re-copies the whole frame (toString()/toByteArray()/
+        // contains/countOccurrences). None of it touches the terminal, so skip it entirely when
+        // diagnostics are off (the production default).
+        if (RenderDiagnostics.isEnabled) {
+            RenderDiagnostics.record(
+                event = "terminal_write",
+                fields =
+                    mapOf(
+                        "operation" to operation,
+                        "bytes" to buffer.toString().toByteArray(Charsets.UTF_8).size,
+                        "chars" to buffer.length,
+                        "clearScreen" to buffer.contains(AnsiCodes.CLEAR_SCREEN),
+                        "clearScrollback" to buffer.contains(AnsiCodes.CLEAR_SCROLLBACK),
+                        "clearLines" to buffer.countOccurrences(AnsiCodes.CLEAR_LINE),
+                        "durationNanos" to System.nanoTime() - startedAt,
+                    ),
+            )
+        }
     }
 
     /**
@@ -418,9 +436,14 @@ class TerminalRenderer(
      * Ring the terminal bell.
      */
     fun bell() {
-        OutputCapture.suppress {
+        // Serialize the BEL with frame emission via renderLock; without it the BEL byte can
+        // interleave into the middle of another method's atomic frame write (the single-writer
+        // invariant every other emitting path already upholds).
+        renderLock.withLock {
+            OutputCapture.suppress {
             terminal.rawPrint("\u0007")
             System.out.flush()
+            }
         }
     }
 

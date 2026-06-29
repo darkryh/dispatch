@@ -89,9 +89,13 @@ internal class BoxMeasurePolicy(
                 measurable.measure(modifiedConstraints)
             }
 
-        // Calculate layout size (largest child)
-        val contentWidth = placeables.maxOfOrNull { it.width } ?: 0
-        val contentHeight = placeables.maxOfOrNull { it.height } ?: 0
+        // Calculate layout size (largest child) in a single pass instead of two maxOfOrNull scans.
+        var contentWidth = 0
+        var contentHeight = 0
+        for (placeable in placeables) {
+            if (placeable.width > contentWidth) contentWidth = placeable.width
+            if (placeable.height > contentHeight) contentHeight = placeable.height
+        }
 
         val layoutWidth =
             if (constraints.hasBoundedWidth) {
@@ -112,13 +116,9 @@ internal class BoxMeasurePolicy(
             height = layoutHeight,
         ) {
             for (placeable in placeables) {
-                val (x, y) =
-                    contentAlignment.align(
-                        containerWidth = layoutWidth,
-                        containerHeight = layoutHeight,
-                        contentWidth = placeable.width,
-                        contentHeight = placeable.height,
-                    )
+                // Call the per-axis aligners directly to avoid boxing a Pair<Int, Int> per child.
+                val x = contentAlignment.horizontal.align(layoutWidth, placeable.width)
+                val y = contentAlignment.vertical.align(layoutHeight, placeable.height)
                 placeable.placeAt(x, y)
             }
         }

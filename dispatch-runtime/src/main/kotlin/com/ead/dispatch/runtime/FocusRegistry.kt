@@ -2,7 +2,6 @@ package com.ead.dispatch.runtime
 
 import com.ead.dispatch.layout.LayoutNode
 import com.ead.dispatch.modifier.FocusTargetModifier
-import com.ead.dispatch.modifier.allOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -17,6 +16,9 @@ import com.github.ajalt.mordant.input.KeyboardEvent
  */
 class FocusRegistry {
     private val order = mutableListOf<Any>()
+    // Reused across syncs so the per-frame focus walk allocates nothing; cleared at the start of
+    // each sync(). Safe because sync() runs single-threaded on the render path.
+    private val seenScratch = HashSet<Any>()
     private var focusedToken: Any? by mutableStateOf(null)
     private var lastEvent: KeyboardEvent? = null
 
@@ -27,14 +29,13 @@ class FocusRegistry {
      * so focus order matches the rendered node tree.
      */
     fun sync(root: LayoutNode?) {
-        val newOrder = mutableListOf<Any>()
-        if (root != null) {
-            // Track seen tokens in a set so de-duplication stays O(1) per node instead of O(n)
-            // (the contains() check across the growing list made this O(n^2) per frame).
-            collectFocusTargets(root, newOrder, HashSet())
-        }
         order.clear()
-        order.addAll(newOrder)
+        seenScratch.clear()
+        if (root != null) {
+            // Collect directly into `order` (nothing reads it mid-walk) and de-dup via a reused
+            // HashSet, so a frame with an unchanged tree allocates nothing here.
+            collectFocusTargets(root, order, seenScratch)
+        }
         focusedToken = when {
             order.isEmpty() -> {
                 lastEvent = null
@@ -74,15 +75,19 @@ class FocusRegistry {
     }
 
     private fun collectFocusTargets(node: LayoutNode, target: MutableList<Any>, seen: HashSet<Any>) {
-        val modifiers = node.modifier.allOf<FocusTargetModifier>()
-        for (modifier in modifiers) {
-            val token = modifier.token ?: node
-            if (seen.add(token)) {
-                target.add(token)
+        // foldIn visits elements outside-to-inside (identical order to the previous allOf()) but
+        // without allocating a list per node.
+        node.modifier.foldIn(Unit) { _, element ->
+            if (element is FocusTargetModifier) {
+                val token = element.token ?: node
+                if (seen.add(token)) {
+                    target.add(token)
+                }
             }
         }
-        node.children.forEach { child ->
-            collectFocusTargets(child, target, seen)
+        val children = node.children
+        for (index in children.indices) {
+            collectFocusTargets(children[index], target, seen)
         }
     }
 }

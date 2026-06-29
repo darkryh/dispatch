@@ -7,8 +7,11 @@ import com.github.ajalt.mordant.terminal.Terminal
 
 /**
  * CompositionLocal providing the current [Terminal].
+ *
+ * Static: the terminal reference is provided once at setup and never changes, so per-read
+ * state tracking is pure overhead.
  */
-val LocalTerminal = compositionLocalOf<Terminal> {
+val LocalTerminal = staticCompositionLocalOf<Terminal> {
     error("No Terminal provided. Ensure you're inside a DispatchApplication.")
 }
 
@@ -25,28 +28,35 @@ val LocalSavedStateHandle = compositionLocalOf<SavedStateHandle?> { null }
 /**
  * CompositionLocal providing the current [DispatchScope].
  */
-val LocalDispatchScope = compositionLocalOf<DispatchScope> {
+val LocalDispatchScope = staticCompositionLocalOf<DispatchScope> {
     error("No DispatchScope provided. Ensure you're inside a DispatchApplication.")
 }
 
 /**
  * CompositionLocal providing parsed arguments and flags.
+ *
+ * Static: provided once with a stable reference.
  */
-val LocalDispatchArgs = compositionLocalOf<DispatchArgs> {
+val LocalDispatchArgs = staticCompositionLocalOf<DispatchArgs> {
     error("No DispatchArgs provided. Ensure you're inside a DispatchApplication.")
 }
 
 /**
  * CompositionLocal providing the combined dispatch context.
+ *
+ * Static: the provided instance is remembered in DispatchApplication so it stays referentially
+ * stable across recompositions (see the `remember(scope, args, config)` at the provider site).
  */
-val LocalDispatchContext = compositionLocalOf<DispatchContext> {
+val LocalDispatchContext = staticCompositionLocalOf<DispatchContext> {
     error("No DispatchContext provided. Ensure you're inside a DispatchApplication.")
 }
 
 /**
  * CompositionLocal providing the dispatch configuration.
+ *
+ * Static: provided once with a stable reference.
  */
-val LocalDispatchConfig = compositionLocalOf<DispatchConfig> {
+val LocalDispatchConfig = staticCompositionLocalOf<DispatchConfig> {
     error("No DispatchConfig provided. Ensure you're inside a DispatchApplication.")
 }
 

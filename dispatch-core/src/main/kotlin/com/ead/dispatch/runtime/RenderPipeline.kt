@@ -127,26 +127,59 @@ internal class RenderPipeline(
                 renderer.updateActiveArea(activeLines)
             }
             lastRenderedFrame = currentFrame
-            RenderDiagnostics.record(
-                event = "render_frame",
-                fields =
-                    mapOf(
-                        "kind" to update.kind,
-                        "reason" to update.reason,
-                        "forceRewrite" to forceRewrite,
-                        "screenTransition" to screenTransition,
-                        "clearScrollback" to update.clearScrollback,
-                        "terminalWidth" to width,
-                        "terminalHeight" to height,
-                        "scrollingLines" to scrollingLines.size,
-                        "visibleScrollingLines" to viewportScrollingLines(scrollingLines, activeLines, height).size,
-                        "activeLines" to activeLines.size,
-                        "frameHash" to currentFrame.hashCode(),
-                        "durationNanos" to System.nanoTime() - startedAt,
-                    ),
+            recordFrameDiagnostics(
+                update = update,
+                forceRewrite = forceRewrite,
+                screenTransition = screenTransition,
+                width = width,
+                height = height,
+                scrollingLines = scrollingLines,
+                activeLines = activeLines,
+                currentFrame = currentFrame,
+                startedAt = startedAt,
             )
-            RenderDiagnostics.recordMemoryIfDue()
         }
+    }
+
+    /**
+     * Emit per-frame diagnostics only when enabled. Building this map (especially
+     * `currentFrame.hashCode()`, which hashes the entire committed scrollback) is the most
+     * expensive per-frame work on the render path, so it is skipped entirely unless
+     * `DISPATCH_DIAGNOSTICS_FILE` is set. The output is a file-only sidecar and never touches the
+     * terminal, so guarding it does not change emitted bytes or timing.
+     */
+    @Suppress("LongParameterList")
+    private fun recordFrameDiagnostics(
+        update: RenderDecision,
+        forceRewrite: Boolean,
+        screenTransition: Boolean,
+        width: Int,
+        height: Int,
+        scrollingLines: List<String>,
+        activeLines: List<String>,
+        currentFrame: RenderFrameSnapshot,
+        startedAt: Long,
+    ) {
+        if (!RenderDiagnostics.isEnabled) return
+        RenderDiagnostics.record(
+            event = "render_frame",
+            fields =
+                mapOf(
+                    "kind" to update.kind,
+                    "reason" to update.reason,
+                    "forceRewrite" to forceRewrite,
+                    "screenTransition" to screenTransition,
+                    "clearScrollback" to update.clearScrollback,
+                    "terminalWidth" to width,
+                    "terminalHeight" to height,
+                    "scrollingLines" to scrollingLines.size,
+                    "visibleScrollingLines" to viewportScrollingLines(scrollingLines, activeLines, height).size,
+                    "activeLines" to activeLines.size,
+                    "frameHash" to currentFrame.hashCode(),
+                    "durationNanos" to System.nanoTime() - startedAt,
+                ),
+        )
+        RenderDiagnostics.recordMemoryIfDue()
     }
 }
 

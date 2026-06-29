@@ -13,9 +13,15 @@ class GithubReleaseUpdateProvider private constructor(
     private val owner: String,
     private val repo: String,
     private val tagPrefixToTrim: String?,
-    private val client: HttpClient,
+    clientFactory: () -> HttpClient,
     private val ownsClient: Boolean,
 ) : UpdateProvider, AutoCloseable {
+
+    // The client (and, for the default path, its CIO selector/worker threads) is created on first
+    // fetch rather than at construction, so a provider whose update check is throttled away never
+    // spins one up. close() only touches it if it was actually initialized.
+    private val lazyClient = lazy(clientFactory)
+    private val client: HttpClient get() = lazyClient.value
 
     /**
      * Default constructor: lazily owns a single CIO-backed [HttpClient] that is reused across
@@ -25,7 +31,7 @@ class GithubReleaseUpdateProvider private constructor(
         owner: String,
         repo: String,
         tagPrefixToTrim: String? = "v",
-    ) : this(owner, repo, tagPrefixToTrim, HttpClient(CIO), ownsClient = true)
+    ) : this(owner, repo, tagPrefixToTrim, { HttpClient(CIO) }, ownsClient = true)
 
     /**
      * Inject a specific engine (e.g. MockEngine for tests). The created client is owned and closed
@@ -36,7 +42,7 @@ class GithubReleaseUpdateProvider private constructor(
         repo: String,
         engine: HttpClientEngine,
         tagPrefixToTrim: String? = "v",
-    ) : this(owner, repo, tagPrefixToTrim, HttpClient(engine), ownsClient = true)
+    ) : this(owner, repo, tagPrefixToTrim, { HttpClient(engine) }, ownsClient = true)
 
     /**
      * Inject a shared [HttpClient]. The caller retains ownership; [close] will not close it.
@@ -46,7 +52,7 @@ class GithubReleaseUpdateProvider private constructor(
         repo: String,
         client: HttpClient,
         tagPrefixToTrim: String? = "v",
-    ) : this(owner, repo, tagPrefixToTrim, client, ownsClient = false)
+    ) : this(owner, repo, tagPrefixToTrim, { client }, ownsClient = false)
 
     override suspend fun latestVersion(): String? {
         val apiUrl = "https://api.github.com/repos/$owner/$repo/releases/latest"
@@ -78,8 +84,10 @@ class GithubReleaseUpdateProvider private constructor(
         }
 
     override fun close() {
-        if (ownsClient) {
-            client.close()
+        // Guard on isInitialized so closing a never-used provider does not force the client (and
+        // its threads) into existence purely to tear it down.
+        if (ownsClient && lazyClient.isInitialized()) {
+            lazyClient.value.close()
         }
     }
 

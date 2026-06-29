@@ -158,15 +158,18 @@ interface PlacementScope {
  * Simple implementation of PlacementScope.
  */
 class SimplePlacementScope : PlacementScope {
-    private val placements = mutableListOf<Pair<Placeable, Pair<Int, Int>>>()
+    private val placements = mutableListOf<Placeable>()
 
     override fun Placeable.placeAt(x: Int, y: Int) {
         this.x = x
         this.y = y
-        placements.add(this to (x to y))
+        placements.add(this)
     }
 
-    fun getPlacements(): List<Pair<Placeable, Pair<Int, Int>>> = placements.toList()
+    // placeAt already records the position on each Placeable's x/y, so there is no need to also
+    // store nested Pair<Placeable, Pair<Int, Int>> tuples (two boxed ints + two Pairs per child).
+    // Consumers read placeable.x / placeable.y directly.
+    fun getPlacements(): List<Placeable> = placements.toList()
 }
 
 /**

@@ -6,7 +6,10 @@ plugins {
 }
 
 allprojects {
-    group = "com.github.ajalt.mordant.dispatch"
+    // NOTE: was "com.github.ajalt.mordant.dispatch" — that is the Mordant author's namespace and
+    // cannot be published/signed to Maven Central. Using the project owner's own group. Confirm the
+    // final coordinates before the first non-SNAPSHOT release.
+    group = "io.github.darkryh.dispatch"
     version = "1.0.0-SNAPSHOT"
 
     repositories {

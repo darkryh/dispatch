@@ -3,14 +3,11 @@ package com.ead.dispatch.runtime
 import com.ead.dispatch.render.TerminalRenderer
 import com.github.ajalt.mordant.input.enterRawMode
 import com.github.ajalt.mordant.terminal.Terminal
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.cancelAndJoin
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlin.time.Duration.Companion.milliseconds
@@ -18,9 +15,7 @@ import kotlin.time.Duration.Companion.milliseconds
 internal class TerminalSessionCoordinator(
     private val terminal: Terminal,
     private val config: DispatchConfig,
-    private val uiScope: CoroutineScope,
     private val backgroundScope: CoroutineScope,
-    private val uiDispatcher: CoroutineDispatcher,
     private val frameScheduler: FrameScheduler,
     private val renderer: TerminalRenderer,
     private val resizeCoordinator: ResizeCoordinator,
@@ -28,7 +23,7 @@ internal class TerminalSessionCoordinator(
     suspend fun run(
         onInputLoop: suspend (suspend () -> Any?) -> Unit,
         onFrameComposeAndRender: () -> Unit,
-        shouldExit: () -> Boolean,
+        awaitExit: suspend () -> Unit,
         onBeforeShutdown: suspend () -> Unit,
     ) {
         terminal.enterRawMode(config.mouseTracking).use { rawMode ->
@@ -47,7 +42,9 @@ internal class TerminalSessionCoordinator(
             frameScheduler.markFrame()
 
             try {
-                awaitExitRequest(shouldExit)
+                // Suspend until an exit is requested (or this coroutine is cancelled when the UI
+                // scope shuts down, which throws and runs the shutdown below) — no 50ms idle poll.
+                awaitExit()
             } finally {
                 withContext(NonCancellable) {
                     shutdown(
@@ -56,12 +53,6 @@ internal class TerminalSessionCoordinator(
                     )
                 }
             }
-        }
-    }
-
-    private suspend fun awaitExitRequest(shouldExit: () -> Boolean) {
-        while (!shouldExit() && uiScope.isActive) {
-            delay(50)
         }
     }
 

@@ -30,6 +30,7 @@ import java.nio.file.WatchKey
 import java.nio.file.WatchService
 import java.security.MessageDigest
 import java.util.EnumSet
+import java.util.HexFormat
 
 interface WorkspaceWatcher {
     val events: SharedFlow<WorkspaceEvent>
@@ -229,7 +230,9 @@ class DefaultWorkspaceWatcher(
             Files.newInputStream(path).use { input ->
                 updateDigest(digest, input)
             }
-            digest.digest().joinToString("") { byte -> "%02x".format(byte) }
+            // HexFormat does the same lowercase, zero-padded hex but without spinning up a
+            // Formatter + intermediate String per byte.
+            HexFormat.of().formatHex(digest.digest())
         } catch (exception: Exception) {
             WorkspaceLog.debug("hashFile failed for $path", exception)
             null

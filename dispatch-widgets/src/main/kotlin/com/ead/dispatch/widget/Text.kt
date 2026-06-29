@@ -113,10 +113,20 @@ internal class TextMeasurable(
             )
         val rendered = terminal.render(renderedLines)
 
+        // The trim sentinel is only injected on the plain-text path, so the markdown path needs no
+        // strip at all, and plain lines without the sentinel are returned untouched (no per-line
+        // String allocation from replace()).
+        val strippedLines =
+            if (markdown) {
+                rendered.lines()
+            } else {
+                rendered.lines().map { line ->
+                    if (line.indexOf(TRIM_SENTINEL) >= 0) line.replace(TRIM_SENTINEL_STRING, "") else line
+                }
+            }
+
         val lines =
-            rendered
-                .lines()
-                .map { it.replace(TRIM_SENTINEL.toString(), "") }
+            strippedLines
                 .let { list ->
                     val effectiveMaxLines = maxLines ?: modifiedConstraints.maxHeight.takeIf { it != Int.MAX_VALUE }
                     if (effectiveMaxLines != null && list.size > effectiveMaxLines) {
@@ -160,16 +170,27 @@ internal class TextMeasurable(
             return renderPlainText(maxWidth = maxWidth, renderedWidth = renderedWidth, align = align)
         }
 
+        // Memoize the parsed+rendered markdown. The output is a pure function of (terminal, text,
+        // width, style): the terminal identity subsumes its capabilities (theme/ansi level/links),
+        // which are fixed for a terminal's lifetime, so a cache hit can never serve bytes rendered
+        // for a different terminal or width. Re-measures of unchanged markdown (relayout, scroll,
+        // focus) skip the expensive AST parse entirely.
+        val cacheKey = MarkdownCacheKey(terminal, text, renderedWidth, style)
+        markdownLinesCache[cacheKey]?.let { return it }
+
         val markdownLines =
             try {
                 Markdown(text).render(terminal, width = renderedWidth)
             } catch (_: Exception) {
                 // Streaming LLM output can contain transient malformed markdown (e.g., unfinished fences).
                 // Fall back to plain text so a parser failure can't crash the render loop.
+                // The fallback is intentionally NOT cached.
                 return renderPlainText(maxWidth = maxWidth, renderedWidth = renderedWidth, align = align)
             }
 
-        return style?.let { markdownLines.withBaseStyle(it) } ?: markdownLines
+        val styled = style?.let { markdownLines.withBaseStyle(it) } ?: markdownLines
+        markdownLinesCache[cacheKey] = styled
+        return styled
     }
 
     private fun renderPlainText(
@@ -193,8 +214,30 @@ internal class TextMeasurable(
         ).render(terminal, width = renderedWidth)
     }
 
+    private data class MarkdownCacheKey(
+        val terminal: com.github.ajalt.mordant.terminal.Terminal,
+        val text: String,
+        val width: Int,
+        val style: TextStyle?,
+    )
+
     private companion object {
+        private const val MARKDOWN_CACHE_MAX = 128
+
+        /**
+         * Shared, bounded, access-ordered LRU of rendered markdown lines. Synchronized because the
+         * frame/render loop may measure from more than one thread over the app's lifetime.
+         */
+        private val markdownLinesCache: MutableMap<MarkdownCacheKey, Lines> =
+            java.util.Collections.synchronizedMap(
+                object : LinkedHashMap<MarkdownCacheKey, Lines>(64, 0.75f, true) {
+                    override fun removeEldestEntry(eldest: Map.Entry<MarkdownCacheKey, Lines>): Boolean =
+                        size > MARKDOWN_CACHE_MAX
+                },
+            )
         private const val TRIM_SENTINEL = '\u0000'
+
+        private val TRIM_SENTINEL_STRING = TRIM_SENTINEL.toString()
 
         private fun Lines.withBaseStyle(style: TextStyle): Lines =
             Lines(

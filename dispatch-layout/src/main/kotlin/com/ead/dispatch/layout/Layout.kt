@@ -50,7 +50,8 @@ internal class LayoutMeasurable(
     private class LineCanvas(
         val width: Int,
     ) {
-        private val chars: CharArray = CharArray(width) { ' ' }
+        // Bulk fill is intrinsified; faster than invoking the init lambda width times per line.
+        private val chars: CharArray = CharArray(width).also { it.fill(' ') }
 
         // Allocated lazily: most lines are plain text with no ANSI inserts, so this stays null
         // and skips the (width + 1) array allocation on the common path.
@@ -150,8 +151,9 @@ internal class LayoutMeasurable(
         val canvas = Array(height) { LineCanvas(width) }
 
         // Place each child
-        for ((placeable, position) in placements) {
-            val (x, y) = position
+        for (placeable in placements) {
+            val x = placeable.x
+            val y = placeable.y
             for ((lineIndex, line) in placeable.lines.withIndex()) {
                 val targetY = y + lineIndex
                 if (targetY !in 0 until height) continue
@@ -162,22 +164,21 @@ internal class LayoutMeasurable(
             }
         }
 
+        // Single pass tracking both minima instead of two allocating mapNotNull/minOrNull chains.
+        // RenderRegionPlaceable children are rare (only TerminalScreen), so most frames find none.
+        var minActiveStart = Int.MAX_VALUE
+        var minScrollingStart = Int.MAX_VALUE
+        for (placeable in placements) {
+            val region = placeable as? RenderRegionPlaceable ?: continue
+            val active = placeable.y + region.activeStartLine
+            if (active < minActiveStart) minActiveStart = active
+            val scrolling = placeable.y + region.scrollingStartLine
+            if (scrolling < minScrollingStart) minScrollingStart = scrolling
+        }
         val propagatedActiveStartLine =
-            placements
-                .mapNotNull { (placeable, position) ->
-                    val region = placeable as? RenderRegionPlaceable ?: return@mapNotNull null
-                    position.second + region.activeStartLine
-                }
-                .minOrNull()
-                ?.coerceIn(0, height)
+            if (minActiveStart == Int.MAX_VALUE) null else minActiveStart.coerceIn(0, height)
         val propagatedScrollingStartLine =
-            placements
-                .mapNotNull { (placeable, position) ->
-                    val region = placeable as? RenderRegionPlaceable ?: return@mapNotNull null
-                    position.second + region.scrollingStartLine
-                }
-                .minOrNull()
-                ?.coerceIn(0, height)
+            if (minScrollingStart == Int.MAX_VALUE) null else minScrollingStart.coerceIn(0, height)
         return RenderedChildren(
             lines = canvas.map { it.buildLine() },
             propagatedActiveStartLine = propagatedActiveStartLine,
@@ -193,7 +194,9 @@ internal class LayoutMeasurable(
         if (canvas.width == 0) return
 
         var column = startColumn
-        val pending = StringBuilder()
+        // Allocated only when the line actually contains an ANSI escape; plain-text lines (the
+        // common case) keep this null and allocate nothing.
+        var pending: StringBuilder? = null
         var painted = false
 
         var index = 0
@@ -202,16 +205,18 @@ internal class LayoutMeasurable(
             if (c == '\u001B') {
                 val sequenceLength = ansiSequenceLength(line, index)
                 if (sequenceLength > 0) {
-                    pending.append(line, index, index + sequenceLength)
+                    val sb = pending ?: StringBuilder().also { pending = it }
+                    sb.append(line, index, index + sequenceLength)
                     index += sequenceLength
                     continue
                 }
             }
 
             if (column in 0 until canvas.width) {
-                if (pending.isNotEmpty()) {
-                    canvas.insertAt(column, pending)
-                    pending.clear()
+                val sb = pending
+                if (sb != null && sb.isNotEmpty()) {
+                    canvas.insertAt(column, sb)
+                    sb.clear()
                 }
                 canvas.setCharAt(column, c)
                 painted = true
@@ -221,8 +226,9 @@ internal class LayoutMeasurable(
             index++
         }
 
-        if (painted && pending.isNotEmpty()) {
-            canvas.insertAt(column, pending)
+        val trailing = pending
+        if (painted && trailing != null && trailing.isNotEmpty()) {
+            canvas.insertAt(column, trailing)
         }
     }
 

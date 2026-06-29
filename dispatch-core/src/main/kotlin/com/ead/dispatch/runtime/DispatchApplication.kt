@@ -52,6 +52,10 @@ internal class DispatchRuntimeEngine(
     @Volatile
     private var exitRequested = false
 
+    // Completed exactly once when an exit is requested, so the session can await it instead of
+    // polling exitRequested every 50ms. Every exit path funnels through requestExit().
+    private val exitSignal = kotlinx.coroutines.CompletableDeferred<Unit>()
+
     @Volatile
     private var exitCode = 0
 
@@ -224,11 +228,16 @@ internal class DispatchRuntimeEngine(
             recomposer,
         )
         composition.setContent {
+            // Remember the context so the (now static) LocalDispatchContext receives a referentially
+            // stable instance and never invalidates its subtree on an unrelated root recomposition.
+            val dispatchContext = remember(dispatchScopeInstance, dispatchArgs, config) {
+                DispatchContext(dispatchScopeInstance, dispatchArgs, config)
+            }
             CompositionLocalProvider(
                 LocalDispatchScope provides dispatchScopeInstance,
                 LocalDispatchArgs provides dispatchArgs,
                 LocalDispatchConfig provides config,
-                LocalDispatchContext provides DispatchContext(dispatchScopeInstance, dispatchArgs, config),
+                LocalDispatchContext provides dispatchContext,
                 LocalTerminal provides t,
                 LocalTerminalWidth provides terminalWidthState.intValue,
                 LocalTerminalHeight provides terminalHeightState.intValue,
@@ -249,16 +258,14 @@ internal class DispatchRuntimeEngine(
         TerminalSessionCoordinator(
             terminal = terminal,
             config = config,
-            uiScope = uiScope,
             backgroundScope = backgroundScope,
-            uiDispatcher = uiDispatcher,
             frameScheduler = frameScheduler,
             renderer = renderer,
             resizeCoordinator = resizeCoordinator,
         ).run(
             onInputLoop = { readEvent -> runInputLoop(readEvent) },
             onFrameComposeAndRender = { composeAndRender() },
-            shouldExit = { exitRequested },
+            awaitExit = { exitSignal.await() },
             onBeforeShutdown = {
                 cancelExitPromptReset()
                 if (::composition.isInitialized) composition.dispose()
@@ -335,6 +342,11 @@ internal class DispatchRuntimeEngine(
         terminal.println(error.stackTraceToString())
     }
 
+    private fun requestExit() {
+        exitRequested = true
+        exitSignal.complete(Unit)
+    }
+
     private fun handleKeyboardEvent(
         event: KeyboardEvent,
         eventTimestampNanos: Long,
@@ -342,7 +354,7 @@ internal class DispatchRuntimeEngine(
         when (resolveExitAction(event, eventTimestampNanos)) {
             ExitAction.Exit -> {
                 disarmExitPrompt()
-                exitRequested = true
+                requestExit()
                 return true
             }
             ExitAction.Arm -> {
@@ -486,7 +498,7 @@ internal class DispatchRuntimeEngine(
 
         override fun exit(code: Int) {
             exitCode = code
-            exitRequested = true
+            requestExit()
         }
 
         override fun hasFlag(name: String) = name in parsedFlags
@@ -624,7 +636,12 @@ internal fun viewportLineCount(
     scrollingLines: List<String>,
     activeLines: List<String>,
     terminalHeight: Int,
-): Int = viewportScrollingLines(scrollingLines, activeLines, terminalHeight).size + activeLines.size
+): Int {
+    // Equivalent to viewportScrollingLines(...).size + activeLines.size but without allocating the
+    // takeLast() sublist purely to read its length (this runs every frame).
+    val availableRows = (terminalHeight - activeLines.size).coerceAtLeast(0)
+    return minOf(scrollingLines.size, availableRows) + activeLines.size
+}
 
 internal data class TerminalSizeUpdate(
     val width: Int,

@@ -7,6 +7,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @Composable
 fun rememberUpdateAdvice(
@@ -34,7 +36,10 @@ fun rememberUpdateAdvice(
             commandProvider = commandProvider,
             environment = environment,
         )
-        advice = advisor.check()
+        // advisor.check() can run a BLOCKING external command (ProcessBuilder.waitFor) or HTTP call.
+        // The composition runs on the single render thread, so run the check on IO to avoid stalling
+        // frames. Writing the snapshot-backed `advice` state off-thread is safe and schedules a frame.
+        advice = withContext(Dispatchers.IO) { advisor.check() }
     }
 
     return advice

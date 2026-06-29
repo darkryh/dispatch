@@ -51,12 +51,24 @@ fun composableContainer(
     ComposeNode<LayoutNode, DispatchNodeApplier>(
         factory = { LayoutNode(name) },
         update = {
-            set(modifier to measurableFactory) { (nextModifier, nextFactory) ->
+            // Two independent set() calls instead of `set(modifier to measurableFactory)` avoid
+            // allocating a Pair every recomposition. Each block rebuilds from the latest captured
+            // modifier AND factory (closure params), so neither half can go stale.
+            set(modifier) {
                 setDelegate(
                     DynamicChildrenMeasurable(
-                        modifier = nextModifier,
+                        modifier = modifier,
                         children = { children },
-                        measurableFactory = nextFactory,
+                        measurableFactory = measurableFactory,
+                    )
+                )
+            }
+            set(measurableFactory) {
+                setDelegate(
+                    DynamicChildrenMeasurable(
+                        modifier = modifier,
+                        children = { children },
+                        measurableFactory = measurableFactory,
                     )
                 )
             }

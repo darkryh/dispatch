@@ -109,24 +109,6 @@ data class Constraints(
         constrainWidth(width) to constrainHeight(height)
 
     /**
-     * Create a copy with specified modifications, automatically coercing values to valid ranges.
-     *
-     * Unlike the auto-generated copy(), this ensures constraints remain valid
-     * by coercing values (e.g., maxWidth is always >= minWidth).
-     */
-    fun copyCoerced(
-        minWidth: Int = this.minWidth,
-        maxWidth: Int = this.maxWidth,
-        minHeight: Int = this.minHeight,
-        maxHeight: Int = this.maxHeight,
-    ): Constraints = Constraints(
-        minWidth = minWidth.coerceAtLeast(0),
-        maxWidth = maxWidth.coerceAtLeast(minWidth.coerceAtLeast(0)),
-        minHeight = minHeight.coerceAtLeast(0),
-        maxHeight = maxHeight.coerceAtLeast(minHeight.coerceAtLeast(0)),
-    )
-
-    /**
      * Create constraints with an offset applied.
      *
      * Useful for accounting for padding/borders.

@@ -22,6 +22,15 @@ object RenderDiagnostics {
             ?.takeIf(String::isNotBlank)
             ?.let(Path::of)
 
+    /**
+     * Whether diagnostics output is active. Callers MUST guard the construction of any
+     * per-frame `fields` map with this flag — when diagnostics are disabled (the production
+     * default), [record] discards its argument, so building the map is pure wasted work on
+     * the render hot path.
+     */
+    val isEnabled: Boolean
+        get() = outputPath != null
+
     fun record(
         event: String,
         fields: Map<String, Any?> = emptyMap(),

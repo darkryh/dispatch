@@ -121,7 +121,10 @@ internal fun <T> buildGridRows(
     val rows = mutableListOf<List<T>>()
     var index = 0
     while (index < items.size) {
-        val slice = items.drop(index).take(perRow)
+        // subList is an O(1) view instead of drop(index).take(perRow), which copied the whole
+        // remaining tail each iteration (O(n^2) over the item list). Rows are consumed within this
+        // synchronous measurement pass, so the view cannot observe a later mutation.
+        val slice = items.subList(index, minOf(index + perRow, items.size))
         rows.add(slice)
         index += perRow
     }

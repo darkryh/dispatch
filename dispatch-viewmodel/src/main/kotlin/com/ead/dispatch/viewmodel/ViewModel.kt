@@ -1,6 +1,7 @@
 package com.ead.dispatch.viewmodel
 
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 import java.io.Closeable
 import java.util.concurrent.atomic.AtomicBoolean
@@ -178,26 +179,27 @@ abstract class StateViewModel<S>(initialState: S) : ViewModel() {
  */
 abstract class MviViewModel<S, I>(initialState: S) : StateViewModel<S>(initialState) {
     /**
-     * Intent channel for processing user actions.
+     * Intent channel for processing user actions. Unlimited so [sendIntent] can enqueue
+     * synchronously in call order without dropping or allocating a coroutine per intent.
      */
-    private val _intents = MutableSharedFlow<I>(extraBufferCapacity = 64)
+    private val _intents = Channel<I>(Channel.UNLIMITED)
 
     init {
-        // Process intents
+        // Process intents in strict arrival order on the single collector coroutine.
         viewModelScope.launch {
-            _intents.collect { intent ->
+            for (intent in _intents) {
                 handleIntent(intent)
             }
         }
     }
 
     /**
-     * Send an intent to be processed.
+     * Send an intent to be processed. trySend enqueues in call order, never suspends, and (with an
+     * unlimited channel) never drops — replacing a per-call `launch { emit }` that could reorder
+     * intents under a multi-threaded dispatcher.
      */
     fun sendIntent(intent: I) {
-        viewModelScope.launch {
-            _intents.emit(intent)
-        }
+        _intents.trySend(intent)
     }
 
     /**
@@ -238,22 +240,21 @@ abstract class FullMviViewModel<S, I, E>(initialState: S) : ViewModel() {
     val state: StateFlow<S> = _state.asStateFlow()
     val currentState: S get() = _state.value
 
-    private val _intents = MutableSharedFlow<I>(extraBufferCapacity = 64)
+    // Unlimited channel: ordered, non-dropping, no per-intent coroutine. See MviViewModel.
+    private val _intents = Channel<I>(Channel.UNLIMITED)
     private val _sideEffect = MutableSharedFlow<E>(extraBufferCapacity = 64)
     val sideEffect: SharedFlow<E> = _sideEffect.asSharedFlow()
 
     init {
         viewModelScope.launch {
-            _intents.collect { intent ->
+            for (intent in _intents) {
                 handleIntent(intent)
             }
         }
     }
 
     fun sendIntent(intent: I) {
-        viewModelScope.launch {
-            _intents.emit(intent)
-        }
+        _intents.trySend(intent)
     }
 
     protected fun updateState(transform: (S) -> S) {

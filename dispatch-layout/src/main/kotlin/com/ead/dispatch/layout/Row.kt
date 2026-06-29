@@ -84,7 +84,9 @@ internal class RowMeasurePolicy(
         // Resolve each child's weight exactly once into a parallel array (no Pair boxing, no second
         // modifier scan). Placeables are written into a single array indexed in original order.
         val count = measurables.size
-        val weights = arrayOfNulls<Float>(count)
+        // Primitive FloatArray (no per-element boxing) with NaN as the "no weight" sentinel.
+        // Real weights are always > 0 (WeightModifier requires it), so NaN can never collide.
+        val weights = FloatArray(count) { Float.NaN }
         var totalWeight = 0f
 
         for (index in 0 until count) {
@@ -106,7 +108,7 @@ internal class RowMeasurePolicy(
         var remainingWidthForFixed = if (constraints.hasBoundedWidth) constraints.maxWidth else Int.MAX_VALUE
 
         for (index in 0 until count) {
-            if (weights[index] != null) continue
+            if (!weights[index].isNaN()) continue
             val measurable = measurables[index]
             val childConstraints =
                 Constraints(
@@ -129,7 +131,8 @@ internal class RowMeasurePolicy(
         // Measure weighted children
         if (weightsEnabled && totalWeight > 0) {
             for (index in 0 until count) {
-                val weight = weights[index] ?: continue
+                val weight = weights[index]
+                if (weight.isNaN()) continue
                 val weightedWidth = (remainingWidth * weight / totalWeight).toInt()
                 val weightedConstraints =
                     Constraints(

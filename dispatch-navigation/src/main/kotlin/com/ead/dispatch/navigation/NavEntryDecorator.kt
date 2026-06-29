@@ -65,13 +65,15 @@ fun <T : NavKey> rememberDecoratedNavEntries(
     val currentKeys = LinkedHashSet<Any>(entries.size)
     entries.forEach { currentKeys.add(it.contentKey) }
 
-    val removedKeys = activeContentKeys - currentKeys
-    if (removedKeys.isNotEmpty()) {
-        removedKeys.forEach { key ->
-            entryDecorators.forEach { decorator -> decorator.onPop(key) }
-        }
-    }
+    // When the back stack is unchanged (the common frame), skip the set-subtraction and the
+    // clear/addAll entirely. If equal, there are no removed keys, so onPop never fires anyway.
     if (activeContentKeys != currentKeys) {
+        val removedKeys = activeContentKeys - currentKeys
+        if (removedKeys.isNotEmpty()) {
+            removedKeys.forEach { key ->
+                entryDecorators.forEach { decorator -> decorator.onPop(key) }
+            }
+        }
         activeContentKeys.clear()
         activeContentKeys.addAll(currentKeys)
     }
@@ -121,6 +123,11 @@ internal class NavEntryState<T : NavKey>(
     var entry: NavBackStackEntry<T>? = null
     var sourceEntry: NavEntry<T>? = null
 
+    // The encoded route payload is a pure function of this entry's key (its contentKey embeds the
+    // class + payload), so it never changes for the life of the state. Encode it once instead of
+    // re-running the reflective serializer lookup every recomposition.
+    var encodedRoutePayload: String? = null
+
     fun dispose() {
         if (lifecycleRegistry.currentState != LifecycleState.DESTROYED) {
             lifecycleRegistry.moveTo(LifecycleState.DESTROYED)
@@ -129,6 +136,7 @@ internal class NavEntryState<T : NavKey>(
         savedStateRegistry.clear()
         entry = null
         sourceEntry = null
+        encodedRoutePayload = null
     }
 }
 
@@ -212,7 +220,10 @@ private fun <T : NavKey> rememberNavEntries(
                     )
                 }
 
-            state.savedStateHandle[ROUTE_PAYLOAD_KEY] = encodeNavKeyPayload(key, json)
+            val encodedPayload =
+                state.encodedRoutePayload
+                    ?: encodeNavKeyPayload(key, json).also { state.encodedRoutePayload = it }
+            state.savedStateHandle[ROUTE_PAYLOAD_KEY] = encodedPayload
 
             // Reuse the cached NavBackStackEntry when the source NavEntry is
             // unchanged so entries are not reconstructed on every frame.
@@ -237,14 +248,15 @@ private fun <T : NavKey> rememberNavEntries(
 
     val currentKeys = LinkedHashSet<Any>(entries.size)
     entries.forEach { currentKeys.add(it.contentKey) }
-    val removed = activeContentKeys - currentKeys
-    if (removed.isNotEmpty()) {
-        removed.forEach { key ->
-            val state = stateStore.remove(key) ?: return@forEach
-            state.dispose()
-        }
-    }
+    // Unchanged back stack: nothing removed, nothing to re-store. Skip the subtraction + copy.
     if (activeContentKeys != currentKeys) {
+        val removed = activeContentKeys - currentKeys
+        if (removed.isNotEmpty()) {
+            removed.forEach { key ->
+                val state = stateStore.remove(key) ?: return@forEach
+                state.dispose()
+            }
+        }
         activeContentKeys.clear()
         activeContentKeys.addAll(currentKeys)
     }
