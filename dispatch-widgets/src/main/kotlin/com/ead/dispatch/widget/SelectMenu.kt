@@ -6,6 +6,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.ead.dispatch.input.Key
+import com.ead.dispatch.input.asKeyEvent
 import com.ead.dispatch.layout.Column
 import com.ead.dispatch.layout.Row
 import com.ead.dispatch.modifier.Modifier
@@ -140,26 +142,27 @@ fun SelectMenu(
 
     DisposableEffect(focusRegistry, keyboardInterceptor) {
         val dispose =
-            keyboardInterceptor.register(priority = -1) { event ->
-                if (!focusRegistry.isFocused(focusToken) || !focusRegistry.claimEvent(event)) {
+            keyboardInterceptor.register(priority = -1) { rawEvent ->
+                if (!focusRegistry.isFocused(focusToken) || !focusRegistry.claimEvent(rawEvent)) {
                     return@register false
                 }
                 val list = itemsRef.value
                 if (list.isEmpty()) return@register false
+                val event = rawEvent.asKeyEvent()
                 when {
-                    event.key == "Tab" && !event.ctrl && !event.alt -> {
+                    event.key == Key.Tab && !event.ctrl && !event.alt -> {
                         if (event.shift) focusRegistry.focusPrevious() else focusRegistry.focusNext()
                         true
                     }
-                    event.key == "ArrowUp" || event.key == "Up" -> {
+                    event.key == Key.ArrowUp -> {
                         state.cursorIndex = nextEnabledIndex(list, state.cursorIndex, -1)
                         true
                     }
-                    event.key == "ArrowDown" || event.key == "Down" -> {
+                    event.key == Key.ArrowDown -> {
                         state.cursorIndex = nextEnabledIndex(list, state.cursorIndex, +1)
                         true
                     }
-                    event.key == "Enter" || event.key == "Return" -> {
+                    event.key == Key.Enter -> {
                         list.getOrNull(state.cursorIndex)?.takeIf { it.enabled }?.onSelect?.invoke()
                         true
                     }

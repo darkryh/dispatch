@@ -4,6 +4,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import com.ead.dispatch.constraints.Constraints
+import com.ead.dispatch.input.Key
+import com.ead.dispatch.input.asKeyEvent
+import com.ead.dispatch.input.shift
 import com.ead.dispatch.layout.Measurable
 import com.ead.dispatch.layout.Placeable
 import com.ead.dispatch.layout.SimplePlaceable
@@ -370,28 +373,29 @@ internal fun focusableAction(
     DisposableEffect(enabled, focusRegistry, keyboardInterceptor) {
         if (!enabled) return@DisposableEffect onDispose {}
         val dispose =
-            keyboardInterceptor.register(priority = -1) { event ->
-                if (!focusRegistry.isFocused(focusToken) || !focusRegistry.claimEvent(event)) {
+            keyboardInterceptor.register(priority = -1) { rawEvent ->
+                if (!focusRegistry.isFocused(focusToken) || !focusRegistry.claimEvent(rawEvent)) {
                     return@register false
                 }
+                val event = rawEvent.asKeyEvent()
                 when {
-                    event.key == "Tab" && !event.ctrl && !event.alt -> {
+                    event.key == Key.Tab && !event.ctrl && !event.alt -> {
                         if (event.shift) focusRegistry.focusPrevious() else focusRegistry.focusNext()
                         true
                     }
-                    event.key == "ArrowDown" || event.key == "Down" -> {
+                    event.key == Key.ArrowDown -> {
                         focusRegistry.focusNext()
                         true
                     }
-                    event.key == "ArrowUp" || event.key == "Up" -> {
+                    event.key == Key.ArrowUp -> {
                         focusRegistry.focusPrevious()
                         true
                     }
-                    event.shift && event.key.equals("q", ignoreCase = true) -> {
+                    event.matches(shift('q')) -> {
                         focusRegistry.focusPrevious()
                         true
                     }
-                    event.key == "Enter" || event.key == "Return" || event.key == "Space" || event.key == " " -> {
+                    event.key == Key.Enter || event.key == Key.Space -> {
                         activate()
                         true
                     }

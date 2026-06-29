@@ -4,6 +4,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlin.random.Random
+import kotlin.time.Duration.Companion.milliseconds
 
 fun interface ResponseSimulator {
     fun stream(prompt: String): Flow<String>
@@ -22,7 +23,7 @@ class RandomResponseSimulator(
                 val chunkSize = random.nextInt(from = 2, until = 13)
                 val end = (offset + chunkSize).coerceAtMost(response.length)
                 if (maximumDelayMillis > 0) {
-                    delay(random.nextLong(minimumDelayMillis, maximumDelayMillis + 1))
+                    delay(random.nextLong(minimumDelayMillis, maximumDelayMillis + 1).milliseconds)
                 }
                 emit(response.substring(offset, end))
                 offset = end

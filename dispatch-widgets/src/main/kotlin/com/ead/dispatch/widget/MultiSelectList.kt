@@ -6,6 +6,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.ead.dispatch.input.Key
+import com.ead.dispatch.input.asKeyEvent
 import com.ead.dispatch.layout.Column
 import com.ead.dispatch.layout.Row
 import com.ead.dispatch.modifier.Modifier
@@ -178,24 +180,25 @@ fun <T, K> MultiSelectList(
 
     DisposableEffect(focusRegistry, keyboardInterceptor) {
         val dispose =
-            keyboardInterceptor.register(priority = -1) { event ->
-                if (!focusRegistry.isFocused(focusToken) || !focusRegistry.claimEvent(event)) {
+            keyboardInterceptor.register(priority = -1) { rawEvent ->
+                if (!focusRegistry.isFocused(focusToken) || !focusRegistry.claimEvent(rawEvent)) {
                     return@register false
                 }
+                val event = rawEvent.asKeyEvent()
                 when {
-                    event.key == "Tab" && !event.ctrl && !event.alt -> {
+                    event.key == Key.Tab && !event.ctrl && !event.alt -> {
                         if (event.shift) focusRegistry.focusPrevious() else focusRegistry.focusNext()
                         true
                     }
-                    event.key == "ArrowUp" || event.key == "Up" -> {
+                    event.key == Key.ArrowUp -> {
                         state.moveUp()
                         true
                     }
-                    event.key == "ArrowDown" || event.key == "Down" -> {
+                    event.key == Key.ArrowDown -> {
                         state.moveDown()
                         true
                     }
-                    event.key == "Space" || event.key == " " -> {
+                    event.key == Key.Space -> {
                         val list = itemsRef.value
                         val item = list.getOrNull(state.cursorIndex)
                         if (item != null) {
@@ -204,7 +207,7 @@ fun <T, K> MultiSelectList(
                         }
                         true
                     }
-                    event.key == "Enter" || event.key == "Return" -> {
+                    event.key == Key.Enter -> {
                         onConfirmCallback(state.selectedKeys)
                         true
                     }

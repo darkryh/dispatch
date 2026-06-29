@@ -5,6 +5,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.ead.dispatch.input.Key
+import com.ead.dispatch.input.asKeyEvent
 import com.github.ajalt.mordant.input.KeyboardEvent
 
 /**
@@ -121,7 +123,7 @@ data class SelectorKeyBindings(
     val onBackspace: (() -> Boolean)? = null,
     val onCharacter: ((Char) -> Boolean)? = null,
     val isCharacterEvent: (KeyboardEvent) -> Boolean = { event ->
-        event.key.length == 1 && !event.ctrl && !event.alt
+        event.asKeyEvent().isText
     },
 )
 
@@ -138,26 +140,29 @@ data class SelectorKeyBindings(
 fun handleSelectorKeyEvent(
     event: KeyboardEvent,
     bindings: SelectorKeyBindings,
-): Boolean =
-    when (event.key) {
-        "ArrowUp" -> {
+): Boolean {
+    val keyEvent = event.asKeyEvent()
+    return when (keyEvent.key) {
+        Key.ArrowUp -> {
             bindings.onMoveUp()
             true
         }
-        "ArrowDown" -> {
+        Key.ArrowDown -> {
             bindings.onMoveDown()
             true
         }
-        "Enter" -> bindings.onConfirm?.invoke() ?: false
-        "Escape" -> bindings.onCancel?.invoke() ?: false
-        "Tab" -> bindings.onTab?.invoke() ?: false
-        "Backspace" -> bindings.onBackspace?.invoke() ?: false
+        Key.Enter -> bindings.onConfirm?.invoke() ?: false
+        Key.Escape -> bindings.onCancel?.invoke() ?: false
+        Key.Tab -> bindings.onTab?.invoke() ?: false
+        Key.Backspace -> bindings.onBackspace?.invoke() ?: false
         else -> {
             val onCharacter = bindings.onCharacter
-            if (onCharacter != null && bindings.isCharacterEvent(event)) {
-                onCharacter(event.key[0])
+            val char = keyEvent.char
+            if (onCharacter != null && char != null && bindings.isCharacterEvent(event)) {
+                onCharacter(char)
             } else {
                 false
             }
         }
     }
+}

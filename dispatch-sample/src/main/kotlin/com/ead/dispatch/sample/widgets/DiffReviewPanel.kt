@@ -8,10 +8,16 @@ import com.ead.dispatch.modifier.Modifier
 import com.ead.dispatch.modifier.fillMaxWidth
 import com.ead.dispatch.modifier.height
 import com.ead.dispatch.modifier.width
+import com.ead.dispatch.widget.DiffColors
+import com.ead.dispatch.widget.DiffFocus
+import com.ead.dispatch.widget.DiffRow
 import com.ead.dispatch.widget.HorizontalDivider
 import com.ead.dispatch.widget.KeyHint
 import com.ead.dispatch.widget.KeyHintBar
+import com.ead.dispatch.widget.ScrollableList
 import com.ead.dispatch.widget.Text
+import com.ead.dispatch.widget.rememberFileDiff
+import com.ead.dispatch.widget.rememberScrollState
 import com.github.ajalt.mordant.rendering.TextColors.Companion.rgb
 import com.github.ajalt.mordant.rendering.TextStyle
 
@@ -23,7 +29,14 @@ data class DiffReviewPanelState(
     val title: String,
     val subtitle: String? = null,
     val statusLine: String? = null,
-    val previewState: FileChangePreviewState,
+    val before: String,
+    val after: String,
+    val path: String? = null,
+    val focus: DiffFocus = DiffFocus.Full,
+    val contextLines: Int = 3,
+    val pageIndex: Int = 0,
+    val pageSizeRows: Int = 20,
+    val pending: Set<Int> = emptySet(),
     val pagesFocused: Boolean = false,
     val actions: List<DiffReviewAction> = emptyList(),
     val selectedActionIndex: Int = 0,
@@ -40,11 +53,13 @@ fun DiffReviewPanel(
     actionsTitle: String = "Actions",
     actionsKeyHints: List<KeyHint> = emptyList(),
     defaultKeyHints: List<KeyHint> = emptyList(),
-    previewStyles: FileChangePreviewStyles = FileChangePreviewStyles(),
+    colors: DiffColors = DiffColors(),
 ) {
-    val pageInfo = computeFileChangePageInfo(state.previewState)
-    val selectedPage = pageInfo.selectedPageIndex
-    onPageCountResolved(pageInfo.pageCount)
+    val diff = rememberFileDiff(state.before, state.after, focus = state.focus, contextLines = state.contextLines)
+    val page = diff.page(state.pageIndex, state.pageSizeRows)
+    val selectedPage = page.pageIndex
+    val pageCount = page.pageCount
+    onPageCountResolved(pageCount)
 
     Row(modifier = Modifier.fillMaxWidth()) {
         Spacer(Modifier.width(2))
@@ -61,19 +76,23 @@ fun DiffReviewPanel(
             }
             state.statusLine?.takeIf { it.isNotBlank() }?.let {
                 Text(
-                    text = "$it · page ${selectedPage + 1}/${pageInfo.pageCount}",
+                    text = "$it · page ${selectedPage + 1}/$pageCount",
                     style = rgb("#8FA2B8"),
                 )
             }
             HorizontalDivider(modifier = Modifier.fillMaxWidth())
 
-            FileChangePreview(
-                state = state.previewState,
-                styles = previewStyles,
-                showHeader = !compact,
-                showStats = true,
-                showLegend = !compact,
+            if (!compact && state.path != null) {
+                Text(text = "File: ${state.path}", style = colors.header)
+            }
+            Text(text = formatDiffStats(diff.stats), style = colors.stats)
+            HorizontalDivider(modifier = Modifier.fillMaxWidth())
+
+            DiffPageBody(
+                rows = page.rows,
                 maxVisibleRows = maxVisibleRows,
+                colors = colors,
+                pending = state.pending,
             )
 
             Spacer(Modifier.height(1))
@@ -86,21 +105,21 @@ fun DiffReviewPanel(
                 val startPage =
                     (selectedPage - maxVisibleIndicators / 2)
                         .coerceAtLeast(0)
-                        .coerceAtMost((pageInfo.pageCount - maxVisibleIndicators).coerceAtLeast(0))
-                val endPageExclusive = (startPage + maxVisibleIndicators).coerceAtMost(pageInfo.pageCount)
-                for (page in startPage until endPageExclusive) {
-                    val isSelected = state.pagesFocused && page == selectedPage
+                        .coerceAtMost((pageCount - maxVisibleIndicators).coerceAtLeast(0))
+                val endPageExclusive = (startPage + maxVisibleIndicators).coerceAtMost(pageCount)
+                for (pageNumber in startPage until endPageExclusive) {
+                    val isSelected = state.pagesFocused && pageNumber == selectedPage
                     val style =
                         if (isSelected) {
                             rgb("#FFFFFF") + rgb("#1F3F6B").bg + TextStyle(bold = true)
                         } else {
                             rgb("#C3D1E6")
                         }
-                    val text = " ${page + 1} "
+                    val text = " ${pageNumber + 1} "
                     Text(text = text, style = style)
                     Text(text = " ", style = rgb("#8FA2B8"))
                 }
-                if (endPageExclusive < pageInfo.pageCount) {
+                if (endPageExclusive < pageCount) {
                     Text(text = "…", style = rgb("#8FA2B8"))
                 }
             }
@@ -149,3 +168,56 @@ fun DiffReviewPanel(
         Spacer(Modifier.width(2))
     }
 }
+
+@Composable
+private fun DiffPageBody(
+    rows: List<DiffRow>,
+    maxVisibleRows: Int,
+    colors: DiffColors,
+    pending: Set<Int>,
+) {
+    val lineDigits =
+        rows
+            .mapNotNull { it.newLineNumber ?: it.oldLineNumber }
+            .maxOfOrNull { it.toString().length }
+            ?.coerceAtLeast(1)
+            ?: 1
+    val scrollState = rememberScrollState()
+    ScrollableList(
+        items = rows,
+        modifier = Modifier.fillMaxWidth().height(maxVisibleRows),
+        scrollState = scrollState,
+    ) { row ->
+        if (row.isCollapsed) {
+            Row(modifier = Modifier.fillMaxWidth()) {
+                Text(text = "…", modifier = Modifier.fillMaxWidth(), style = rgb("#A7B2BF"))
+            }
+            return@ScrollableList
+        }
+        val number = (row.newLineNumber ?: row.oldLineNumber)?.toString()?.padStart(lineDigits) ?: " ".repeat(lineDigits)
+        val markerStyle =
+            when (row.marker) {
+                '+' -> rgb("#699862") + TextStyle(bold = true)
+                '-' -> rgb("#6E3D37") + TextStyle(bold = true)
+                else -> rgb("#4E5561")
+            }
+        val background: TextStyle? =
+            when {
+                row.marker == '-' -> colors.deleted
+                row.newLineNumber != null && row.newLineNumber in pending -> rgb("#1F3F6B")
+                row.marker == '+' -> colors.added
+                else -> null
+            }
+        val contentStyle = if (background != null) colors.content + background.bg else colors.content
+        Row(modifier = Modifier.fillMaxWidth()) {
+            Text(text = number, style = colors.gutter)
+            Text(text = " ", style = null)
+            Text(text = row.marker.toString(), style = markerStyle)
+            Text(text = " ", style = null)
+            Text(text = row.content, modifier = Modifier.fillMaxWidth(), style = contentStyle)
+        }
+    }
+}
+
+private fun formatDiffStats(stats: com.ead.dispatch.widget.DiffStats): String =
+    "lines=${stats.totalLines}  +${stats.addedLines}  -${stats.deletedLines}  ~${stats.modifiedLines}"

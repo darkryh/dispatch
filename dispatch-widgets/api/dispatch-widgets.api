@@ -153,6 +153,12 @@ public final class com/ead/dispatch/widget/CommandPaletteTextStyles {
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class com/ead/dispatch/widget/ComposableSingletons$FileDiffKt {
+	public static final field INSTANCE Lcom/ead/dispatch/widget/ComposableSingletons$FileDiffKt;
+	public fun <init> ()V
+	public final fun getLambda$431836124$io_github_darkryh_dispatch_dispatch_widgets ()Lkotlin/jvm/functions/Function3;
+}
+
 public final class com/ead/dispatch/widget/DecisionOption {
 	public static final field $stable I
 	public fun <init> (Ljava/lang/String;)V
@@ -234,6 +240,83 @@ public final class com/ead/dispatch/widget/DecisionSelection$Option : com/ead/di
 	public fun toString ()Ljava/lang/String;
 }
 
+public final class com/ead/dispatch/widget/DiffColors {
+	public static final field $stable I
+	public static final field Companion Lcom/ead/dispatch/widget/DiffColors$Companion;
+	public fun <init> ()V
+	public fun <init> (Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;)V
+	public synthetic fun <init> (Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/github/ajalt/mordant/rendering/TextStyle;
+	public final fun component2 ()Lcom/github/ajalt/mordant/rendering/TextStyle;
+	public final fun component3 ()Lcom/github/ajalt/mordant/rendering/TextStyle;
+	public final fun component4 ()Lcom/github/ajalt/mordant/rendering/TextStyle;
+	public final fun component5 ()Lcom/github/ajalt/mordant/rendering/TextStyle;
+	public final fun component6 ()Lcom/github/ajalt/mordant/rendering/TextStyle;
+	public final fun copy (Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;)Lcom/ead/dispatch/widget/DiffColors;
+	public static synthetic fun copy$default (Lcom/ead/dispatch/widget/DiffColors;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;ILjava/lang/Object;)Lcom/ead/dispatch/widget/DiffColors;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAdded ()Lcom/github/ajalt/mordant/rendering/TextStyle;
+	public final fun getContent ()Lcom/github/ajalt/mordant/rendering/TextStyle;
+	public final fun getDeleted ()Lcom/github/ajalt/mordant/rendering/TextStyle;
+	public final fun getGutter ()Lcom/github/ajalt/mordant/rendering/TextStyle;
+	public final fun getHeader ()Lcom/github/ajalt/mordant/rendering/TextStyle;
+	public final fun getStats ()Lcom/github/ajalt/mordant/rendering/TextStyle;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/ead/dispatch/widget/DiffColors$Companion {
+	public final fun getDefault ()Lcom/ead/dispatch/widget/DiffColors;
+}
+
+public final class com/ead/dispatch/widget/DiffFocus : java/lang/Enum {
+	public static final field Additions Lcom/ead/dispatch/widget/DiffFocus;
+	public static final field Changes Lcom/ead/dispatch/widget/DiffFocus;
+	public static final field Deletions Lcom/ead/dispatch/widget/DiffFocus;
+	public static final field Full Lcom/ead/dispatch/widget/DiffFocus;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/ead/dispatch/widget/DiffFocus;
+	public static fun values ()[Lcom/ead/dispatch/widget/DiffFocus;
+}
+
+public final class com/ead/dispatch/widget/DiffRow {
+	public static final field $stable I
+	public fun <init> ()V
+	public final fun component1 ()Z
+	public final fun component2 ()Ljava/lang/Integer;
+	public final fun component3 ()Ljava/lang/Integer;
+	public final fun component4 ()C
+	public final fun component5 ()Ljava/lang/String;
+	public final fun copy (ZLjava/lang/Integer;Ljava/lang/Integer;CLjava/lang/String;)Lcom/ead/dispatch/widget/DiffRow;
+	public static synthetic fun copy$default (Lcom/ead/dispatch/widget/DiffRow;ZLjava/lang/Integer;Ljava/lang/Integer;CLjava/lang/String;ILjava/lang/Object;)Lcom/ead/dispatch/widget/DiffRow;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getContent ()Ljava/lang/String;
+	public final fun getMarker ()C
+	public final fun getNewLineNumber ()Ljava/lang/Integer;
+	public final fun getOldLineNumber ()Ljava/lang/Integer;
+	public fun hashCode ()I
+	public final fun isCollapsed ()Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/ead/dispatch/widget/DiffStats {
+	public static final field $stable I
+	public fun <init> (IIII)V
+	public final fun component1 ()I
+	public final fun component2 ()I
+	public final fun component3 ()I
+	public final fun component4 ()I
+	public final fun copy (IIII)Lcom/ead/dispatch/widget/DiffStats;
+	public static synthetic fun copy$default (Lcom/ead/dispatch/widget/DiffStats;IIIIILjava/lang/Object;)Lcom/ead/dispatch/widget/DiffStats;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAddedLines ()I
+	public final fun getDeletedLines ()I
+	public final fun getModifiedLines ()I
+	public final fun getTotalLines ()I
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class com/ead/dispatch/widget/DividerKt {
 	public static final fun HorizontalDivider (Lcom/ead/dispatch/modifier/Modifier;CLandroidx/compose/runtime/Composer;II)V
 	public static final fun HorizontalDivider (Lcom/ead/dispatch/widget/DividerStyle;Lcom/ead/dispatch/modifier/Modifier;Landroidx/compose/runtime/Composer;II)V
@@ -253,6 +336,34 @@ public final class com/ead/dispatch/widget/DividerStyle : java/lang/Enum {
 	public final fun getVertical ()C
 	public static fun valueOf (Ljava/lang/String;)Lcom/ead/dispatch/widget/DividerStyle;
 	public static fun values ()[Lcom/ead/dispatch/widget/DividerStyle;
+}
+
+public final class com/ead/dispatch/widget/FileDiffKt {
+	public static final fun FileDiff (Ljava/lang/String;Ljava/lang/String;Lcom/ead/dispatch/modifier/Modifier;Ljava/lang/String;Lcom/ead/dispatch/widget/DiffFocus;IZZLcom/ead/dispatch/widget/DiffColors;Ljava/lang/Integer;Ljava/util/Set;Lcom/github/ajalt/mordant/rendering/TextStyle;Landroidx/compose/runtime/Composer;III)V
+	public static final fun rememberFileDiff (Ljava/lang/String;Ljava/lang/String;Lcom/ead/dispatch/widget/DiffFocus;ILandroidx/compose/runtime/Composer;II)Lcom/ead/dispatch/widget/FileDiffResult;
+}
+
+public final class com/ead/dispatch/widget/FileDiffPage {
+	public static final field $stable I
+	public fun <init> (Ljava/util/List;II)V
+	public final fun component1 ()Ljava/util/List;
+	public final fun component2 ()I
+	public final fun component3 ()I
+	public final fun copy (Ljava/util/List;II)Lcom/ead/dispatch/widget/FileDiffPage;
+	public static synthetic fun copy$default (Lcom/ead/dispatch/widget/FileDiffPage;Ljava/util/List;IIILjava/lang/Object;)Lcom/ead/dispatch/widget/FileDiffPage;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getPageCount ()I
+	public final fun getPageIndex ()I
+	public final fun getRows ()Ljava/util/List;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/ead/dispatch/widget/FileDiffResult {
+	public static final field $stable I
+	public final fun getRows ()Ljava/util/List;
+	public final fun getStats ()Lcom/ead/dispatch/widget/DiffStats;
+	public final fun page (II)Lcom/ead/dispatch/widget/FileDiffPage;
 }
 
 public final class com/ead/dispatch/widget/FilterableSelectorKt {

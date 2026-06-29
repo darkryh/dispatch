@@ -7,6 +7,8 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import com.ead.dispatch.input.Key
+import com.ead.dispatch.input.asKeyEvent
 import com.ead.dispatch.layout.Column
 import com.ead.dispatch.layout.Spacer
 import com.ead.dispatch.modifier.Modifier
@@ -52,8 +54,9 @@ fun ChatScreen(viewModel: ChatViewModel = viewModel()) {
     // Esc stops an in-flight streaming response (higher priority than Esc-as-back).
     DisposableEffect(keyboardInterceptor, isStreaming) {
         val dispose =
-            keyboardInterceptor.register(priority = 100) { event ->
-                if (event.key == "Escape" || event.key == "Esc") {
+            keyboardInterceptor.register(priority = 100) { rawEvent ->
+                val event = rawEvent.asKeyEvent()
+                if (event.key == Key.Escape) {
                     viewModel.cancel()
                     true
                 } else {

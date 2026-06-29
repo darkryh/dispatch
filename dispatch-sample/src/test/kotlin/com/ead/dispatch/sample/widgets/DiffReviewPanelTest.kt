@@ -1,5 +1,6 @@
 package com.ead.dispatch.sample.widgets
 
+import com.ead.dispatch.widget.DiffFocus
 import com.ead.dispatch.widget.KeyHint
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -9,21 +10,15 @@ class DiffReviewPanelTest {
     @Test
     fun `large content uses selected page and resolves page count`() {
         var resolvedPageCount = 0
-        val previewState =
-            FileChangePreviewState(
-                fileType = PreviewFileType.TEXT,
-                beforeText = "",
-                afterText = (1..95).joinToString("\n") { "line $it" },
-                nowEpochMillis = 1_000L,
-                focusMode = ChangeFocusMode.FULL,
-                pageIndex = 2,
-                pageSizeRows = 20,
-            )
         val panelState =
             DiffReviewPanelState(
                 title = "Preview",
                 statusLine = "status: applied",
-                previewState = previewState,
+                before = "",
+                after = (1..95).joinToString("\n") { "line $it" },
+                focus = DiffFocus.Full,
+                pageIndex = 2,
+                pageSizeRows = 20,
                 pagesFocused = true,
             )
 
@@ -50,20 +45,14 @@ class DiffReviewPanelTest {
 
     @Test
     fun `actions strip and action hints are rendered when actions exist`() {
-        val previewState =
-            FileChangePreviewState(
-                fileType = PreviewFileType.TEXT,
-                beforeText = "old",
-                afterText = "new",
-                nowEpochMillis = 1_000L,
-                focusMode = ChangeFocusMode.FULL,
-                pageIndex = 0,
-                pageSizeRows = 10,
-            )
         val panelState =
             DiffReviewPanelState(
                 title = "Preview",
-                previewState = previewState,
+                before = "old",
+                after = "new",
+                focus = DiffFocus.Full,
+                pageIndex = 0,
+                pageSizeRows = 10,
                 actions =
                     listOf(
                         DiffReviewAction("Approve Proposal"),

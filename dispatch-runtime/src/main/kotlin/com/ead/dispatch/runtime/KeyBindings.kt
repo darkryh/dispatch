@@ -3,38 +3,27 @@ package com.ead.dispatch.runtime
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
+import com.ead.dispatch.input.Key
+import com.ead.dispatch.input.KeyStroke
+import com.ead.dispatch.input.asKeyEvent
+import com.ead.dispatch.input.stroke
 import com.github.ajalt.mordant.input.KeyboardEvent
 
 /**
- * A single declarative keyboard binding.
+ * A single declarative keyboard binding: a [KeyStroke] plus an [action] to run when it matches.
  *
- * Matches an incoming [KeyboardEvent] when its [key] equals [KeyboardEvent.key] and the
- * required modifier flags ([ctrl], [alt], [shift]) match the event's modifiers exactly.
- *
- * @param key The key name to match (e.g. `"Enter"`, `"ArrowUp"`, `"p"`). Compared case-sensitively
- *   against [KeyboardEvent.key]; use the exact casing Mordant reports.
+ * @param stroke The key + required modifiers this binding matches (e.g. `Key.Enter.stroke()`,
+ *   `ctrl('p')`, `Key.Tab.shift`).
  * @param description Optional human-readable description (useful for building key-hint bars).
- * @param ctrl Whether the Ctrl modifier must be held.
- * @param alt Whether the Alt modifier must be held.
- * @param shift Whether the Shift modifier must be held.
  * @param action Invoked when this binding matches an incoming event.
  */
 data class KeyBinding(
-    val key: String,
+    val stroke: KeyStroke,
     val description: String = "",
-    val ctrl: Boolean = false,
-    val alt: Boolean = false,
-    val shift: Boolean = false,
     val action: () -> Unit,
 ) {
-    /**
-     * Returns `true` if [event] matches this binding's key and modifier flags.
-     */
-    fun matches(event: KeyboardEvent): Boolean =
-        event.key == key &&
-            event.ctrl == ctrl &&
-            event.alt == alt &&
-            event.shift == shift
+    /** Returns `true` if [event] matches this binding's [stroke]. */
+    fun matches(event: KeyboardEvent): Boolean = stroke.matches(event.asKeyEvent())
 }
 
 /**
@@ -47,33 +36,33 @@ class KeyBindingsScope {
     private val bindings = mutableListOf<KeyBinding>()
 
     /**
-     * Declare a key binding.
+     * Declare a key binding from a [KeyStroke] (e.g. `on(ctrl('p'))` or `on(Key.Tab.shift)`).
      *
-     * @param key The key name to match (see [KeyBinding.key]).
+     * @param stroke The key + required modifiers to match.
      * @param description Optional human-readable description.
-     * @param ctrl Whether the Ctrl modifier must be held.
-     * @param alt Whether the Alt modifier must be held.
-     * @param shift Whether the Shift modifier must be held.
      * @param action Invoked when this binding matches.
      */
     fun on(
-        key: String,
+        stroke: KeyStroke,
         description: String = "",
-        ctrl: Boolean = false,
-        alt: Boolean = false,
-        shift: Boolean = false,
         action: () -> Unit,
     ) {
-        bindings.add(
-            KeyBinding(
-                key = key,
-                description = description,
-                ctrl = ctrl,
-                alt = alt,
-                shift = shift,
-                action = action,
-            ),
-        )
+        bindings.add(KeyBinding(stroke = stroke, description = description, action = action))
+    }
+
+    /**
+     * Declare a key binding from a [Key] with no required modifiers (e.g. `on(Key.Enter)`).
+     *
+     * @param key The key to match.
+     * @param description Optional human-readable description.
+     * @param action Invoked when this binding matches.
+     */
+    fun on(
+        key: Key,
+        description: String = "",
+        action: () -> Unit,
+    ) {
+        on(stroke = key.stroke(), description = description, action = action)
     }
 
     /**
@@ -109,9 +98,9 @@ class KeyBindingsScope {
  * Example:
  * ```kotlin
  * KeyBindings {
- *     on("ArrowUp", description = "move up") { state.moveUp() }
- *     on("ArrowDown", description = "move down") { state.moveDown() }
- *     on("p", ctrl = true, description = "go to…") { openPalette() }
+ *     on(Key.ArrowUp, description = "move up") { state.moveUp() }
+ *     on(Key.ArrowDown, description = "move down") { state.moveDown() }
+ *     on(ctrl('p'), description = "go to…") { openPalette() }
  * }
  * ```
  *

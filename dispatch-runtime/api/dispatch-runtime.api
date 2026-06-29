@@ -78,6 +78,136 @@ public final class com/ead/dispatch/constraints/Constraints$Companion {
 	public final fun minSize (II)Lcom/ead/dispatch/constraints/Constraints;
 }
 
+public abstract interface class com/ead/dispatch/input/Key {
+	public static final field Companion Lcom/ead/dispatch/input/Key$Companion;
+}
+
+public final class com/ead/dispatch/input/Key$Char : com/ead/dispatch/input/Key {
+	public static final synthetic fun box-impl (C)Lcom/ead/dispatch/input/Key$Char;
+	public static fun constructor-impl (C)C
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (CLjava/lang/Object;)Z
+	public static final fun equals-impl0 (CC)Z
+	public final fun getChar ()C
+	public fun hashCode ()I
+	public static fun hashCode-impl (C)I
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (C)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()C
+}
+
+public final class com/ead/dispatch/input/Key$Companion {
+	public final fun char (C)Lcom/ead/dispatch/input/Key;
+	public final fun getArrowDown ()Lcom/ead/dispatch/input/Key;
+	public final fun getArrowLeft ()Lcom/ead/dispatch/input/Key;
+	public final fun getArrowRight ()Lcom/ead/dispatch/input/Key;
+	public final fun getArrowUp ()Lcom/ead/dispatch/input/Key;
+	public final fun getBackspace ()Lcom/ead/dispatch/input/Key;
+	public final fun getDelete ()Lcom/ead/dispatch/input/Key;
+	public final fun getEnd ()Lcom/ead/dispatch/input/Key;
+	public final fun getEnter ()Lcom/ead/dispatch/input/Key;
+	public final fun getEscape ()Lcom/ead/dispatch/input/Key;
+	public final fun getHome ()Lcom/ead/dispatch/input/Key;
+	public final fun getInsert ()Lcom/ead/dispatch/input/Key;
+	public final fun getPageDown ()Lcom/ead/dispatch/input/Key;
+	public final fun getPageUp ()Lcom/ead/dispatch/input/Key;
+	public final fun getPasteEnd ()Lcom/ead/dispatch/input/Key;
+	public final fun getPasteStart ()Lcom/ead/dispatch/input/Key;
+	public final fun getSpace ()Lcom/ead/dispatch/input/Key;
+	public final fun getTab ()Lcom/ead/dispatch/input/Key;
+}
+
+public final class com/ead/dispatch/input/Key$Named : java/lang/Enum, com/ead/dispatch/input/Key {
+	public static final field ArrowDown Lcom/ead/dispatch/input/Key$Named;
+	public static final field ArrowLeft Lcom/ead/dispatch/input/Key$Named;
+	public static final field ArrowRight Lcom/ead/dispatch/input/Key$Named;
+	public static final field ArrowUp Lcom/ead/dispatch/input/Key$Named;
+	public static final field Backspace Lcom/ead/dispatch/input/Key$Named;
+	public static final field Delete Lcom/ead/dispatch/input/Key$Named;
+	public static final field End Lcom/ead/dispatch/input/Key$Named;
+	public static final field Enter Lcom/ead/dispatch/input/Key$Named;
+	public static final field Escape Lcom/ead/dispatch/input/Key$Named;
+	public static final field F1 Lcom/ead/dispatch/input/Key$Named;
+	public static final field F10 Lcom/ead/dispatch/input/Key$Named;
+	public static final field F11 Lcom/ead/dispatch/input/Key$Named;
+	public static final field F12 Lcom/ead/dispatch/input/Key$Named;
+	public static final field F2 Lcom/ead/dispatch/input/Key$Named;
+	public static final field F3 Lcom/ead/dispatch/input/Key$Named;
+	public static final field F4 Lcom/ead/dispatch/input/Key$Named;
+	public static final field F5 Lcom/ead/dispatch/input/Key$Named;
+	public static final field F6 Lcom/ead/dispatch/input/Key$Named;
+	public static final field F7 Lcom/ead/dispatch/input/Key$Named;
+	public static final field F8 Lcom/ead/dispatch/input/Key$Named;
+	public static final field F9 Lcom/ead/dispatch/input/Key$Named;
+	public static final field Home Lcom/ead/dispatch/input/Key$Named;
+	public static final field Insert Lcom/ead/dispatch/input/Key$Named;
+	public static final field PageDown Lcom/ead/dispatch/input/Key$Named;
+	public static final field PageUp Lcom/ead/dispatch/input/Key$Named;
+	public static final field PasteEnd Lcom/ead/dispatch/input/Key$Named;
+	public static final field PasteStart Lcom/ead/dispatch/input/Key$Named;
+	public static final field Tab Lcom/ead/dispatch/input/Key$Named;
+	public static final field Unknown Lcom/ead/dispatch/input/Key$Named;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/ead/dispatch/input/Key$Named;
+	public static fun values ()[Lcom/ead/dispatch/input/Key$Named;
+}
+
+public final class com/ead/dispatch/input/KeyEvent {
+	public static final synthetic fun box-impl (Lcom/github/ajalt/mordant/input/KeyboardEvent;)Lcom/ead/dispatch/input/KeyEvent;
+	public fun equals (Ljava/lang/Object;)Z
+	public static fun equals-impl (Lcom/github/ajalt/mordant/input/KeyboardEvent;Ljava/lang/Object;)Z
+	public static final fun equals-impl0 (Lcom/github/ajalt/mordant/input/KeyboardEvent;Lcom/github/ajalt/mordant/input/KeyboardEvent;)Z
+	public static final fun getAlt-impl (Lcom/github/ajalt/mordant/input/KeyboardEvent;)Z
+	public static final fun getChar-impl (Lcom/github/ajalt/mordant/input/KeyboardEvent;)Ljava/lang/Character;
+	public static final fun getCtrl-impl (Lcom/github/ajalt/mordant/input/KeyboardEvent;)Z
+	public static final fun getKey-impl (Lcom/github/ajalt/mordant/input/KeyboardEvent;)Lcom/ead/dispatch/input/Key;
+	public final fun getRaw ()Lcom/github/ajalt/mordant/input/KeyboardEvent;
+	public static final fun getShift-impl (Lcom/github/ajalt/mordant/input/KeyboardEvent;)Z
+	public fun hashCode ()I
+	public static fun hashCode-impl (Lcom/github/ajalt/mordant/input/KeyboardEvent;)I
+	public static final fun isChar-impl (Lcom/github/ajalt/mordant/input/KeyboardEvent;CZ)Z
+	public static synthetic fun isChar-impl$default (Lcom/github/ajalt/mordant/input/KeyboardEvent;CZILjava/lang/Object;)Z
+	public static final fun isText-impl (Lcom/github/ajalt/mordant/input/KeyboardEvent;)Z
+	public static final fun matches-impl (Lcom/github/ajalt/mordant/input/KeyboardEvent;Lcom/ead/dispatch/input/KeyStroke;)Z
+	public fun toString ()Ljava/lang/String;
+	public static fun toString-impl (Lcom/github/ajalt/mordant/input/KeyboardEvent;)Ljava/lang/String;
+	public final synthetic fun unbox-impl ()Lcom/github/ajalt/mordant/input/KeyboardEvent;
+}
+
+public final class com/ead/dispatch/input/KeyKt {
+	public static final fun alt (C)Lcom/ead/dispatch/input/KeyStroke;
+	public static final fun asKeyEvent (Lcom/github/ajalt/mordant/input/KeyboardEvent;)Lcom/github/ajalt/mordant/input/KeyboardEvent;
+	public static final fun ctrl (C)Lcom/ead/dispatch/input/KeyStroke;
+	public static final fun getAlt (Lcom/ead/dispatch/input/Key;)Lcom/ead/dispatch/input/KeyStroke;
+	public static final fun getCtrl (Lcom/ead/dispatch/input/Key;)Lcom/ead/dispatch/input/KeyStroke;
+	public static final fun getShift (Lcom/ead/dispatch/input/Key;)Lcom/ead/dispatch/input/KeyStroke;
+	public static final fun keyEvent (Ljava/lang/String;ZZZ)Lcom/github/ajalt/mordant/input/KeyboardEvent;
+	public static synthetic fun keyEvent$default (Ljava/lang/String;ZZZILjava/lang/Object;)Lcom/github/ajalt/mordant/input/KeyboardEvent;
+	public static final fun shift (C)Lcom/ead/dispatch/input/KeyStroke;
+	public static final fun stroke (Lcom/ead/dispatch/input/Key;)Lcom/ead/dispatch/input/KeyStroke;
+}
+
+public final class com/ead/dispatch/input/KeyStroke {
+	public static final field $stable I
+	public fun <init> (Lcom/ead/dispatch/input/Key;ZZZ)V
+	public synthetic fun <init> (Lcom/ead/dispatch/input/Key;ZZZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/ead/dispatch/input/Key;
+	public final fun component2 ()Z
+	public final fun component3 ()Z
+	public final fun component4 ()Z
+	public final fun copy (Lcom/ead/dispatch/input/Key;ZZZ)Lcom/ead/dispatch/input/KeyStroke;
+	public static synthetic fun copy$default (Lcom/ead/dispatch/input/KeyStroke;Lcom/ead/dispatch/input/Key;ZZZILjava/lang/Object;)Lcom/ead/dispatch/input/KeyStroke;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAlt ()Z
+	public final fun getCtrl ()Z
+	public final fun getKey ()Lcom/ead/dispatch/input/Key;
+	public final fun getShift ()Z
+	public fun hashCode ()I
+	public final fun label ()Ljava/lang/String;
+	public final fun matches-G4ZYk6o (Lcom/github/ajalt/mordant/input/KeyboardEvent;)Z
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class com/ead/dispatch/layout/LayoutNode : com/ead/dispatch/layout/Measurable {
 	public static final field $stable I
 	public fun <init> (Ljava/lang/String;)V
@@ -818,6 +948,7 @@ public final class com/ead/dispatch/runtime/ExitKeyBinding {
 }
 
 public final class com/ead/dispatch/runtime/ExitKeyBinding$Companion {
+	public final fun ctrl (C)Lcom/ead/dispatch/runtime/ExitKeyBinding;
 	public final fun ctrl (Ljava/lang/String;)Lcom/ead/dispatch/runtime/ExitKeyBinding;
 }
 
@@ -856,23 +987,17 @@ public final class com/ead/dispatch/runtime/FocusRegistry {
 
 public final class com/ead/dispatch/runtime/KeyBinding {
 	public static final field $stable I
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;ZZZLkotlin/jvm/functions/Function0;)V
-	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;ZZZLkotlin/jvm/functions/Function0;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Ljava/lang/String;
+	public fun <init> (Lcom/ead/dispatch/input/KeyStroke;Ljava/lang/String;Lkotlin/jvm/functions/Function0;)V
+	public synthetic fun <init> (Lcom/ead/dispatch/input/KeyStroke;Ljava/lang/String;Lkotlin/jvm/functions/Function0;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/ead/dispatch/input/KeyStroke;
 	public final fun component2 ()Ljava/lang/String;
-	public final fun component3 ()Z
-	public final fun component4 ()Z
-	public final fun component5 ()Z
-	public final fun component6 ()Lkotlin/jvm/functions/Function0;
-	public final fun copy (Ljava/lang/String;Ljava/lang/String;ZZZLkotlin/jvm/functions/Function0;)Lcom/ead/dispatch/runtime/KeyBinding;
-	public static synthetic fun copy$default (Lcom/ead/dispatch/runtime/KeyBinding;Ljava/lang/String;Ljava/lang/String;ZZZLkotlin/jvm/functions/Function0;ILjava/lang/Object;)Lcom/ead/dispatch/runtime/KeyBinding;
+	public final fun component3 ()Lkotlin/jvm/functions/Function0;
+	public final fun copy (Lcom/ead/dispatch/input/KeyStroke;Ljava/lang/String;Lkotlin/jvm/functions/Function0;)Lcom/ead/dispatch/runtime/KeyBinding;
+	public static synthetic fun copy$default (Lcom/ead/dispatch/runtime/KeyBinding;Lcom/ead/dispatch/input/KeyStroke;Ljava/lang/String;Lkotlin/jvm/functions/Function0;ILjava/lang/Object;)Lcom/ead/dispatch/runtime/KeyBinding;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getAction ()Lkotlin/jvm/functions/Function0;
-	public final fun getAlt ()Z
-	public final fun getCtrl ()Z
 	public final fun getDescription ()Ljava/lang/String;
-	public final fun getKey ()Ljava/lang/String;
-	public final fun getShift ()Z
+	public final fun getStroke ()Lcom/ead/dispatch/input/KeyStroke;
 	public fun hashCode ()I
 	public final fun matches (Lcom/github/ajalt/mordant/input/KeyboardEvent;)Z
 	public fun toString ()Ljava/lang/String;
@@ -887,8 +1012,10 @@ public final class com/ead/dispatch/runtime/KeyBindingsScope {
 	public fun <init> ()V
 	public final fun bindings ()Ljava/util/List;
 	public final fun handle (Lcom/github/ajalt/mordant/input/KeyboardEvent;)Z
-	public final fun on (Ljava/lang/String;Ljava/lang/String;ZZZLkotlin/jvm/functions/Function0;)V
-	public static synthetic fun on$default (Lcom/ead/dispatch/runtime/KeyBindingsScope;Ljava/lang/String;Ljava/lang/String;ZZZLkotlin/jvm/functions/Function0;ILjava/lang/Object;)V
+	public final fun on (Lcom/ead/dispatch/input/Key;Ljava/lang/String;Lkotlin/jvm/functions/Function0;)V
+	public final fun on (Lcom/ead/dispatch/input/KeyStroke;Ljava/lang/String;Lkotlin/jvm/functions/Function0;)V
+	public static synthetic fun on$default (Lcom/ead/dispatch/runtime/KeyBindingsScope;Lcom/ead/dispatch/input/Key;Ljava/lang/String;Lkotlin/jvm/functions/Function0;ILjava/lang/Object;)V
+	public static synthetic fun on$default (Lcom/ead/dispatch/runtime/KeyBindingsScope;Lcom/ead/dispatch/input/KeyStroke;Ljava/lang/String;Lkotlin/jvm/functions/Function0;ILjava/lang/Object;)V
 }
 
 public final class com/ead/dispatch/runtime/KeyboardInterceptor {

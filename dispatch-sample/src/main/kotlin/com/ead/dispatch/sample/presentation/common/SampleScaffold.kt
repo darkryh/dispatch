@@ -8,6 +8,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.ead.dispatch.input.Key
+import com.ead.dispatch.input.asKeyEvent
+import com.ead.dispatch.input.ctrl
 import com.ead.dispatch.layout.Column
 import com.ead.dispatch.layout.Row
 import com.ead.dispatch.layout.Spacer
@@ -53,8 +56,9 @@ fun SampleScaffold(
     DisposableEffect(escGoesBack, interceptor) {
         if (!escGoesBack) return@DisposableEffect onDispose {}
         val dispose =
-            interceptor.register(priority = 5) { event ->
-                if (event.key == "Escape" || event.key == "Esc") {
+            interceptor.register(priority = 5) { rawEvent ->
+                val event = rawEvent.asKeyEvent()
+                if (event.key == Key.Escape) {
                     navigator.popBackStack()
                 } else {
                     false
@@ -125,7 +129,7 @@ private fun CommandNavigator(navigator: Navigator) {
         val dispose =
             interceptor.register(priority = 1000) { event ->
                 handleNavigatorKey(
-                    event = event,
+                    rawEvent = event,
                     isOpen = open,
                     count = count,
                     setOpen = { open = it },
@@ -158,7 +162,7 @@ private fun CommandNavigator(navigator: Navigator) {
 }
 
 private fun handleNavigatorKey(
-    event: KeyboardEvent,
+    rawEvent: KeyboardEvent,
     isOpen: Boolean,
     count: Int,
     setOpen: (Boolean) -> Unit,
@@ -166,8 +170,8 @@ private fun handleNavigatorKey(
     confirm: () -> Unit,
     resetSelection: () -> Unit,
 ): Boolean {
-    val isToggle = event.ctrl && event.key.equals("p", ignoreCase = true)
-    if (isToggle) {
+    val event = rawEvent.asKeyEvent()
+    if (event.matches(ctrl('p'))) {
         val next = !isOpen
         setOpen(next)
         if (next) resetSelection()
@@ -175,19 +179,19 @@ private fun handleNavigatorKey(
     }
     if (!isOpen || count == 0) return false
     return when (event.key) {
-        "ArrowUp", "Up" -> {
+        Key.ArrowUp -> {
             moveSelection(-1)
             true
         }
-        "ArrowDown", "Down" -> {
+        Key.ArrowDown -> {
             moveSelection(1)
             true
         }
-        "Enter" -> {
+        Key.Enter -> {
             confirm()
             true
         }
-        "Escape", "Esc" -> {
+        Key.Escape -> {
             setOpen(false)
             true
         }

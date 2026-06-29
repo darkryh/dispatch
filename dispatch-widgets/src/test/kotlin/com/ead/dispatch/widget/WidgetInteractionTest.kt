@@ -121,7 +121,7 @@ class WidgetInteractionTest {
         assertEquals(1, harness.buttonClicks)
 
         harness.press("Tab")
-        harness.press("Space")
+        harness.press(" ") // Mordant emits " " for the space bar, never "Space"
         assertEquals(1, harness.iconClicks)
 
         harness.press("Tab")

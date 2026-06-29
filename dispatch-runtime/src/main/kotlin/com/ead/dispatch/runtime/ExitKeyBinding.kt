@@ -31,5 +31,7 @@ data class ExitKeyBinding(
 
     companion object {
         fun ctrl(key: String): ExitKeyBinding = ExitKeyBinding(key = key, ctrl = true)
+
+        fun ctrl(c: Char): ExitKeyBinding = ExitKeyBinding(key = c.toString(), ctrl = true)
     }
 }

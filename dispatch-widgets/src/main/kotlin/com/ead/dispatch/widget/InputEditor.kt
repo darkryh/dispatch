@@ -1,5 +1,7 @@
 package com.ead.dispatch.widget
 
+import com.ead.dispatch.input.Key
+import com.ead.dispatch.input.asKeyEvent
 import com.github.ajalt.mordant.input.KeyboardEvent
 import com.github.ajalt.mordant.rendering.OverflowWrap
 import com.github.ajalt.mordant.rendering.Whitespace
@@ -69,24 +71,25 @@ internal class InputEditor(
     }
 
     fun handleKeyEvent(event: KeyboardEvent) {
+        val key = event.asKeyEvent()
         setCursor(getCursor().coerceIn(0, getValue().length))
-        if (event.key != "ArrowUp" && event.key != "ArrowDown") {
+        if (key.key != Key.ArrowUp && key.key != Key.ArrowDown) {
             preferredVerticalColumn = null
         }
-        when (event.key) {
-            "PasteStart" -> {
+        when (key.key) {
+            Key.PasteStart -> {
                 pasteTracker.increment()
                 pasteHeuristic.reset()
                 return
             }
-            "PasteEnd" -> {
+            Key.PasteEnd -> {
                 pasteTracker.decrement()
                 pasteHeuristic.reset()
                 return
             }
-            "Enter" -> {
+            Key.Enter -> {
                 // Shift+Enter inserts a newline (when supported by the terminal).
-                if (event.shift || pasteTracker.isActive || pasteHeuristic.shouldTreatEnterAsNewline()) {
+                if (key.shift || pasteTracker.isActive || pasteHeuristic.shouldTreatEnterAsNewline()) {
                     insertText("\n")
                     return
                 }
@@ -102,7 +105,7 @@ internal class InputEditor(
                     }
                 }
             }
-            "Backspace" -> {
+            Key.Backspace -> {
                 val currentValue = getValue()
                 val safeCursor = getCursor().coerceIn(0, currentValue.length)
                 if (safeCursor > 0 && currentValue.isNotEmpty()) {
@@ -120,7 +123,7 @@ internal class InputEditor(
                     updateCursorPosition(safeCursor)
                 }
             }
-            "Delete" -> {
+            Key.Delete -> {
                 val currentValue = getValue()
                 val safeCursor = getCursor().coerceIn(0, currentValue.length)
                 if (safeCursor < currentValue.length && currentValue.isNotEmpty()) {
@@ -137,15 +140,15 @@ internal class InputEditor(
                     updateCursorPosition(safeCursor)
                 }
             }
-            "ArrowLeft" -> {
+            Key.ArrowLeft -> {
                 val safeCursor = getCursor().coerceIn(0, getValue().length)
                 updateCursorPosition((safeCursor - 1).coerceAtLeast(0))
             }
-            "ArrowRight" -> {
+            Key.ArrowRight -> {
                 val safeCursor = getCursor().coerceIn(0, getValue().length)
                 updateCursorPosition((safeCursor + 1).coerceAtMost(getValue().length))
             }
-            "ArrowUp" -> {
+            Key.ArrowUp -> {
                 val historyItems = historyItemsProvider()
                 if (historyItems.isNotEmpty() && getCursor() == 0) {
                     historyIndexState.index = historyIndexState.index.coerceIn(0, historyItems.size)
@@ -183,7 +186,7 @@ internal class InputEditor(
                     ),
                 )
             }
-            "ArrowDown" -> {
+            Key.ArrowDown -> {
                 val historyItems = historyItemsProvider()
                 if (historyItems.isNotEmpty() && getCursor() == getValue().length) {
                     historyIndexState.index = historyIndexState.index.coerceIn(0, historyItems.size)
@@ -226,10 +229,10 @@ internal class InputEditor(
                     ),
                 )
             }
-            "Home" -> updateCursorPosition(0)
-            "End" -> updateCursorPosition(getValue().length)
+            Key.Home -> updateCursorPosition(0)
+            Key.End -> updateCursorPosition(getValue().length)
             else -> {
-                // Handle printable characters or multi-codepoint text
+                // Handle printable characters or multi-codepoint text (incl. multi-char paste).
                 val text = parseTextFromKeyEvent(event)
                 if (text != null) {
                     insertText(text)

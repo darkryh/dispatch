@@ -46,7 +46,7 @@ class WidgetCatalogCoverageTest {
                 "DecisionPrompt",
                 "DiffReviewPanel",
                 "EmptyState",
-                "FileChangePreview",
+                "FileDiff",
                 "Grid",
                 "HorizontalDivider",
                 "IconButton",

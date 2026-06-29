@@ -6,6 +6,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.ead.dispatch.input.Key
+import com.ead.dispatch.input.asKeyEvent
 import com.ead.dispatch.layout.Column
 import com.ead.dispatch.layout.Row
 import com.ead.dispatch.modifier.Modifier
@@ -178,27 +180,28 @@ fun <T> Tree(
     val rowsState = remember { mutableStateOf<List<TreeRow<T>>>(emptyList()) }
     rowsState.value = rows
 
-    fun handleKeyEvent(event: KeyboardEvent): Boolean {
+    fun handleKeyEvent(rawEvent: KeyboardEvent): Boolean {
         val currentRows = rowsState.value
         val current = currentRows.getOrNull(state.selectedIndex)
+        val event = rawEvent.asKeyEvent()
         return when (event.key) {
-            "ArrowUp" -> {
+            Key.ArrowUp -> {
                 state.moveUp()
                 true
             }
-            "ArrowDown" -> {
+            Key.ArrowDown -> {
                 state.moveDown(currentRows.lastIndex)
                 true
             }
-            "ArrowRight" -> {
+            Key.ArrowRight -> {
                 if (current != null && current.hasChildren) state.expand(current.key)
                 true
             }
-            "ArrowLeft" -> {
+            Key.ArrowLeft -> {
                 if (current != null && current.hasChildren) state.collapse(current.key)
                 true
             }
-            "Enter" -> {
+            Key.Enter -> {
                 if (current != null && current.hasChildren) state.toggle(current.key)
                 true
             }

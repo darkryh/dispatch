@@ -2,6 +2,8 @@ package com.ead.dispatch.widget
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import com.ead.dispatch.input.Key
+import com.ead.dispatch.input.asKeyEvent
 import com.ead.dispatch.layout.Spacer
 import com.ead.dispatch.layout.TerminalScreen
 import com.ead.dispatch.modifier.Modifier
@@ -56,8 +58,9 @@ fun Scaffold(
         val back = onBack
         if (!escGoesBack || back == null) return@DisposableEffect onDispose {}
         val dispose =
-            interceptor.register(priority = 5) { event ->
-                if (event.key == "Escape" || event.key == "Esc") {
+            interceptor.register(priority = 5) { rawEvent ->
+                val event = rawEvent.asKeyEvent()
+                if (event.key == Key.Escape) {
                     back()
                     true
                 } else {

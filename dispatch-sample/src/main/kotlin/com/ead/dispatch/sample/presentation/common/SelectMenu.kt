@@ -8,6 +8,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.ead.dispatch.input.Key
+import com.ead.dispatch.input.asKeyEvent
 import com.ead.dispatch.layout.Column
 import com.ead.dispatch.layout.Row
 import com.ead.dispatch.modifier.Modifier
@@ -49,22 +51,23 @@ fun SelectMenu(
     DisposableEffect(enabled, count == 0, interceptor) {
         if (!enabled || count == 0) return@DisposableEffect onDispose {}
         val dispose =
-            interceptor.register(priority = priority) { event ->
+            interceptor.register(priority = priority) { rawEvent ->
                 val list = itemsRef.value
                 val size = list.size
                 if (size == 0) {
                     return@register false
                 }
+                val event = rawEvent.asKeyEvent()
                 when (event.key) {
-                    "ArrowUp", "Up" -> {
+                    Key.ArrowUp -> {
                         selected = (selected - 1 + size) % size
                         true
                     }
-                    "ArrowDown", "Down" -> {
+                    Key.ArrowDown -> {
                         selected = (selected + 1) % size
                         true
                     }
-                    "Enter" -> {
+                    Key.Enter -> {
                         list.getOrNull(selected)?.onActivate?.invoke()
                         true
                     }

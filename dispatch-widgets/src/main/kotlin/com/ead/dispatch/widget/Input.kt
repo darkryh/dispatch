@@ -7,6 +7,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.ead.dispatch.constraints.Constraints
+import com.ead.dispatch.input.Key
+import com.ead.dispatch.input.asKeyEvent
+import com.ead.dispatch.input.shift
 import com.ead.dispatch.layout.Measurable
 import com.ead.dispatch.layout.Placeable
 import com.ead.dispatch.layout.SimplePlaceable
@@ -705,25 +708,27 @@ fun TextField(
         }
 
         val dispose =
-            keyboardInterceptor.register(priority = -1) { event ->
+            keyboardInterceptor.register(priority = -1) { rawEvent ->
                 if (!focusRegistry.isFocused(focusToken)) {
                     return@register false
                 }
-                if (!focusRegistry.claimEvent(event)) {
+                if (!focusRegistry.claimEvent(rawEvent)) {
                     return@register false
                 }
 
-                if (event.key == "Tab" && !event.ctrl && !event.alt) {
+                val event = rawEvent.asKeyEvent()
+
+                if (event.key == Key.Tab && !event.ctrl && !event.alt) {
                     if (event.shift) focusRegistry.focusPrevious() else focusRegistry.focusNext()
                     return@register true
                 }
 
-                if (event.shift && (event.key == "Q" || event.key == "q")) {
+                if (event.matches(shift('q'))) {
                     focusRegistry.focusPrevious()
                     return@register true
                 }
 
-                editor.handleKeyEvent(event)
+                editor.handleKeyEvent(rawEvent)
                 true
             }
 
