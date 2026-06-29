@@ -4,8 +4,26 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="09adec4a-725e-47a4-af17-b0db55278204" name="Changes" comment="app initializer">
+    <list default="true" id="09adec4a-725e-47a4-af17-b0db55278204" name="Changes" comment="documentation">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/CHANGELOG.md" beforeDir="false" afterPath="$PROJECT_DIR$/CHANGELOG.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/OPTIMIZATION_PLAN.md" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-core/src/main/kotlin/com/ead/dispatch/runtime/DispatchApplication.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-core/src/main/kotlin/com/ead/dispatch/runtime/DispatchApplication.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-core/src/main/kotlin/com/ead/dispatch/runtime/FrameScheduler.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-core/src/main/kotlin/com/ead/dispatch/runtime/FrameScheduler.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-core/src/main/kotlin/com/ead/dispatch/runtime/RenderPipeline.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-core/src/main/kotlin/com/ead/dispatch/runtime/RenderPipeline.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-runtime/api/dispatch-runtime.api" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-runtime/api/dispatch-runtime.api" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-runtime/src/main/kotlin/com/ead/dispatch/runtime/DispatchRuntimeConfig.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-runtime/src/main/kotlin/com/ead/dispatch/runtime/DispatchRuntimeConfig.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-sample/src/main/kotlin/com/ead/dispatch/sample/Main.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-sample/src/main/kotlin/com/ead/dispatch/sample/Main.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-sample/src/main/kotlin/com/ead/dispatch/sample/presentation/DispatchSampleApp.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-sample/src/main/kotlin/com/ead/dispatch/sample/presentation/DispatchSampleApp.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-widgets/src/main/kotlin/com/ead/dispatch/widget/LazyColumn.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-widgets/src/main/kotlin/com/ead/dispatch/widget/LazyColumn.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-widgets/src/main/kotlin/com/ead/dispatch/widget/Text.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-widgets/src/main/kotlin/com/ead/dispatch/widget/Text.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/explanation/index.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/explanation/index.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/explanation/render-model.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/explanation/render-model.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/how-to/index.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/how-to/index.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/index.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/index.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/docs/reference/application.md" beforeDir="false" afterPath="$PROJECT_DIR$/docs/reference/application.md" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/initializr/src/commonMain/kotlin/io/github/darkryh/dispatch/initializr/template/StarterTemplate.kt" beforeDir="false" afterPath="$PROJECT_DIR$/initializr/src/commonMain/kotlin/io/github/darkryh/dispatch/initializr/template/StarterTemplate.kt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -84,7 +102,13 @@
     &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;
   }
 }</component>
-  <component name="RunManager" selected="Gradle.wasmJsMain [wasmJs]">
+  <component name="RunManager" selected="Shell Script.build-execute.sh">
+    <configuration default="true" type="AppleRunConfiguration" factoryName="Application" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" PASS_PARENT_ENVS_2="true" IS_LOCATION_SIMULATION_SUPPORTED="false" IS_LOCATION_SIMULATION_ALLOWED="true" APPLICATION_LANGUAGE="IDELaunchSchemeLanguageUseSystemLanguage" APPLICATION_REGION="" DEVELOPMENT_TEAM="" MAKE_ACTIVE="TRUE" SHOULD_DEBUG_EXTENSIONS="false">
+      <embedded_app_extension_list />
+      <method v="2">
+        <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+      </method>
+    </configuration>
     <configuration name="wasmJsMain [wasmJs]" type="GradleRunConfiguration" factoryName="Gradle">
       <ExternalSystemSettings>
         <option name="executionName" />
@@ -235,7 +259,15 @@
       <option name="project" value="LOCAL" />
       <updated>1782765501028</updated>
     </task>
-    <option name="localTasksCounter" value="12" />
+    <task id="LOCAL-00012" summary="documentation">
+      <option name="closed" value="true" />
+      <created>1782767078930</created>
+      <option name="number" value="00012" />
+      <option name="presentableId" value="LOCAL-00012" />
+      <option name="project" value="LOCAL" />
+      <updated>1782767078930</updated>
+    </task>
+    <option name="localTasksCounter" value="13" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -249,6 +281,7 @@
     <MESSAGE value="fixes, impl" />
     <MESSAGE value="sample build" />
     <MESSAGE value="app initializer" />
-    <option name="LAST_COMMIT_MESSAGE" value="app initializer" />
+    <MESSAGE value="documentation" />
+    <option name="LAST_COMMIT_MESSAGE" value="documentation" />
   </component>
 </project>

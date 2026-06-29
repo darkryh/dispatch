@@ -14,7 +14,7 @@ import java.util.concurrent.atomic.AtomicLong
  */
 internal class FrameScheduler(
     private val scope: CoroutineScope,
-    private val targetFps: Int,
+    targetFps: Int,
     private val onFrame: () -> Unit,
     private val timeProvider: () -> Long = { System.currentTimeMillis() },
 ) {
@@ -23,7 +23,23 @@ internal class FrameScheduler(
     private val lastFrameTime = AtomicLong(0L)
     private var job: Job? = null
 
-    private val frameTimeMs: Long = if (targetFps > 0) 1000L / targetFps else 0L
+    @Volatile
+    var targetFps: Int = targetFps
+        private set
+
+    @Volatile
+    private var frameTimeMs: Long = fpsToFrameTimeMs(targetFps)
+
+    private val bypassNextBudget = AtomicBoolean(false)
+
+    /**
+     * Change the paint cadence at runtime. Used by idle hibernation to throttle FPS down while idle
+     * and restore it on wake. Takes effect on the next frame request.
+     */
+    fun setTargetFps(fps: Int) {
+        targetFps = fps
+        frameTimeMs = fpsToFrameTimeMs(fps)
+    }
 
     fun start() {
         if (!running.compareAndSet(false, true)) return
@@ -51,6 +67,15 @@ internal class FrameScheduler(
         frameRequests.trySend(Unit)
     }
 
+    /**
+     * Request a frame that skips the pacing budget for that one paint. Used to wake instantly from
+     * hibernation so the restored FPS never delays the first frame after user input.
+     */
+    fun requestImmediateFrame() {
+        bypassNextBudget.set(true)
+        requestFrame()
+    }
+
     fun markFrame() {
         lastFrameTime.set(timeProvider())
     }
@@ -58,12 +83,14 @@ internal class FrameScheduler(
     private fun canRenderNow(): Boolean = running.get() && scope.isActive
 
     private suspend fun delayToRespectFrameBudget() {
-        if (frameTimeMs <= 0) return
+        if (bypassNextBudget.compareAndSet(true, false)) return
+        val budget = frameTimeMs
+        if (budget <= 0) return
         val last = lastFrameTime.get()
         if (last <= 0) return
 
         val elapsed = timeProvider() - last
-        val sleepTime = frameTimeMs - elapsed
+        val sleepTime = budget - elapsed
         if (sleepTime > 0) {
             delay(sleepTime)
         }
@@ -74,4 +101,7 @@ internal class FrameScheduler(
         lastFrameTime.set(timeProvider())
     }
 
+    private companion object {
+        private fun fpsToFrameTimeMs(fps: Int): Long = if (fps > 0) 1000L / fps else 0L
+    }
 }

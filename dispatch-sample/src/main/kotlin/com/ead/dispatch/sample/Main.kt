@@ -22,6 +22,16 @@ fun main(args: Array<String>) =
             requireExitDoublePress = true
             exitTimeoutOnDoublePress = 1_500.milliseconds
 
+            hibernation {
+                // Framework defaults (enabled, idleFps = 1, releaseCaches, requestGc) are kept.
+                // The idle timeout is overridable so demos and PTY tests can hibernate in seconds
+                // instead of the production 5-minute default:
+                //   DISPATCH_SAMPLE_IDLE_TIMEOUT_MS=1500 ./dispatch-sample
+                System.getenv("DISPATCH_SAMPLE_IDLE_TIMEOUT_MS")?.toLongOrNull()?.let { valueMs ->
+                    idleTimeout = valueMs.milliseconds
+                }
+            }
+
             koin { modules(sampleModule) }
         }
 

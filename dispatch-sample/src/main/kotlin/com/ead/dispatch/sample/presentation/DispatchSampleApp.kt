@@ -3,11 +3,18 @@
 package com.ead.dispatch.sample.presentation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import com.ead.dispatch.koin.KoinViewModelFactory
+import com.ead.dispatch.layout.Column
+import com.ead.dispatch.modifier.Modifier
+import com.ead.dispatch.modifier.fillMaxSize
+import com.ead.dispatch.modifier.weight
 import com.ead.dispatch.navigation.NavDisplay
 import com.ead.dispatch.navigation.NavKey
 import com.ead.dispatch.navigation.entryProvider
 import com.ead.dispatch.navigation.rememberNavBackStack
+import com.ead.dispatch.sample.designsystem.HibernationOverlay
+import com.ead.dispatch.sample.designsystem.isHibernationOverlayEnabled
 import com.ead.dispatch.sample.navigation.ButtonsRoute
 import com.ead.dispatch.sample.navigation.ChatRoute
 import com.ead.dispatch.sample.navigation.HierarchyRoute
@@ -40,24 +47,38 @@ import com.ead.dispatch.sample.presentation.tasks.TasksScreen
 @Composable
 fun DispatchSampleApp() {
     val backStack = rememberNavBackStack(HomeRoute())
+    val showOverlay = remember { isHibernationOverlayEnabled() }
 
-    NavDisplay(
-        backStack = backStack,
-        viewModelFactory = KoinViewModelFactory(),
-        entryProvider =
-            entryProvider<NavKey> {
-                entry<HomeRoute> { HomeScreen() }
-                entry<InputsRoute> { InputsScreen() }
-                entry<ButtonsRoute> { ButtonsScreen() }
-                entry<ListsRoute> { ListsScreen() }
-                entry<TablesRoute> { TablesScreen() }
-                entry<HierarchyRoute> { HierarchyScreen() }
-                entry<TasksRoute> { TasksScreen() }
-                entry<ProgressRoute> { ProgressScreen() }
-                entry<SurfacesRoute> { SurfacesScreen() }
-                entry<LayoutRoute> { LayoutScreen() }
-                entry<ReviewRoute> { ReviewScreen() }
-                entry<ChatRoute> { ChatScreen() }
-            },
-    )
+    val navDisplay: @Composable (Modifier) -> Unit = { modifier ->
+        NavDisplay(
+            backStack = backStack,
+            modifier = modifier,
+            viewModelFactory = KoinViewModelFactory(),
+            entryProvider =
+                entryProvider<NavKey> {
+                    entry<HomeRoute> { HomeScreen() }
+                    entry<InputsRoute> { InputsScreen() }
+                    entry<ButtonsRoute> { ButtonsScreen() }
+                    entry<ListsRoute> { ListsScreen() }
+                    entry<TablesRoute> { TablesScreen() }
+                    entry<HierarchyRoute> { HierarchyScreen() }
+                    entry<TasksRoute> { TasksScreen() }
+                    entry<ProgressRoute> { ProgressScreen() }
+                    entry<SurfacesRoute> { SurfacesScreen() }
+                    entry<LayoutRoute> { LayoutScreen() }
+                    entry<ReviewRoute> { ReviewScreen() }
+                    entry<ChatRoute> { ChatScreen() }
+                },
+        )
+    }
+
+    if (showOverlay) {
+        // Opt-in debug build: pin the screen above a one-line hibernation status footer.
+        Column(modifier = Modifier.fillMaxSize()) {
+            navDisplay(Modifier.weight(1f))
+            HibernationOverlay()
+        }
+    } else {
+        navDisplay(Modifier)
+    }
 }

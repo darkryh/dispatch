@@ -114,6 +114,7 @@ class DispatchConfig : DispatchLifecycleHooks
 | `exitKeyBindings` | `List<ExitKeyBinding>` | `listOf(ExitKeyBinding.ctrl("C"))` | Bindings that trigger exit. |
 | `exitKeyPredicate` | `((KeyboardEvent) -> Boolean)?` | `null` | Custom exit predicate; overrides `exitKeyBindings` when set. |
 | `captureSystemOutput` | `Boolean` | `true` | Whether app `stdout`/`stderr` is captured during rendering. |
+| `hibernation` | `HibernationConfig` | enabled, 5 min idle | Idle-hibernation settings — see [Idle hibernation](#idle-hibernation). |
 
 Read-only collections populated by the DSL functions below:
 
@@ -149,6 +150,11 @@ fun exitKeyPredicate(predicate: (KeyboardEvent) -> Boolean)
 Sets a custom predicate deciding whether a key event triggers exit.
 
 ```kotlin
+fun hibernation(block: HibernationConfig.() -> Unit)
+```
+Configures idle hibernation in place. See [Idle hibernation](#idle-hibernation).
+
+```kotlin
 fun onExit(action: () -> Unit)
 ```
 Registers a shutdown callback. Callbacks run in reverse registration order at exit. Inherited from
@@ -169,6 +175,85 @@ fun DispatchConfig.koin(
 
 Starts Koin from the config block, optionally registers a stop-on-exit hook, and validates that the
 listed (or auto-registered) view models resolve. See the [Koin reference](koin.md).
+
+## Idle hibernation
+
+After a stretch with no keyboard or mouse input, a Dispatch app drops to a low-resource *hibernate*
+state: the paint cadence falls to `idleFps` and rebuildable caches are released. The next input wakes
+it instantly. Hibernation is **enabled by default** and is non-destructive — scrollback and
+application state are kept. It only affects rendering; it never pauses your coroutines, view models,
+or background work. For the rationale, see [The render model](../explanation/render-model.md#idle-hibernation);
+for tuning recipes, see [Tune idle hibernation](../how-to/tune-idle-hibernation.md).
+
+Configure it with the `hibernation { }` block inside `config { }`:
+
+```kotlin
+import kotlin.time.Duration.Companion.minutes
+
+config {
+    hibernation {
+        idleTimeout = 2.minutes
+        idleFps = 1
+    }
+}
+```
+
+### HibernationConfig
+
+The receiver of `config.hibernation { }`.
+
+| Property | Type | Default | Controls |
+|---|---|---|---|
+| `enabled` | `Boolean` | `true` | Whether idle hibernation runs at all. |
+| `idleTimeout` | `Duration` | `5.minutes` | Inactivity (no input) before hibernating. |
+| `idleFps` | `Int` | `1` | Paint cadence while hibernating; caps the frame rate of ongoing animation. |
+| `releaseCaches` | `Boolean` | `true` | Release rebuildable caches (markdown render cache, lazy-list heights, frame diff) on hibernate. |
+| `requestGc` | `Boolean` | `true` | Hint a GC after caches are released so freed memory is reclaimed. |
+| `trimScrollback` | `Boolean` | `false` | Also drop the renderer's scrollback shadow, forcing a full repaint on wake. Clears only the framework's cached view of painted lines — not the terminal's scrollback nor your app's history state. |
+| `pollInterval` | `Duration` | `1.seconds` | How often the idle watcher checks for inactivity. |
+
+### HibernationHandle
+
+A read-only view of the runtime's hibernation state, for diagnostics overlays and apps that react to
+it. Read it in composition through `LocalHibernation.current`.
+
+```kotlin
+interface HibernationHandle {
+    val isHibernating: Boolean       // snapshot-backed; recomposes on change
+    val idleFps: Int
+    val activeFps: Int
+    fun idleCountdownMillis(): Long   // ms of inactivity left before hibernating; 0 while hibernating
+    fun wakeNow()                     // force an immediate wake
+}
+
+val LocalHibernation: ProvidableCompositionLocal<HibernationHandle?>   // null when unavailable
+```
+
+`isHibernating` is backed by snapshot state, so reading it in a composable recomposes that composable
+when it flips. `idleCountdownMillis()` is time-based — poll it; it does not auto-recompose.
+
+### HibernationRegistry
+
+A process-wide registry of "release on hibernate" callbacks, letting a cache contribute reclaimable
+memory to the hibernate path. Releasers run on the UI thread; everything they drop must be cheap to
+rebuild lazily on wake.
+
+```kotlin
+object HibernationRegistry {
+    fun registerReleaser(release: () -> Unit): AutoCloseable   // close the handle to unregister
+    fun releaseAll(): Int
+}
+```
+
+Register from a `DisposableEffect` and close the handle on dispose so a per-instance cache leaves no
+dangling releaser. Dispatch's own widget caches register here; you rarely call it directly.
+
+### Diagnostics
+
+When `DISPATCH_DIAGNOSTICS_FILE` is set, hibernation appends JSON-lines events: `hibernate_enter`
+(`heapBeforeBytes`, `heapAfterBytes`, `heapFreedBytes`, `idleFps`, …) and `hibernate_exit`
+(`hibernatedDurationMs`, `wakeLatencyNanos`, `activeFps`). They are no-ops when the variable is unset
+(the production default).
 
 ## DispatchLifecycleHooks
 
@@ -295,6 +380,7 @@ Package `com.ead.dispatch.runtime`. Read these with `LocalX.current`.
 | `LocalKeyboardInterceptor` | `KeyboardInterceptor` | required |
 | `LocalExitPromptState` | `ExitPromptState` | `ExitPromptState()` |
 | `LocalFocusRegistry` | `FocusRegistry` | required |
+| `LocalHibernation` | `HibernationHandle?` | `null` |
 | `LocalTerminalWidth` | `Int` | `80` |
 | `LocalTerminalHeight` | `Int` | `24` |
 
@@ -322,5 +408,7 @@ read back from it with `toRoute()` — see the [navigation reference](navigation
 
 - [Getting started](../getting-started.md) — build your first app.
 - [Keyboard input](input.md) — handle keys inside composition.
-- [The render model](../explanation/render-model.md) — what `activeAreaHeight`, `targetFps`, and the
-  exit prompt mean in terms of rendering.
+- [Tune idle hibernation](../how-to/tune-idle-hibernation.md) — change the timeout, keep a screen
+  awake, or turn it off.
+- [The render model](../explanation/render-model.md) — what `activeAreaHeight`, `targetFps`,
+  hibernation, and the exit prompt mean in terms of rendering.

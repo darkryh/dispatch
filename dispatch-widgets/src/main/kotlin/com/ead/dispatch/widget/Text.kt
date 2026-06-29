@@ -7,6 +7,7 @@ import com.ead.dispatch.layout.Placeable
 import com.ead.dispatch.layout.SimplePlaceable
 import com.ead.dispatch.modifier.Modifier
 import com.ead.dispatch.modifier.applyToConstraints
+import com.ead.dispatch.runtime.HibernationRegistry
 import com.ead.dispatch.runtime.LocalTerminal
 import com.ead.dispatch.runtime.composableWidget
 import com.github.ajalt.mordant.markdown.Markdown
@@ -235,6 +236,15 @@ internal class TextMeasurable(
                         size > MARKDOWN_CACHE_MAX
                 },
             )
+
+        init {
+            // Process-global cache: register once and never unregister. On hibernation the runtime
+            // clears it on the UI dispatcher, but other threads may still measure, so honour the
+            // synchronizedMap contract by guarding the clear with the map's monitor.
+            HibernationRegistry.registerReleaser {
+                synchronized(markdownLinesCache) { markdownLinesCache.clear() }
+            }
+        }
         private const val TRIM_SENTINEL = '\u0000'
 
         private val TRIM_SENTINEL_STRING = TRIM_SENTINEL.toString()

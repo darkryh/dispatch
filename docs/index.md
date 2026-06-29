@@ -45,6 +45,9 @@ Pick the doorway that matches what you need right now.
   cells. See the [layout reference](reference/layout.md).
 - **Navigation** — a typed, serializable back stack with lifecycle-aware entries. See the
   [navigation reference](reference/navigation.md).
+- **Idle hibernation** — when left without input, the app drops to a low-power state (throttled FPS,
+  caches released) and wakes instantly on the next key, without touching your background work. On by
+  default. See [Tune idle hibernation](how-to/tune-idle-hibernation.md).
 - **Architecture** — `ViewModel` and MVI base classes, a lifecycle registry, saved-state handles,
   and optional Koin dependency injection.
 - **Optional modules** — in-app [self-update](how-to/check-for-updates.md) (Homebrew, Scoop, APT,

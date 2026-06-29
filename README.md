@@ -22,6 +22,9 @@ different — a terminal — so Dispatch is built around what a terminal can and
   palette.
 - **Flicker-free rendering** — content is painted print-once / append-only; only what changes is
   repainted, and every frame is buffered and flushed atomically.
+- **Idle hibernation** — after a spell with no input, the app throttles its frame rate and releases
+  rebuildable caches, then wakes instantly on the next key — without pausing your background work.
+  On by default, fully configurable.
 - **Typed navigation** — a serializable back stack with lifecycle-aware, view-model-scoped entries.
 - **Architecture batteries included** — `ViewModel` and MVI base classes, a lifecycle registry,
   saved-state handles, and optional Koin dependency injection.

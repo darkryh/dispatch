@@ -22,6 +22,17 @@ internal class RenderPipeline(
         }
     }
 
+    /**
+     * Release only the frame-diff snapshot, keeping the committed scrollback shadow intact. Used by
+     * idle hibernation's conservative release: drops the diff cache (rebuilt by a full repaint on
+     * the next frame) without discarding history.
+     */
+    fun releaseDiffSnapshot() {
+        renderLock.withLock {
+            lastRenderedFrame = null
+        }
+    }
+
     @Suppress("LongMethod")
     fun render(
         measurable: Measurable?,

@@ -51,6 +51,15 @@ full-repaint behavior are unchanged.
 
 ### Added
 
+- **Idle hibernation** — after a configurable span with no keyboard or mouse input, the app drops to
+  a low-power state: the paint cadence falls to `idleFps` (default 1) and rebuildable caches (markdown
+  render cache, lazy-list heights, frame diff) are released, then the next input wakes it instantly.
+  Enabled by default and non-destructive (scrollback and app state are kept); it only affects
+  rendering and never pauses coroutines, view models, or background work. Configure it with the
+  `hibernation { }` block in `config { }`; observe it through `LocalHibernation` or the
+  `hibernate_enter` / `hibernate_exit` diagnostics events. See the
+  [reference](docs/reference/application.md#idle-hibernation) and
+  [how-to](docs/how-to/tune-idle-hibernation.md).
 - `LICENSE` (Apache 2.0), `README.md`, and this changelog.
 
 [Unreleased]: https://github.com/darkryh/dispatch

@@ -9,6 +9,8 @@ start with the [Getting started tutorial](../getting-started.md)) and gets you t
   declare key bindings.
 - [Lay out a screen](lay-out-a-screen.md) — Combine `Column`, `Row`, `Box`, weighting, and spacing.
 - [Theme your app](theme-your-app.md) — Choose a built-in theme or define your own colors and styles.
+- [Tune idle hibernation](tune-idle-hibernation.md) — Change the idle timeout, keep a live screen
+  awake, or turn the low-power idle state off.
 
 ## Architecture
 

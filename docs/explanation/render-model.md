@@ -67,6 +67,39 @@ explains behaviors you will notice:
 - **`targetFps` trades latency for work.** A higher target coalesces fewer frames; `0` paints every
   change immediately. The default of 60 is a good balance.
 
+## Idle hibernation
+
+Because the loop is event-driven, a *static* idle screen already costs almost nothing — nothing
+requests a frame, the recomposer sleeps, and an unchanged frame is a no-op. So idle hibernation is
+not about a screen that sits still. It targets two other costs: an app that keeps *animating* while
+no one is watching (a spinner, a progress bar, a streaming response all keep requesting frames), and
+the memory held in caches that can be rebuilt on demand.
+
+After a stretch with no input, Dispatch hibernates: it throttles the paint cadence to `idleFps`
+(default 1) and releases rebuildable caches — the markdown render cache, lazy-list heights, the frame
+diff — then hints a GC. The next keypress or mouse event wakes it instantly and restores the active
+`targetFps`; everything dropped is reconstructed lazily on the first frame back.
+
+Two design choices are worth understanding:
+
+- **Idle is measured from input, not from screen changes.** "Nobody is here" means no keyboard or
+  mouse for the timeout — *not* "the UI stopped changing". A screen still updating from background
+  work does not stay awake on its own; it hibernates if you do not touch it, and only its visible
+  refresh slows to `idleFps` until you return. This is deliberate: it is the only definition of idle
+  that lets a long-running, self-updating screen (a live log, a backend dashboard) hibernate when
+  abandoned instead of pinning the CPU forever.
+- **It only touches rendering.** Hibernation changes the frame scheduler's cadence and drops view
+  caches. It never cancels or pauses a coroutine, a `ViewModel`, or any background job — Dispatch
+  deliberately does *not* drive the lifecycle into a stopped state. If you run schedulers, timers, or
+  a server alongside the UI, they keep running untouched while the UI naps; throttling the paint loop
+  simply leaves them more CPU. The default release is non-destructive, too: scrollback and all
+  application state are kept.
+
+Hibernation is on by default and fully configurable — see
+[Idle hibernation](../reference/application.md#idle-hibernation) for the options and
+[Tune idle hibernation](../how-to/tune-idle-hibernation.md) for recipes (raise `idleFps` for a live
+dashboard, call `wakeNow()` on fresh data, or disable it entirely).
+
 ## Why not just clear and redraw everything?
 
 It would be simpler to write, and it is what many terminal apps do. Dispatch does not, for three
@@ -79,4 +112,6 @@ part of the terminal rather than a hijacked screen.
 
 - [Architecture and modules](architecture.md) — where the renderer sits among the modules.
 - [Application & configuration](../reference/application.md#dispatchconfig) — `activeAreaHeight`,
-  `targetFps`, and related options.
+  `targetFps`, hibernation, and related options.
+- [Tune idle hibernation](../how-to/tune-idle-hibernation.md) — adjust the idle behavior described
+  above.

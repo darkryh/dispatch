@@ -28,6 +28,10 @@ class DispatchConfig : DispatchLifecycleHooks {
     var exitKeyBindings: List<ExitKeyBinding> = listOf(ExitKeyBinding.ctrl("C"))
     var exitKeyPredicate: ((KeyboardEvent) -> Boolean)? = null
     var captureSystemOutput: Boolean = true
+
+    /** Idle hibernation settings. Enabled by default; see [HibernationConfig]. */
+    val hibernation = HibernationConfig()
+
     private val exitActions = mutableListOf<() -> Unit>()
     private var exitActionsExecuted: Boolean = false
 
@@ -55,6 +59,9 @@ class DispatchConfig : DispatchLifecycleHooks {
     fun exitKeyPredicate(predicate: (KeyboardEvent) -> Boolean) {
         exitKeyPredicate = predicate
     }
+
+    /** Configure idle hibernation, e.g. `hibernation { idleTimeout = 2.minutes; idleFps = 1 }`. */
+    fun hibernation(block: HibernationConfig.() -> Unit) = hibernation.block()
 
     override fun onExit(action: () -> Unit) {
         exitActions += action

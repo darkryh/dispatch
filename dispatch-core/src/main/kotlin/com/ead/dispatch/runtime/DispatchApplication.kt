@@ -54,7 +54,7 @@ internal class DispatchRuntimeEngine(
 
     // Completed exactly once when an exit is requested, so the session can await it instead of
     // polling exitRequested every 50ms. Every exit path funnels through requestExit().
-    private val exitSignal = kotlinx.coroutines.CompletableDeferred<Unit>()
+    private val exitSignal = CompletableDeferred<Unit>()
 
     @Volatile
     private var exitCode = 0
@@ -72,6 +72,9 @@ internal class DispatchRuntimeEngine(
     private lateinit var resizeCoordinator: ResizeCoordinator
     private lateinit var renderPipeline: RenderPipeline
     private lateinit var frameScheduler: FrameScheduler
+
+    @Volatile
+    private var hibernationController: HibernationController? = null
 
     private val rootMeasurable = AtomicReference<Measurable?>(null)
     private val parsedFlags = mutableSetOf<String>()
@@ -126,10 +129,11 @@ internal class DispatchRuntimeEngine(
 
     /**
      * Release engine resources on every exit path (including early returns and throws before the
-     * terminal session starts). Idempotent: [onBeforeShutdown] may have already torn parts down.
+     * terminal session starts). Idempotent: [teardown] may have already torn parts down.
      */
     private suspend fun teardown() {
         withContext(NonCancellable) {
+            hibernationController?.stop()
             cancelExitPromptReset()
             keyEventHandler = null
             mouseEventHandler = null
@@ -213,6 +217,19 @@ internal class DispatchRuntimeEngine(
                 targetFps = config.targetFps,
                 onFrame = { composeAndRender() },
             )
+        hibernationController =
+            HibernationController(
+                config = config.hibernation,
+                watcherScope = backgroundScope,
+                uiScope = uiScope,
+                frameScheduler = frameScheduler,
+                awakeFps = config.targetFps,
+                onReleaseResources = {
+                    HibernationRegistry.releaseAll()
+                    renderPipeline.releaseDiffSnapshot()
+                    if (config.hibernation.trimScrollback) renderPipeline.reset()
+                },
+            )
         initializeComposition()
         return true
     }
@@ -246,6 +263,7 @@ internal class DispatchRuntimeEngine(
                 LocalFocusRegistry provides focusRegistry,
                 LocalExitPromptState provides exitPromptState,
                 LocalScreenTransitionObserver provides screenTransitionObserver,
+                LocalHibernation provides hibernationController,
             ) {
                 block()
             }
@@ -255,6 +273,7 @@ internal class DispatchRuntimeEngine(
 
     private suspend fun runTerminalSession() {
         if (activeUIBlock == null) return
+        hibernationController?.start()
         TerminalSessionCoordinator(
             terminal = terminal,
             config = config,
@@ -267,6 +286,7 @@ internal class DispatchRuntimeEngine(
             onFrameComposeAndRender = { composeAndRender() },
             awaitExit = { exitSignal.await() },
             onBeforeShutdown = {
+                hibernationController?.stop()
                 cancelExitPromptReset()
                 if (::composition.isInitialized) composition.dispose()
                 recomposer.close()
@@ -351,6 +371,7 @@ internal class DispatchRuntimeEngine(
         event: KeyboardEvent,
         eventTimestampNanos: Long,
     ): Boolean {
+        hibernationController?.onUserActivity(eventTimestampNanos)
         when (resolveExitAction(event, eventTimestampNanos)) {
             ExitAction.Exit -> {
                 disarmExitPrompt()
@@ -418,6 +439,7 @@ internal class DispatchRuntimeEngine(
     }
 
     private fun handleMouseEvent(event: MouseEvent) {
+        hibernationController?.onUserActivity()
         mouseEventHandler?.invoke(event)
     }
 

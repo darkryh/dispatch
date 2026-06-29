@@ -4,7 +4,8 @@ These pages explain how Dispatch works and why it is built the way it is. They a
 not for step-by-step tasks — read them away from the keyboard.
 
 - [The render model](render-model.md) — How Dispatch paints a terminal without flicker: the
-  print-once / append-only scrollback, the in-place active area, and full-repaint navigation.
+  print-once / append-only scrollback, the in-place active area, full-repaint navigation, and idle
+  hibernation.
 - [Architecture and modules](architecture.md) — How the library is split into modules, the
   dependency boundaries between them, and what each one is responsible for.
 - [Why the Compose runtime](why-compose-runtime.md) — Why Dispatch reuses Jetpack Compose's runtime

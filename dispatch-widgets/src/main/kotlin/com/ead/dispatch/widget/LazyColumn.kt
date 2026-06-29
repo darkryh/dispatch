@@ -1,6 +1,7 @@
 package com.ead.dispatch.widget
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.key
 import androidx.compose.runtime.remember
 import com.ead.dispatch.constraints.Constraints
@@ -9,6 +10,7 @@ import com.ead.dispatch.layout.Measurable
 import com.ead.dispatch.layout.Placeable
 import com.ead.dispatch.layout.SimplePlaceable
 import com.ead.dispatch.modifier.Modifier
+import com.ead.dispatch.runtime.HibernationRegistry
 import com.ead.dispatch.runtime.LocalTerminalHeight
 import com.ead.dispatch.runtime.composableContainer
 
@@ -27,6 +29,12 @@ fun LazyColumn(
     scope.content()
     val entries = scope.entries
     val cache = remember { LazyItemHeightCache() }
+    DisposableEffect(cache) {
+        // Drop this LazyColumn's measured heights when the app hibernates; unregister on dispose
+        // so a removed list leaves no dangling releaser.
+        val handle = HibernationRegistry.registerReleaser { cache.clear() }
+        onDispose { handle.close() }
+    }
     val viewportHeight = LocalTerminalHeight.current.coerceAtLeast(1)
     val window = cache.window(entries, state.offset, viewportHeight, stickToEnd)
 
@@ -179,6 +187,10 @@ private class LazyItemHeightCache {
     }
 
     private fun heightOf(key: Any): Int = heights[key] ?: 1
+
+    fun clear() {
+        heights.clear()
+    }
 }
 
 private class LazyColumnMeasurable(

@@ -128,6 +128,7 @@ object StarterTemplate {
         import com.ead.dispatch.viewmodel.ViewModelProviderScope
         import {{PACKAGE}}.di.appModule
         import kotlin.time.Duration.Companion.milliseconds
+        import kotlin.time.Duration.Companion.minutes
 
         /**
          * Entry point. [DispatchApplication] owns the terminal lifecycle; `config { }` declares the app
@@ -144,6 +145,15 @@ object StarterTemplate {
                     exitKeys(ExitKeyBinding.ctrl("C"))
                     requireExitDoublePress = true
                     exitTimeoutOnDoublePress = 1_500.milliseconds
+
+                    // Idle hibernation is on by default: after a stretch with no keyboard/mouse input
+                    // the app drops to a low-power state — paint throttles to 1 FPS and rebuildable
+                    // caches are released — and wakes instantly on the next input. The defaults apply
+                    // even without this block; it's here so the knobs are easy to find. Tune or delete.
+                    hibernation {
+                        idleTimeout = 5.minutes
+                        idleFps = 1
+                    }
 
                     koin { modules(appModule) }
                 }

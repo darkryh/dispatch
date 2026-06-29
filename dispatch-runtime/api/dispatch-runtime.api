@@ -818,6 +818,7 @@ public final class com/ead/dispatch/runtime/DispatchConfig : com/ead/dispatch/ru
 	public final fun getExitKeyPredicate ()Lkotlin/jvm/functions/Function1;
 	public final fun getExitTimeoutOnDoublePress-UwyO8pc ()J
 	public final fun getFlags ()Ljava/util/Map;
+	public final fun getHibernation ()Lcom/ead/dispatch/runtime/HibernationConfig;
 	public final fun getMouseTracking ()Lcom/github/ajalt/mordant/input/MouseTracking;
 	public final fun getName ()Ljava/lang/String;
 	public final fun getRequireExitDoublePress ()Z
@@ -825,6 +826,7 @@ public final class com/ead/dispatch/runtime/DispatchConfig : com/ead/dispatch/ru
 	public final fun getTheme ()Lcom/ead/dispatch/theme/DispatchTheme;
 	public final fun getVersion ()Ljava/lang/String;
 	public final fun getWindowTitle ()Ljava/lang/String;
+	public final fun hibernation (Lkotlin/jvm/functions/Function1;)V
 	public fun onExit (Lkotlin/jvm/functions/Function0;)V
 	public final fun runExitActions ()V
 	public final fun setActiveAreaHeight (I)V
@@ -983,6 +985,44 @@ public final class com/ead/dispatch/runtime/FocusRegistry {
 	public final fun focusPrevious ()V
 	public final fun isFocused (Ljava/lang/Object;)Z
 	public final fun sync (Lcom/ead/dispatch/layout/LayoutNode;)V
+}
+
+public final class com/ead/dispatch/runtime/HibernationConfig {
+	public static final field $stable I
+	public fun <init> ()V
+	public final fun getEnabled ()Z
+	public final fun getIdleFps ()I
+	public final fun getIdleTimeout-UwyO8pc ()J
+	public final fun getPollInterval-UwyO8pc ()J
+	public final fun getReleaseCaches ()Z
+	public final fun getRequestGc ()Z
+	public final fun getTrimScrollback ()Z
+	public final fun setEnabled (Z)V
+	public final fun setIdleFps (I)V
+	public final fun setIdleTimeout-LRDsOJo (J)V
+	public final fun setPollInterval-LRDsOJo (J)V
+	public final fun setReleaseCaches (Z)V
+	public final fun setRequestGc (Z)V
+	public final fun setTrimScrollback (Z)V
+}
+
+public abstract interface class com/ead/dispatch/runtime/HibernationHandle {
+	public abstract fun getActiveFps ()I
+	public abstract fun getIdleFps ()I
+	public abstract fun idleCountdownMillis ()J
+	public abstract fun isHibernating ()Z
+	public abstract fun wakeNow ()V
+}
+
+public final class com/ead/dispatch/runtime/HibernationHandleKt {
+	public static final fun getLocalHibernation ()Landroidx/compose/runtime/ProvidableCompositionLocal;
+}
+
+public final class com/ead/dispatch/runtime/HibernationRegistry {
+	public static final field $stable I
+	public static final field INSTANCE Lcom/ead/dispatch/runtime/HibernationRegistry;
+	public final fun registerReleaser (Lkotlin/jvm/functions/Function0;)Ljava/lang/AutoCloseable;
+	public final fun releaseAll ()I
 }
 
 public final class com/ead/dispatch/runtime/KeyBinding {
