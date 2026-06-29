@@ -23,6 +23,13 @@
 /dispatch-benchmarks/build/
 /*/bin/
 
+# Initializr (standalone Kotlin/Wasm + Compose Multiplatform build).
+# Ignore generated output and caches; keep sources and kotlin-js-store/ (the yarn lockfile,
+# committed for reproducible CI/Pages builds).
+/initializr/.gradle/
+/initializr/.kotlin/
+/initializr/build/
+
 # Root aggregate build output (reports, etc.) — generated, never source
 /build/
 

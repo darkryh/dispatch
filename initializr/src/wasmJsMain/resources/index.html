@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dispatch · Project Initializer</title>
+    <style>
+        html, body { margin: 0; padding: 0; height: 100%; background: #0f1216; }
+        #loading {
+            position: fixed; inset: 0; display: flex; align-items: center; justify-content: center;
+            color: #6e7681; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 14px;
+        }
+        #loading b { color: #56d4dd; font-weight: 500; }
+        #loading .cursor { color: #56d4dd; animation: blink 1.06s steps(1) infinite; }
+        @keyframes blink { 50% { opacity: 0; } }
+        @media (prefers-reduced-motion: reduce) { #loading .cursor { animation: none; } }
+    </style>
+</head>
+<body>
+<div id="loading">~/dispatch <b>❯</b> booting…<span class="cursor">▌</span></div>
+<script type="application/javascript" src="initializr.js"></script>
+</body>
+</html>
