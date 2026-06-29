@@ -20,7 +20,14 @@
 /dispatch-workspace/build/
 /dispatch-viewmodel/build/
 /dispatch-widgets/build/
+/dispatch-benchmarks/build/
 /*/bin/
+
+# Root aggregate build output (reports, etc.) — generated, never source
+/build/
+
+# macOS / editor cruft
+.DS_Store
 /koog-context-orchestrator/build/
 /koog-agent-benchmark-core/build/
 /koog-agent-benchmark-koog/build/

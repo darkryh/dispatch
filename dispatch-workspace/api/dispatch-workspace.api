@@ -1,0 +1,112 @@
+public final class com/ead/dispatch/workspace/DefaultWorkspaceWatcher : com/ead/dispatch/workspace/WorkspaceWatcher, java/lang/AutoCloseable {
+	public static final field $stable I
+	public fun <init> (Lcom/ead/dispatch/workspace/WorkspaceWatchConfig;Lkotlin/jvm/functions/Function0;)V
+	public synthetic fun <init> (Lcom/ead/dispatch/workspace/WorkspaceWatchConfig;Lkotlin/jvm/functions/Function0;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun close ()V
+	public fun getEvents ()Lkotlinx/coroutines/flow/SharedFlow;
+	public fun start ()V
+	public fun stop ()V
+}
+
+public final class com/ead/dispatch/workspace/HashingMode : java/lang/Enum {
+	public static final field ALWAYS Lcom/ead/dispatch/workspace/HashingMode;
+	public static final field NONE Lcom/ead/dispatch/workspace/HashingMode;
+	public static final field ON_MODIFY Lcom/ead/dispatch/workspace/HashingMode;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/ead/dispatch/workspace/HashingMode;
+	public static fun values ()[Lcom/ead/dispatch/workspace/HashingMode;
+}
+
+public final class com/ead/dispatch/workspace/WorkspaceCompositionKt {
+	public static final fun WorkspaceProvider (Lcom/ead/dispatch/workspace/WorkspaceWatchConfig;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;I)V
+	public static final fun getLocalWorkspaceConfig ()Landroidx/compose/runtime/ProvidableCompositionLocal;
+	public static final fun getLocalWorkspaceWatcher ()Landroidx/compose/runtime/ProvidableCompositionLocal;
+	public static final fun rememberWorkspaceEvents (Lcom/ead/dispatch/workspace/WorkspaceWatchConfig;Landroidx/compose/runtime/Composer;I)Lkotlinx/coroutines/flow/SharedFlow;
+	public static final fun rememberWorkspaceState (Lcom/ead/dispatch/workspace/WorkspaceWatchConfig;Landroidx/compose/runtime/Composer;I)Lcom/ead/dispatch/workspace/WorkspaceState;
+	public static final fun rememberWorkspaceWatcher (Lcom/ead/dispatch/workspace/WorkspaceWatchConfig;Landroidx/compose/runtime/Composer;I)Lcom/ead/dispatch/workspace/WorkspaceWatcher;
+	public static final fun requireWorkspaceConfig (Landroidx/compose/runtime/Composer;I)Lcom/ead/dispatch/workspace/WorkspaceWatchConfig;
+	public static final fun requireWorkspaceWatcher (Landroidx/compose/runtime/Composer;I)Lcom/ead/dispatch/workspace/WorkspaceWatcher;
+}
+
+public final class com/ead/dispatch/workspace/WorkspaceEvent {
+	public static final field $stable I
+	public fun <init> (Ljava/nio/file/Path;Lcom/ead/dispatch/workspace/WorkspaceEventType;JLjava/lang/String;)V
+	public synthetic fun <init> (Ljava/nio/file/Path;Lcom/ead/dispatch/workspace/WorkspaceEventType;JLjava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/nio/file/Path;
+	public final fun component2 ()Lcom/ead/dispatch/workspace/WorkspaceEventType;
+	public final fun component3 ()J
+	public final fun component4 ()Ljava/lang/String;
+	public final fun copy (Ljava/nio/file/Path;Lcom/ead/dispatch/workspace/WorkspaceEventType;JLjava/lang/String;)Lcom/ead/dispatch/workspace/WorkspaceEvent;
+	public static synthetic fun copy$default (Lcom/ead/dispatch/workspace/WorkspaceEvent;Ljava/nio/file/Path;Lcom/ead/dispatch/workspace/WorkspaceEventType;JLjava/lang/String;ILjava/lang/Object;)Lcom/ead/dispatch/workspace/WorkspaceEvent;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getHash ()Ljava/lang/String;
+	public final fun getPath ()Ljava/nio/file/Path;
+	public final fun getTimestamp ()J
+	public final fun getType ()Lcom/ead/dispatch/workspace/WorkspaceEventType;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/ead/dispatch/workspace/WorkspaceEventType : java/lang/Enum {
+	public static final field CREATED Lcom/ead/dispatch/workspace/WorkspaceEventType;
+	public static final field DELETED Lcom/ead/dispatch/workspace/WorkspaceEventType;
+	public static final field MODIFIED Lcom/ead/dispatch/workspace/WorkspaceEventType;
+	public static final field OVERFLOW Lcom/ead/dispatch/workspace/WorkspaceEventType;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lcom/ead/dispatch/workspace/WorkspaceEventType;
+	public static fun values ()[Lcom/ead/dispatch/workspace/WorkspaceEventType;
+}
+
+public final class com/ead/dispatch/workspace/WorkspaceState {
+	public static final field $stable I
+	public fun <init> ()V
+	public fun <init> (Lcom/ead/dispatch/workspace/WorkspaceEvent;Ljava/lang/Long;Z)V
+	public synthetic fun <init> (Lcom/ead/dispatch/workspace/WorkspaceEvent;Ljava/lang/Long;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/ead/dispatch/workspace/WorkspaceEvent;
+	public final fun component2 ()Ljava/lang/Long;
+	public final fun component3 ()Z
+	public final fun copy (Lcom/ead/dispatch/workspace/WorkspaceEvent;Ljava/lang/Long;Z)Lcom/ead/dispatch/workspace/WorkspaceState;
+	public static synthetic fun copy$default (Lcom/ead/dispatch/workspace/WorkspaceState;Lcom/ead/dispatch/workspace/WorkspaceEvent;Ljava/lang/Long;ZILjava/lang/Object;)Lcom/ead/dispatch/workspace/WorkspaceState;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getHasPendingChanges ()Z
+	public final fun getLastEventAt ()Ljava/lang/Long;
+	public final fun getLatestEvent ()Lcom/ead/dispatch/workspace/WorkspaceEvent;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/ead/dispatch/workspace/WorkspaceWatchConfig {
+	public static final field $stable I
+	public synthetic fun <init> (Ljava/nio/file/Path;ZLjava/util/List;Ljava/util/List;JLcom/ead/dispatch/workspace/HashingMode;Ljava/lang/String;ZIILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (Ljava/nio/file/Path;ZLjava/util/List;Ljava/util/List;JLcom/ead/dispatch/workspace/HashingMode;Ljava/lang/String;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/nio/file/Path;
+	public final fun component2 ()Z
+	public final fun component3 ()Ljava/util/List;
+	public final fun component4 ()Ljava/util/List;
+	public final fun component5-UwyO8pc ()J
+	public final fun component6 ()Lcom/ead/dispatch/workspace/HashingMode;
+	public final fun component7 ()Ljava/lang/String;
+	public final fun component8 ()Z
+	public final fun component9 ()I
+	public final fun copy-efNRYWU (Ljava/nio/file/Path;ZLjava/util/List;Ljava/util/List;JLcom/ead/dispatch/workspace/HashingMode;Ljava/lang/String;ZI)Lcom/ead/dispatch/workspace/WorkspaceWatchConfig;
+	public static synthetic fun copy-efNRYWU$default (Lcom/ead/dispatch/workspace/WorkspaceWatchConfig;Ljava/nio/file/Path;ZLjava/util/List;Ljava/util/List;JLcom/ead/dispatch/workspace/HashingMode;Ljava/lang/String;ZIILjava/lang/Object;)Lcom/ead/dispatch/workspace/WorkspaceWatchConfig;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getDebounce-UwyO8pc ()J
+	public final fun getExcludeGlobs ()Ljava/util/List;
+	public final fun getFollowSymlinks ()Z
+	public final fun getHashAlgorithm ()Ljava/lang/String;
+	public final fun getHashing ()Lcom/ead/dispatch/workspace/HashingMode;
+	public final fun getIncludeGlobs ()Ljava/util/List;
+	public final fun getMaxEventBatchSize ()I
+	public final fun getRecursive ()Z
+	public final fun getRoot ()Ljava/nio/file/Path;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class com/ead/dispatch/workspace/WorkspaceWatcher {
+	public abstract fun getEvents ()Lkotlinx/coroutines/flow/SharedFlow;
+	public abstract fun start ()V
+	public abstract fun stop ()V
+}
+

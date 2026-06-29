@@ -1,0 +1,254 @@
+public final class com/ead/dispatch/layout/Alignment {
+	public static final field $stable I
+	public static final field INSTANCE Lcom/ead/dispatch/layout/Alignment;
+	public final fun getBottomCenter ()Lcom/ead/dispatch/layout/Alignment$Alignment2D;
+	public final fun getBottomEnd ()Lcom/ead/dispatch/layout/Alignment$Alignment2D;
+	public final fun getBottomStart ()Lcom/ead/dispatch/layout/Alignment$Alignment2D;
+	public final fun getCenter ()Lcom/ead/dispatch/layout/Alignment$Alignment2D;
+	public final fun getCenterEnd ()Lcom/ead/dispatch/layout/Alignment$Alignment2D;
+	public final fun getCenterStart ()Lcom/ead/dispatch/layout/Alignment$Alignment2D;
+	public final fun getTopCenter ()Lcom/ead/dispatch/layout/Alignment$Alignment2D;
+	public final fun getTopEnd ()Lcom/ead/dispatch/layout/Alignment$Alignment2D;
+	public final fun getTopStart ()Lcom/ead/dispatch/layout/Alignment$Alignment2D;
+}
+
+public final class com/ead/dispatch/layout/Alignment$Alignment2D {
+	public static final field $stable I
+	public fun <init> (Lcom/ead/dispatch/layout/Alignment$Horizontal;Lcom/ead/dispatch/layout/Alignment$Vertical;)V
+	public final fun align (IIII)Lkotlin/Pair;
+	public final fun component1 ()Lcom/ead/dispatch/layout/Alignment$Horizontal;
+	public final fun component2 ()Lcom/ead/dispatch/layout/Alignment$Vertical;
+	public final fun copy (Lcom/ead/dispatch/layout/Alignment$Horizontal;Lcom/ead/dispatch/layout/Alignment$Vertical;)Lcom/ead/dispatch/layout/Alignment$Alignment2D;
+	public static synthetic fun copy$default (Lcom/ead/dispatch/layout/Alignment$Alignment2D;Lcom/ead/dispatch/layout/Alignment$Horizontal;Lcom/ead/dispatch/layout/Alignment$Vertical;ILjava/lang/Object;)Lcom/ead/dispatch/layout/Alignment$Alignment2D;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getHorizontal ()Lcom/ead/dispatch/layout/Alignment$Horizontal;
+	public final fun getVertical ()Lcom/ead/dispatch/layout/Alignment$Vertical;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/ead/dispatch/layout/Alignment$Bottom : com/ead/dispatch/layout/Alignment$Vertical {
+	public static final field $stable I
+	public static final field INSTANCE Lcom/ead/dispatch/layout/Alignment$Bottom;
+	public fun align (II)I
+}
+
+public final class com/ead/dispatch/layout/Alignment$CenterHorizontally : com/ead/dispatch/layout/Alignment$Horizontal {
+	public static final field $stable I
+	public static final field INSTANCE Lcom/ead/dispatch/layout/Alignment$CenterHorizontally;
+	public fun align (II)I
+}
+
+public final class com/ead/dispatch/layout/Alignment$CenterVertically : com/ead/dispatch/layout/Alignment$Vertical {
+	public static final field $stable I
+	public static final field INSTANCE Lcom/ead/dispatch/layout/Alignment$CenterVertically;
+	public fun align (II)I
+}
+
+public final class com/ead/dispatch/layout/Alignment$End : com/ead/dispatch/layout/Alignment$Horizontal {
+	public static final field $stable I
+	public static final field INSTANCE Lcom/ead/dispatch/layout/Alignment$End;
+	public fun align (II)I
+}
+
+public abstract interface class com/ead/dispatch/layout/Alignment$Horizontal {
+	public abstract fun align (II)I
+}
+
+public final class com/ead/dispatch/layout/Alignment$Start : com/ead/dispatch/layout/Alignment$Horizontal {
+	public static final field $stable I
+	public static final field INSTANCE Lcom/ead/dispatch/layout/Alignment$Start;
+	public fun align (II)I
+}
+
+public final class com/ead/dispatch/layout/Alignment$Top : com/ead/dispatch/layout/Alignment$Vertical {
+	public static final field $stable I
+	public static final field INSTANCE Lcom/ead/dispatch/layout/Alignment$Top;
+	public fun align (II)I
+}
+
+public abstract interface class com/ead/dispatch/layout/Alignment$Vertical {
+	public abstract fun align (II)I
+}
+
+public final class com/ead/dispatch/layout/Arrangement {
+	public static final field $stable I
+	public static final field INSTANCE Lcom/ead/dispatch/layout/Arrangement;
+	public final fun spacedBy (I)Lcom/ead/dispatch/layout/Arrangement$HorizontalOrVertical;
+}
+
+public final class com/ead/dispatch/layout/Arrangement$Bottom : com/ead/dispatch/layout/Arrangement$Vertical {
+	public static final field $stable I
+	public static final field INSTANCE Lcom/ead/dispatch/layout/Arrangement$Bottom;
+	public fun arrange (ILjava/util/List;)Ljava/util/List;
+}
+
+public final class com/ead/dispatch/layout/Arrangement$Center : com/ead/dispatch/layout/Arrangement$HorizontalOrVertical {
+	public static final field $stable I
+	public static final field INSTANCE Lcom/ead/dispatch/layout/Arrangement$Center;
+	public fun arrange (ILjava/util/List;)Ljava/util/List;
+}
+
+public final class com/ead/dispatch/layout/Arrangement$End : com/ead/dispatch/layout/Arrangement$Horizontal {
+	public static final field $stable I
+	public static final field INSTANCE Lcom/ead/dispatch/layout/Arrangement$End;
+	public fun arrange (ILjava/util/List;)Ljava/util/List;
+}
+
+public abstract interface class com/ead/dispatch/layout/Arrangement$Horizontal {
+	public abstract fun arrange (ILjava/util/List;)Ljava/util/List;
+}
+
+public abstract interface class com/ead/dispatch/layout/Arrangement$HorizontalOrVertical : com/ead/dispatch/layout/Arrangement$Horizontal, com/ead/dispatch/layout/Arrangement$Vertical {
+}
+
+public final class com/ead/dispatch/layout/Arrangement$SpaceAround : com/ead/dispatch/layout/Arrangement$HorizontalOrVertical {
+	public static final field $stable I
+	public static final field INSTANCE Lcom/ead/dispatch/layout/Arrangement$SpaceAround;
+	public fun arrange (ILjava/util/List;)Ljava/util/List;
+}
+
+public final class com/ead/dispatch/layout/Arrangement$SpaceBetween : com/ead/dispatch/layout/Arrangement$HorizontalOrVertical {
+	public static final field $stable I
+	public static final field INSTANCE Lcom/ead/dispatch/layout/Arrangement$SpaceBetween;
+	public fun arrange (ILjava/util/List;)Ljava/util/List;
+}
+
+public final class com/ead/dispatch/layout/Arrangement$SpaceEvenly : com/ead/dispatch/layout/Arrangement$HorizontalOrVertical {
+	public static final field $stable I
+	public static final field INSTANCE Lcom/ead/dispatch/layout/Arrangement$SpaceEvenly;
+	public fun arrange (ILjava/util/List;)Ljava/util/List;
+}
+
+public final class com/ead/dispatch/layout/Arrangement$SpacedBy : com/ead/dispatch/layout/Arrangement$HorizontalOrVertical {
+	public static final field $stable I
+	public fun <init> (I)V
+	public fun arrange (ILjava/util/List;)Ljava/util/List;
+}
+
+public final class com/ead/dispatch/layout/Arrangement$Start : com/ead/dispatch/layout/Arrangement$Horizontal {
+	public static final field $stable I
+	public static final field INSTANCE Lcom/ead/dispatch/layout/Arrangement$Start;
+	public fun arrange (ILjava/util/List;)Ljava/util/List;
+}
+
+public final class com/ead/dispatch/layout/Arrangement$Top : com/ead/dispatch/layout/Arrangement$Vertical {
+	public static final field $stable I
+	public static final field INSTANCE Lcom/ead/dispatch/layout/Arrangement$Top;
+	public fun arrange (ILjava/util/List;)Ljava/util/List;
+}
+
+public abstract interface class com/ead/dispatch/layout/Arrangement$Vertical {
+	public abstract fun arrange (ILjava/util/List;)Ljava/util/List;
+}
+
+public final class com/ead/dispatch/layout/BannerLayoutKt {
+	public static final fun BannerLayout (Lcom/ead/dispatch/modifier/Modifier;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;II)V
+	public static final fun FooterLayout (Lcom/ead/dispatch/modifier/Modifier;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;II)V
+	public static final fun HeaderLayout (Lcom/ead/dispatch/modifier/Modifier;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;II)V
+}
+
+public final class com/ead/dispatch/layout/BoxKt {
+	public static final fun Box (Lcom/ead/dispatch/modifier/Modifier;Lcom/ead/dispatch/layout/Alignment$Alignment2D;Lkotlin/jvm/functions/Function3;Landroidx/compose/runtime/Composer;II)V
+	public static final fun Spacer (Lcom/ead/dispatch/modifier/Modifier;Landroidx/compose/runtime/Composer;II)V
+}
+
+public abstract interface class com/ead/dispatch/layout/BoxScope : com/ead/dispatch/layout/LayoutScope {
+	public abstract fun getContentAlignment ()Lcom/ead/dispatch/layout/Alignment$Alignment2D;
+}
+
+public final class com/ead/dispatch/layout/BoxScope$DefaultImpls {
+	public static fun getItemModifier (Lcom/ead/dispatch/layout/BoxScope;)Lcom/ead/dispatch/modifier/Modifier;
+}
+
+public final class com/ead/dispatch/layout/BoxScopeInstance : com/ead/dispatch/layout/BoxScope {
+	public static final field $stable I
+	public fun <init> (Lcom/ead/dispatch/layout/Alignment$Alignment2D;)V
+	public final fun component1 ()Lcom/ead/dispatch/layout/Alignment$Alignment2D;
+	public final fun copy (Lcom/ead/dispatch/layout/Alignment$Alignment2D;)Lcom/ead/dispatch/layout/BoxScopeInstance;
+	public static synthetic fun copy$default (Lcom/ead/dispatch/layout/BoxScopeInstance;Lcom/ead/dispatch/layout/Alignment$Alignment2D;ILjava/lang/Object;)Lcom/ead/dispatch/layout/BoxScopeInstance;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getContentAlignment ()Lcom/ead/dispatch/layout/Alignment$Alignment2D;
+	public fun getItemModifier ()Lcom/ead/dispatch/modifier/Modifier;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/ead/dispatch/layout/ColumnKt {
+	public static final fun Column (Lcom/ead/dispatch/modifier/Modifier;Lcom/ead/dispatch/layout/Arrangement$Vertical;Lcom/ead/dispatch/layout/Alignment$Horizontal;Lkotlin/jvm/functions/Function3;Landroidx/compose/runtime/Composer;II)V
+}
+
+public abstract interface class com/ead/dispatch/layout/ColumnScope : com/ead/dispatch/layout/LayoutScope {
+	public abstract fun getHorizontalAlignment ()Lcom/ead/dispatch/layout/Alignment$Horizontal;
+}
+
+public final class com/ead/dispatch/layout/ColumnScope$DefaultImpls {
+	public static fun getItemModifier (Lcom/ead/dispatch/layout/ColumnScope;)Lcom/ead/dispatch/modifier/Modifier;
+}
+
+public final class com/ead/dispatch/layout/ColumnScopeInstance : com/ead/dispatch/layout/ColumnScope {
+	public static final field $stable I
+	public fun <init> (Lcom/ead/dispatch/layout/Alignment$Horizontal;)V
+	public final fun component1 ()Lcom/ead/dispatch/layout/Alignment$Horizontal;
+	public final fun copy (Lcom/ead/dispatch/layout/Alignment$Horizontal;)Lcom/ead/dispatch/layout/ColumnScopeInstance;
+	public static synthetic fun copy$default (Lcom/ead/dispatch/layout/ColumnScopeInstance;Lcom/ead/dispatch/layout/Alignment$Horizontal;ILjava/lang/Object;)Lcom/ead/dispatch/layout/ColumnScopeInstance;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getHorizontalAlignment ()Lcom/ead/dispatch/layout/Alignment$Horizontal;
+	public fun getItemModifier ()Lcom/ead/dispatch/modifier/Modifier;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/ead/dispatch/layout/ComposableSingletons$BoxKt {
+	public static final field INSTANCE Lcom/ead/dispatch/layout/ComposableSingletons$BoxKt;
+	public fun <init> ()V
+	public final fun getLambda$1612611018$io_github_darkryh_dispatch_dispatch_layout ()Lkotlin/jvm/functions/Function3;
+}
+
+public final class com/ead/dispatch/layout/LayoutKt {
+	public static final fun Layout (Lcom/ead/dispatch/modifier/Modifier;Lcom/ead/dispatch/layout/MeasurePolicy;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;II)V
+}
+
+public abstract interface class com/ead/dispatch/layout/LayoutScope {
+	public fun getItemModifier ()Lcom/ead/dispatch/modifier/Modifier;
+}
+
+public final class com/ead/dispatch/layout/LayoutScope$DefaultImpls {
+	public static fun getItemModifier (Lcom/ead/dispatch/layout/LayoutScope;)Lcom/ead/dispatch/modifier/Modifier;
+}
+
+public class com/ead/dispatch/layout/LayoutScopeInstance : com/ead/dispatch/layout/LayoutScope {
+	public static final field $stable I
+	public fun <init> ()V
+	public fun getItemModifier ()Lcom/ead/dispatch/modifier/Modifier;
+}
+
+public final class com/ead/dispatch/layout/RowKt {
+	public static final fun Row (Lcom/ead/dispatch/modifier/Modifier;Lcom/ead/dispatch/layout/Arrangement$Horizontal;Lcom/ead/dispatch/layout/Alignment$Vertical;Lkotlin/jvm/functions/Function3;Landroidx/compose/runtime/Composer;II)V
+}
+
+public abstract interface class com/ead/dispatch/layout/RowScope : com/ead/dispatch/layout/LayoutScope {
+	public abstract fun getVerticalAlignment ()Lcom/ead/dispatch/layout/Alignment$Vertical;
+}
+
+public final class com/ead/dispatch/layout/RowScope$DefaultImpls {
+	public static fun getItemModifier (Lcom/ead/dispatch/layout/RowScope;)Lcom/ead/dispatch/modifier/Modifier;
+}
+
+public final class com/ead/dispatch/layout/RowScopeInstance : com/ead/dispatch/layout/RowScope {
+	public static final field $stable I
+	public fun <init> (Lcom/ead/dispatch/layout/Alignment$Vertical;)V
+	public final fun component1 ()Lcom/ead/dispatch/layout/Alignment$Vertical;
+	public final fun copy (Lcom/ead/dispatch/layout/Alignment$Vertical;)Lcom/ead/dispatch/layout/RowScopeInstance;
+	public static synthetic fun copy$default (Lcom/ead/dispatch/layout/RowScopeInstance;Lcom/ead/dispatch/layout/Alignment$Vertical;ILjava/lang/Object;)Lcom/ead/dispatch/layout/RowScopeInstance;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun getItemModifier ()Lcom/ead/dispatch/modifier/Modifier;
+	public fun getVerticalAlignment ()Lcom/ead/dispatch/layout/Alignment$Vertical;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/ead/dispatch/layout/TerminalScreenKt {
+	public static final fun TerminalScreen (Lcom/ead/dispatch/modifier/Modifier;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function3;Landroidx/compose/runtime/Composer;II)V
+}
+

@@ -3,6 +3,15 @@ plugins {
     alias(libs.plugins.dokka)
     alias(libs.plugins.kotlin.jvm) apply false
     alias(libs.plugins.kotlin.serialization) apply false
+    alias(libs.plugins.binary.compatibility)
+}
+
+// Public-API surface guard. `apiCheck` auto-wires into `check` (and thus `validateAll`); run
+// `./gradlew apiDump` to (re)generate the committed <module>/api/<module>.api baselines whenever a
+// public ABI change is intended. Non-published projects are excluded.
+apiValidation {
+    ignoredProjects += "dispatch-sample"
+    ignoredProjects += "dispatch-benchmarks"
 }
 
 allprojects {
@@ -30,9 +39,11 @@ if (koverRequested) {
 
     // Aggregate Kover reports from all library modules (excluding sample)
     dependencies {
-        subprojects.filter { it.name != "dispatch-sample" }.forEach {
-            add("kover", dependencies.project(":${it.name}"))
-        }
+        subprojects
+            .filter { it.name != "dispatch-sample" && it.name != "dispatch-benchmarks" }
+            .forEach {
+                add("kover", dependencies.project(":${it.name}"))
+            }
     }
 }
 

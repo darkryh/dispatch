@@ -1,0 +1,6 @@
+public final class com/ead/dispatch/update/AptUpdateProvider : com/ead/dispatch/update/CommandBasedUpdateProvider {
+	public static final field $stable I
+	public fun <init> (Ljava/lang/String;Lcom/ead/dispatch/update/CommandRunner;)V
+	public fun latestVersion (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+}
+

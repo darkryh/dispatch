@@ -1,0 +1,175 @@
+public final class com/ead/dispatch/navigation/ComposableSingletons$NavDisplayKt {
+	public static final field INSTANCE Lcom/ead/dispatch/navigation/ComposableSingletons$NavDisplayKt;
+	public fun <init> ()V
+	public final fun getLambda$1872316245$io_github_darkryh_dispatch_dispatch_navigation ()Lkotlin/jvm/functions/Function3;
+}
+
+public abstract interface annotation class com/ead/dispatch/navigation/EntryDsl : java/lang/annotation/Annotation {
+}
+
+public final class com/ead/dispatch/navigation/EntryProviderKt {
+	public static final fun entryProvider (Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)Lkotlin/jvm/functions/Function1;
+	public static synthetic fun entryProvider$default (Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lkotlin/jvm/functions/Function1;
+}
+
+public final class com/ead/dispatch/navigation/EntryProviderScope {
+	public static final field $stable I
+	public fun <init> (Lkotlin/jvm/functions/Function1;)V
+	public final fun addEntryProvider (Lcom/ead/dispatch/navigation/NavKey;Ljava/lang/Object;Ljava/util/Map;Lkotlin/jvm/functions/Function3;)V
+	public final fun addEntryProvider (Lcom/ead/dispatch/navigation/NavKey;Ljava/lang/Object;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function3;)V
+	public final fun addEntryProvider (Lkotlin/reflect/KClass;Lkotlin/jvm/functions/Function1;Ljava/util/Map;Lkotlin/jvm/functions/Function3;)V
+	public final fun addEntryProvider (Lkotlin/reflect/KClass;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function3;)V
+	public static synthetic fun addEntryProvider$default (Lcom/ead/dispatch/navigation/EntryProviderScope;Lcom/ead/dispatch/navigation/NavKey;Ljava/lang/Object;Ljava/util/Map;Lkotlin/jvm/functions/Function3;ILjava/lang/Object;)V
+	public static synthetic fun addEntryProvider$default (Lcom/ead/dispatch/navigation/EntryProviderScope;Lcom/ead/dispatch/navigation/NavKey;Ljava/lang/Object;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function3;ILjava/lang/Object;)V
+	public static synthetic fun addEntryProvider$default (Lcom/ead/dispatch/navigation/EntryProviderScope;Lkotlin/reflect/KClass;Lkotlin/jvm/functions/Function1;Ljava/util/Map;Lkotlin/jvm/functions/Function3;ILjava/lang/Object;)V
+	public static synthetic fun addEntryProvider$default (Lcom/ead/dispatch/navigation/EntryProviderScope;Lkotlin/reflect/KClass;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function3;ILjava/lang/Object;)V
+	public final fun build ()Lkotlin/jvm/functions/Function1;
+	public final fun entry (Lcom/ead/dispatch/navigation/NavKey;Ljava/lang/Object;Ljava/util/Map;Lkotlin/jvm/functions/Function3;)V
+	public final fun entry (Lcom/ead/dispatch/navigation/NavKey;Ljava/lang/Object;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function3;)V
+	public static synthetic fun entry$default (Lcom/ead/dispatch/navigation/EntryProviderScope;Lcom/ead/dispatch/navigation/NavKey;Ljava/lang/Object;Ljava/util/Map;Lkotlin/jvm/functions/Function3;ILjava/lang/Object;)V
+	public static synthetic fun entry$default (Lcom/ead/dispatch/navigation/EntryProviderScope;Lcom/ead/dispatch/navigation/NavKey;Ljava/lang/Object;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function3;ILjava/lang/Object;)V
+}
+
+public final class com/ead/dispatch/navigation/LocalNavigatorKt {
+	public static final fun getLocalNavigator ()Landroidx/compose/runtime/ProvidableCompositionLocal;
+}
+
+public final class com/ead/dispatch/navigation/NavBackStack : java/util/List, kotlin/jvm/internal/markers/KMutableList {
+	public static final field $stable I
+	public fun <init> ()V
+	public fun <init> ([Lcom/ead/dispatch/navigation/NavKey;)V
+	public fun add (ILcom/ead/dispatch/navigation/NavKey;)V
+	public synthetic fun add (ILjava/lang/Object;)V
+	public fun add (Lcom/ead/dispatch/navigation/NavKey;)Z
+	public synthetic fun add (Ljava/lang/Object;)Z
+	public fun addAll (ILjava/util/Collection;)Z
+	public fun addAll (Ljava/util/Collection;)Z
+	public fun clear ()V
+	public fun contains (Lcom/ead/dispatch/navigation/NavKey;)Z
+	public final fun contains (Ljava/lang/Object;)Z
+	public fun containsAll (Ljava/util/Collection;)Z
+	public fun get (I)Lcom/ead/dispatch/navigation/NavKey;
+	public synthetic fun get (I)Ljava/lang/Object;
+	public fun getSize ()I
+	public fun indexOf (Lcom/ead/dispatch/navigation/NavKey;)I
+	public final fun indexOf (Ljava/lang/Object;)I
+	public fun isEmpty ()Z
+	public fun iterator ()Ljava/util/Iterator;
+	public fun lastIndexOf (Lcom/ead/dispatch/navigation/NavKey;)I
+	public final fun lastIndexOf (Ljava/lang/Object;)I
+	public fun listIterator ()Ljava/util/ListIterator;
+	public fun listIterator (I)Ljava/util/ListIterator;
+	public final fun remove (I)Lcom/ead/dispatch/navigation/NavKey;
+	public synthetic fun remove (I)Ljava/lang/Object;
+	public fun remove (Lcom/ead/dispatch/navigation/NavKey;)Z
+	public final fun remove (Ljava/lang/Object;)Z
+	public fun removeAll (Ljava/util/Collection;)Z
+	public fun removeAt (I)Lcom/ead/dispatch/navigation/NavKey;
+	public fun retainAll (Ljava/util/Collection;)Z
+	public fun set (ILcom/ead/dispatch/navigation/NavKey;)Lcom/ead/dispatch/navigation/NavKey;
+	public synthetic fun set (ILjava/lang/Object;)Ljava/lang/Object;
+	public final fun size ()I
+	public fun subList (II)Ljava/util/List;
+	public fun toArray ()[Ljava/lang/Object;
+	public fun toArray ([Ljava/lang/Object;)[Ljava/lang/Object;
+}
+
+public final class com/ead/dispatch/navigation/NavBackStackEntry : com/ead/dispatch/lifecycle/LifecycleOwner {
+	public static final field $stable I
+	public fun <init> (Lcom/ead/dispatch/navigation/NavKey;Ljava/lang/Object;Ljava/util/Map;Lkotlin/jvm/functions/Function2;Lcom/ead/dispatch/runtime/SavedStateHandle;Lcom/ead/dispatch/viewmodel/ViewModelProvider;Lcom/ead/dispatch/lifecycle/LifecycleRegistry;)V
+	public final fun Content (Landroidx/compose/runtime/Composer;I)V
+	public final fun getContentKey ()Ljava/lang/Object;
+	public final fun getKey ()Lcom/ead/dispatch/navigation/NavKey;
+	public fun getLifecycle ()Lcom/ead/dispatch/lifecycle/LifecycleRegistry;
+	public final fun getLifecycleRegistry ()Lcom/ead/dispatch/lifecycle/LifecycleRegistry;
+	public final fun getMetadata ()Ljava/util/Map;
+	public final fun getSavedStateHandle ()Lcom/ead/dispatch/runtime/SavedStateHandle;
+	public final fun getViewModelProvider ()Lcom/ead/dispatch/viewmodel/ViewModelProvider;
+}
+
+public final class com/ead/dispatch/navigation/NavBackStackExtensionsKt {
+	public static final fun canGoBack (Lcom/ead/dispatch/navigation/NavBackStack;)Z
+	public static final fun navigate (Lcom/ead/dispatch/navigation/NavBackStack;Lcom/ead/dispatch/navigation/NavKey;)V
+	public static final fun popBackStack (Lcom/ead/dispatch/navigation/NavBackStack;)Z
+}
+
+public final class com/ead/dispatch/navigation/NavBackStackKt {
+	public static final fun rememberNavBackStack ([Lcom/ead/dispatch/navigation/NavKey;Lkotlinx/serialization/json/Json;Landroidx/compose/runtime/Composer;II)Lcom/ead/dispatch/navigation/NavBackStack;
+}
+
+public final class com/ead/dispatch/navigation/NavDisplayKt {
+	public static final fun NavDisplay (Lcom/ead/dispatch/navigation/NavBackStack;Lkotlin/jvm/functions/Function1;Lcom/ead/dispatch/modifier/Modifier;Ljava/util/List;Lcom/ead/dispatch/viewmodel/ViewModelFactory;Lkotlinx/serialization/json/Json;Landroidx/compose/runtime/Composer;II)V
+}
+
+public final class com/ead/dispatch/navigation/NavEntry {
+	public static final field $stable I
+	public fun <init> (Lcom/ead/dispatch/navigation/NavKey;Ljava/lang/Object;Ljava/util/Map;Lkotlin/jvm/functions/Function3;)V
+	public synthetic fun <init> (Lcom/ead/dispatch/navigation/NavKey;Ljava/lang/Object;Ljava/util/Map;Lkotlin/jvm/functions/Function3;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lcom/ead/dispatch/navigation/NavKey;
+	public final fun component2 ()Ljava/lang/Object;
+	public final fun component3 ()Ljava/util/Map;
+	public final fun component4 ()Lkotlin/jvm/functions/Function3;
+	public final fun copy (Lcom/ead/dispatch/navigation/NavKey;Ljava/lang/Object;Ljava/util/Map;Lkotlin/jvm/functions/Function3;)Lcom/ead/dispatch/navigation/NavEntry;
+	public static synthetic fun copy$default (Lcom/ead/dispatch/navigation/NavEntry;Lcom/ead/dispatch/navigation/NavKey;Ljava/lang/Object;Ljava/util/Map;Lkotlin/jvm/functions/Function3;ILjava/lang/Object;)Lcom/ead/dispatch/navigation/NavEntry;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getContent ()Lkotlin/jvm/functions/Function3;
+	public final fun getContentKey ()Ljava/lang/Object;
+	public final fun getKey ()Lcom/ead/dispatch/navigation/NavKey;
+	public final fun getMetadata ()Ljava/util/Map;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public class com/ead/dispatch/navigation/NavEntryDecorator {
+	public static final field $stable I
+	public fun <init> (Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function3;)V
+	public synthetic fun <init> (Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function3;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+}
+
+public final class com/ead/dispatch/navigation/NavEntryDecoratorKt {
+	public static final fun rememberDecoratedNavEntries (Ljava/util/List;Ljava/util/List;Landroidx/compose/runtime/Composer;II)Ljava/util/List;
+	public static final fun rememberDecoratedNavEntries (Ljava/util/List;Ljava/util/List;Lkotlin/jvm/functions/Function1;Lcom/ead/dispatch/viewmodel/ViewModelFactory;Lkotlinx/serialization/json/Json;Landroidx/compose/runtime/Composer;II)Ljava/util/List;
+}
+
+public final class com/ead/dispatch/navigation/NavEntryKt {
+	public static final fun stableContentKey (Lcom/ead/dispatch/navigation/NavKey;)Ljava/lang/Object;
+	public static final fun wrap (Lcom/ead/dispatch/navigation/NavBackStackEntry;Lkotlin/jvm/functions/Function2;)Lcom/ead/dispatch/navigation/NavBackStackEntry;
+}
+
+public abstract interface class com/ead/dispatch/navigation/NavKey {
+}
+
+public final class com/ead/dispatch/navigation/NavKeySerializationKt {
+	public static final field ROUTE_PAYLOAD_KEY Ljava/lang/String;
+	public static final fun getDefaultRouteJson ()Lkotlinx/serialization/json/Json;
+	public static final fun serializerFor (Ljava/lang/Object;)Lkotlinx/serialization/KSerializer;
+	public static final fun serializerForClass (Ljava/lang/String;)Lkotlinx/serialization/KSerializer;
+}
+
+public final class com/ead/dispatch/navigation/NavLocalsKt {
+	public static final fun getLocalLifecycleOwner ()Landroidx/compose/runtime/ProvidableCompositionLocal;
+	public static final fun getLocalNavBackStackEntry ()Landroidx/compose/runtime/ProvidableCompositionLocal;
+}
+
+public abstract interface class com/ead/dispatch/navigation/Navigator {
+	public abstract fun navigate (Lcom/ead/dispatch/navigation/NavKey;)V
+	public abstract fun popBackStack ()Z
+}
+
+public final class com/ead/dispatch/navigation/SavedStateHandleExtensionsKt {
+	public static final fun getBooleanArgument (Lcom/ead/dispatch/runtime/SavedStateHandle;Ljava/lang/String;)Ljava/lang/Boolean;
+	public static final fun getIntArgument (Lcom/ead/dispatch/runtime/SavedStateHandle;Ljava/lang/String;)Ljava/lang/Integer;
+	public static final fun getLongArgument (Lcom/ead/dispatch/runtime/SavedStateHandle;Ljava/lang/String;)Ljava/lang/Long;
+	public static final fun getStringArgument (Lcom/ead/dispatch/runtime/SavedStateHandle;Ljava/lang/String;)Ljava/lang/String;
+	public static final fun requireBooleanArgument (Lcom/ead/dispatch/runtime/SavedStateHandle;Ljava/lang/String;)Z
+	public static final fun requireIntArgument (Lcom/ead/dispatch/runtime/SavedStateHandle;Ljava/lang/String;)I
+	public static final fun requireLongArgument (Lcom/ead/dispatch/runtime/SavedStateHandle;Ljava/lang/String;)J
+	public static final fun requireStringArgument (Lcom/ead/dispatch/runtime/SavedStateHandle;Ljava/lang/String;)Ljava/lang/String;
+}
+
+public final class com/ead/dispatch/navigation/TypedRoutesKt {
+	public static final fun decodeRoutePayload (Lkotlinx/serialization/KSerializer;Ljava/lang/String;Lkotlinx/serialization/json/Json;)Ljava/lang/Object;
+	public static synthetic fun decodeRoutePayload$default (Lkotlinx/serialization/KSerializer;Ljava/lang/String;Lkotlinx/serialization/json/Json;ILjava/lang/Object;)Ljava/lang/Object;
+	public static final fun routeName (Lkotlinx/serialization/KSerializer;)Ljava/lang/String;
+}
+

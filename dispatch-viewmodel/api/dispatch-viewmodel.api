@@ -1,0 +1,202 @@
+public final class com/ead/dispatch/viewmodel/DefaultViewModelFactory : com/ead/dispatch/viewmodel/ViewModelFactory {
+	public static final field $stable I
+	public fun <init> ()V
+	public fun create (Lkotlin/reflect/KClass;)Lcom/ead/dispatch/viewmodel/ViewModel;
+}
+
+public abstract class com/ead/dispatch/viewmodel/FullMviViewModel : com/ead/dispatch/viewmodel/ViewModel {
+	public static final field $stable I
+	public fun <init> (Ljava/lang/Object;)V
+	protected final fun emitSideEffect (Ljava/lang/Object;)V
+	public final fun getCurrentState ()Ljava/lang/Object;
+	public final fun getSideEffect ()Lkotlinx/coroutines/flow/SharedFlow;
+	public final fun getState ()Lkotlinx/coroutines/flow/StateFlow;
+	protected final fun get_state ()Lkotlinx/coroutines/flow/MutableStateFlow;
+	protected abstract fun handleIntent (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun sendIntent (Ljava/lang/Object;)V
+	protected final fun setState (Ljava/lang/Object;)V
+	protected final fun updateState (Lkotlin/jvm/functions/Function1;)V
+}
+
+public final class com/ead/dispatch/viewmodel/LambdaViewModelFactory : com/ead/dispatch/viewmodel/ViewModelFactory {
+	public static final field $stable I
+	public fun <init> (Ljava/util/Map;)V
+	public fun create (Lkotlin/reflect/KClass;)Lcom/ead/dispatch/viewmodel/ViewModel;
+}
+
+public final class com/ead/dispatch/viewmodel/LambdaViewModelFactory$Builder {
+	public static final field $stable I
+	public fun <init> ()V
+	public final fun build ()Lcom/ead/dispatch/viewmodel/LambdaViewModelFactory;
+	public final fun getCreators ()Ljava/util/Map;
+}
+
+public abstract class com/ead/dispatch/viewmodel/LoadingState {
+	public static final field $stable I
+	public final fun getOrDefault (Ljava/lang/Object;)Ljava/lang/Object;
+	public final fun getOrNull ()Ljava/lang/Object;
+	public final fun isError ()Z
+	public final fun isLoading ()Z
+	public final fun isSuccess ()Z
+}
+
+public final class com/ead/dispatch/viewmodel/LoadingState$Error : com/ead/dispatch/viewmodel/LoadingState {
+	public static final field $stable I
+	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/Throwable;
+	public final fun copy (Ljava/lang/String;Ljava/lang/Throwable;)Lcom/ead/dispatch/viewmodel/LoadingState$Error;
+	public static synthetic fun copy$default (Lcom/ead/dispatch/viewmodel/LoadingState$Error;Ljava/lang/String;Ljava/lang/Throwable;ILjava/lang/Object;)Lcom/ead/dispatch/viewmodel/LoadingState$Error;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCause ()Ljava/lang/Throwable;
+	public final fun getMessage ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/ead/dispatch/viewmodel/LoadingState$Loading : com/ead/dispatch/viewmodel/LoadingState {
+	public static final field $stable I
+	public static final field INSTANCE Lcom/ead/dispatch/viewmodel/LoadingState$Loading;
+}
+
+public final class com/ead/dispatch/viewmodel/LoadingState$Success : com/ead/dispatch/viewmodel/LoadingState {
+	public static final field $stable I
+	public fun <init> (Ljava/lang/Object;)V
+	public final fun component1 ()Ljava/lang/Object;
+	public final fun copy (Ljava/lang/Object;)Lcom/ead/dispatch/viewmodel/LoadingState$Success;
+	public static synthetic fun copy$default (Lcom/ead/dispatch/viewmodel/LoadingState$Success;Ljava/lang/Object;ILjava/lang/Object;)Lcom/ead/dispatch/viewmodel/LoadingState$Success;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getData ()Ljava/lang/Object;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract class com/ead/dispatch/viewmodel/MviViewModel : com/ead/dispatch/viewmodel/StateViewModel {
+	public static final field $stable I
+	public fun <init> (Ljava/lang/Object;)V
+	protected abstract fun handleIntent (Ljava/lang/Object;Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
+	public final fun sendIntent (Ljava/lang/Object;)V
+}
+
+public abstract class com/ead/dispatch/viewmodel/Resource {
+	public static final field $stable I
+	public final fun getOrNull ()Ljava/lang/Object;
+	public final fun isError ()Z
+	public final fun isIdle ()Z
+	public final fun isLoading ()Z
+	public final fun isSuccess ()Z
+}
+
+public final class com/ead/dispatch/viewmodel/Resource$Error : com/ead/dispatch/viewmodel/Resource {
+	public static final field $stable I
+	public fun <init> (Ljava/lang/String;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/Throwable;
+	public final fun copy (Ljava/lang/String;Ljava/lang/Throwable;)Lcom/ead/dispatch/viewmodel/Resource$Error;
+	public static synthetic fun copy$default (Lcom/ead/dispatch/viewmodel/Resource$Error;Ljava/lang/String;Ljava/lang/Throwable;ILjava/lang/Object;)Lcom/ead/dispatch/viewmodel/Resource$Error;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getCause ()Ljava/lang/Throwable;
+	public final fun getMessage ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/ead/dispatch/viewmodel/Resource$Idle : com/ead/dispatch/viewmodel/Resource {
+	public static final field $stable I
+	public static final field INSTANCE Lcom/ead/dispatch/viewmodel/Resource$Idle;
+}
+
+public final class com/ead/dispatch/viewmodel/Resource$Loading : com/ead/dispatch/viewmodel/Resource {
+	public static final field $stable I
+	public static final field INSTANCE Lcom/ead/dispatch/viewmodel/Resource$Loading;
+}
+
+public final class com/ead/dispatch/viewmodel/Resource$Success : com/ead/dispatch/viewmodel/Resource {
+	public static final field $stable I
+	public fun <init> (Ljava/lang/Object;)V
+	public final fun component1 ()Ljava/lang/Object;
+	public final fun copy (Ljava/lang/Object;)Lcom/ead/dispatch/viewmodel/Resource$Success;
+	public static synthetic fun copy$default (Lcom/ead/dispatch/viewmodel/Resource$Success;Ljava/lang/Object;ILjava/lang/Object;)Lcom/ead/dispatch/viewmodel/Resource$Success;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getData ()Ljava/lang/Object;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public abstract interface class com/ead/dispatch/viewmodel/SavedStateViewModelFactory : com/ead/dispatch/viewmodel/ViewModelFactory {
+	public abstract fun create (Lkotlin/reflect/KClass;Lcom/ead/dispatch/runtime/SavedStateHandle;)Lcom/ead/dispatch/viewmodel/ViewModel;
+}
+
+public abstract class com/ead/dispatch/viewmodel/SideEffectViewModel : com/ead/dispatch/viewmodel/StateViewModel {
+	public static final field $stable I
+	public fun <init> (Ljava/lang/Object;)V
+	protected final fun emitSideEffect (Ljava/lang/Object;)V
+	public final fun getSideEffect ()Lkotlinx/coroutines/flow/SharedFlow;
+}
+
+public final class com/ead/dispatch/viewmodel/StateFlowExtensionsKt {
+	public static final fun asMutableState (Lkotlinx/coroutines/flow/MutableStateFlow;)Landroidx/compose/runtime/MutableState;
+	public static final fun asState (Lkotlinx/coroutines/flow/StateFlow;)Landroidx/compose/runtime/State;
+	public static final fun collectSideEffect (Lkotlinx/coroutines/flow/SharedFlow;Lkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;I)V
+	public static final fun combineStates (Lkotlinx/coroutines/flow/StateFlow;Lkotlinx/coroutines/flow/StateFlow;Lkotlinx/coroutines/CoroutineScope;Lkotlin/jvm/functions/Function2;)Lkotlinx/coroutines/flow/StateFlow;
+	public static final fun combineStates (Lkotlinx/coroutines/flow/StateFlow;Lkotlinx/coroutines/flow/StateFlow;Lkotlinx/coroutines/flow/StateFlow;Lkotlinx/coroutines/CoroutineScope;Lkotlin/jvm/functions/Function3;)Lkotlinx/coroutines/flow/StateFlow;
+	public static final fun debounce (Lkotlinx/coroutines/flow/StateFlow;JLkotlinx/coroutines/CoroutineScope;)Lkotlinx/coroutines/flow/StateFlow;
+	public static final fun distinctByKey (Lkotlinx/coroutines/flow/StateFlow;Lkotlinx/coroutines/CoroutineScope;Lkotlin/jvm/functions/Function1;)Lkotlinx/coroutines/flow/StateFlow;
+	public static final fun filterState (Lkotlinx/coroutines/flow/StateFlow;Lkotlinx/coroutines/CoroutineScope;Lkotlin/jvm/functions/Function1;)Lkotlinx/coroutines/flow/StateFlow;
+	public static final fun mapState (Lkotlinx/coroutines/flow/StateFlow;Lkotlinx/coroutines/CoroutineScope;Lkotlin/jvm/functions/Function1;)Lkotlinx/coroutines/flow/StateFlow;
+}
+
+public abstract class com/ead/dispatch/viewmodel/StateViewModel : com/ead/dispatch/viewmodel/ViewModel {
+	public static final field $stable I
+	public fun <init> (Ljava/lang/Object;)V
+	public final fun getCurrentState ()Ljava/lang/Object;
+	public final fun getState ()Lkotlinx/coroutines/flow/StateFlow;
+	protected final fun get_state ()Lkotlinx/coroutines/flow/MutableStateFlow;
+	protected final fun setState (Ljava/lang/Object;)V
+	protected final fun updateState (Lkotlin/jvm/functions/Function1;)V
+}
+
+public abstract class com/ead/dispatch/viewmodel/ViewModel : java/io/Closeable {
+	public static final field $stable I
+	public fun <init> ()V
+	public final fun addCloseable (Ljava/io/Closeable;)V
+	protected final fun asViewModelStateFlow (Lkotlinx/coroutines/flow/MutableStateFlow;)Lkotlinx/coroutines/flow/StateFlow;
+	public final fun clear ()V
+	public fun close ()V
+	public final fun getViewModelScope ()Lkotlinx/coroutines/CoroutineScope;
+	public final fun isCleared ()Z
+	protected final fun launch (Lkotlin/coroutines/CoroutineContext;Lkotlin/jvm/functions/Function2;)Lkotlinx/coroutines/Job;
+	public static synthetic fun launch$default (Lcom/ead/dispatch/viewmodel/ViewModel;Lkotlin/coroutines/CoroutineContext;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)Lkotlinx/coroutines/Job;
+	protected fun onCleared ()V
+}
+
+public abstract interface class com/ead/dispatch/viewmodel/ViewModelFactory {
+	public abstract fun create (Lkotlin/reflect/KClass;)Lcom/ead/dispatch/viewmodel/ViewModel;
+}
+
+public final class com/ead/dispatch/viewmodel/ViewModelProvider {
+	public static final field $stable I
+	public fun <init> ()V
+	public fun <init> (Lcom/ead/dispatch/viewmodel/ViewModelFactory;Lcom/ead/dispatch/runtime/SavedStateHandle;)V
+	public synthetic fun <init> (Lcom/ead/dispatch/viewmodel/ViewModelFactory;Lcom/ead/dispatch/runtime/SavedStateHandle;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun clear ()V
+	public final fun clear (Ljava/lang/String;)V
+	public final fun get (Lkotlin/reflect/KClass;Ljava/lang/String;)Lcom/ead/dispatch/viewmodel/ViewModel;
+	public static synthetic fun get$default (Lcom/ead/dispatch/viewmodel/ViewModelProvider;Lkotlin/reflect/KClass;Ljava/lang/String;ILjava/lang/Object;)Lcom/ead/dispatch/viewmodel/ViewModel;
+}
+
+public final class com/ead/dispatch/viewmodel/ViewModelProviderKt {
+	public static final fun ViewModelProviderScope (Lcom/ead/dispatch/viewmodel/ViewModelFactory;Lcom/ead/dispatch/runtime/SavedStateHandle;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;II)V
+	public static final fun getLocalViewModelProvider ()Landroidx/compose/runtime/ProvidableCompositionLocal;
+	public static final fun viewModelFactory (Lkotlin/jvm/functions/Function1;)Lcom/ead/dispatch/viewmodel/LambdaViewModelFactory;
+}
+
+public final class com/ead/dispatch/viewmodel/ViewModelStore {
+	public static final field $stable I
+	public static final field INSTANCE Lcom/ead/dispatch/viewmodel/ViewModelStore;
+	public final fun clear ()V
+	public final fun getOrCreate (Ljava/lang/String;Lkotlin/jvm/functions/Function0;)Lcom/ead/dispatch/viewmodel/ViewModel;
+}
+

@@ -6,6 +6,18 @@ import com.github.ajalt.mordant.rendering.Whitespace
 
 internal var inputNowNanos: () -> Long = { System.nanoTime() }
 
+/**
+ * T2.12 test-only seam: invoked exactly once per *actual* marker render performed by
+ * [VerticalCursorMeasurer] (i.e. on each `terminal.render` cache miss, not on cache hits).
+ *
+ * Mirrors the [inputNowNanos] seam: the default is a no-op, so production behavior is unchanged.
+ * It exists because Mordant's `Terminal` (and `Terminal.render`) are `final`, so the render-budget
+ * test cannot subclass/decorate the terminal to count calls; this observer is the only behavior-
+ * neutral counting point. NOTE: this counts ONLY the editor's vertical-measurement renders, which
+ * is exactly the O(n)-per-keypress hot path T2.12 STEP 2 targets.
+ */
+internal var inputVerticalRenderObserver: () -> Unit = {}
+
 internal data class TextInsertResult(
     val value: String,
     val cursorPosition: Int,
@@ -147,13 +159,15 @@ internal class InputEditor(
                     onValueChange(getValue())
                     return
                 }
-                val info =
-                    cursorLineInfo(
+                // T2.12 STEP 1: build the shared measurer ONCE and pass it to both
+                // cursorLineInfo and moveCursorVertical so they share a single render cache.
+                val measurer =
+                    VerticalCursorMeasurer(
                         terminal = terminal,
                         text = getValue(),
-                        cursorPosition = getCursor(),
                         wrapWidth = contentWidthProvider(),
                     )
+                val info = cursorLineInfo(measurer, getCursor())
                 val targetColumn = preferredVerticalColumn ?: info.col
                 preferredVerticalColumn = targetColumn
                 if (info.line == 0 && getCursor() > 0) {
@@ -162,11 +176,9 @@ internal class InputEditor(
                 }
                 updateCursorPosition(
                     moveCursorVertical(
-                        terminal = terminal,
-                        text = getValue(),
+                        measurer = measurer,
                         cursorPosition = getCursor(),
                         direction = -1,
-                        wrapWidth = contentWidthProvider(),
                         desiredColumn = targetColumn,
                     ),
                 )
@@ -190,13 +202,15 @@ internal class InputEditor(
                         return
                     }
                 }
-                val info =
-                    cursorLineInfo(
+                // T2.12 STEP 1: build the shared measurer ONCE and pass it to both
+                // cursorLineInfo and moveCursorVertical so they share a single render cache.
+                val measurer =
+                    VerticalCursorMeasurer(
                         terminal = terminal,
                         text = getValue(),
-                        cursorPosition = getCursor(),
                         wrapWidth = contentWidthProvider(),
                     )
+                val info = cursorLineInfo(measurer, getCursor())
                 val targetColumn = preferredVerticalColumn ?: info.col
                 preferredVerticalColumn = targetColumn
                 if (info.line == info.maxLine && getCursor() < getValue().length) {
@@ -205,11 +219,9 @@ internal class InputEditor(
                 }
                 updateCursorPosition(
                     moveCursorVertical(
-                        terminal = terminal,
-                        text = getValue(),
+                        measurer = measurer,
                         cursorPosition = getCursor(),
                         direction = 1,
-                        wrapWidth = contentWidthProvider(),
                         desiredColumn = targetColumn,
                     ),
                 )
@@ -315,24 +327,38 @@ private data class CursorLineInfo(
     val col: Int,
 )
 
-private fun moveCursorVertical(
-    terminal: com.github.ajalt.mordant.terminal.Terminal,
-    text: String,
-    cursorPosition: Int,
-    direction: Int,
+/**
+ * T2.12 STEP 1 — Shared vertical-cursor measurer.
+ *
+ * Before T2.12, `cursorLineInfo` and `moveCursorVertical` each declared their OWN `HashMap` cache and
+ * their OWN local `visualAt`, so a single ArrowUp/ArrowDown rendered the marker at `clampedCursor` and
+ * at `text.length` TWICE (once per function) — 2 fully duplicated `terminal.render` calls per keypress.
+ *
+ * Hoisting the cache + `visualAt` into one object that both functions share removes those duplicates
+ * with NO behavior change. `visualAt` here is byte-identical to the two originals:
+ *  - same cursor [CURSOR_MARKER] inserted at the cursor index,
+ *  - same [spanSuffixFrom] suffix appended for every marker render,
+ *  - same `Whitespace.PRE_WRAP` / `OverflowWrap.BREAK_WORD` / `width.coerceAtLeast(1)`,
+ *  - same two index fallbacks: `indexOfFirst { contains(marker) } == -1 -> lines.lastIndex`,
+ *    and `markerLine.indexOf(marker) == -1 -> markerLine.length`,
+ *  - same per-index memoization keyed by the clamped position.
+ */
+private class VerticalCursorMeasurer(
+    private val terminal: com.github.ajalt.mordant.terminal.Terminal,
+    private val text: String,
     wrapWidth: Int,
-    desiredColumn: Int,
-): Int {
-    if (direction == 0) return cursorPosition.coerceIn(0, text.length)
+) {
+    private val width = wrapWidth.coerceAtLeast(1)
+    private val marker = CURSOR_MARKER
+    private val cache = HashMap<Int, CursorVisual>()
 
-    val width = wrapWidth.coerceAtLeast(1)
-    val clampedCursor = cursorPosition.coerceIn(0, text.length)
-    val cache = HashMap<Int, CursorVisual>()
-    val marker = CURSOR_MARKER
+    val textLength: Int get() = text.length
 
     fun visualAt(pos: Int): CursorVisual {
         val safePos = pos.coerceIn(0, text.length)
         return cache.getOrPut(safePos) {
+            // Count this as one real terminal.render (cache misses only). No-op in production.
+            inputVerticalRenderObserver()
             val prefix = text.substring(0, safePos)
             val suffixSpan = spanSuffixFrom(text, safePos)
             val rendered =
@@ -356,16 +382,45 @@ private fun moveCursorVertical(
             CursorVisual(line = markerLineIndex, col = markerCol)
         }
     }
+}
 
-    val current = visualAt(clampedCursor)
-    val maxLine = visualAt(text.length).line
+private fun moveCursorVertical(
+    measurer: VerticalCursorMeasurer,
+    cursorPosition: Int,
+    direction: Int,
+    desiredColumn: Int,
+): Int {
+    val textLength = measurer.textLength
+    if (direction == 0) return cursorPosition.coerceIn(0, textLength)
+
+    val clampedCursor = cursorPosition.coerceIn(0, textLength)
+
+    val current = measurer.visualAt(clampedCursor)
+    val maxLine = measurer.visualAt(textLength).line
     val targetLine = (current.line + direction).coerceIn(0, maxLine)
     if (targetLine == current.line) return clampedCursor
     val desiredCol = desiredColumn.coerceAtLeast(0)
 
-    return (0..text.length)
+    // T2.12 STEP 2 DEFERRED: the per-position scan below (one marker `visualAt` for EVERY index
+    // 0..textLength) is the O(n^2)-chars-per-keypress hot path the plan targets. The proposed fix is
+    // a single no-marker full-text render walked into an index -> (line, col) map, with one marker
+    // re-validation render on the chosen candidate. It is NOT shipped here because it cannot be proven
+    // BYTE-IDENTICAL without running the renderer (forbidden in this task):
+    //   * This scan selects the index whose MARKER render (`prefix + marker + spanSuffixFrom(...)`,
+    //     truncated at the cursor span end) lands on `targetLine`, then minimizes `abs(col-desiredCol)`.
+    //   * A no-marker render of the WHOLE text can wrap trailing whitespace / a soft-wrap boundary
+    //     differently than the truncated marker render (precisely why `spanSuffixFrom` exists). At the
+    //     edge cases the golden suite pins — cursor exactly at the wrap column, end-of-logical-line vs
+    //     start-of-next-visual-line, trailing spaces — the no-marker map and the marker render can
+    //     disagree about which indices sit on `targetLine`.
+    //   * Re-validating only the single chosen index cannot reproduce the original min-search's
+    //     candidate SET when the map disagrees, so the returned index could differ from master.
+    // STEP 1 (shared cache above) is the guaranteed-safe deliverable. STEP 2 should land only once the
+    // characterization golden suite (InputEditorVerticalGoldenTest) has CAPTURE-confirmed values on
+    // master that the rewrite can be checked against, and the render-budget gate flips green.
+    return (0..textLength)
         .asSequence()
-        .map { position -> position to visualAt(position) }
+        .map { position -> position to measurer.visualAt(position) }
         .filter { (_, visual) -> visual.line == targetLine }
         .minWithOrNull(
             compareBy<Pair<Int, CursorVisual>> { (_, visual) -> kotlin.math.abs(visual.col - desiredCol) }
@@ -375,44 +430,12 @@ private fun moveCursorVertical(
 }
 
 private fun cursorLineInfo(
-    terminal: com.github.ajalt.mordant.terminal.Terminal,
-    text: String,
+    measurer: VerticalCursorMeasurer,
     cursorPosition: Int,
-    wrapWidth: Int,
 ): CursorLineInfo {
-    val width = wrapWidth.coerceAtLeast(1)
-    val clampedCursor = cursorPosition.coerceIn(0, text.length)
-    val cache = HashMap<Int, CursorVisual>()
-    val marker = CURSOR_MARKER
-
-    fun visualAt(pos: Int): CursorVisual {
-        val safePos = pos.coerceIn(0, text.length)
-        return cache.getOrPut(safePos) {
-            val prefix = text.substring(0, safePos)
-            val suffixSpan = spanSuffixFrom(text, safePos)
-            val rendered =
-                terminal.render(
-                    prefix + marker + suffixSpan,
-                    whitespace = Whitespace.PRE_WRAP,
-                    overflowWrap = OverflowWrap.BREAK_WORD,
-                    width = width,
-                )
-            val lines = rendered.lines()
-            val markerLineIndex =
-                lines.indexOfFirst { it.contains(marker) }.let { index ->
-                    if (index == -1) lines.lastIndex.coerceAtLeast(0) else index
-                }
-            val markerLine = lines.getOrNull(markerLineIndex).orEmpty()
-            val markerCol =
-                markerLine.indexOf(marker).let { index ->
-                    if (index == -1) markerLine.length else index
-                }
-            CursorVisual(line = markerLineIndex, col = markerCol)
-        }
-    }
-
-    val current = visualAt(clampedCursor)
-    val maxLine = visualAt(text.length).line
+    val clampedCursor = cursorPosition.coerceIn(0, measurer.textLength)
+    val current = measurer.visualAt(clampedCursor)
+    val maxLine = measurer.visualAt(measurer.textLength).line
     return CursorLineInfo(line = current.line, maxLine = maxLine, col = current.col)
 }
 
