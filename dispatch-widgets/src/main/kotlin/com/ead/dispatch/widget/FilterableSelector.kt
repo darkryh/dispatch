@@ -1,11 +1,27 @@
 package com.ead.dispatch.widget
 
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.github.ajalt.mordant.input.KeyboardEvent
 
-internal class FilterableSelectorState<T>(
+/**
+ * Reusable state engine for filterable, keyboard-navigable selectors.
+ *
+ * Holds visibility, the current selection index, the filter text and the currently filtered
+ * options, and exposes the navigation/filter mutations shared by selector widgets (such as
+ * a session selector). Callers feed the already-filtered options via [updateFilteredOptions] and
+ * drive the selection through [moveUp]/[moveDown] and the filter through
+ * [appendFilter]/[removeLastFilter]/[clearFilter].
+ *
+ * @param T The type of the options being selected.
+ * @param initialVisible Initial visibility of the selector.
+ * @param initialSelectedIndex Initial selected index within the filtered options.
+ * @param initialFilterText Initial filter text.
+ */
+class FilterableSelectorState<T>(
     initialVisible: Boolean,
     initialSelectedIndex: Int,
     initialFilterText: String = "",
@@ -64,7 +80,39 @@ internal class FilterableSelectorState<T>(
     }
 }
 
-internal data class SelectorKeyBindings(
+/**
+ * Remember a [FilterableSelectorState] across recompositions.
+ *
+ * @param T The type of the options being selected.
+ * @param initialVisible Initial visibility of the selector.
+ * @param initialSelectedIndex Initial selected index within the filtered options.
+ * @param initialFilterText Initial filter text.
+ * @return A composition-scoped [FilterableSelectorState].
+ */
+@Composable
+fun <T> rememberSelectorState(
+    initialVisible: Boolean = true,
+    initialSelectedIndex: Int = 0,
+    initialFilterText: String = "",
+): FilterableSelectorState<T> =
+    remember { FilterableSelectorState(initialVisible, initialSelectedIndex, initialFilterText) }
+
+/**
+ * Declarative key bindings for a filterable selector, consumed by [handleSelectorKeyEvent].
+ *
+ * Each callback returns `true` when it consumes the event. Navigation callbacks
+ * ([onMoveUp]/[onMoveDown]) always consume. Optional callbacks default to "not handled".
+ *
+ * @param onMoveUp Invoked on ArrowUp.
+ * @param onMoveDown Invoked on ArrowDown.
+ * @param onConfirm Invoked on Enter; returns whether the event was consumed.
+ * @param onCancel Invoked on Escape; returns whether the event was consumed.
+ * @param onTab Invoked on Tab; returns whether the event was consumed.
+ * @param onBackspace Invoked on Backspace; returns whether the event was consumed.
+ * @param onCharacter Invoked for a printable character event; returns whether it was consumed.
+ * @param isCharacterEvent Predicate identifying a printable single-character event.
+ */
+data class SelectorKeyBindings(
     val onMoveUp: () -> Unit,
     val onMoveDown: () -> Unit,
     val onConfirm: (() -> Boolean)? = null,
@@ -77,7 +125,17 @@ internal data class SelectorKeyBindings(
     },
 )
 
-internal fun handleSelectorKeyEvent(
+/**
+ * Dispatch a [KeyboardEvent] to the matching callback in [bindings].
+ *
+ * Maps ArrowUp/ArrowDown/Enter/Escape/Tab/Backspace to their bindings, and routes printable
+ * single-character events to [SelectorKeyBindings.onCharacter].
+ *
+ * @param event The incoming keyboard event.
+ * @param bindings The selector's key bindings.
+ * @return `true` if the event was consumed, `false` otherwise.
+ */
+fun handleSelectorKeyEvent(
     event: KeyboardEvent,
     bindings: SelectorKeyBindings,
 ): Boolean =

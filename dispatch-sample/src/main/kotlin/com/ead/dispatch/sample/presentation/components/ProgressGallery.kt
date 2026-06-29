@@ -15,18 +15,18 @@ import com.ead.dispatch.modifier.Modifier
 import com.ead.dispatch.modifier.fillMaxWidth
 import com.ead.dispatch.modifier.width
 import com.ead.dispatch.widget.LoadingIndicator
-import com.ead.dispatch.widget.ProgressBar
-import com.ead.dispatch.widget.ProgressBarStyle
-import com.ead.dispatch.widget.SectionHeader
+import com.ead.dispatch.widget.LinearProgressIndicator
+import com.ead.dispatch.widget.LinearProgressIndicatorStyle
+import com.ead.dispatch.sample.widgets.SectionHeader
 import com.ead.dispatch.widget.Spinner
 import com.ead.dispatch.widget.SpinnerStyle
 import com.ead.dispatch.widget.Text
-import com.ead.dispatch.widget.TransferProgress
+import com.ead.dispatch.sample.widgets.TransferProgress
 import kotlinx.coroutines.delay
 
 @Composable
 internal fun ProgressGallery() {
-    val styles = ProgressBarStyle.entries
+    val styles = LinearProgressIndicatorStyle.entries
 
     // One progress value per bar, each filling at its own rate then snapping back to 0 and looping.
     val progress = remember { mutableStateListOf<Float>().apply { repeat(styles.size) { add(0f) } } }
@@ -55,7 +55,7 @@ internal fun ProgressGallery() {
         styles.forEachIndexed { index, style ->
             Row(modifier = Modifier.fillMaxWidth()) {
                 Text(style.name.padEnd(8))
-                ProgressBar(
+                LinearProgressIndicator(
                     progress = progress[index],
                     modifier = Modifier.fillMaxWidth(),
                     style = style,

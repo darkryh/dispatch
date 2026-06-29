@@ -131,7 +131,7 @@ class WidgetMemoryPerfTest {
 
         @Composable
         fun screen() {
-            InputTextField(
+            TextField(
                 value = value,
                 onValueChange = { value = it },
                 icon = "> ",
@@ -158,7 +158,7 @@ class WidgetMemoryPerfTest {
         @Composable
         fun screen() {
             if (present) {
-                InputTextField(
+                TextField(
                     value = "",
                     onValueChange = {},
                     icon = "> ",
@@ -188,7 +188,7 @@ class WidgetMemoryPerfTest {
 
         @Composable
         fun screen() {
-            InputTextField(
+            TextField(
                 value = value,
                 onValueChange = { value = it },
                 icon = "> ",

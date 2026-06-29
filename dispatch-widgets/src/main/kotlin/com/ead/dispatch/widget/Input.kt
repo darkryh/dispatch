@@ -28,7 +28,7 @@ import com.github.ajalt.mordant.rendering.Whitespace
  * Example:
  * ```kotlin
  * var text by remember { mutableStateOf("") }
- * TextField(
+ * BasicTextFieldRenderer(
  *     value = text,
  *     onValueChange = { text = it },
  *     placeholder = "Enter text...",
@@ -39,8 +39,8 @@ import com.github.ajalt.mordant.rendering.Whitespace
  * ```
  *
  * This is a pure display widget: it does not handle keyboard input. [onValueChange]
- * is accepted only so the value-based form mirrors the [TextField] (state) and
- * [InputTextField] signatures; this overload never invokes it. Use [InputTextField]
+ * is accepted only so the value-based form mirrors the [BasicTextFieldRenderer] (state) and
+ * [TextField] signatures; this overload never invokes it. Use [TextField]
  * for interactive editing.
  *
  * @param value Current text value.
@@ -56,7 +56,7 @@ import com.github.ajalt.mordant.rendering.Whitespace
  * @param cursorPosition Cursor position (character index) within [value].
  */
 @Composable
-fun TextField(
+fun BasicTextFieldRenderer(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -73,7 +73,7 @@ fun TextField(
     iconStyle: TextStyle? = null,
 ) {
     val terminal = LocalTerminal.current
-    composableWidget("TextField") {
+    composableWidget("BasicTextFieldRenderer") {
         TextFieldMeasurable(
             value = value,
             icon = icon,
@@ -94,7 +94,7 @@ fun TextField(
 }
 
 /**
- * Measurable for TextField.
+ * Measurable for BasicTextFieldRenderer.
  */
 internal class TextFieldMeasurable(
     private val value: String,
@@ -472,7 +472,7 @@ fun rememberInputHistoryIndexState(): InputHistoryIndexState = remember { InputH
  * A text field that uses TextFieldState for full control.
  */
 @Composable
-fun TextField(
+fun BasicTextFieldRenderer(
     state: TextFieldState,
     modifier: Modifier = Modifier,
     icon: String = "",
@@ -485,7 +485,7 @@ fun TextField(
     placeholderStyle: TextStyle? = null,
     iconStyle: TextStyle? = null,
 ) {
-    TextField(
+    BasicTextFieldRenderer(
         value = state.value,
         onValueChange = { state.value = it },
         modifier = modifier,
@@ -515,7 +515,7 @@ fun PasswordField(
     enabled: Boolean = true,
     maskChar: Char = '•',
 ) {
-    InputTextField(
+    TextField(
         value = value,
         onValueChange = onValueChange,
         modifier = modifier,
@@ -530,13 +530,13 @@ fun PasswordField(
 /**
  * A text input field with automatic keyboard handling.
  *
- * This is a convenience wrapper around [TextField] that automatically handles
+ * This is a convenience wrapper around [BasicTextFieldRenderer] that automatically handles
  * keyboard events (Enter, Backspace, printable characters) via [DispatchScope].
  *
  * Example:
  * ```kotlin
  * var text by remember { mutableStateOf("") }
- * InputTextField(
+ * TextField(
  *     value = text,
  *     onValueChange = { text = it },
  *     icon = "> ",
@@ -558,7 +558,7 @@ fun PasswordField(
  * @param cursorChar Character to use for the cursor.
  */
 @Composable
-fun InputTextField(
+fun TextField(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -733,7 +733,7 @@ fun InputTextField(
     }
 
     // Render the text field
-    TextField(
+    BasicTextFieldRenderer(
         value = maskChar?.toString()?.repeat(latestValue.length) ?: latestValue,
         onValueChange = onValueChangeCallback,
         modifier = focusableModifier,
@@ -752,7 +752,7 @@ fun InputTextField(
 }
 
 @Composable
-fun InputTextField(
+fun TextField(
     state: TextFieldState,
     modifier: Modifier = Modifier,
     icon: String = "",
@@ -769,7 +769,7 @@ fun InputTextField(
     historyIndexState: InputHistoryIndexState? = null,
     maskChar: Char? = null,
 ) {
-    InputTextField(
+    TextField(
         value = state.value,
         onValueChange = { state.value = it },
         modifier = modifier,

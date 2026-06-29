@@ -5,13 +5,48 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="09adec4a-725e-47a4-af17-b0db55278204" name="Changes" comment="fixes, optimizations">
+      <change beforePath="$PROJECT_DIR$/.idea/gradle.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/gradle.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/build.gradle.kts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/build/reports/problems/problems-report.html" beforeDir="false" afterPath="$PROJECT_DIR$/build/reports/problems/problems-report.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dispatch-runtime/src/main/kotlin/com/ead/dispatch/runtime/DispatchFrameClock.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-runtime/src/main/kotlin/com/ead/dispatch/runtime/DispatchFrameClock.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dispatch-widgets/src/main/kotlin/com/ead/dispatch/widget/InputEditor.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-widgets/src/main/kotlin/com/ead/dispatch/widget/InputEditor.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/gradle/libs.versions.toml" beforeDir="false" afterPath="$PROJECT_DIR$/gradle/libs.versions.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/settings.gradle.kts" beforeDir="false" afterPath="$PROJECT_DIR$/settings.gradle.kts" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/build/reports/problems/problems-report.html" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-layout/src/main/kotlin/com/ead/dispatch/layout/Box.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-layout/src/main/kotlin/com/ead/dispatch/layout/Box.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-layout/src/main/kotlin/com/ead/dispatch/layout/Column.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-layout/src/main/kotlin/com/ead/dispatch/layout/Column.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-layout/src/main/kotlin/com/ead/dispatch/layout/Row.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-layout/src/main/kotlin/com/ead/dispatch/layout/Row.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-navigation/src/test/kotlin/com/ead/dispatch/navigation/NavigationStackReliabilityTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-navigation/src/test/kotlin/com/ead/dispatch/navigation/NavigationStackReliabilityTest.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-runtime/src/main/kotlin/com/ead/dispatch/runtime/CompositionLocals.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-runtime/src/main/kotlin/com/ead/dispatch/runtime/CompositionLocals.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-runtime/src/main/kotlin/com/ead/dispatch/runtime/KeyboardInterceptor.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-runtime/src/main/kotlin/com/ead/dispatch/runtime/KeyboardInterceptor.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-sample/src/main/kotlin/com/ead/dispatch/sample/presentation/chat/ChatScreen.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-sample/src/main/kotlin/com/ead/dispatch/sample/presentation/chat/ChatScreen.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-sample/src/main/kotlin/com/ead/dispatch/sample/presentation/components/ComponentsScreen.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-sample/src/main/kotlin/com/ead/dispatch/sample/presentation/components/ComponentsScreen.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-sample/src/main/kotlin/com/ead/dispatch/sample/presentation/components/ProgressGallery.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-sample/src/main/kotlin/com/ead/dispatch/sample/presentation/components/ProgressGallery.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-sample/src/main/kotlin/com/ead/dispatch/sample/presentation/components/SurfacesGallery.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-sample/src/main/kotlin/com/ead/dispatch/sample/presentation/components/SurfacesGallery.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-sample/src/main/kotlin/com/ead/dispatch/sample/presentation/components/WorkflowGallery.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-sample/src/main/kotlin/com/ead/dispatch/sample/presentation/components/WorkflowGallery.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-sample/src/test/kotlin/com/ead/dispatch/sample/presentation/components/WidgetCatalogCoverageTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-sample/src/test/kotlin/com/ead/dispatch/sample/presentation/components/WidgetCatalogCoverageTest.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-widgets/src/main/kotlin/com/ead/dispatch/widget/Background.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-widgets/src/main/kotlin/com/ead/dispatch/widget/Background.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-widgets/src/main/kotlin/com/ead/dispatch/widget/Button.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-widgets/src/main/kotlin/com/ead/dispatch/widget/Button.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-widgets/src/main/kotlin/com/ead/dispatch/widget/CycleButton.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-widgets/src/main/kotlin/com/ead/dispatch/widget/CycleButton.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-widgets/src/main/kotlin/com/ead/dispatch/widget/FilterBar.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-widgets/src/main/kotlin/com/ead/dispatch/widget/FilterBar.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-widgets/src/main/kotlin/com/ead/dispatch/widget/FilterBarCard.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-widgets/src/main/kotlin/com/ead/dispatch/widget/FilterBarCard.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-widgets/src/main/kotlin/com/ead/dispatch/widget/FilterableSelector.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-widgets/src/main/kotlin/com/ead/dispatch/widget/FilterableSelector.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-widgets/src/main/kotlin/com/ead/dispatch/widget/Input.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-widgets/src/main/kotlin/com/ead/dispatch/widget/Input.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-widgets/src/main/kotlin/com/ead/dispatch/widget/ProgressBar.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-widgets/src/main/kotlin/com/ead/dispatch/widget/ProgressBar.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-widgets/src/main/kotlin/com/ead/dispatch/widget/TagPill.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-widgets/src/main/kotlin/com/ead/dispatch/widget/TagPill.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-widgets/src/test/kotlin/com/ead/dispatch/widget/BackgroundMeasurableTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-widgets/src/test/kotlin/com/ead/dispatch/widget/BackgroundMeasurableTest.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-widgets/src/test/kotlin/com/ead/dispatch/widget/CycleButtonTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-widgets/src/test/kotlin/com/ead/dispatch/widget/CycleButtonTest.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-widgets/src/test/kotlin/com/ead/dispatch/widget/DictationBurstReliabilityTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-widgets/src/test/kotlin/com/ead/dispatch/widget/DictationBurstReliabilityTest.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-widgets/src/test/kotlin/com/ead/dispatch/widget/InputCommandPaletteIntegrationTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-widgets/src/test/kotlin/com/ead/dispatch/widget/InputCommandPaletteIntegrationTest.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-widgets/src/test/kotlin/com/ead/dispatch/widget/InputEditorVerticalGoldenTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-widgets/src/test/kotlin/com/ead/dispatch/widget/InputEditorVerticalGoldenTest.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-widgets/src/test/kotlin/com/ead/dispatch/widget/InputTextFieldInputTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-widgets/src/test/kotlin/com/ead/dispatch/widget/InputTextFieldInputTest.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-widgets/src/test/kotlin/com/ead/dispatch/widget/InputTextFieldMultiInputTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-widgets/src/test/kotlin/com/ead/dispatch/widget/InputTextFieldMultiInputTest.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-widgets/src/test/kotlin/com/ead/dispatch/widget/KeyboardInterceptorPipelineTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-widgets/src/test/kotlin/com/ead/dispatch/widget/KeyboardInterceptorPipelineTest.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-widgets/src/test/kotlin/com/ead/dispatch/widget/NavigationChurnReliabilityTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-widgets/src/test/kotlin/com/ead/dispatch/widget/NavigationChurnReliabilityTest.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-widgets/src/test/kotlin/com/ead/dispatch/widget/ProgressBarMeasurableTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-widgets/src/test/kotlin/com/ead/dispatch/widget/ProgressBarMeasurableTest.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-widgets/src/test/kotlin/com/ead/dispatch/widget/ReliabilityDesignMatrixTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-widgets/src/test/kotlin/com/ead/dispatch/widget/ReliabilityDesignMatrixTest.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-widgets/src/test/kotlin/com/ead/dispatch/widget/ReliabilityFuzzSystemTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-widgets/src/test/kotlin/com/ead/dispatch/widget/ReliabilityFuzzSystemTest.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-widgets/src/test/kotlin/com/ead/dispatch/widget/ScrollStabilityReliabilityTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-widgets/src/test/kotlin/com/ead/dispatch/widget/ScrollStabilityReliabilityTest.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-widgets/src/test/kotlin/com/ead/dispatch/widget/SpinnerMeasurableTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-widgets/src/test/kotlin/com/ead/dispatch/widget/SpinnerMeasurableTest.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-widgets/src/test/kotlin/com/ead/dispatch/widget/StructuralStabilityTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-widgets/src/test/kotlin/com/ead/dispatch/widget/StructuralStabilityTest.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-widgets/src/test/kotlin/com/ead/dispatch/widget/TagListTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-widgets/src/test/kotlin/com/ead/dispatch/widget/TagListTest.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-widgets/src/test/kotlin/com/ead/dispatch/widget/WidgetInteractionTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-widgets/src/test/kotlin/com/ead/dispatch/widget/WidgetInteractionTest.kt" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/dispatch-widgets/src/test/kotlin/com/ead/dispatch/widget/WidgetMemoryPerfTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-widgets/src/test/kotlin/com/ead/dispatch/widget/WidgetMemoryPerfTest.kt" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -74,7 +109,6 @@
     "RunOnceActivity.readMode.enableVisualFormatting": "true",
     "RunOnceActivity.typescript.service.memoryLimit.init": "true",
     "Shell Script.build-execute.sh.executor": "Run",
-    "android.gradle.sync.needed": "true",
     "cidr.known.project.marker": "true",
     "codeWithMe.voiceChat.enabledByDefault": "false",
     "git-widget-placeholder": "master",
@@ -168,7 +202,15 @@
       <option name="project" value="LOCAL" />
       <updated>1782740782784</updated>
     </task>
-    <option name="localTasksCounter" value="7" />
+    <task id="LOCAL-00007" summary="fixes, optimizations">
+      <option name="closed" value="true" />
+      <created>1782743405033</created>
+      <option name="number" value="00007" />
+      <option name="presentableId" value="LOCAL-00007" />
+      <option name="project" value="LOCAL" />
+      <updated>1782743405033</updated>
+    </task>
+    <option name="localTasksCounter" value="8" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">

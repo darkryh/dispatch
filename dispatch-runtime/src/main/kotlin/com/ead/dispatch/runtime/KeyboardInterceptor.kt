@@ -7,7 +7,7 @@ import java.util.concurrent.CopyOnWriteArrayList
  * Registry for keyboard event interceptors.
  *
  * Allows multiple widgets to register handlers that are checked
- * BEFORE the default InputTextField handling. This enables widgets
+ * BEFORE the default TextField handling. This enables widgets
  * like CommandPalette to intercept specific keys (Arrow, Enter, Escape)
  * when they are active, while letting other keys pass through.
  *

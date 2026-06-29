@@ -74,21 +74,6 @@ data class DispatchTheme(
      * Selection background.
      */
     val selection: TextStyle,
-
-    /**
-     * User message style.
-     */
-    val userMessage: TextStyle,
-
-    /**
-     * Assistant message style.
-     */
-    val assistantMessage: TextStyle,
-
-    /**
-     * System message style.
-     */
-    val systemMessage: TextStyle,
 ) {
     /**
      * Apply primary style to text.
@@ -148,9 +133,6 @@ data class DispatchTheme(
             border = TextColors.gray,
             cursor = TextStyle(inverse = true),
             selection = TextColors.black on TextColors.white,
-            userMessage = TextColors.brightWhite,
-            assistantMessage = TextColors.cyan,
-            systemMessage = TextColors.gray,
         )
 
         /**
@@ -170,9 +152,6 @@ data class DispatchTheme(
             border = TextColors.gray,
             cursor = TextStyle(inverse = true),
             selection = TextColors.white on TextColors.black,
-            userMessage = TextColors.black,
-            assistantMessage = TextColors.blue,
-            systemMessage = TextColors.gray,
         )
 
         /**
@@ -192,9 +171,6 @@ data class DispatchTheme(
             border = TextStyle(dim = true),
             cursor = TextStyle(inverse = true),
             selection = TextStyle(inverse = true),
-            userMessage = TextStyle(bold = true),
-            assistantMessage = TextStyle(),
-            systemMessage = TextStyle(dim = true),
         )
     }
 }

@@ -335,8 +335,29 @@ fun RadioButton(
     }
 }
 
+/**
+ * Makes [this] modifier focusable and activatable: it participates in Tab/arrow focus traversal
+ * and invokes [onClick] when the element is focused and the user presses Enter/Return/Space.
+ *
+ * This is the public, general-purpose "clickable" primitive for building custom interactive
+ * widgets on the Dispatch foundation — the same mechanism that backs [Button], [ToggleButton],
+ * [RadioButton] and [SegmentedButton].
+ *
+ * @param enabled When false, the element is neither focusable nor activatable.
+ * @param onClick Invoked when the focused element is activated.
+ */
 @Composable
-private fun focusableAction(
+fun Modifier.clickable(
+    enabled: Boolean = true,
+    onClick: () -> Unit,
+): Modifier = focusableAction(this, enabled, onClick).modifier
+
+/**
+ * Shared focus + keyboard-activation plumbing for the action widgets. Registers a focus token,
+ * wires Tab/Shift+Tab and arrow traversal, and activates on Enter/Return/Space while focused.
+ */
+@Composable
+internal fun focusableAction(
     modifier: Modifier,
     enabled: Boolean,
     onActivate: () -> Unit,
@@ -386,7 +407,7 @@ private fun focusableAction(
     )
 }
 
-private data class ActionFocus(
+internal data class ActionFocus(
     val modifier: Modifier,
     val isFocused: Boolean,
 )

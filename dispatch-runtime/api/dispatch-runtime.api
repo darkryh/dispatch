@@ -374,6 +374,32 @@ public final class com/ead/dispatch/modifier/Modifier$Element$DefaultImpls {
 	public static fun then (Lcom/ead/dispatch/modifier/Modifier$Element;Lcom/ead/dispatch/modifier/Modifier;)Lcom/ead/dispatch/modifier/Modifier;
 }
 
+public final class com/ead/dispatch/modifier/OffsetModifier : com/ead/dispatch/modifier/Modifier$Element {
+	public static final field $stable I
+	public fun <init> (II)V
+	public fun allOf (Ljava/lang/Class;)Ljava/util/List;
+	public fun any (Lkotlin/jvm/functions/Function1;)Z
+	public final fun component1 ()I
+	public final fun component2 ()I
+	public final fun copy (II)Lcom/ead/dispatch/modifier/OffsetModifier;
+	public static synthetic fun copy$default (Lcom/ead/dispatch/modifier/OffsetModifier;IIILjava/lang/Object;)Lcom/ead/dispatch/modifier/OffsetModifier;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun firstOrNull (Ljava/lang/Class;)Lcom/ead/dispatch/modifier/Modifier$Element;
+	public fun foldIn (Ljava/lang/Object;Lkotlin/jvm/functions/Function2;)Ljava/lang/Object;
+	public fun foldOut (Ljava/lang/Object;Lkotlin/jvm/functions/Function2;)Ljava/lang/Object;
+	public final fun getX ()I
+	public final fun getY ()I
+	public fun hashCode ()I
+	public fun then (Lcom/ead/dispatch/modifier/Modifier;)Lcom/ead/dispatch/modifier/Modifier;
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/ead/dispatch/modifier/OffsetModifierKt {
+	public static final fun getOffset (Lcom/ead/dispatch/modifier/Modifier;)Lcom/ead/dispatch/modifier/OffsetModifier;
+	public static final fun offset (Lcom/ead/dispatch/modifier/Modifier;II)Lcom/ead/dispatch/modifier/Modifier;
+	public static synthetic fun offset$default (Lcom/ead/dispatch/modifier/Modifier;IIILjava/lang/Object;)Lcom/ead/dispatch/modifier/Modifier;
+}
+
 public abstract interface class com/ead/dispatch/modifier/PaddingModifier : com/ead/dispatch/modifier/Modifier$Element {
 	public abstract fun getBottom ()I
 	public abstract fun getEnd ()I
@@ -828,6 +854,43 @@ public final class com/ead/dispatch/runtime/FocusRegistry {
 	public final fun sync (Lcom/ead/dispatch/layout/LayoutNode;)V
 }
 
+public final class com/ead/dispatch/runtime/KeyBinding {
+	public static final field $stable I
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;ZZZLkotlin/jvm/functions/Function0;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;ZZZLkotlin/jvm/functions/Function0;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Z
+	public final fun component4 ()Z
+	public final fun component5 ()Z
+	public final fun component6 ()Lkotlin/jvm/functions/Function0;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;ZZZLkotlin/jvm/functions/Function0;)Lcom/ead/dispatch/runtime/KeyBinding;
+	public static synthetic fun copy$default (Lcom/ead/dispatch/runtime/KeyBinding;Ljava/lang/String;Ljava/lang/String;ZZZLkotlin/jvm/functions/Function0;ILjava/lang/Object;)Lcom/ead/dispatch/runtime/KeyBinding;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getAction ()Lkotlin/jvm/functions/Function0;
+	public final fun getAlt ()Z
+	public final fun getCtrl ()Z
+	public final fun getDescription ()Ljava/lang/String;
+	public final fun getKey ()Ljava/lang/String;
+	public final fun getShift ()Z
+	public fun hashCode ()I
+	public final fun matches (Lcom/github/ajalt/mordant/input/KeyboardEvent;)Z
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/ead/dispatch/runtime/KeyBindingsKt {
+	public static final fun KeyBindings (ZILkotlin/jvm/functions/Function1;Landroidx/compose/runtime/Composer;II)V
+}
+
+public final class com/ead/dispatch/runtime/KeyBindingsScope {
+	public static final field $stable I
+	public fun <init> ()V
+	public final fun bindings ()Ljava/util/List;
+	public final fun handle (Lcom/github/ajalt/mordant/input/KeyboardEvent;)Z
+	public final fun on (Ljava/lang/String;Ljava/lang/String;ZZZLkotlin/jvm/functions/Function0;)V
+	public static synthetic fun on$default (Lcom/ead/dispatch/runtime/KeyBindingsScope;Ljava/lang/String;Ljava/lang/String;ZZZLkotlin/jvm/functions/Function0;ILjava/lang/Object;)V
+}
+
 public final class com/ead/dispatch/runtime/KeyboardInterceptor {
 	public static final field $stable I
 	public fun <init> ()V
@@ -897,16 +960,13 @@ public final class com/ead/dispatch/theme/DispatchTextStyle {
 public final class com/ead/dispatch/theme/DispatchTheme {
 	public static final field $stable I
 	public static final field Companion Lcom/ead/dispatch/theme/DispatchTheme$Companion;
-	public fun <init> (Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;)V
+	public fun <init> (Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;)V
 	public final fun accent (Ljava/lang/String;)Ljava/lang/String;
 	public final fun component1 ()Lcom/github/ajalt/mordant/rendering/TextStyle;
 	public final fun component10 ()Lcom/github/ajalt/mordant/rendering/TextStyle;
 	public final fun component11 ()Lcom/github/ajalt/mordant/rendering/TextStyle;
 	public final fun component12 ()Lcom/github/ajalt/mordant/rendering/TextStyle;
 	public final fun component13 ()Lcom/github/ajalt/mordant/rendering/TextStyle;
-	public final fun component14 ()Lcom/github/ajalt/mordant/rendering/TextStyle;
-	public final fun component15 ()Lcom/github/ajalt/mordant/rendering/TextStyle;
-	public final fun component16 ()Lcom/github/ajalt/mordant/rendering/TextStyle;
 	public final fun component2 ()Lcom/github/ajalt/mordant/rendering/TextStyle;
 	public final fun component3 ()Lcom/github/ajalt/mordant/rendering/TextStyle;
 	public final fun component4 ()Lcom/github/ajalt/mordant/rendering/TextStyle;
@@ -915,12 +975,11 @@ public final class com/ead/dispatch/theme/DispatchTheme {
 	public final fun component7 ()Lcom/github/ajalt/mordant/rendering/TextStyle;
 	public final fun component8 ()Lcom/github/ajalt/mordant/rendering/TextStyle;
 	public final fun component9 ()Lcom/github/ajalt/mordant/rendering/TextStyle;
-	public final fun copy (Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;)Lcom/ead/dispatch/theme/DispatchTheme;
-	public static synthetic fun copy$default (Lcom/ead/dispatch/theme/DispatchTheme;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;ILjava/lang/Object;)Lcom/ead/dispatch/theme/DispatchTheme;
+	public final fun copy (Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;)Lcom/ead/dispatch/theme/DispatchTheme;
+	public static synthetic fun copy$default (Lcom/ead/dispatch/theme/DispatchTheme;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;ILjava/lang/Object;)Lcom/ead/dispatch/theme/DispatchTheme;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun error (Ljava/lang/String;)Ljava/lang/String;
 	public final fun getAccent ()Lcom/github/ajalt/mordant/rendering/TextStyle;
-	public final fun getAssistantMessage ()Lcom/github/ajalt/mordant/rendering/TextStyle;
 	public final fun getBorder ()Lcom/github/ajalt/mordant/rendering/TextStyle;
 	public final fun getCode ()Lcom/github/ajalt/mordant/rendering/TextStyle;
 	public final fun getCursor ()Lcom/github/ajalt/mordant/rendering/TextStyle;
@@ -932,8 +991,6 @@ public final class com/ead/dispatch/theme/DispatchTheme {
 	public final fun getSecondary ()Lcom/github/ajalt/mordant/rendering/TextStyle;
 	public final fun getSelection ()Lcom/github/ajalt/mordant/rendering/TextStyle;
 	public final fun getSuccess ()Lcom/github/ajalt/mordant/rendering/TextStyle;
-	public final fun getSystemMessage ()Lcom/github/ajalt/mordant/rendering/TextStyle;
-	public final fun getUserMessage ()Lcom/github/ajalt/mordant/rendering/TextStyle;
 	public final fun getWarning ()Lcom/github/ajalt/mordant/rendering/TextStyle;
 	public fun hashCode ()I
 	public final fun info (Ljava/lang/String;)Ljava/lang/String;

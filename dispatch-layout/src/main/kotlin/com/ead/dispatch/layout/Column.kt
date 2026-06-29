@@ -5,6 +5,7 @@ import com.ead.dispatch.constraints.Constraints
 import com.ead.dispatch.modifier.Modifier
 import com.ead.dispatch.modifier.WeightModifier
 import com.ead.dispatch.modifier.applyToConstraints
+import com.ead.dispatch.modifier.getOffset
 
 /**
  * A layout that places children vertically, one below the other.
@@ -180,8 +181,18 @@ internal class ColumnMeasurePolicy(
         ) {
             for (index in 0 until count) {
                 val placeable = placeables[index] ?: continue
-                val x = horizontalAlignment.align(layoutWidth, placeable.width)
-                val y = positions.getOrElse(index) { 0 }
+                // A per-child Modifier.align(...) overrides the column's horizontalAlignment for
+                // this child only; absent one, the container alignment is used (default unchanged).
+                val childModifier = measurables[index].modifier
+                val horizontal = childModifier.columnAlign() ?: horizontalAlignment
+                var x = horizontal.align(layoutWidth, placeable.width)
+                var y = positions.getOrElse(index) { 0 }
+                // Apply an optional fixed cell offset after the normal position is computed.
+                val offset = childModifier.getOffset()
+                if (offset != null) {
+                    x += offset.x
+                    y += offset.y
+                }
                 placeable.placeAt(x, y)
             }
         }

@@ -107,7 +107,7 @@ private fun ChatScreen(
             Text(line)
         }
         item {
-            InputTextField(
+            TextField(
                 value = chatInput,
                 onValueChange = onChatInputChange,
                 icon = "> ",

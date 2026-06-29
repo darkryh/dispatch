@@ -387,7 +387,7 @@ private fun ChatScreenWithAnimation(
 
         // Input field
         item {
-            InputTextField(
+            TextField(
                 value = "",
                 onValueChange = {},
                 icon = "> ",
@@ -439,7 +439,7 @@ private fun ChatScreenWithCommandPalette(
 
         // Input field
         item {
-            InputTextField(
+            TextField(
                 value = inputValue,
                 onValueChange = {},
                 icon = "> ",

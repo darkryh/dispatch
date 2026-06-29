@@ -9,7 +9,7 @@ import com.ead.dispatch.modifier.fillMaxWidth
 import com.ead.dispatch.modifier.weight
 import com.ead.dispatch.navigation.harness.ReliabilityHarness
 import com.ead.dispatch.theme.DispatchTheme
-import com.ead.dispatch.widget.InputTextField
+import com.ead.dispatch.widget.TextField
 import com.ead.dispatch.widget.LazyColumn
 import com.ead.dispatch.widget.Panel
 import com.ead.dispatch.widget.Text
@@ -118,7 +118,7 @@ private fun ReliabilityEditorRoute(revision: Int) {
     Column(modifier = Modifier.fillMaxWidth()) {
         Text("anchor::route_editor")
         Text("revision=$revision")
-        InputTextField(
+        TextField(
             value = "compose scene revision $revision with tighter beats",
             onValueChange = {},
             icon = "> ",

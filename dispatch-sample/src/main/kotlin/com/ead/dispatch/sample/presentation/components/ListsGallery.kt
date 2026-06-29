@@ -10,13 +10,13 @@ import com.ead.dispatch.runtime.LocalTheme
 import com.ead.dispatch.widget.LazyColumn
 import com.ead.dispatch.widget.ScrollableList
 import com.ead.dispatch.widget.ScrollableListWithIndicator
-import com.ead.dispatch.widget.SectionHeader
+import com.ead.dispatch.sample.widgets.SectionHeader
+import com.ead.dispatch.sample.widgets.SessionDisplayColumn
+import com.ead.dispatch.sample.widgets.SessionOption
+import com.ead.dispatch.sample.widgets.SessionSelector
 import com.ead.dispatch.widget.SelectableList
 import com.ead.dispatch.widget.SelectableListStyles
 import com.ead.dispatch.widget.SelectableWindowedList
-import com.ead.dispatch.widget.SessionDisplayColumn
-import com.ead.dispatch.widget.SessionOption
-import com.ead.dispatch.widget.SessionSelector
 import com.ead.dispatch.widget.Text
 
 @Composable

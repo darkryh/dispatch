@@ -320,7 +320,7 @@ class InputEditorVerticalGoldenTest {
                     LocalDispatchScope provides dispatchScope,
                     LocalTheme provides DispatchTheme.Dark,
                 ) {
-                    InputTextField(
+                    TextField(
                         value = inputValue,
                         onValueChange = { inputValue = it },
                         icon = "> ",

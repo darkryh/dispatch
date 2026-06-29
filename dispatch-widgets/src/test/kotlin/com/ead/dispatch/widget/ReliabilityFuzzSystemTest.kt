@@ -111,7 +111,7 @@ private fun FuzzChatBody(state: FuzzState) {
             Text(line)
         }
         item {
-            InputTextField(
+            TextField(
                 value = state.input,
                 onValueChange = {},
                 icon = "> ",

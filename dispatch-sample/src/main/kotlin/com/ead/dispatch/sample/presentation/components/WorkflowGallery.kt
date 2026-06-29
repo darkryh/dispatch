@@ -7,14 +7,14 @@ import com.ead.dispatch.widget.CommandOption
 import com.ead.dispatch.widget.CommandPalette
 import com.ead.dispatch.widget.DecisionOption
 import com.ead.dispatch.widget.DecisionPrompt
-import com.ead.dispatch.widget.InputTextField
-import com.ead.dispatch.widget.SectionHeader
+import com.ead.dispatch.widget.TextField
+import com.ead.dispatch.sample.widgets.SectionHeader
 
 @Composable
 internal fun WorkflowGallery() {
     GalleryScreen("Workflow", "Command discovery and explicit decision prompts") {
         SectionHeader("CommandPalette")
-        InputTextField(
+        TextField(
             value = "/he",
             onValueChange = {},
             enabled = false,

@@ -61,7 +61,7 @@ class WidgetInteractionTest {
                 ) {
                     Column {
                         Text(headerText)
-                        InputTextField(
+                        TextField(
                             value = inputValue,
                             onValueChange = { inputValue = it },
                             icon = "> ",
@@ -69,7 +69,7 @@ class WidgetInteractionTest {
                             enabled = inputEnabled,
                             modifier = inputModifier,
                         )
-                        CycleButton(
+                        SegmentedButton(
                             value = cycleValue,
                             options = listOf("Alpha", "Beta"),
                             onValueChange = { cycleValue = it },
@@ -222,7 +222,7 @@ class WidgetInteractionTest {
 
         assertEquals(1, inputNodes.size)
         assertEquals(1, cycleNodes.size)
-        assertTrue(inputNodes.first().name.contains("TextField"))
+        assertTrue(inputNodes.first().name.contains("BasicTextFieldRenderer"))
     }
 
     private fun findNodesWithTag(

@@ -14,13 +14,13 @@ import com.ead.dispatch.sample.presentation.common.SampleScaffold
 import com.ead.dispatch.viewmodel.viewModel
 import com.ead.dispatch.widget.Button
 import com.ead.dispatch.widget.ButtonStyle
-import com.ead.dispatch.widget.CycleButton
+import com.ead.dispatch.widget.SegmentedButton
 import com.ead.dispatch.widget.IconButton
-import com.ead.dispatch.widget.InputTextField
+import com.ead.dispatch.widget.TextField
 import com.ead.dispatch.widget.KeyHint
 import com.ead.dispatch.widget.PasswordField
 import com.ead.dispatch.widget.RadioButton
-import com.ead.dispatch.widget.SectionHeader
+import com.ead.dispatch.sample.widgets.SectionHeader
 import com.ead.dispatch.widget.Text
 import com.ead.dispatch.widget.ToggleButton
 
@@ -52,7 +52,7 @@ private fun ControlsGallery(viewModel: ComponentsViewModel) {
 
     GalleryScreen(title = "Controls", subtitle = "Tab moves the highlighted focus background") {
         SectionHeader("Text input")
-        InputTextField(
+        TextField(
             value = name,
             onValueChange = viewModel::updateName,
             modifier = Modifier.fillMaxWidth(),
@@ -81,7 +81,7 @@ private fun ControlsGallery(viewModel: ComponentsViewModel) {
         )
         RadioButton(selected = radioIndex == 0, onClick = { viewModel.selectRadio(0) }, label = "Alpha")
         RadioButton(selected = radioIndex == 1, onClick = { viewModel.selectRadio(1) }, label = "Beta")
-        CycleButton(
+        SegmentedButton(
             value = cycleValue,
             options = listOf("ALPHA", "BETA", "GAMMA"),
             onValueChange = viewModel::updateCycleValue,

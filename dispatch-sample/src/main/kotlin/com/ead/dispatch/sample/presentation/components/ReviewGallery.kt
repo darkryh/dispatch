@@ -3,14 +3,14 @@
 package com.ead.dispatch.sample.presentation.components
 
 import androidx.compose.runtime.Composable
-import com.ead.dispatch.widget.ChangeFocusMode
-import com.ead.dispatch.widget.DiffReviewAction
-import com.ead.dispatch.widget.DiffReviewPanel
-import com.ead.dispatch.widget.DiffReviewPanelState
-import com.ead.dispatch.widget.FileChangePreview
-import com.ead.dispatch.widget.FileChangePreviewState
-import com.ead.dispatch.widget.PreviewFileType
-import com.ead.dispatch.widget.SectionHeader
+import com.ead.dispatch.sample.widgets.ChangeFocusMode
+import com.ead.dispatch.sample.widgets.DiffReviewAction
+import com.ead.dispatch.sample.widgets.DiffReviewPanel
+import com.ead.dispatch.sample.widgets.DiffReviewPanelState
+import com.ead.dispatch.sample.widgets.FileChangePreview
+import com.ead.dispatch.sample.widgets.FileChangePreviewState
+import com.ead.dispatch.sample.widgets.PreviewFileType
+import com.ead.dispatch.sample.widgets.SectionHeader
 
 @Composable
 internal fun ReviewGallery() {

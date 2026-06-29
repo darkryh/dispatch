@@ -127,7 +127,7 @@ class StructuralStabilityTest {
                             item { StatusTicker() }
                         }
                         item {
-                            InputTextField(
+                            TextField(
                                 value = inputValue,
                                 onValueChange = { inputValue = it },
                                 icon = "> ",

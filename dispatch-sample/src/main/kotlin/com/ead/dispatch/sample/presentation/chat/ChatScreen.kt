@@ -23,14 +23,14 @@ import com.ead.dispatch.sample.navigation.HomeRoute
 import com.ead.dispatch.sample.presentation.common.SampleScaffold
 import com.ead.dispatch.theme.DispatchTheme
 import com.ead.dispatch.viewmodel.viewModel
-import com.ead.dispatch.widget.Background
-import com.ead.dispatch.widget.BackgroundStyle
+import com.ead.dispatch.widget.Surface
+import com.ead.dispatch.widget.SurfaceStyle
 import com.ead.dispatch.widget.Button
 import com.ead.dispatch.widget.ButtonRow
 import com.ead.dispatch.widget.CommandOption
 import com.ead.dispatch.widget.CommandPalette
 import com.ead.dispatch.widget.InputHistoryIndexState
-import com.ead.dispatch.widget.InputTextField
+import com.ead.dispatch.widget.TextField
 import com.ead.dispatch.widget.KeyHint
 import com.ead.dispatch.widget.Panel
 import com.ead.dispatch.widget.Text
@@ -111,8 +111,8 @@ private fun ChatComposer(
     onClear: () -> Unit,
 ) {
     Spacer(Modifier.height(1))
-    Background(style = BackgroundStyle.fill(rgb("#303846"))) {
-        InputTextField(
+    Surface(style = SurfaceStyle.fill(rgb("#303846"))) {
+        TextField(
             value = input,
             onValueChange = onInputChanged,
             modifier = Modifier.fillMaxWidth(),
@@ -174,9 +174,9 @@ private fun ChatMessages(
                 val suffix = if (message.isStreaming) " [streaming]" else ""
                 val style =
                     if (message.author == MessageAuthor.USER) {
-                        theme.userMessage
+                        theme.accent
                     } else {
-                        theme.assistantMessage
+                        theme.info
                     }
                 Panel(modifier = Modifier.fillMaxWidth(), title = author + suffix) {
                     Column {

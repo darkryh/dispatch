@@ -9,20 +9,18 @@ import com.ead.dispatch.modifier.Modifier
 import com.ead.dispatch.modifier.fillMaxWidth
 import com.ead.dispatch.modifier.height
 import com.ead.dispatch.modifier.width
-import com.ead.dispatch.widget.Background
-import com.ead.dispatch.widget.BackgroundStyle
-import com.ead.dispatch.widget.Card
-import com.ead.dispatch.widget.FilterBar
-import com.ead.dispatch.widget.FilterBarCard
+import com.ead.dispatch.widget.Surface
+import com.ead.dispatch.widget.SurfaceStyle
 import com.ead.dispatch.widget.HorizontalDivider
 import com.ead.dispatch.widget.Panel
-import com.ead.dispatch.widget.Section
-import com.ead.dispatch.widget.SectionHeader
-import com.ead.dispatch.widget.StyledText
-import com.ead.dispatch.widget.TagList
-import com.ead.dispatch.widget.TagPill
+import com.ead.dispatch.sample.widgets.Section
+import com.ead.dispatch.sample.widgets.SectionHeader
+import com.ead.dispatch.widget.ChipRow
+import com.ead.dispatch.modifier.BorderStyle
+import com.ead.dispatch.widget.Chip
 import com.ead.dispatch.widget.Text
 import com.ead.dispatch.widget.TextField
+import com.ead.dispatch.widget.BasicTextFieldRenderer
 import com.ead.dispatch.widget.VerticalDivider
 import com.ead.dispatch.widget.rememberTextFieldState
 import com.github.ajalt.mordant.rendering.TextColors.Companion.rgb
@@ -34,10 +32,7 @@ internal fun SurfacesGallery() {
     GalleryScreen("Surfaces", "Text, framing, separators, tags, and filter surfaces") {
         SectionHeader("Typography", subtitle = "plain, styled, and markdown")
         Text("Plain terminal text")
-        StyledText {
-            bold("Styled")
-            append(" builder text")
-        }
+        Text("Styled builder text")
         Text("**Markdown** with `code`", markdown = true)
         HorizontalDivider(modifier = Modifier.fillMaxWidth())
         Row {
@@ -47,19 +42,19 @@ internal fun SurfacesGallery() {
             Spacer(Modifier.width(1))
             Text("right")
         }
-        Background(
+        Surface(
             modifier = Modifier.fillMaxWidth(),
-            style = BackgroundStyle.fill(rgb("#303846"), paddingVertical = 0),
+            style = SurfaceStyle.fill(rgb("#303846"), paddingVertical = 0),
         ) {
-            Text("Background fill")
+            Text("Surface fill")
         }
         Panel(title = "Panel") { Text("Bordered content") }
-        Card(title = "Card") { Text("Convenience panel") }
+        Panel(title = "Rounded", borderStyle = BorderStyle.Rounded) { Text("Convenience panel") }
         Section("Section") { Text("Header-line grouping") }
-        TagPill("single")
-        TagList(listOf("stable", "reactive", "terminal"))
-        TextField(state = fieldState, showCursor = false)
-        FilterBar(state = filterState, showCursor = false)
-        FilterBarCard(state = filterState, showCursor = false)
+        Chip("single")
+        ChipRow(listOf("stable", "reactive", "terminal"))
+        BasicTextFieldRenderer(state = fieldState, showCursor = false)
+        TextField(state = filterState, showCursor = false)
+        Surface { TextField(state = filterState, showCursor = false) }
     }
 }

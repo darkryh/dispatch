@@ -90,7 +90,7 @@ fun DecisionPrompt(
     options: List<DecisionOption>,
     onSubmit: (DecisionSelection) -> Unit,
     modifier: Modifier = Modifier,
-    placeholder: String = "tell the assistant how it should proceed...",
+    placeholder: String = "type a custom response…",
     visible: Boolean = true,
     enabled: Boolean = true,
     selectionIndicator: String = "> ",

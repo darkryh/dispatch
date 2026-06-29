@@ -108,7 +108,7 @@ class InputCommandPaletteIntegrationTest {
                     LocalTheme provides DispatchTheme.Dark,
                 ) {
                     Column {
-                        InputTextField(
+                        TextField(
                             value = inputValue,
                             onValueChange = { inputValue = it },
                             icon = "> ",

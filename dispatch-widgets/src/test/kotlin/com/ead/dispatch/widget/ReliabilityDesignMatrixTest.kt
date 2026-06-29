@@ -112,7 +112,7 @@ private fun ChatTranscriptScenario() {
             Text(line)
         }
         item {
-            InputTextField(
+            TextField(
                 modifier = Modifier.fillMaxWidth(),
                 value = "plan the next chapter with stronger tension and a cleaner climax",
                 onValueChange = {},
@@ -135,23 +135,20 @@ private fun ChatTranscriptScenario() {
 private fun AnalyticsDashboardScenario() {
     Column(modifier = Modifier.fillMaxWidth()) {
         Text("anchor::analytics_dashboard")
-        CountTileGrid(
+        Grid(
             items =
                 listOf(
-                    CountTile("users-online", 245),
-                    CountTile("active-streams", 18),
-                    CountTile("alerts-open", 3),
-                    CountTile("deployments", 7),
+                    "users-online: 245",
+                    "active-streams: 18",
+                    "alerts-open: 3",
+                    "deployments: 7",
                 ),
             cells = GridCells.Fixed(2),
-        )
+        ) { item, width ->
+            Text(item.padEnd(width))
+        }
         Spacer(Modifier.height(1))
-        ProgressBar(progress = 0.67f, showPercentage = true)
-        TransferProgress(
-            progress = 0.42f,
-            bytesTransferred = 4_200_000,
-            totalBytes = 10_000_000,
-        )
+        LinearProgressIndicator(progress = 0.67f, showPercentage = true)
         Spacer(Modifier.height(1))
         KeyHintBar(
             hints =
@@ -189,18 +186,6 @@ private fun WorkflowChecklistScenario() {
 @Composable
 private fun SelectorWorkbenchScenario() {
     val commandState = rememberCommandPaletteState<String>()
-    val sessionState = rememberSessionSelectorState<String>()
-    val sessions =
-        List(16) { index ->
-            SessionOption(
-                id = "session-$index",
-                title = "Story draft ${index + 1}",
-                updatedTime = "${index + 1}h ago",
-                conversationId = "conv-${1000 + index}",
-                messageCount = (index + 1) * 3,
-                data = "session-$index",
-            )
-        }
 
     Column(modifier = Modifier.fillMaxWidth()) {
         Text("anchor::selector_workbench")
@@ -216,14 +201,6 @@ private fun SelectorWorkbenchScenario() {
             onInputTransform = {},
             state = commandState,
         )
-        Spacer(Modifier.height(1))
-        SessionSelector(
-            options = sessions,
-            onOptionSelected = {},
-            onExit = {},
-            state = sessionState,
-            visibleCount = 5,
-        )
     }
 }
 
@@ -232,7 +209,7 @@ private fun FormDecisionScenario() {
     val filterState = rememberTextFieldState("villain")
     Column(modifier = Modifier.fillMaxWidth()) {
         Text("anchor::form_decision")
-        FilterBar(state = filterState)
+        TextField(state = filterState)
         Spacer(Modifier.height(1))
         DecisionPrompt(
             question = "Choose a follow-up action",
@@ -257,14 +234,9 @@ private fun UnicodeMarkdownScenario() {
             markdown = true,
         )
         Spacer(Modifier.height(1))
-        LabeledValueList(
-            items =
-                listOf(
-                    LabeledValue("Locale", "ja-JP / en-US"),
-                    LabeledValue("Status", "Δ stable"),
-                    LabeledValue("GlyphTest", "中文 한국어 عربى"),
-                ),
-        )
+        Text("Locale: ja-JP / en-US")
+        Text("Status: Δ stable")
+        Text("GlyphTest: 中文 한국어 عربى")
     }
 }
 
@@ -273,7 +245,7 @@ private fun TagBackgroundScenario() {
     Column(modifier = Modifier.fillMaxWidth()) {
         Text("anchor::tag_background")
         Panel(modifier = Modifier.fillMaxWidth(), title = "Entity Overview") {
-            TagList(tags = listOf("mystery", "noir", "flashback", "memory-core"))
+            ChipRow(tags = listOf("mystery", "noir", "flashback", "memory-core"))
             Spacer(Modifier.height(1))
             Text("The dossier combines fractured recollection with precise temporal indexing.")
         }
@@ -331,15 +303,9 @@ private fun WindowedSelectableScenario() {
 private fun TransferMonitorScenario() {
     Column(modifier = Modifier.fillMaxWidth()) {
         Text("anchor::transfer_monitor")
-        ProgressBar(progress = 0.25f, showPercentage = true)
-        ProgressBar(progress = 0.50f, showPercentage = true)
-        ProgressBar(progress = 0.90f, showPercentage = true)
-        Spacer(Modifier.height(1))
-        TransferProgress(
-            progress = 0.78f,
-            bytesTransferred = 78_000_000,
-            totalBytes = 100_000_000,
-        )
+        LinearProgressIndicator(progress = 0.25f, showPercentage = true)
+        LinearProgressIndicator(progress = 0.50f, showPercentage = true)
+        LinearProgressIndicator(progress = 0.90f, showPercentage = true)
     }
 }
 

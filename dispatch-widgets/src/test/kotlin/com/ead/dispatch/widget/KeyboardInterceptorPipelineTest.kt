@@ -48,7 +48,7 @@ class KeyboardInterceptorPipelineTest {
                     LocalFocusRegistry provides focusRegistry,
                     LocalTheme provides DispatchTheme.Dark,
                 ) {
-                    InputTextField(
+                    TextField(
                         state = state,
                         icon = "> ",
                         placeholder = "Type / for commands",

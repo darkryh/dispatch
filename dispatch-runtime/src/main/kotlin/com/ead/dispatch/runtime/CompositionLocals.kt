@@ -89,7 +89,7 @@ data class Position(val x: Int, val y: Int)
  * CompositionLocal providing the keyboard event interceptor.
  *
  * This allows widgets like CommandPalette to intercept keyboard events
- * before InputTextField handles them.
+ * before TextField handles them.
  */
 val LocalKeyboardInterceptor = staticCompositionLocalOf<KeyboardInterceptor> {
     error("No KeyboardInterceptor provided. Ensure you're inside a DispatchApplication.")

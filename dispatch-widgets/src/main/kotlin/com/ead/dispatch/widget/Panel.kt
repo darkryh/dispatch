@@ -167,35 +167,3 @@ private fun borderType(style: BorderStyle): BorderType? =
         BorderStyle.Double -> BorderType.DOUBLE
         BorderStyle.Dashed -> BorderType.ASCII // closest available
     }
-
-/**
- * A simple card widget (panel with padding).
- */
-@Composable
-fun Card(
-    modifier: Modifier = Modifier,
-    title: String? = null,
-    content: @Composable () -> Unit,
-) {
-    Panel(
-        modifier = modifier,
-        title = title,
-        borderStyle = BorderStyle.Rounded,
-        content = content,
-    )
-}
-
-/**
- * A section with a header line.
- */
-@Composable
-fun Section(
-    title: String,
-    modifier: Modifier = Modifier,
-    content: @Composable () -> Unit,
-) {
-    Column(modifier = modifier) {
-        Text("─── $title ───")
-        content()
-    }
-}

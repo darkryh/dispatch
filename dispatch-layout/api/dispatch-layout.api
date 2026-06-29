@@ -1,3 +1,12 @@
+public final class com/ead/dispatch/layout/AlignModifierKt {
+	public static final fun align (Lcom/ead/dispatch/layout/BoxScope;Lcom/ead/dispatch/layout/Alignment$Alignment2D;)Lcom/ead/dispatch/modifier/Modifier;
+	public static final fun align (Lcom/ead/dispatch/layout/ColumnScope;Lcom/ead/dispatch/layout/Alignment$Horizontal;)Lcom/ead/dispatch/modifier/Modifier;
+	public static final fun align (Lcom/ead/dispatch/layout/RowScope;Lcom/ead/dispatch/layout/Alignment$Vertical;)Lcom/ead/dispatch/modifier/Modifier;
+	public static final fun boxAlign (Lcom/ead/dispatch/modifier/Modifier;)Lcom/ead/dispatch/layout/Alignment$Alignment2D;
+	public static final fun columnAlign (Lcom/ead/dispatch/modifier/Modifier;)Lcom/ead/dispatch/layout/Alignment$Horizontal;
+	public static final fun rowAlign (Lcom/ead/dispatch/modifier/Modifier;)Lcom/ead/dispatch/layout/Alignment$Vertical;
+}
+
 public final class com/ead/dispatch/layout/Alignment {
 	public static final field $stable I
 	public static final field INSTANCE Lcom/ead/dispatch/layout/Alignment;
@@ -148,6 +157,24 @@ public final class com/ead/dispatch/layout/BannerLayoutKt {
 	public static final fun HeaderLayout (Lcom/ead/dispatch/modifier/Modifier;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;II)V
 }
 
+public final class com/ead/dispatch/layout/BoxAlignModifier : com/ead/dispatch/modifier/Modifier$Element {
+	public static final field $stable I
+	public fun <init> (Lcom/ead/dispatch/layout/Alignment$Alignment2D;)V
+	public fun allOf (Ljava/lang/Class;)Ljava/util/List;
+	public fun any (Lkotlin/jvm/functions/Function1;)Z
+	public final fun component1 ()Lcom/ead/dispatch/layout/Alignment$Alignment2D;
+	public final fun copy (Lcom/ead/dispatch/layout/Alignment$Alignment2D;)Lcom/ead/dispatch/layout/BoxAlignModifier;
+	public static synthetic fun copy$default (Lcom/ead/dispatch/layout/BoxAlignModifier;Lcom/ead/dispatch/layout/Alignment$Alignment2D;ILjava/lang/Object;)Lcom/ead/dispatch/layout/BoxAlignModifier;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun firstOrNull (Ljava/lang/Class;)Lcom/ead/dispatch/modifier/Modifier$Element;
+	public fun foldIn (Ljava/lang/Object;Lkotlin/jvm/functions/Function2;)Ljava/lang/Object;
+	public fun foldOut (Ljava/lang/Object;Lkotlin/jvm/functions/Function2;)Ljava/lang/Object;
+	public final fun getAlignment ()Lcom/ead/dispatch/layout/Alignment$Alignment2D;
+	public fun hashCode ()I
+	public fun then (Lcom/ead/dispatch/modifier/Modifier;)Lcom/ead/dispatch/modifier/Modifier;
+	public fun toString ()Ljava/lang/String;
+}
+
 public final class com/ead/dispatch/layout/BoxKt {
 	public static final fun Box (Lcom/ead/dispatch/modifier/Modifier;Lcom/ead/dispatch/layout/Alignment$Alignment2D;Lkotlin/jvm/functions/Function3;Landroidx/compose/runtime/Composer;II)V
 	public static final fun Spacer (Lcom/ead/dispatch/modifier/Modifier;Landroidx/compose/runtime/Composer;II)V
@@ -171,6 +198,24 @@ public final class com/ead/dispatch/layout/BoxScopeInstance : com/ead/dispatch/l
 	public fun getContentAlignment ()Lcom/ead/dispatch/layout/Alignment$Alignment2D;
 	public fun getItemModifier ()Lcom/ead/dispatch/modifier/Modifier;
 	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class com/ead/dispatch/layout/ColumnAlignModifier : com/ead/dispatch/modifier/Modifier$Element {
+	public static final field $stable I
+	public fun <init> (Lcom/ead/dispatch/layout/Alignment$Horizontal;)V
+	public fun allOf (Ljava/lang/Class;)Ljava/util/List;
+	public fun any (Lkotlin/jvm/functions/Function1;)Z
+	public final fun component1 ()Lcom/ead/dispatch/layout/Alignment$Horizontal;
+	public final fun copy (Lcom/ead/dispatch/layout/Alignment$Horizontal;)Lcom/ead/dispatch/layout/ColumnAlignModifier;
+	public static synthetic fun copy$default (Lcom/ead/dispatch/layout/ColumnAlignModifier;Lcom/ead/dispatch/layout/Alignment$Horizontal;ILjava/lang/Object;)Lcom/ead/dispatch/layout/ColumnAlignModifier;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun firstOrNull (Ljava/lang/Class;)Lcom/ead/dispatch/modifier/Modifier$Element;
+	public fun foldIn (Ljava/lang/Object;Lkotlin/jvm/functions/Function2;)Ljava/lang/Object;
+	public fun foldOut (Ljava/lang/Object;Lkotlin/jvm/functions/Function2;)Ljava/lang/Object;
+	public final fun getAlignment ()Lcom/ead/dispatch/layout/Alignment$Horizontal;
+	public fun hashCode ()I
+	public fun then (Lcom/ead/dispatch/modifier/Modifier;)Lcom/ead/dispatch/modifier/Modifier;
 	public fun toString ()Ljava/lang/String;
 }
 
@@ -205,6 +250,37 @@ public final class com/ead/dispatch/layout/ComposableSingletons$BoxKt {
 	public final fun getLambda$1612611018$io_github_darkryh_dispatch_dispatch_layout ()Lkotlin/jvm/functions/Function3;
 }
 
+public abstract interface class com/ead/dispatch/layout/FlowColumnScope : com/ead/dispatch/layout/LayoutScope {
+}
+
+public final class com/ead/dispatch/layout/FlowColumnScope$DefaultImpls {
+	public static fun getItemModifier (Lcom/ead/dispatch/layout/FlowColumnScope;)Lcom/ead/dispatch/modifier/Modifier;
+}
+
+public final class com/ead/dispatch/layout/FlowColumnScopeInstance : com/ead/dispatch/layout/FlowColumnScope {
+	public static final field $stable I
+	public static final field INSTANCE Lcom/ead/dispatch/layout/FlowColumnScopeInstance;
+	public fun getItemModifier ()Lcom/ead/dispatch/modifier/Modifier;
+}
+
+public final class com/ead/dispatch/layout/FlowLayoutKt {
+	public static final fun FlowColumn (Lcom/ead/dispatch/modifier/Modifier;Lcom/ead/dispatch/layout/Arrangement$Vertical;Lcom/ead/dispatch/layout/Arrangement$Horizontal;ILkotlin/jvm/functions/Function3;Landroidx/compose/runtime/Composer;II)V
+	public static final fun FlowRow (Lcom/ead/dispatch/modifier/Modifier;Lcom/ead/dispatch/layout/Arrangement$Horizontal;Lcom/ead/dispatch/layout/Arrangement$Vertical;ILkotlin/jvm/functions/Function3;Landroidx/compose/runtime/Composer;II)V
+}
+
+public abstract interface class com/ead/dispatch/layout/FlowRowScope : com/ead/dispatch/layout/LayoutScope {
+}
+
+public final class com/ead/dispatch/layout/FlowRowScope$DefaultImpls {
+	public static fun getItemModifier (Lcom/ead/dispatch/layout/FlowRowScope;)Lcom/ead/dispatch/modifier/Modifier;
+}
+
+public final class com/ead/dispatch/layout/FlowRowScopeInstance : com/ead/dispatch/layout/FlowRowScope {
+	public static final field $stable I
+	public static final field INSTANCE Lcom/ead/dispatch/layout/FlowRowScopeInstance;
+	public fun getItemModifier ()Lcom/ead/dispatch/modifier/Modifier;
+}
+
 public final class com/ead/dispatch/layout/LayoutKt {
 	public static final fun Layout (Lcom/ead/dispatch/modifier/Modifier;Lcom/ead/dispatch/layout/MeasurePolicy;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;II)V
 }
@@ -221,6 +297,24 @@ public class com/ead/dispatch/layout/LayoutScopeInstance : com/ead/dispatch/layo
 	public static final field $stable I
 	public fun <init> ()V
 	public fun getItemModifier ()Lcom/ead/dispatch/modifier/Modifier;
+}
+
+public final class com/ead/dispatch/layout/RowAlignModifier : com/ead/dispatch/modifier/Modifier$Element {
+	public static final field $stable I
+	public fun <init> (Lcom/ead/dispatch/layout/Alignment$Vertical;)V
+	public fun allOf (Ljava/lang/Class;)Ljava/util/List;
+	public fun any (Lkotlin/jvm/functions/Function1;)Z
+	public final fun component1 ()Lcom/ead/dispatch/layout/Alignment$Vertical;
+	public final fun copy (Lcom/ead/dispatch/layout/Alignment$Vertical;)Lcom/ead/dispatch/layout/RowAlignModifier;
+	public static synthetic fun copy$default (Lcom/ead/dispatch/layout/RowAlignModifier;Lcom/ead/dispatch/layout/Alignment$Vertical;ILjava/lang/Object;)Lcom/ead/dispatch/layout/RowAlignModifier;
+	public fun equals (Ljava/lang/Object;)Z
+	public fun firstOrNull (Ljava/lang/Class;)Lcom/ead/dispatch/modifier/Modifier$Element;
+	public fun foldIn (Ljava/lang/Object;Lkotlin/jvm/functions/Function2;)Ljava/lang/Object;
+	public fun foldOut (Ljava/lang/Object;Lkotlin/jvm/functions/Function2;)Ljava/lang/Object;
+	public final fun getAlignment ()Lcom/ead/dispatch/layout/Alignment$Vertical;
+	public fun hashCode ()I
+	public fun then (Lcom/ead/dispatch/modifier/Modifier;)Lcom/ead/dispatch/modifier/Modifier;
+	public fun toString ()Ljava/lang/String;
 }
 
 public final class com/ead/dispatch/layout/RowKt {

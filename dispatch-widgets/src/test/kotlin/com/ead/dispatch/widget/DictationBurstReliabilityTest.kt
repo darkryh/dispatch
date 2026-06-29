@@ -65,7 +65,7 @@ private fun DictationFooterScreen(
     contextPercent: Int,
 ) {
     Column(modifier = Modifier.fillMaxWidth()) {
-        InputTextField(
+        TextField(
             modifier = Modifier.fillMaxWidth(),
             value = value,
             onValueChange = onValueChange,

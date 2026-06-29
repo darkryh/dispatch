@@ -30,14 +30,16 @@ fun <T> SelectableWindowedList(
     )
 }
 
-internal data class WindowSlice<T>(
+/** Result of [computeWindowSlice]: the visible slice plus its absolute start offset. */
+public data class WindowSlice<T>(
     val window: List<T>,
     val localSelected: Int,
     val startIndex: Int,
     val endIndex: Int,
 )
 
-internal fun <T> computeWindowSlice(
+/** Computes the visible window slice of [items] around [selectedIndex] for [visibleCount] rows. */
+public fun <T> computeWindowSlice(
     items: List<T>,
     selectedIndex: Int,
     visibleCount: Int,

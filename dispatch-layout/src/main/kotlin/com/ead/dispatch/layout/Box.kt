@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import com.ead.dispatch.constraints.Constraints
 import com.ead.dispatch.modifier.Modifier
 import com.ead.dispatch.modifier.applyToConstraints
+import com.ead.dispatch.modifier.getOffset
 
 /**
  * A layout that stacks children on top of each other.
@@ -17,7 +18,7 @@ import com.ead.dispatch.modifier.applyToConstraints
  *     modifier = Modifier.fillMaxSize(),
  *     contentAlignment = Alignment.Center,
  * ) {
- *     Panel(title = "Background")
+ *     Panel(title = "Surface")
  *     Text("Foreground")
  * }
  * ```
@@ -115,10 +116,21 @@ internal class BoxMeasurePolicy(
             width = layoutWidth,
             height = layoutHeight,
         ) {
-            for (placeable in placeables) {
+            for (index in placeables.indices) {
+                val placeable = placeables[index]
+                // A per-child Modifier.align(...) overrides the container alignment for this child
+                // only; absent one, the container contentAlignment is used (default path unchanged).
+                val childModifier = measurables[index].modifier
+                val alignment = childModifier.boxAlign() ?: contentAlignment
                 // Call the per-axis aligners directly to avoid boxing a Pair<Int, Int> per child.
-                val x = contentAlignment.horizontal.align(layoutWidth, placeable.width)
-                val y = contentAlignment.vertical.align(layoutHeight, placeable.height)
+                var x = alignment.horizontal.align(layoutWidth, placeable.width)
+                var y = alignment.vertical.align(layoutHeight, placeable.height)
+                // Apply an optional fixed cell offset after the normal position is computed.
+                val offset = childModifier.getOffset()
+                if (offset != null) {
+                    x += offset.x
+                    y += offset.y
+                }
                 placeable.placeAt(x, y)
             }
         }
