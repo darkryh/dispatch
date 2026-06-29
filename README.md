@@ -1,94 +1,166 @@
 # Dispatch
 
-A declarative terminal UI framework for Kotlin, built on the Jetpack Compose runtime.
+> A declarative terminal UI framework for Kotlin, built on the Jetpack Compose runtime.
 
-Dispatch lets you build rich, interactive command-line applications the same way you build
-Compose UIs — with `@Composable` functions, state, layout containers, navigation, and
-view models — while rendering to a real terminal within its hard constraints.
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.darkryh.dispatch/dispatch-core.svg?label=Maven%20Central)](https://central.sonatype.com/namespace/io.github.darkryh.dispatch)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
-> Status: `1.0.0-SNAPSHOT`, preparing for first release.
+Dispatch lets you build rich, interactive command-line apps the same way you build Compose UIs —
+with `@Composable` functions, state, layout containers, navigation, and view models — rendered to a
+real terminal, flicker-free.
 
-## Why Dispatch
+If you know Compose on Android or desktop, you already know Dispatch: state drives recomposition,
+layout is a tree of measure/place nodes, and a modifier chain configures each node. The target is
+different — a terminal — so Dispatch is built around what a terminal can and cannot do.
 
-- **Compose programming model** — `Column`, `Row`, `Box`, `LazyColumn`, state, recomposition,
-  `CompositionLocal`s, and a familiar modifier system, all targeting the terminal.
-- **Flicker-free rendering** — a render-decision engine paints content in a print-once /
-  append-only style and only repaints what genuinely changes. Committed scrollback is never
-  rewritten; the bottom "active area" updates in place; screen navigation does a deliberate
-  full repaint. Every frame is buffered and flushed atomically to avoid tearing.
-- **Navigation** — a typed back stack with entry decorators, saved state, and lifecycle-aware
-  disposal.
-- **Architecture batteries included** — `ViewModel` / MVI base classes, a lifecycle registry,
+## Features
+
+- **The Compose programming model** — `Column`, `Row`, `Box`, lazy lists, `remember`, state and
+  recomposition, `CompositionLocal`s, and a familiar modifier system, targeting the terminal.
+- **A full widget set** — text, buttons, inputs, selectable and multi-select lists, tables, grids,
+  trees, panels, surfaces, dividers, progress bars, spinners, checklists, diffs, and a command
+  palette.
+- **Flicker-free rendering** — content is painted print-once / append-only; only what changes is
+  repainted, and every frame is buffered and flushed atomically.
+- **Typed navigation** — a serializable back stack with lifecycle-aware, view-model-scoped entries.
+- **Architecture batteries included** — `ViewModel` and MVI base classes, a lifecycle registry,
   saved-state handles, and optional Koin dependency injection.
-- **Self-update + workspace** — optional modules for in-app update checks (Homebrew, Scoop,
-  APT, GitHub releases) and filesystem watching.
+- **Optional modules** — in-app self-update (Homebrew, Scoop, APT, GitHub releases) and filesystem
+  watching.
+
+## Requirements
+
+- JDK 21 or newer.
+- Kotlin with Gradle and the Compose compiler plugin (Dispatch composables are compiled by the same
+  plugin used for Compose).
+
+## Create a new project
+
+The fastest way to start is the **Dispatch Initializr** — a Spring-Initializr-style generator that
+scaffolds a ready-to-run project in your browser:
+
+**[start.dispatch → darkryh.github.io/dispatch](https://darkryh.github.io/dispatch/)**
+
+Fill in a project name, package, and version, then download a zipped, complete Dispatch app — a
+single screen wired with Koin dependency injection and an MVI view model, the blessed starting
+pattern. The generated project pins Kotlin, Gradle, the JVM toolchain, and the Dispatch version for
+you. It runs entirely in the browser; there is no backend.
+
+After unzipping, generate the Gradle wrapper once and run it:
+
+```bash
+gradle wrapper --gradle-version 9.6.1
+./gradlew run
+```
+
+Prefer to wire it up by hand? Follow [Installation](#installation) below.
+
+## Installation
+
+Add the Compose compiler plugin and the Dispatch dependencies. The entry point lives in
+`dispatch-core`; `dispatch-widgets` brings the widgets, layout, modifiers, theme, and view-model
+APIs with it.
+
+```kotlin
+// build.gradle.kts
+plugins {
+    kotlin("jvm") version "2.4.0"
+    id("org.jetbrains.kotlin.plugin.compose") version "2.4.0"
+}
+
+dependencies {
+    implementation("io.github.darkryh.dispatch:dispatch-core:1.0.0")
+    implementation("io.github.darkryh.dispatch:dispatch-widgets:1.0.0")
+
+    // Add as needed:
+    implementation("io.github.darkryh.dispatch:dispatch-navigation:1.0.0")
+    implementation("io.github.darkryh.dispatch:dispatch-koin:1.0.0")
+}
+```
+
+All artifacts share the group `io.github.darkryh.dispatch` and the same version. See
+[Modules](#modules) for the full list.
+
+## Quick start
+
+```kotlin
+import com.ead.dispatch.layout.Column
+import com.ead.dispatch.runtime.DispatchApplication
+import com.ead.dispatch.runtime.ExitKeyBinding
+import com.ead.dispatch.runtime.LocalTheme
+import com.ead.dispatch.theme.DispatchTheme
+import com.ead.dispatch.widget.Text
+import androidx.compose.runtime.Composable
+
+fun main(args: Array<String>) =
+    DispatchApplication(args) {
+        config {
+            name = "hello"
+            version = "1.0.0"
+            theme = DispatchTheme.Dark
+            exitKeys(ExitKeyBinding.ctrl("C"))
+        }
+        content { Hello() }
+    }
+
+@Composable
+fun Hello() {
+    val theme = LocalTheme.current
+    Column {
+        Text("Hello, Dispatch!", style = theme.primary)
+        Text("Press Ctrl+C to quit.", style = theme.muted)
+    }
+}
+```
+
+Run it, and the two lines render in your terminal. Press Ctrl+C to quit. The
+[Getting started tutorial](docs/getting-started.md) builds this up step by step.
+
+## Documentation
+
+Full documentation lives in [`docs/`](docs/index.md):
+
+- **[Getting started](docs/getting-started.md)** — build and run your first app.
+- **[How-to guides](docs/how-to/index.md)** — navigation, view models, Koin DI, keyboard input,
+  theming, self-update, and workspace watching.
+- **[Reference](docs/reference/index.md)** — every widget, modifier, configuration option, and class.
+- **[Explanation](docs/explanation/index.md)** — the render model, the module architecture, and why
+  Dispatch builds on the Compose runtime.
 
 ## Modules
 
 | Module | Responsibility |
 |---|---|
-| `dispatch-core` | Runtime engine, frame scheduling, the render-decision pipeline |
-| `dispatch-runtime` | Compose integration, composition, modifiers, constraints, focus |
-| `dispatch-renderer` | ANSI output, atomic frame flushing, active-area management |
-| `dispatch-layout` | `Column` / `Row` / `Box` / `Layout` measure policies, alignment, arrangement |
-| `dispatch-widgets` | `Text`, `LazyColumn`, inputs, lists, grids, panels, and more |
-| `dispatch-navigation` | Typed back stack, nav entries, decorators, saved state |
-| `dispatch-viewmodel` | `ViewModel`, MVI base classes, `StateFlow` helpers |
-| `dispatch-lifecycle` | Lifecycle registry and states |
-| `dispatch-koin` | Koin DI integration and view-model factory |
-| `dispatch-workspace` | Filesystem watching for live-reload style workflows |
-| `dispatch-update*` | Update advisor + provider implementations (Brew/Scoop/APT/GitHub) |
+| `dispatch-core` | App entry point (`DispatchApplication`), runtime engine, frame scheduling. |
+| `dispatch-runtime` | Compose integration, composition, modifiers, constraints, focus, theme, input. |
+| `dispatch-renderer` | ANSI output, atomic frame flushing, active-area management. |
+| `dispatch-layout` | `Column` / `Row` / `Box` / flow layouts, alignment, arrangement. |
+| `dispatch-widgets` | `Text`, lists, inputs, tables, panels, progress, command palette, and more. |
+| `dispatch-navigation` | Typed back stack, nav entries, decorators, saved state. |
+| `dispatch-viewmodel` | `ViewModel`, MVI base classes, `StateFlow` helpers. |
+| `dispatch-lifecycle` | Lifecycle registry and states. |
+| `dispatch-koin` | Koin DI integration and view-model factory. |
+| `dispatch-workspace` | Filesystem watching for live-reload-style workflows. |
+| `dispatch-update` | Update advisor (core). |
+| `dispatch-update-github` / `-brew` / `-scoop` / `-apt` | Update providers per channel. |
 
-## Quick start
-
-```kotlin
-import com.ead.dispatch.runtime.DispatchApplication
-import com.ead.dispatch.runtime.ExitKeyBinding
-import com.ead.dispatch.theme.DispatchTheme
-
-fun main(args: Array<String>) =
-    DispatchApplication(args) {
-        config {
-            name = "my-app"
-            windowTitle = "My App"
-            version = "1.0.0"
-            theme = DispatchTheme.Dark
-            targetFps = 60
-            exitKeys(ExitKeyBinding.ctrl("C"))
-        }
-
-        content {
-            // Any @Composable tree built from Dispatch widgets
-            App()
-        }
-    }
-```
-
-See the `dispatch-sample` module for a complete, offline showcase of layout, navigation,
-view models, input, and DI.
-
-## Building
+## Building from source
 
 ```bash
-./gradlew build          # compile + test all modules
-./gradlew test           # run the test suite
+./gradlew build                  # compile and test all modules
 ./gradlew :dispatch-sample:run   # run the sample app
-./gradlew validateAll    # build, test, detekt, ktlint, coverage, module-boundary checks
+./gradlew validateAll            # build, test, detekt, ktlint, coverage, module-boundary checks
 ```
 
-Requires JDK 21+.
+The `dispatch-sample` module is a complete, offline showcase of layout, navigation, view models,
+input, and DI. Requires JDK 21+.
 
-## The render invariant
+## Contributing
 
-Dispatch is deliberately built around what a terminal can and cannot do:
-
-- Scrollback is append-only — committed lines are never repainted.
-- The bottom active area updates in place without disturbing scrollback.
-- A terminal resize forces a full rewrite (cursor positioning is invalidated).
-- Screen-to-screen navigation clears the previous screen and repaints fresh, by design.
-- Every frame is composed into a single buffer and flushed once to prevent flicker.
-
-Contributions and optimizations must preserve this behavior; see `OPTIMIZATION_PLAN.md`.
+Issues and pull requests are welcome at
+[github.com/darkryh/dispatch](https://github.com/darkryh/dispatch). Dispatch is built around a strict
+render model — see [The render model](docs/explanation/render-model.md) before changing rendering
+behavior.
 
 ## License
 
