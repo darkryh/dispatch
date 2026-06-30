@@ -40,6 +40,7 @@ object StarterTemplate {
             TemplateFile("gradle.properties", GRADLE_PROPERTIES),
             TemplateFile("build.gradle.kts", BUILD_GRADLE),
             TemplateFile(".gitignore", GITIGNORE),
+            TemplateFile("run.sh", RUN_SH, executable = true),
             TemplateFile("README.md", README),
             TemplateFile("src/main/kotlin/{{PACKAGE_PATH}}/Main.kt", MAIN_KT),
             TemplateFile("src/main/kotlin/{{PACKAGE_PATH}}/MainScreen.kt", MAIN_SCREEN_KT),
@@ -266,6 +267,53 @@ object StarterTemplate {
             }
         """.trimIndent() + "\n"
 
+    // Bash uses `$`, which is also Kotlin's string-template marker — so every `$` here is written as the
+    // `{{D}}` token and restored to a literal `$` by the generator (same trick as the Kotlin sources).
+    private val RUN_SH =
+        """
+        #!/usr/bin/env bash
+        set -euo pipefail
+
+        # A terminal UI needs a real TTY. Launching through `./gradlew run` captures stdin/stdout and
+        # garbles the rendering, so this script installs a native launcher with `installDist` and execs
+        # it directly — rebuilding first so each run picks up your latest changes.
+
+        SCRIPT_DIR="{{D}}( cd "{{D}}( dirname "{{D}}{BASH_SOURCE[0]}" )" && pwd )"
+        cd "{{D}}SCRIPT_DIR"
+
+        APP_NAME="{{ARTIFACT_ID}}"
+        BIN_FILE="{{D}}SCRIPT_DIR/build/install/{{D}}APP_NAME/bin/{{D}}APP_NAME"
+
+        # Prefer the Gradle wrapper; fall back to a system Gradle if the wrapper jar isn't generated yet.
+        if [ -f "{{D}}SCRIPT_DIR/gradle/wrapper/gradle-wrapper.jar" ]; then
+            GRADLE="./gradlew"
+        elif command -v gradle >/dev/null 2>&1; then
+            GRADLE="gradle"
+        else
+            echo "Neither the Gradle wrapper nor a system 'gradle' was found."
+            echo "Install Gradle (brew install gradle / sdk install gradle), then run:"
+            echo "  gradle wrapper --gradle-version {{GRADLE_VERSION}}"
+            echo "  ./run.sh"
+            exit 1
+        fi
+
+        echo "Building {{D}}APP_NAME..."
+        "{{D}}GRADLE" installDist --warning-mode all
+
+        if [ ! -x "{{D}}BIN_FILE" ]; then
+            echo "Error: launcher not found at {{D}}BIN_FILE"
+            exit 1
+        fi
+
+        if [ -t 0 ] && [ -t 1 ]; then
+            echo "Launching {{D}}APP_NAME..."
+            exec "{{D}}BIN_FILE" "{{D}}@"
+        else
+            echo "Non-interactive terminal detected; skipping launch."
+            echo "Run ./run.sh from an interactive terminal to start the app."
+        fi
+        """.trimIndent() + "\n"
+
     private val README =
         """
         # {{PROJECT_NAME}}
@@ -275,13 +323,20 @@ object StarterTemplate {
 
         ## Run it
 
+        A terminal UI needs a real TTY, so launch with the bundled `run.sh`: it builds a native launcher
+        with `installDist` and execs it directly. (Don't use `./gradlew run` — Gradle captures stdin and
+        stdout and garbles the rendering.)
+
         This starter does not bundle the Gradle wrapper jar. Generate the wrapper once (needs a local
-        Gradle — `brew install gradle` or `sdk install gradle`), then run:
+        Gradle — `brew install gradle` or `sdk install gradle`), then run the script:
 
         ```bash
         gradle wrapper --gradle-version {{GRADLE_VERSION}}
-        ./gradlew run
+        ./run.sh
         ```
+
+        After the wrapper exists, `./run.sh` is all you need — it rebuilds and relaunches each time.
+        On Windows, run `gradlew installDist` and launch `build\install\{{ARTIFACT_ID}}\bin\{{ARTIFACT_ID}}.bat`.
 
         - **↑ / ↓** — change the counter
         - **Ctrl+C** (twice) — quit
@@ -289,6 +344,7 @@ object StarterTemplate {
         ## Project layout
 
         ```
+        run.sh                                 build a native launcher with installDist and exec it
         build.gradle.kts                       Dispatch dependencies (Maven Central) + Compose compiler
         src/main/kotlin/{{PACKAGE_PATH}}/
           Main.kt                              DispatchApplication bootstrap + Koin + ViewModel store

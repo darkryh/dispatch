@@ -76,6 +76,47 @@ class GenerationTest {
     }
 
     @Test
+    fun emitsExecutableRunScript() {
+        val runSh = ProjectGenerator.generate(config).single { it.path == "run.sh" }
+        assertTrue(runSh.executable, "run.sh should be marked executable")
+        assertTrue(runSh.content.startsWith("#!/usr/bin/env bash"), "run.sh missing shebang")
+        assertTrue(runSh.content.contains("installDist"), "run.sh should build via installDist")
+        assertTrue(runSh.content.contains("APP_NAME=\"acme-tui\""), "run.sh should bind APP_NAME to the artifact id")
+        assertTrue(
+            runSh.content.contains("build/install/\$APP_NAME/bin/\$APP_NAME"),
+            "run.sh wrong launcher path",
+        )
+        assertFalse(runSh.content.contains("{{"), "run.sh has unsubstituted tokens")
+    }
+
+    @Test
+    fun zipRecordsUnixExecutableMode() {
+        val files = ProjectGenerator.generate(config)
+        val zip = ZipArchive.create(files)
+
+        // Walk the central directory and check the external-attrs high 16 bits carry the Unix mode:
+        // 0o100755 for run.sh, 0o100644 for everything else.
+        val cdSig = byteArrayOf(0x50, 0x4B, 0x01, 0x02)
+        var seenExecutable = false
+        var i = 0
+        while (i <= zip.size - 4) {
+            if (zip[i] == cdSig[0] && zip[i + 1] == cdSig[1] && zip[i + 2] == cdSig[2] && zip[i + 3] == cdSig[3]) {
+                val nameLen = (zip[i + 28].toInt() and 0xFF) or ((zip[i + 29].toInt() and 0xFF) shl 8)
+                val mode = (zip[i + 40].toInt() and 0xFF) or ((zip[i + 41].toInt() and 0xFF) shl 8)
+                val name = zip.copyOfRange(i + 46, i + 46 + nameLen).decodeToString()
+                if (name == "run.sh") {
+                    assertEquals(0x81ED, mode, "run.sh should be mode 0o100755")
+                    seenExecutable = true
+                } else {
+                    assertEquals(0x81A4, mode, "$name should be mode 0o100644")
+                }
+            }
+            i++
+        }
+        assertTrue(seenExecutable, "run.sh entry not found in central directory")
+    }
+
+    @Test
     fun crc32MatchesKnownVector() {
         // CRC-32 of the ASCII string "123456789" is the well-known check value 0xCBF43926.
         assertEquals(0xCBF43926L, Crc32.compute("123456789".encodeToByteArray()))

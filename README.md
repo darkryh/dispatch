@@ -53,8 +53,12 @@ After unzipping, generate the Gradle wrapper once and run it:
 
 ```bash
 gradle wrapper --gradle-version 9.6.1
-./gradlew run
+./run.sh
 ```
+
+The generated project ships a `run.sh` because a terminal UI needs a real TTY: `./gradlew run`
+captures stdin/stdout and garbles the rendering, so `run.sh` builds a native launcher with
+`installDist` and execs it directly.
 
 Prefer to wire it up by hand? Follow [Installation](#installation) below.
 
@@ -151,7 +155,7 @@ Full documentation lives in [`docs/`](docs/index.md):
 
 ```bash
 ./gradlew build                  # compile and test all modules
-./gradlew :dispatch-sample:run   # run the sample app
+./build-execute.sh               # build and run the sample app (installDist + real-TTY launch)
 ./gradlew validateAll            # build, test, detekt, ktlint, coverage, module-boundary checks
 ```
 

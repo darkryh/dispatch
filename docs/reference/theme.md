@@ -103,6 +103,7 @@ Text("Important", style = theme.error + DispatchTextStyle.Bold)
 ## Composition local
 
 ```kotlin
+// com.ead.dispatch.runtime.LocalTheme (note: the runtime package, not com.ead.dispatch.theme)
 val LocalTheme: ProvidableCompositionLocal<DispatchTheme>   // default DispatchTheme.Dark
 ```
 

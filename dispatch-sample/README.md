@@ -10,15 +10,20 @@ built on the library's own base classes, typed **navigation**, **Koin** DI, and 
 
 ## Run it
 
+From the repository root:
+
 ```bash
-./gradlew :dispatch-sample:run
+./build-execute.sh
 ```
 
-Requires JDK 21+ and a real ANSI terminal (a true TTY — not the Gradle console). For a deterministic
-chat stream while exploring, set a seed:
+Requires JDK 21+ and a real ANSI terminal (a true TTY — not the Gradle console). That is exactly why
+this uses `build-execute.sh` rather than `./gradlew :dispatch-sample:run`: the Gradle `run` task
+gives the app no TTY (stdin/stdout are captured), so the TUI gets no input and the rendering garbles.
+`build-execute.sh` installs a native launcher with `installDist` and execs it directly. For a
+deterministic chat stream while exploring, set a seed:
 
 ```bash
-DISPATCH_SAMPLE_STREAM_SEED=1 ./gradlew :dispatch-sample:run
+DISPATCH_SAMPLE_STREAM_SEED=1 ./build-execute.sh
 ```
 
 ## Getting around

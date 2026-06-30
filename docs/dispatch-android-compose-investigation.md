@@ -12,7 +12,7 @@ Validate how Android and Jetpack Compose internals work (API surface, lifecycle,
 
 **Modules**
 - `dispatch-core`: Entry point and app orchestration. See `dispatch-core/src/main/kotlin/com/ead/dispatch/runtime/DispatchApplication.kt`.
-- `dispatch-runtime`: Composition engine, state, composition locals, modifiers, and constraints. See `dispatch-runtime/src/main/kotlin/com/ead/dispatch/runtime/Composer.kt` and `dispatch-runtime/src/main/kotlin/com/ead/dispatch/state`.
+- `dispatch-runtime`: Composition engine, state, composition locals, modifiers, and constraints. See `dispatch-runtime/src/main/kotlin/com/ead/dispatch/runtime/DispatchComposition.kt` and `dispatch-runtime/src/main/kotlin/com/ead/dispatch/state`.
 - `dispatch-renderer`: Terminal rendering, frame diff, and active-area rendering. See `dispatch-renderer/src/main/kotlin/com/ead/dispatch/render/TerminalRenderer.kt`.
 - `dispatch-layout`: Layout primitives (Row/Column/Box) and measure/placement policy. See `dispatch-layout/src/main/kotlin/com/ead/dispatch/layout/Layout.kt`.
 - `dispatch-widgets`: UI components built on layout/runtime. See `dispatch-widgets/src/main/kotlin/com/ead/dispatch/widget`.

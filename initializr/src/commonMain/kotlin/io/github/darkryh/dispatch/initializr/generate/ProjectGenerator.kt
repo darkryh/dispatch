@@ -38,7 +38,11 @@ object ProjectGenerator {
         }
 
         return StarterTemplate.files().map { file ->
-            TemplateFile(path = substitute(file.path), content = substitute(file.content))
+            TemplateFile(
+                path = substitute(file.path),
+                content = substitute(file.content),
+                executable = file.executable,
+            )
         }
     }
 

@@ -15,8 +15,8 @@ fun DispatchApplication(
 ```
 
 Boots the Dispatch runtime and runs `content` against a [`DispatchScope`](#dispatchscope). Call it
-directly from `main`; it blocks until the app exits and calls `exitProcess` with the resolved exit
-code.
+directly from `main`; it blocks until the app exits. On a non-zero exit code it calls `exitProcess`
+with that code; a clean (code 0) exit simply returns.
 
 **Parameters**
 

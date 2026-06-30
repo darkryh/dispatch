@@ -94,8 +94,12 @@ Hibernation writes diagnostics when `DISPATCH_DIAGNOSTICS_FILE` points at a file
 it set, stay idle past the timeout, then press a key:
 
 ```bash
-DISPATCH_DIAGNOSTICS_FILE=/tmp/dispatch-diag.jsonl ./gradlew run
+./gradlew installDist
+DISPATCH_DIAGNOSTICS_FILE=/tmp/dispatch-diag.jsonl ./build/install/<project>/bin/<project>
 ```
+
+(A Dispatch TUI needs a real terminal; `./gradlew run` would capture stdin/stdout and never wake on a
+keypress, so launch the installed binary. `<project>` is your Gradle project name.)
 
 ```bash
 grep hibernate /tmp/dispatch-diag.jsonl

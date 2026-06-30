@@ -263,9 +263,16 @@ fun App() {
 
 ## Step 9: Run it
 
+A Dispatch TUI needs a real terminal, which `./gradlew run` can't give it (Gradle captures stdin and
+stdout, so arrow keys and Enter never reach the app). Build a native launcher with `installDist` and
+run that:
+
 ```bash
-./gradlew run
+./gradlew installDist
+./build/install/<project>/bin/<project>
 ```
+
+`<project>` is your Gradle project name (the directory name unless you set `rootProject.name`).
 
 You should see the notes list:
 

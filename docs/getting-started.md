@@ -91,11 +91,16 @@ Two blocks do the work. `config { }` sets the app's name, version, theme, and th
 `content { }` names the root composable. `App` reads the current theme from `LocalTheme` and renders
 one styled line.
 
-Run it:
+Run it. A Dispatch app needs a real terminal (TTY), and `./gradlew run` doesn't provide one — Gradle
+captures stdin and stdout, so keypresses never reach the app and the display garbles. Build a native
+launcher with `installDist` and run that instead:
 
 ```bash
-./gradlew run
+./gradlew installDist
+./build/install/<project>/bin/<project>
 ```
+
+`<project>` is your Gradle project name — the directory name unless you set `rootProject.name`.
 
 You should see:
 
@@ -133,7 +138,7 @@ Add the `Modifier` import too:
 import com.ead.dispatch.modifier.Modifier
 ```
 
-Run again with `./gradlew run`. You should see:
+Rebuild and relaunch the same way — `./gradlew installDist` then `./build/install/<project>/bin/<project>`. You should see:
 
 ```
 Counter

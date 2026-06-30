@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Performance
 
-Pre-release optimization pass (see `OPTIMIZATION_PLAN.md`). All changes are byte-stream and
+Pre-release optimization pass. All changes are byte-stream and
 frame-timing neutral; the print-once / append-only render model and the screen-transition
 full-repaint behavior are unchanged.
 

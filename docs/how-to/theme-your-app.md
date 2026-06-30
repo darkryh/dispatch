@@ -57,10 +57,11 @@ import com.github.ajalt.mordant.rendering.TextColors.Companion.rgb
 import com.github.ajalt.mordant.rendering.TextStyle
 
 val brand = DispatchTheme.Dark.copy(
-    primary = TextStyle(rgb("#7AA2F7"), bold = true),
-    accent = TextStyle(rgb("#BB9AF7")),
-    success = TextStyle(rgb("#9ECE6A")),
-    error = TextStyle(rgb("#F7768E")),
+    // `rgb(...)` already returns a TextStyle; combine styles with `+` to add attributes like bold.
+    primary = rgb("#7AA2F7") + TextStyle(bold = true),
+    accent = rgb("#BB9AF7"),
+    success = rgb("#9ECE6A"),
+    error = rgb("#F7768E"),
 )
 
 fun main(args: Array<String>) =

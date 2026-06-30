@@ -16,6 +16,14 @@ object ZipArchive {
     private const val UTF8_FLAG = 0x0800
     private const val VERSION = 20
 
+    // "Version made by": high byte = host OS (3 = Unix), low byte = spec version. Declaring Unix is
+    // what lets the high 16 bits of the external attributes carry a Unix file mode that `unzip` honors.
+    private const val VERSION_MADE_BY_UNIX = (3 shl 8) or VERSION
+
+    // Unix modes packed into the high 16 bits of the external attributes: 0o100755 / 0o100644.
+    private const val MODE_EXECUTABLE = 0x81ED
+    private const val MODE_REGULAR = 0x81A4
+
     fun create(files: List<TemplateFile>): ByteArray {
         val out = ByteSink()
         val central = ByteSink()
@@ -26,6 +34,8 @@ object ZipArchive {
             val data = file.content.encodeToByteArray()
             val crc = Crc32.compute(data)
             val offset = out.size
+            val mode = if (file.executable) MODE_EXECUTABLE else MODE_REGULAR
+            val externalAttrs = mode.toLong() shl 16
 
             // ---- Local file header ----
             out.u32(0x04034B50)
@@ -44,7 +54,7 @@ object ZipArchive {
 
             // ---- Central directory header (buffered, appended after all entries) ----
             central.u32(0x02014B50)
-            central.u16(VERSION) // version made by
+            central.u16(VERSION_MADE_BY_UNIX) // version made by (Unix host → mode bits honored)
             central.u16(VERSION) // version needed
             central.u16(UTF8_FLAG)
             central.u16(0) // compression
@@ -58,7 +68,7 @@ object ZipArchive {
             central.u16(0) // comment length
             central.u16(0) // disk number start
             central.u16(0) // internal attrs
-            central.u32(0) // external attrs
+            central.u32(externalAttrs) // external attrs: Unix mode in the high 16 bits
             central.u32(offset.toLong())
             central.raw(nameBytes)
 
