@@ -19,17 +19,17 @@ enum class CatalogDestination(
     val blurb: String,
     val route: NavKey,
 ) {
-    INPUTS("Inputs", "⌨", "Text & password", InputsRoute),
-    BUTTONS("Buttons & Selection", "⏺", "Buttons & toggles", ButtonsRoute),
-    LISTS("Lists", "☰", "Scrollable lists", ListsRoute),
-    TABLES("Tables & Grid", "▦", "Grid & tables", TablesRoute),
-    HIERARCHY("Hierarchy & Command", "⌥", "Tree & commands", HierarchyRoute),
+    INPUTS("Inputs", "▦", "Text & password fields", InputsRoute),
+    BUTTONS("Buttons & Selection", "●", "Buttons & toggle sets", ButtonsRoute),
+    LISTS("Lists", "±", "Scrollable item lists", ListsRoute),
+    TABLES("Tables & Grid", "▦", "Grids & data tables", TablesRoute),
+    HIERARCHY("Hierarchy & Command", "⌥", "Trees & command menus", HierarchyRoute),
     TASKS("Checklist & Tasks", "✔", "Checklists & tasks", TasksRoute),
-    PROGRESS("Progress", "◴", "Bars & spinners", ProgressRoute),
-    SURFACES("Surfaces & Dividers", "▭", "Panels & dividers", SurfacesRoute),
-    LAYOUT("Layout", "▤", "Boxes & flows", LayoutRoute),
-    REVIEW("Diff & Review", "±", "File diffs", ReviewRoute),
-    CHAT("Chat", "💬", "Streaming chat", ChatRoute()),
+    PROGRESS("Progress", "◴", "Progress & spinners", ProgressRoute),
+    SURFACES("Surfaces & Dividers", "▭", "Panels, cards & rules", SurfacesRoute),
+    LAYOUT("Layout", "▤", "Boxes, rows & flows", LayoutRoute),
+    REVIEW("Diff & Review", "±", "File diffs & review", ReviewRoute),
+    CHAT("Chat", "💬", "Live streaming chat", ChatRoute()),
     ;
 
     companion object {

@@ -120,7 +120,7 @@ class TerminalApplicationStressTest {
         terminal: PtyTerminalSession,
         after: Int,
     ) {
-        terminal.awaitText("Chat — Streaming", after = after)
+        terminal.awaitText("Chat — Live streaming", after = after)
     }
 
     private fun collectPostGcHeap(

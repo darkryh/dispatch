@@ -17,6 +17,7 @@ import com.ead.dispatch.sample.navigation.CatalogDestination
 import com.ead.dispatch.widget.Panel
 import com.ead.dispatch.widget.Text
 import com.github.ajalt.mordant.rendering.TextAlign
+import com.github.ajalt.mordant.rendering.TextStyles
 
 /** Fixed width of one launcher card. [CatalogDestination.COLUMNS] of these plus gaps form the menu block. */
 private const val CARD_WIDTH = 24
@@ -70,19 +71,22 @@ private fun LauncherCard(
     isSelected: Boolean,
 ) {
     val theme = LocalTheme.current
-    val titleStyle = if (isSelected) theme.accent else theme.primary
+    val titleStyle = (if (isSelected) theme.accent else theme.primary) + TextStyles.bold.style
     Panel(
         modifier = Modifier.width(CARD_WIDTH),
         borderStyle = if (isSelected) BorderStyle.Heavy else BorderStyle.Rounded,
     ) {
         Column(modifier = Modifier.fillMaxWidth()) {
+            Spacer(Modifier.height(1))
             Text(
                 "${destination.glyph} ${destination.title}",
                 align = TextAlign.CENTER,
                 modifier = Modifier.fillMaxWidth(),
                 style = titleStyle,
             )
+            Spacer(Modifier.height(1))
             Text(destination.blurb, align = TextAlign.CENTER, modifier = Modifier.fillMaxWidth(), style = theme.muted)
+            Spacer(Modifier.height(1))
         }
     }
 }

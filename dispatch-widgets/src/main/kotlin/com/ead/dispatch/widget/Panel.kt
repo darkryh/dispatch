@@ -10,6 +10,7 @@ import com.ead.dispatch.modifier.BorderStyle
 import com.ead.dispatch.modifier.Modifier
 import com.ead.dispatch.modifier.applyToConstraints
 import com.ead.dispatch.runtime.LocalTerminal
+import com.ead.dispatch.runtime.LocalTheme
 import com.ead.dispatch.runtime.composableContainer
 import com.github.ajalt.mordant.rendering.BorderType
 import com.github.ajalt.mordant.rendering.TextStyle
@@ -47,11 +48,15 @@ fun Panel(
     content: @Composable () -> Unit,
 ) {
     val terminal = LocalTerminal.current
+    // Mordant's Panel `borderStyle` (passed below as titleTextStyle) colors the border characters.
+    // Default it to the theme's border token so panel borders follow the active theme instead of
+    // rendering at the terminal's default foreground; an explicit `titleStyle` still overrides.
+    val resolvedBorderTextStyle = titleStyle ?: LocalTheme.current.border
     composableContainer(
         name = "Panel",
         modifier = modifier,
         measurableFactory = { children ->
-            PanelMeasurable(modifier, title, borderStyle, children, terminal, titleStyle, expand)
+            PanelMeasurable(modifier, title, borderStyle, children, terminal, resolvedBorderTextStyle, expand)
         },
         content = content,
     )

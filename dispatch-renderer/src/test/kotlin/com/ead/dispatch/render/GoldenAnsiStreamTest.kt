@@ -152,10 +152,11 @@ class GoldenAnsiStreamTest {
         )
         val out = delta(recorder, before)
 
-        // Trace: CLEAR_SCROLLBACK (clearScrollback=true) -> CURSOR_HOME -> \r CLEAR_LINE H1 \n ->
+        // Trace: CLEAR_SCROLLBACK (clearScrollback=true) -> CURSOR_HOME -> CLEAR_TO_END (full
+        // visible-screen wipe so a scrolled previous screen cannot ghost) -> \r CLEAR_LINE H1 \n ->
         // \r CLEAR_LINE >in (last, no \n) -> clear rows 3..24 -> moveTo(2,1).
         val expected =
-            AnsiCodes.CLEAR_SCROLLBACK + AnsiCodes.CURSOR_HOME +
+            AnsiCodes.CLEAR_SCROLLBACK + AnsiCodes.CURSOR_HOME + AnsiCodes.CLEAR_TO_END +
                 CR + CL + "H1" + LF +
                 CR + CL + ">in" +
                 trailingRowClears(3, 24) + // contentLineCount=2 -> firstBlankRow=3, height=24

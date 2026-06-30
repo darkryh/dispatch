@@ -129,11 +129,12 @@ class GoldenAnsiEdgeCaseTest {
         renderer.rewriteViewport(scrollingLines = emptyList(), activeLines = emptyList())
         val out = delta(recorder, before)
 
-        // Trace: clearScrollback defaults true -> CLEAR_SCROLLBACK + CURSOR_HOME. contentLineCount=0
+        // Trace: clearScrollback defaults true -> CLEAR_SCROLLBACK + CURSOR_HOME + CLEAR_TO_END
+        // (full visible-screen wipe so a scrolled previous screen cannot ghost). contentLineCount=0
         // -> no body. clearViewportRowsAfter(0): firstBlankRow=1 -> clear rows 1..24. No final moveTo
         // (contentLineCount==0).
         val expected =
-            AnsiCodes.CLEAR_SCROLLBACK + AnsiCodes.CURSOR_HOME +
+            AnsiCodes.CLEAR_SCROLLBACK + AnsiCodes.CURSOR_HOME + AnsiCodes.CLEAR_TO_END +
                 trailingRowClears(1, 24)
         assertEquals(expected, out, visualizeEscapes(out))
         assertFalse(out.contains(AnsiCodes.CLEAR_SCREEN))

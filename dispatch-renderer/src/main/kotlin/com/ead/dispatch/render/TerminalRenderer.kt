@@ -88,11 +88,24 @@ class TerminalRenderer(
         renderLock.withLock {
             val buffer = scratch()
             if (clearScrollback) {
-                // Keep the visible viewport intact. Rows are replaced below before obsolete
-                // trailing rows are erased, so the terminal never observes a blank frame.
                 buffer.append(AnsiCodes.CLEAR_SCROLLBACK)
             }
             buffer.append(AnsiCodes.CURSOR_HOME)
+            if (clearScrollback) {
+                // Screen transition / content reset: wipe the whole visible screen from the
+                // top-left before repainting. The per-line CLEAR_LINE below and
+                // clearViewportRowsAfter only erase rows the *new* frame addresses; but this app
+                // renders inline (no alternate screen buffer) and CURSOR_HOME is an absolute move
+                // to physical row 1. If the terminal scrolled while the previous, taller screen
+                // was visible, that screen's rows now sit at physical offsets the new frame never
+                // overwrites — leaving ghost fragments (the cross-screen residue seen on short
+                // terminal windows). CLEAR_TO_END erases to end-of-screen independent of any
+                // scroll offset. It is emitted in the same atomic buffer as the repaint that
+                // immediately follows, so the terminal never composites a blank frame; and it is
+                // gated on clearScrollback, so same-screen overlay rewrites keep their
+                // flicker-free per-line diff path.
+                buffer.append(AnsiCodes.CLEAR_TO_END)
+            }
             val contentLineCount = scrollingLines.size + activeLines.size
             appendViewportLinesWithoutTrailingNewline(buffer, scrollingLines, activeLines)
             clearViewportRowsAfter(buffer, contentLineCount)
@@ -350,6 +363,7 @@ class TerminalRenderer(
                         "bytes" to buffer.toString().toByteArray(Charsets.UTF_8).size,
                         "chars" to buffer.length,
                         "clearScreen" to buffer.contains(AnsiCodes.CLEAR_SCREEN),
+                        "clearToEnd" to buffer.contains(AnsiCodes.CLEAR_TO_END),
                         "clearScrollback" to buffer.contains(AnsiCodes.CLEAR_SCROLLBACK),
                         "clearLines" to buffer.countOccurrences(AnsiCodes.CLEAR_LINE),
                         "durationNanos" to System.nanoTime() - startedAt,

@@ -122,15 +122,22 @@ data class DispatchTheme(
         val Dark = DispatchTheme(
             primary = TextColors.brightWhite,
             secondary = TextColors.cyan,
-            muted = TextColors.gray,
+            // muted/border were TextColors.gray (ANSI bright-black, ~#686868) — only ~2.3:1 against a
+            // dark background, so blurbs, instruction text and card borders looked washed out on the
+            // native terminal. These light cool-grays read clearly on dark backgrounds (muted ~7:1,
+            // border ~4.3:1) while staying visually subordinate to brightWhite primary. Mordant
+            // downsamples them to the terminal's palette (e.g. macOS Terminal's 256 colors).
+            muted = TextColors.rgb("#AAB2BD"),
             accent = TextColors.brightCyan,
             success = TextColors.green,
             warning = TextColors.yellow,
-            error = TextColors.red,
-            info = TextColors.blue,
+            // On black, pure red (3.6:1) and pure blue (2.1:1) are below AA. Brighten to keep the
+            // hue while clearing the 4.5:1 text threshold (brightRed ~7.7:1, this blue ~6.7:1).
+            error = TextColors.brightRed,
+            info = TextColors.rgb("#5C8CFF"),
             code = TextColors.brightYellow,
             link = TextColors.brightBlue + TextStyles.underline,
-            border = TextColors.gray,
+            border = TextColors.rgb("#7E8794"),
             cursor = TextStyle(inverse = true),
             selection = TextColors.black on TextColors.white,
         )
@@ -139,15 +146,18 @@ data class DispatchTheme(
          * Light theme.
          */
         val Light = DispatchTheme(
+            // On a white background, muted/border gray (~5.6:1) read fine, but the standard ANSI
+            // accent/success/warning/code are intrinsically too light (cyan 2.1:1, green 2.4:1,
+            // yellow 1.9:1, magenta 4.4:1). Darken those — same hue family — to clear AA on white.
             primary = TextColors.black,
             secondary = TextColors.blue,
             muted = TextColors.gray,
-            accent = TextColors.cyan,
-            success = TextColors.green,
-            warning = TextColors.yellow,
+            accent = TextColors.rgb("#007D7E"),
+            success = TextColors.rgb("#007A00"),
+            warning = TextColors.rgb("#767400"),
             error = TextColors.red,
             info = TextColors.blue,
-            code = TextColors.magenta,
+            code = TextColors.rgb("#A800A6"),
             link = TextColors.blue + TextStyles.underline,
             border = TextColors.gray,
             cursor = TextStyle(inverse = true),

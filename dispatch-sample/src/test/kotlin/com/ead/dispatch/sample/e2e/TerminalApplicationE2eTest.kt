@@ -248,6 +248,58 @@ class TerminalApplicationE2eTest {
     }
 
     @Test
+    fun `navigating back on a short terminal wipes the previous screen leaving no residue`() {
+        // lines=20 mirrors a short macOS Terminal window: the launcher grid and sub-screens are
+        // taller than the viewport, so the terminal scrolls. Under scroll, the previous screen's
+        // rows sit at physical offsets that an absolute-home repaint never re-addresses — the
+        // ghost fragments seen on Terminal.app but never in a tall IDE pane (which never scrolls).
+        // Every screen transition must therefore wipe the whole visible screen, not just the rows
+        // the new frame happens to paint.
+        PtyTerminalSession.start("navigation-residue-short", columns = 120, lines = 20).use { terminal ->
+            terminal.awaitText(HOME_TITLE)
+
+            repeat(3) {
+                val enterStart = terminal.checkpoint()
+                // Launcher cursor rests on the first card (Inputs); Enter opens it.
+                terminal.sendEnter()
+                terminal.awaitText("$BANNER Inputs", after = enterStart)
+
+                val backStart = terminal.checkpoint()
+                val diagnosticsStart = terminal.diagnosticCheckpoint()
+                terminal.sendEscape()
+                terminal.awaitText("$BANNER $HOME_TITLE", after = backStart)
+                terminal.awaitQuiet()
+
+                val diagnostics = terminal.diagnosticEvents(diagnosticsStart)
+                val transitionWrites =
+                    diagnostics
+                        .lineSequence()
+                        .filter {
+                            it.contains("\"event\":\"terminal_write\"") &&
+                                it.contains("\"operation\":\"rewrite_viewport\"") &&
+                                it.contains("\"clearScrollback\":true")
+                        }.toList()
+                assertTrue(
+                    transitionWrites.isNotEmpty(),
+                    "Back navigation recorded no screen-transition rewrite: $diagnostics",
+                )
+                // The transition must clear the visible screen to its end so no previous-screen row
+                // can survive at a scrolled offset...
+                assertTrue(
+                    transitionWrites.all { it.contains("\"clearToEnd\":true") },
+                    "Screen-transition rewrite did not wipe the visible screen — previous-screen rows can ghost: $transitionWrites",
+                )
+                // ...yet it must NOT use a full ESC[2J blanking clear-screen (that flickers and the
+                // inline scrollback model is deliberately preserved).
+                assertFalse(
+                    diagnostics.contains("\"clearScreen\":true"),
+                    "Transition emitted a blanking clear-screen instead of an in-place wipe: $diagnostics",
+                )
+            }
+        }
+    }
+
+    @Test
     fun `animated gallery remains non blanking at compact and wide PTY sizes`() {
         listOf(80 to 24, 160 to 50).forEach { (columns, lines) ->
             PtyTerminalSession.start("progress-${columns}x$lines", columns = columns, lines = lines).use { terminal ->
@@ -317,7 +369,7 @@ class TerminalApplicationE2eTest {
         terminal: PtyTerminalSession,
         after: Int,
     ) {
-        terminal.awaitText("Chat — Streaming", after = after)
+        terminal.awaitText("Chat — Live streaming", after = after)
     }
 
     private fun openProgress(terminal: PtyTerminalSession) {
