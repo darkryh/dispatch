@@ -20,9 +20,10 @@ object ViewModelStore {
     private val viewModels = mutableMapOf<String, ViewModel>()
 
     @Suppress("UNCHECKED_CAST")
-    fun <T : ViewModel> getOrCreate(key: String, factory: () -> T): T {
-        return viewModels.getOrPut(key) { factory() } as T
-    }
+    fun <T : ViewModel> getOrCreate(
+        key: String,
+        factory: () -> T,
+    ): T = viewModels.getOrPut(key) { factory() } as T
 
     fun clear() {
         viewModels.values.forEach { it.clear() }
@@ -41,8 +42,8 @@ object ViewModelStore {
  */
 @Composable
 inline fun <reified T : ViewModel> viewModel(
-    key: String = "${T::class.java.name}#${currentCompositeKeyHashCode}",
-    noinline factory: () -> T
+    key: String = "${T::class.java.name}#$currentCompositeKeyHashCode",
+    noinline factory: () -> T,
 ): T {
     val provider = LocalViewModelProvider.current
     return provider?.get(T::class, key) ?: remember(key) {
@@ -57,7 +58,7 @@ inline fun <reified T : ViewModel> viewModel(
  */
 @Composable
 inline fun <reified T : ViewModel> viewModel(): T {
-    val key = "${T::class.java.name}#${currentCompositeKeyHashCode}"
+    val key = "${T::class.java.name}#$currentCompositeKeyHashCode"
     val provider = LocalViewModelProvider.current
     return provider?.get(T::class, key)
         ?: remember(key) {

@@ -9,7 +9,10 @@ internal object WorkspaceLog {
     private val enabled: Boolean =
         System.getProperty("dispatch.workspace.debug")?.toBoolean() == true
 
-    fun debug(message: String, throwable: Throwable? = null) {
+    fun debug(
+        message: String,
+        throwable: Throwable? = null,
+    ) {
         if (!enabled) return
         System.err.println("[dispatch-workspace] $message")
         throwable?.printStackTrace()

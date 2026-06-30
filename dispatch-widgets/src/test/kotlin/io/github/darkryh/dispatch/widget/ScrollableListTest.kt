@@ -2,6 +2,8 @@ package io.github.darkryh.dispatch.widget
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import com.github.ajalt.mordant.rendering.AnsiLevel
+import com.github.ajalt.mordant.terminal.Terminal
 import io.github.darkryh.dispatch.constraints.Constraints
 import io.github.darkryh.dispatch.modifier.Modifier
 import io.github.darkryh.dispatch.modifier.height
@@ -14,8 +16,6 @@ import io.github.darkryh.dispatch.runtime.LocalTerminal
 import io.github.darkryh.dispatch.runtime.LocalTerminalHeight
 import io.github.darkryh.dispatch.runtime.LocalTerminalWidth
 import io.github.darkryh.dispatch.runtime.withComposer
-import com.github.ajalt.mordant.rendering.AnsiLevel
-import com.github.ajalt.mordant.terminal.Terminal
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue

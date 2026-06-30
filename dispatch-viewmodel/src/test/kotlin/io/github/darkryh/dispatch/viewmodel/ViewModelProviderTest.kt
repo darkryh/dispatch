@@ -1,17 +1,17 @@
 package io.github.darkryh.dispatch.viewmodel
 
-import kotlin.test.Test
-import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertNotSame
-import kotlin.test.assertSame
-import kotlin.test.assertTrue
 import io.github.darkryh.dispatch.runtime.SavedStateHandle
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertFalse
+import kotlin.test.assertNotSame
+import kotlin.test.assertSame
+import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.seconds
 
 class ViewModelProviderTest {
@@ -83,9 +83,10 @@ class ViewModelProviderTest {
 
     @Test
     fun `custom factory supplies instances`() {
-        val factory = viewModelFactory {
-            add { TestViewModel() }
-        }
+        val factory =
+            viewModelFactory {
+                add { TestViewModel() }
+            }
         val provider = ViewModelProvider(factory)
 
         val model = provider.get(TestViewModel::class)
@@ -96,21 +97,22 @@ class ViewModelProviderTest {
     @Test
     fun `provider uses saved state factory when handle is provided`() {
         val handle = SavedStateHandle().apply { this["key"] = "value" }
-        val factory = object : SavedStateViewModelFactory {
-            var lastHandle: SavedStateHandle? = null
+        val factory =
+            object : SavedStateViewModelFactory {
+                var lastHandle: SavedStateHandle? = null
 
-            @Suppress("UNCHECKED_CAST")
-            override fun <T : ViewModel> create(modelClass: kotlin.reflect.KClass<T>): T = TestViewModel() as T
+                @Suppress("UNCHECKED_CAST")
+                override fun <T : ViewModel> create(modelClass: kotlin.reflect.KClass<T>): T = TestViewModel() as T
 
-            @Suppress("UNCHECKED_CAST")
-            override fun <T : ViewModel> create(
-                modelClass: kotlin.reflect.KClass<T>,
-                savedStateHandle: SavedStateHandle,
-            ): T {
-                lastHandle = savedStateHandle
-                return TestViewModel() as T
+                @Suppress("UNCHECKED_CAST")
+                override fun <T : ViewModel> create(
+                    modelClass: kotlin.reflect.KClass<T>,
+                    savedStateHandle: SavedStateHandle,
+                ): T {
+                    lastHandle = savedStateHandle
+                    return TestViewModel() as T
+                }
             }
-        }
 
         val provider = ViewModelProvider(factory, handle)
         provider.get(TestViewModel::class)
@@ -119,22 +121,23 @@ class ViewModelProviderTest {
     }
 
     @Test
-    fun `clear cancels all child viewmodel scopes`() = runBlocking {
-        val provider = ViewModelProvider()
-        val first = provider.get(ScopedViewModel::class, "a")
-        val second = provider.get(ScopedViewModel::class, "b")
+    fun `clear cancels all child viewmodel scopes`() =
+        runBlocking {
+            val provider = ViewModelProvider()
+            val first = provider.get(ScopedViewModel::class, "a")
+            val second = provider.get(ScopedViewModel::class, "b")
 
-        provider.clear()
+            provider.clear()
 
-        assertTrue(first.isCleared)
-        assertTrue(second.isCleared)
-        withTimeout(1.seconds) {
-            first.job.join()
-            second.job.join()
+            assertTrue(first.isCleared)
+            assertTrue(second.isCleared)
+            withTimeout(1.seconds) {
+                first.job.join()
+                second.job.join()
+            }
+            assertTrue(first.job.isCancelled)
+            assertTrue(second.job.isCancelled)
         }
-        assertTrue(first.job.isCancelled)
-        assertTrue(second.job.isCancelled)
-    }
 
     @Test
     fun `type mismatch on same key clears displaced instance`() {

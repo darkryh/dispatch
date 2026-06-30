@@ -3,6 +3,7 @@ package io.github.darkryh.dispatch.widget
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
+import com.github.ajalt.mordant.rendering.TextStyle
 import io.github.darkryh.dispatch.constraints.Constraints
 import io.github.darkryh.dispatch.input.Key
 import io.github.darkryh.dispatch.input.asKeyEvent
@@ -19,7 +20,6 @@ import io.github.darkryh.dispatch.runtime.LocalTheme
 import io.github.darkryh.dispatch.runtime.composableContainer
 import io.github.darkryh.dispatch.runtime.composableWidget
 import io.github.darkryh.dispatch.runtime.rememberCallback
-import com.github.ajalt.mordant.rendering.TextStyle
 
 /**
  * A clickable button.

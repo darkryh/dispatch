@@ -15,8 +15,8 @@ class GithubReleaseUpdateProvider private constructor(
     private val tagPrefixToTrim: String?,
     clientFactory: () -> HttpClient,
     private val ownsClient: Boolean,
-) : UpdateProvider, AutoCloseable {
-
+) : UpdateProvider,
+    AutoCloseable {
     // The client (and, for the default path, its CIO selector/worker threads) is created on first
     // fetch rather than at construction, so a provider whose update check is throttled away never
     // spins one up. close() only touches it if it was actually initialized.
@@ -65,17 +65,17 @@ class GithubReleaseUpdateProvider private constructor(
         }
     }
 
-    private fun extractTag(payload: String): String? =
-        TAG_REGEX.find(payload)?.groupValues?.getOrNull(1)
+    private fun extractTag(payload: String): String? = TAG_REGEX.find(payload)?.groupValues?.getOrNull(1)
 
     private suspend fun fetch(url: String): String? =
         runCatching {
-            val response = client.get(url) {
-                headers {
-                    append(HttpHeaders.Accept, "application/vnd.github+json")
-                    append(HttpHeaders.UserAgent, "dispatch-update")
+            val response =
+                client.get(url) {
+                    headers {
+                        append(HttpHeaders.Accept, "application/vnd.github+json")
+                        append(HttpHeaders.UserAgent, "dispatch-update")
+                    }
                 }
-            }
             if (!response.status.isSuccess()) return null
             response.bodyAsText()
         }.getOrElse { error ->

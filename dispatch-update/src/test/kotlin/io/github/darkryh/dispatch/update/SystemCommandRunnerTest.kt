@@ -10,7 +10,12 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 class SystemCommandRunnerTest {
-    private val isWindows = System.getProperty("os.name").orEmpty().lowercase().contains("win")
+    private val isWindows =
+        System
+            .getProperty("os.name")
+            .orEmpty()
+            .lowercase()
+            .contains("win")
 
     @Test
     fun `non existent command returns minus one without throwing`() {
@@ -43,10 +48,11 @@ class SystemCommandRunnerTest {
         val script = "i=0; while [ \$i -lt 20000 ]; do echo \"line-\$i\" 1>&2; i=\$((i+1)); done"
         val finished = AtomicReference<CommandResult?>(null)
         val latch = CountDownLatch(1)
-        val worker = Thread {
-            finished.set(runner.run("/bin/sh", "-c", script))
-            latch.countDown()
-        }
+        val worker =
+            Thread {
+                finished.set(runner.run("/bin/sh", "-c", script))
+                latch.countDown()
+            }
         worker.start()
 
         assertTrue(latch.await(20, TimeUnit.SECONDS), "command deadlocked draining stderr")
@@ -63,12 +69,13 @@ class SystemCommandRunnerTest {
         val interruptObserved = AtomicReference(false)
         val done = CountDownLatch(1)
 
-        val worker = Thread {
-            // sleep 30s child; the worker thread is interrupted while waitFor() blocks.
-            runner.run("/bin/sh", "-c", "sleep 30")
-            interruptObserved.set(Thread.currentThread().isInterrupted)
-            done.countDown()
-        }
+        val worker =
+            Thread {
+                // sleep 30s child; the worker thread is interrupted while waitFor() blocks.
+                runner.run("/bin/sh", "-c", "sleep 30")
+                interruptObserved.set(Thread.currentThread().isInterrupted)
+                done.countDown()
+            }
         worker.start()
         // Give the process time to start.
         Thread.sleep(500)

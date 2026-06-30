@@ -47,22 +47,25 @@ class UpdateCheckThrottleTest {
     }
 
     @Test
-    fun `provider latestVersion invoked only once across remounts`() = runBlocking {
-        // Simulates the LaunchedEffect body running twice within the throttle window (as on a
-        // remount). With the throttle persisted outside composition, the provider must be hit once.
-        val provider = CountingProvider("9.9.9")
-        val interval = 24.hours
+    fun `provider latestVersion invoked only once across remounts`() =
+        runBlocking {
+            // Simulates the LaunchedEffect body running twice within the throttle window (as on a
+            // remount). With the throttle persisted outside composition, the provider must be hit once.
+            val provider = CountingProvider("9.9.9")
+            val interval = 24.hours
 
-        repeat(2) {
-            if (UpdateCheckThrottle.shouldCheck("1.0.0", interval, now = 0)) {
-                provider.latestVersion()
+            repeat(2) {
+                if (UpdateCheckThrottle.shouldCheck("1.0.0", interval, now = 0)) {
+                    provider.latestVersion()
+                }
             }
+
+            assertEquals(1, provider.invocations)
         }
 
-        assertEquals(1, provider.invocations)
-    }
-
-    private class CountingProvider(private val version: String?) : UpdateProvider {
+    private class CountingProvider(
+        private val version: String?,
+    ) : UpdateProvider {
         var invocations = 0
             private set
 

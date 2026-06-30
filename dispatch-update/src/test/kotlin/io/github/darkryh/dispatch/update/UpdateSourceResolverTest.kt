@@ -6,11 +6,12 @@ import kotlin.test.assertEquals
 class UpdateSourceResolverTest {
     @Test
     fun `detects homebrew install`() {
-        val env = FakeUpdateEnvironment(
-            os = OperatingSystem.MAC,
-            pathEntries = listOf("/opt/homebrew/bin"),
-            existingPaths = setOf("/opt/homebrew/bin/brew"),
-        )
+        val env =
+            FakeUpdateEnvironment(
+                os = OperatingSystem.MAC,
+                pathEntries = listOf("/opt/homebrew/bin"),
+                existingPaths = setOf("/opt/homebrew/bin/brew"),
+            )
 
         val resolver = DefaultUpdateSourceResolver()
         val source = resolver.resolve("xtory", UpdateConfig(), env)
@@ -19,11 +20,12 @@ class UpdateSourceResolverTest {
 
     @Test
     fun `detects scoop install`() {
-        val env = FakeUpdateEnvironment(
-            os = OperatingSystem.WINDOWS,
-            pathEntries = listOf("C:\\Users\\me\\scoop\\shims"),
-            existingPaths = setOf("C:\\Users\\me\\scoop\\shims\\scoop.exe"),
-        )
+        val env =
+            FakeUpdateEnvironment(
+                os = OperatingSystem.WINDOWS,
+                pathEntries = listOf("C:\\Users\\me\\scoop\\shims"),
+                existingPaths = setOf("C:\\Users\\me\\scoop\\shims\\scoop.exe"),
+            )
 
         val resolver = DefaultUpdateSourceResolver()
         val source = resolver.resolve("xtory", UpdateConfig(), env)
@@ -32,11 +34,12 @@ class UpdateSourceResolverTest {
 
     @Test
     fun `detects apt install`() {
-        val env = FakeUpdateEnvironment(
-            os = OperatingSystem.LINUX,
-            pathEntries = listOf("/usr/bin"),
-            existingPaths = setOf("/usr/bin/apt"),
-        )
+        val env =
+            FakeUpdateEnvironment(
+                os = OperatingSystem.LINUX,
+                pathEntries = listOf("/usr/bin"),
+                existingPaths = setOf("/usr/bin/apt"),
+            )
 
         val resolver = DefaultUpdateSourceResolver()
         val source = resolver.resolve("xtory", UpdateConfig(), env)
@@ -45,11 +48,12 @@ class UpdateSourceResolverTest {
 
     @Test
     fun `falls back to manual install`() {
-        val env = FakeUpdateEnvironment(
-            os = OperatingSystem.LINUX,
-            pathEntries = listOf("/usr/bin"),
-            existingPaths = emptySet(),
-        )
+        val env =
+            FakeUpdateEnvironment(
+                os = OperatingSystem.LINUX,
+                pathEntries = listOf("/usr/bin"),
+                existingPaths = emptySet(),
+            )
 
         val resolver = DefaultUpdateSourceResolver()
         val source = resolver.resolve("xtory", UpdateConfig(), env)
@@ -70,12 +74,8 @@ class UpdateSourceResolverTest {
             return existingPaths.any { normalize(it) == normalized }
         }
 
-        override fun toString(): String {
-            return "FakeUpdateEnvironment(os=$os)"
-        }
+        override fun toString(): String = "FakeUpdateEnvironment(os=$os)"
 
-        private fun normalize(value: String): String {
-            return value.replace("\\", "/")
-        }
+        private fun normalize(value: String): String = value.replace("\\", "/")
     }
 }

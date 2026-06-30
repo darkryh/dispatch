@@ -87,9 +87,9 @@ internal class TransferProgressMeasurable(
 
     private fun formatBytes(bytes: Long): String =
         when {
-            bytes >= 1_000_000_000 -> String.format("%.1fGB", bytes / 1_000_000_000.0)
-            bytes >= 1_000_000 -> String.format("%.1fMB", bytes / 1_000_000.0)
-            bytes >= 1_000 -> String.format("%.1fKB", bytes / 1_000.0)
+            bytes >= 1_000_000_000 -> String.format(java.util.Locale.ROOT, "%.1fGB", bytes / 1_000_000_000.0)
+            bytes >= 1_000_000 -> String.format(java.util.Locale.ROOT, "%.1fMB", bytes / 1_000_000.0)
+            bytes >= 1_000 -> String.format(java.util.Locale.ROOT, "%.1fKB", bytes / 1_000.0)
             else -> "${bytes}B"
         }
 }

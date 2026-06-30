@@ -5,6 +5,7 @@ package io.github.darkryh.dispatch.sample.presentation.surfaces
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import com.github.ajalt.mordant.rendering.TextColors.Companion.rgb
 import io.github.darkryh.dispatch.layout.Column
 import io.github.darkryh.dispatch.layout.Row
 import io.github.darkryh.dispatch.layout.Spacer
@@ -32,7 +33,6 @@ import io.github.darkryh.dispatch.widget.SurfaceStyle
 import io.github.darkryh.dispatch.widget.Text
 import io.github.darkryh.dispatch.widget.TextOverflow
 import io.github.darkryh.dispatch.widget.VerticalDivider
-import com.github.ajalt.mordant.rendering.TextColors.Companion.rgb
 
 /**
  * Surfaces & Dividers playground.

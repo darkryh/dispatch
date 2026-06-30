@@ -1,14 +1,16 @@
+@file:Suppress("UnusedImports") // detekt mis-flags the lambda-form `Flow.collect` extension import
+
 package io.github.darkryh.dispatch.workspace
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.LaunchedEffect
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.collect
 
@@ -16,14 +18,12 @@ val LocalWorkspaceWatcher = compositionLocalOf<WorkspaceWatcher?> { null }
 val LocalWorkspaceConfig = compositionLocalOf<WorkspaceWatchConfig?> { null }
 
 @Composable
-fun requireWorkspaceWatcher(): WorkspaceWatcher {
-    return LocalWorkspaceWatcher.current ?: error("No WorkspaceWatcher provided. Wrap your UI in WorkspaceProvider.")
-}
+fun requireWorkspaceWatcher(): WorkspaceWatcher =
+    LocalWorkspaceWatcher.current ?: error("No WorkspaceWatcher provided. Wrap your UI in WorkspaceProvider.")
 
 @Composable
-fun requireWorkspaceConfig(): WorkspaceWatchConfig {
-    return LocalWorkspaceConfig.current ?: error("No WorkspaceWatchConfig provided. Wrap your UI in WorkspaceProvider.")
-}
+fun requireWorkspaceConfig(): WorkspaceWatchConfig =
+    LocalWorkspaceConfig.current ?: error("No WorkspaceWatchConfig provided. Wrap your UI in WorkspaceProvider.")
 
 @Composable
 fun WorkspaceProvider(
@@ -50,9 +50,7 @@ fun rememberWorkspaceWatcher(config: WorkspaceWatchConfig): WorkspaceWatcher {
 }
 
 @Composable
-fun rememberWorkspaceEvents(config: WorkspaceWatchConfig): SharedFlow<WorkspaceEvent> {
-    return rememberWorkspaceWatcher(config).events
-}
+fun rememberWorkspaceEvents(config: WorkspaceWatchConfig): SharedFlow<WorkspaceEvent> = rememberWorkspaceWatcher(config).events
 
 data class WorkspaceState(
     val latestEvent: WorkspaceEvent? = null,
@@ -67,11 +65,12 @@ fun rememberWorkspaceState(config: WorkspaceWatchConfig): WorkspaceState {
 
     LaunchedEffect(watcher) {
         watcher.events.collect { event ->
-            state = WorkspaceState(
-                latestEvent = event,
-                lastEventAt = event.timestamp,
-                hasPendingChanges = true,
-            )
+            state =
+                WorkspaceState(
+                    latestEvent = event,
+                    lastEventAt = event.timestamp,
+                    hasPendingChanges = true,
+                )
         }
     }
 

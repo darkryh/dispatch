@@ -5,6 +5,7 @@ package io.github.darkryh.dispatch.sample.presentation.tables
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import com.github.ajalt.mordant.rendering.TextAlign
 import io.github.darkryh.dispatch.layout.Column
 import io.github.darkryh.dispatch.layout.Spacer
 import io.github.darkryh.dispatch.modifier.Modifier
@@ -25,7 +26,6 @@ import io.github.darkryh.dispatch.widget.TableColumn
 import io.github.darkryh.dispatch.widget.TableColumnWidth
 import io.github.darkryh.dispatch.widget.Text
 import io.github.darkryh.dispatch.widget.rememberTableState
-import com.github.ajalt.mordant.rendering.TextAlign
 
 /**
  * Tables & Grid playground.

@@ -31,7 +31,7 @@ fun <T> SelectableWindowedList(
 }
 
 /** Result of [computeWindowSlice]: the visible slice plus its absolute start offset. */
-public data class WindowSlice<T>(
+data class WindowSlice<T>(
     val window: List<T>,
     val localSelected: Int,
     val startIndex: Int,

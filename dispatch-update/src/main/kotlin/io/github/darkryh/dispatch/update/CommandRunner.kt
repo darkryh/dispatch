@@ -20,9 +20,10 @@ internal class SystemCommandRunner : CommandRunner {
     override fun run(vararg args: String): CommandResult {
         var process: Process? = null
         return try {
-            val started = ProcessBuilder(*args)
-                .redirectErrorStream(false)
-                .start()
+            val started =
+                ProcessBuilder(*args)
+                    .redirectErrorStream(false)
+                    .start()
             process = started
 
             // Drain stdout and stderr on dedicated threads. Reading them sequentially can deadlock
@@ -32,14 +33,16 @@ internal class SystemCommandRunner : CommandRunner {
             // so reading on the calling thread would ignore Thread.interrupt() entirely.
             val stdoutCapture = StreamCapture(started.inputStream)
             val stderrCapture = StreamCapture(started.errorStream)
-            val stdoutThread = Thread(stdoutCapture, "dispatch-cmd-stdout").apply {
-                isDaemon = true
-                start()
-            }
-            val stderrThread = Thread(stderrCapture, "dispatch-cmd-stderr").apply {
-                isDaemon = true
-                start()
-            }
+            val stdoutThread =
+                Thread(stdoutCapture, "dispatch-cmd-stdout").apply {
+                    isDaemon = true
+                    start()
+                }
+            val stderrThread =
+                Thread(stderrCapture, "dispatch-cmd-stderr").apply {
+                    isDaemon = true
+                    start()
+                }
 
             val exitCode = started.waitFor()
             stdoutThread.join()

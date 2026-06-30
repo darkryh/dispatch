@@ -1,6 +1,7 @@
 package io.github.darkryh.dispatch.widget
 
 import androidx.compose.runtime.Composable
+import com.github.ajalt.mordant.rendering.TextStyle
 import io.github.darkryh.dispatch.constraints.Constraints
 import io.github.darkryh.dispatch.layout.Measurable
 import io.github.darkryh.dispatch.layout.Placeable
@@ -8,7 +9,6 @@ import io.github.darkryh.dispatch.layout.SimplePlaceable
 import io.github.darkryh.dispatch.modifier.Modifier
 import io.github.darkryh.dispatch.modifier.applyToConstraints
 import io.github.darkryh.dispatch.runtime.composableWidget
-import com.github.ajalt.mordant.rendering.TextStyle
 
 /**
  * A horizontal progress bar.

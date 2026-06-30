@@ -2,6 +2,10 @@ package io.github.darkryh.dispatch.widget
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import com.github.ajalt.mordant.input.KeyboardEvent
+import com.github.ajalt.mordant.input.MouseEvent
+import com.github.ajalt.mordant.rendering.AnsiLevel
+import com.github.ajalt.mordant.terminal.Terminal
 import io.github.darkryh.dispatch.constraints.Constraints
 import io.github.darkryh.dispatch.modifier.Modifier
 import io.github.darkryh.dispatch.modifier.height
@@ -19,10 +23,6 @@ import io.github.darkryh.dispatch.runtime.LocalTerminalWidth
 import io.github.darkryh.dispatch.runtime.LocalTheme
 import io.github.darkryh.dispatch.runtime.withComposer
 import io.github.darkryh.dispatch.theme.DispatchTheme
-import com.github.ajalt.mordant.input.KeyboardEvent
-import com.github.ajalt.mordant.input.MouseEvent
-import com.github.ajalt.mordant.rendering.AnsiLevel
-import com.github.ajalt.mordant.terminal.Terminal
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import java.util.concurrent.atomic.AtomicInteger
@@ -106,16 +106,23 @@ class WidgetMemoryPerfTest {
         override val terminalHeight: Int get() = terminal.size.height
 
         override fun config(block: DispatchConfig.() -> Unit) = Unit
+
         override fun exit(code: Int) = Unit
+
         override fun hasFlag(name: String): Boolean = false
+
         override fun getArgument(name: String): String? = null
+
         override fun launch(block: suspend CoroutineScope.() -> Unit): Job = Job()
+
         override fun clearScreen(clearScrollback: Boolean) = Unit
+
         override fun onKeyEvent(handler: (KeyboardEvent) -> Unit) {
             keyHandler = handler
         }
 
         override fun onMouseEvent(handler: (MouseEvent) -> Unit) = Unit
+
         override fun content(block: @Composable () -> Unit) = Unit
 
         fun sendKey(event: KeyboardEvent) {

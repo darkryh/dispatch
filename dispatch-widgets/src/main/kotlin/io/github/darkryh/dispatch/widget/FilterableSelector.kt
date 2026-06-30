@@ -5,9 +5,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.github.ajalt.mordant.input.KeyboardEvent
 import io.github.darkryh.dispatch.input.Key
 import io.github.darkryh.dispatch.input.asKeyEvent
-import com.github.ajalt.mordant.input.KeyboardEvent
 
 /**
  * Reusable state engine for filterable, keyboard-navigable selectors.
@@ -96,8 +96,7 @@ fun <T> rememberSelectorState(
     initialVisible: Boolean = true,
     initialSelectedIndex: Int = 0,
     initialFilterText: String = "",
-): FilterableSelectorState<T> =
-    remember { FilterableSelectorState(initialVisible, initialSelectedIndex, initialFilterText) }
+): FilterableSelectorState<T> = remember { FilterableSelectorState(initialVisible, initialSelectedIndex, initialFilterText) }
 
 /**
  * Declarative key bindings for a filterable selector, consumed by [handleSelectorKeyEvent].

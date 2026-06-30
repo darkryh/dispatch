@@ -11,6 +11,7 @@ import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.github.ajalt.mordant.rendering.TextColors.Companion.rgb
 import io.github.darkryh.dispatch.input.Key
 import io.github.darkryh.dispatch.input.asKeyEvent
 import io.github.darkryh.dispatch.layout.Column
@@ -45,7 +46,6 @@ import io.github.darkryh.dispatch.widget.SurfaceStyle
 import io.github.darkryh.dispatch.widget.Text
 import io.github.darkryh.dispatch.widget.TextField
 import io.github.darkryh.dispatch.widget.rememberInputHistoryIndexState
-import com.github.ajalt.mordant.rendering.TextColors.Companion.rgb
 import kotlinx.coroutines.delay
 
 /**

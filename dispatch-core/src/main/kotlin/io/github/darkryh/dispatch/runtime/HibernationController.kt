@@ -88,6 +88,9 @@ internal class HibernationController(
         if (hibernating.get()) wake(activityNanos)
     }
 
+    // Hibernation deliberately hints the GC after releasing rebuildable caches, to actually reclaim
+    // the freed heap while the app is idle. This is an intentional, measured part of the design.
+    @Suppress("ExplicitGarbageCollectionCall")
     private fun enterHibernate() {
         if (!hibernating.compareAndSet(false, true)) return
         hibernateEnteredAtNanos = nanoTime()

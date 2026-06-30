@@ -1,8 +1,11 @@
 package io.github.darkryh.dispatch.widget
 
 import androidx.compose.runtime.Composable
+import com.github.ajalt.mordant.rendering.BorderType
+import com.github.ajalt.mordant.rendering.TextStyle
+import com.github.ajalt.mordant.rendering.Whitespace
+import com.github.ajalt.mordant.widgets.Padding
 import io.github.darkryh.dispatch.constraints.Constraints
-import io.github.darkryh.dispatch.layout.Column
 import io.github.darkryh.dispatch.layout.Measurable
 import io.github.darkryh.dispatch.layout.Placeable
 import io.github.darkryh.dispatch.layout.SimplePlaceable
@@ -12,10 +15,6 @@ import io.github.darkryh.dispatch.modifier.applyToConstraints
 import io.github.darkryh.dispatch.runtime.LocalTerminal
 import io.github.darkryh.dispatch.runtime.LocalTheme
 import io.github.darkryh.dispatch.runtime.composableContainer
-import com.github.ajalt.mordant.rendering.BorderType
-import com.github.ajalt.mordant.rendering.TextStyle
-import com.github.ajalt.mordant.rendering.Whitespace
-import com.github.ajalt.mordant.widgets.Padding
 import com.github.ajalt.mordant.widgets.Panel as MordantPanel
 import com.github.ajalt.mordant.widgets.Text as MordantText
 

@@ -1,3 +1,5 @@
+@file:Suppress("UnusedImports") // detekt mis-flags the flow `debounce` import (shadowed by a local extension)
+
 package io.github.darkryh.dispatch.viewmodel
 
 import androidx.compose.runtime.Composable
@@ -7,7 +9,6 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.rememberUpdatedState
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -37,6 +38,7 @@ fun <T> MutableStateFlow<T>.asMutableState(): MutableState<T> {
             }
 
         override fun component1(): T = value
+
         override fun component2(): (T) -> Unit = { value = it }
     }
 }

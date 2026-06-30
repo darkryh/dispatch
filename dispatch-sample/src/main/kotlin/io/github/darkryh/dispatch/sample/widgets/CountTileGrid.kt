@@ -3,13 +3,13 @@
 package io.github.darkryh.dispatch.sample.widgets
 
 import androidx.compose.runtime.Composable
+import com.github.ajalt.mordant.rendering.TextColors
+import com.github.ajalt.mordant.rendering.TextStyle
 import io.github.darkryh.dispatch.layout.Row
 import io.github.darkryh.dispatch.modifier.Modifier
 import io.github.darkryh.dispatch.widget.Grid
 import io.github.darkryh.dispatch.widget.GridCells
 import io.github.darkryh.dispatch.widget.Text
-import com.github.ajalt.mordant.rendering.TextColors
-import com.github.ajalt.mordant.rendering.TextStyle
 
 data class CountTile(
     val label: String,

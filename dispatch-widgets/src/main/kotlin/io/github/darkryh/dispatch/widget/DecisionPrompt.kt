@@ -6,6 +6,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.github.ajalt.mordant.rendering.TextColors.Companion.rgb
+import com.github.ajalt.mordant.rendering.TextStyle
 import io.github.darkryh.dispatch.layout.Column
 import io.github.darkryh.dispatch.layout.Row
 import io.github.darkryh.dispatch.layout.Spacer
@@ -13,8 +15,6 @@ import io.github.darkryh.dispatch.modifier.Modifier
 import io.github.darkryh.dispatch.modifier.fillMaxWidth
 import io.github.darkryh.dispatch.modifier.width
 import io.github.darkryh.dispatch.runtime.LocalKeyboardInterceptor
-import com.github.ajalt.mordant.rendering.TextColors.Companion.rgb
-import com.github.ajalt.mordant.rendering.TextStyle
 
 data class DecisionOption(
     val label: String,

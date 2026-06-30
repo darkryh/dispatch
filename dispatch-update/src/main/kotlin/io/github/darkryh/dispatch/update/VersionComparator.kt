@@ -1,9 +1,15 @@
 package io.github.darkryh.dispatch.update
 
 object VersionComparator {
-    fun isNewer(latest: String, current: String): Boolean = compare(latest, current) > 0
+    fun isNewer(
+        latest: String,
+        current: String,
+    ): Boolean = compare(latest, current) > 0
 
-    fun compare(a: String, b: String): Int {
+    fun compare(
+        a: String,
+        b: String,
+    ): Int {
         val aParts = normalize(a)
         val bParts = normalize(b)
 
@@ -21,9 +27,16 @@ object VersionComparator {
     }
 
     private fun normalize(version: String): List<Int> {
-        val core = version.trim().removePrefix("v").removePrefix("V")
-            .split("-", "+").firstOrNull().orEmpty()
-        return core.split(".")
+        val core =
+            version
+                .trim()
+                .removePrefix("v")
+                .removePrefix("V")
+                .split("-", "+")
+                .firstOrNull()
+                .orEmpty()
+        return core
+            .split(".")
             .mapNotNull { it.toIntOrNull() }
     }
 }

@@ -13,8 +13,9 @@ class BrewUpdateProvider(
         val result = runner.run("brew", "info", "--json=v2", formula)
         if (!result.isSuccess) return null
 
-        val response = runCatching { json.decodeFromString<BrewInfoResponse>(result.stdout) }.getOrNull()
-            ?: return null
+        val response =
+            runCatching { json.decodeFromString<BrewInfoResponse>(result.stdout) }.getOrNull()
+                ?: return null
         val entry = response.formulae.firstOrNull() ?: return null
         return entry.versions.stable
     }

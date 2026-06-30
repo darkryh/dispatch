@@ -6,6 +6,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.github.ajalt.mordant.rendering.TextStyle
 import io.github.darkryh.dispatch.input.Key
 import io.github.darkryh.dispatch.input.asKeyEvent
 import io.github.darkryh.dispatch.layout.Column
@@ -15,7 +16,6 @@ import io.github.darkryh.dispatch.modifier.focusable
 import io.github.darkryh.dispatch.runtime.LocalFocusRegistry
 import io.github.darkryh.dispatch.runtime.LocalKeyboardInterceptor
 import io.github.darkryh.dispatch.runtime.LocalTerminalHeight
-import com.github.ajalt.mordant.rendering.TextStyle
 
 /**
  * A single action row in a [SelectMenu].
@@ -163,7 +163,11 @@ fun SelectMenu(
                         true
                     }
                     event.key == Key.Enter -> {
-                        list.getOrNull(state.cursorIndex)?.takeIf { it.enabled }?.onSelect?.invoke()
+                        list
+                            .getOrNull(state.cursorIndex)
+                            ?.takeIf { it.enabled }
+                            ?.onSelect
+                            ?.invoke()
                         true
                     }
                     else -> false
@@ -207,7 +211,10 @@ fun SelectMenu(
  * First enabled index at or after [from], wrapping to the start; falls back to [from] when no row is
  * enabled.
  */
-private fun firstEnabledIndex(items: List<MenuItem>, from: Int): Int {
+private fun firstEnabledIndex(
+    items: List<MenuItem>,
+    from: Int,
+): Int {
     if (items.isEmpty()) return 0
     for (offset in items.indices) {
         val index = (from + offset) % items.size
@@ -220,7 +227,11 @@ private fun firstEnabledIndex(items: List<MenuItem>, from: Int): Int {
  * Next enabled index from [from] stepping by [direction] (+1 down, -1 up), wrapping around; returns
  * [from] when no other row is enabled.
  */
-private fun nextEnabledIndex(items: List<MenuItem>, from: Int, direction: Int): Int {
+private fun nextEnabledIndex(
+    items: List<MenuItem>,
+    from: Int,
+    direction: Int,
+): Int {
     if (items.isEmpty()) return from
     var index = from
     repeat(items.size) {

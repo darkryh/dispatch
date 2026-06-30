@@ -46,7 +46,7 @@ class NavDisplayMemoryLeakTest {
                         backStack = backStack,
                         entryProvider = { key ->
                             NavEntry(key = key) {
-                                captureViewModel { poppedVm = it }
+                                captureViewModel { vm -> poppedVm = vm }
                             }
                         },
                     )
@@ -76,7 +76,7 @@ class NavDisplayMemoryLeakTest {
                         backStack = backStack,
                         entryProvider = { key ->
                             NavEntry(key = key) {
-                                captureViewModel { poppedVm = it }
+                                captureViewModel { vm -> poppedVm = vm }
                             }
                         },
                     )

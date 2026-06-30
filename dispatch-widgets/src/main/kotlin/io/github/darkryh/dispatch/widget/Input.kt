@@ -6,6 +6,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.github.ajalt.mordant.rendering.OverflowWrap
+import com.github.ajalt.mordant.rendering.TextStyle
+import com.github.ajalt.mordant.rendering.Whitespace
 import io.github.darkryh.dispatch.constraints.Constraints
 import io.github.darkryh.dispatch.input.Key
 import io.github.darkryh.dispatch.input.asKeyEvent
@@ -21,9 +24,6 @@ import io.github.darkryh.dispatch.runtime.LocalKeyboardInterceptor
 import io.github.darkryh.dispatch.runtime.LocalTerminal
 import io.github.darkryh.dispatch.runtime.LocalTerminalWidth
 import io.github.darkryh.dispatch.runtime.composableWidget
-import com.github.ajalt.mordant.rendering.OverflowWrap
-import com.github.ajalt.mordant.rendering.TextStyle
-import com.github.ajalt.mordant.rendering.Whitespace
 
 /**
  * A text input field with built-in keyboard handling.
@@ -57,7 +57,11 @@ import com.github.ajalt.mordant.rendering.Whitespace
  * @param cursorChar Character to use for the cursor.
  * @param maxLines Optional maximum number of lines to render (null = no limit within constraints).
  * @param cursorPosition Cursor position (character index) within [value].
+ *
+ * onValueChange is part of the text-field renderer contract; this renderer is display-only and the
+ * owning composable applies edits, so the callback is intentionally unused here.
  */
+@Suppress("UnusedParameter")
 @Composable
 fun BasicTextFieldRenderer(
     value: String,
@@ -202,7 +206,13 @@ internal class TextFieldMeasurable(
                 contentLines
             } else {
                 contentLines.mapIndexed { index, line ->
-                    if (isPlaceholder && showCursor && cursorToken.isNotEmpty() && index == 0 && line.startsWith(cursorToken)) {
+                    val isCursorLine =
+                        isPlaceholder &&
+                            showCursor &&
+                            cursorToken.isNotEmpty() &&
+                            index == 0 &&
+                            line.startsWith(cursorToken)
+                    if (isCursorLine) {
                         cursorToken + contentTextStyle.invoke(line.removePrefix(cursorToken))
                     } else {
                         contentTextStyle.invoke(line)
@@ -434,6 +444,7 @@ class TextFieldState(
     /**
      * Delete selected text.
      */
+    @Suppress("UnsafeCallOnNullableType") // selectionStart/selectionEnd are non-null once hasSelection() holds.
     fun deleteSelection() {
         if (!hasSelection()) return
 

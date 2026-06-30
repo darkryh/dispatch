@@ -1,6 +1,13 @@
 package io.github.darkryh.dispatch.widget
 
 import androidx.compose.runtime.Composable
+import com.github.ajalt.mordant.markdown.Markdown
+import com.github.ajalt.mordant.rendering.Lines
+import com.github.ajalt.mordant.rendering.OverflowWrap
+import com.github.ajalt.mordant.rendering.Span
+import com.github.ajalt.mordant.rendering.TextAlign
+import com.github.ajalt.mordant.rendering.TextStyle
+import com.github.ajalt.mordant.rendering.Whitespace
 import io.github.darkryh.dispatch.constraints.Constraints
 import io.github.darkryh.dispatch.layout.Measurable
 import io.github.darkryh.dispatch.layout.Placeable
@@ -10,13 +17,6 @@ import io.github.darkryh.dispatch.modifier.applyToConstraints
 import io.github.darkryh.dispatch.runtime.HibernationRegistry
 import io.github.darkryh.dispatch.runtime.LocalTerminal
 import io.github.darkryh.dispatch.runtime.composableWidget
-import com.github.ajalt.mordant.markdown.Markdown
-import com.github.ajalt.mordant.rendering.Lines
-import com.github.ajalt.mordant.rendering.OverflowWrap
-import com.github.ajalt.mordant.rendering.Span
-import com.github.ajalt.mordant.rendering.TextAlign
-import com.github.ajalt.mordant.rendering.TextStyle
-import com.github.ajalt.mordant.rendering.Whitespace
 import com.github.ajalt.mordant.rendering.Line as MordantLine
 import com.github.ajalt.mordant.widgets.Text as MordantText
 
@@ -232,8 +232,7 @@ internal class TextMeasurable(
         private val markdownLinesCache: MutableMap<MarkdownCacheKey, Lines> =
             java.util.Collections.synchronizedMap(
                 object : LinkedHashMap<MarkdownCacheKey, Lines>(64, 0.75f, true) {
-                    override fun removeEldestEntry(eldest: Map.Entry<MarkdownCacheKey, Lines>): Boolean =
-                        size > MARKDOWN_CACHE_MAX
+                    override fun removeEldestEntry(eldest: Map.Entry<MarkdownCacheKey, Lines>): Boolean = size > MARKDOWN_CACHE_MAX
                 },
             )
 
@@ -245,6 +244,7 @@ internal class TextMeasurable(
                 synchronized(markdownLinesCache) { markdownLinesCache.clear() }
             }
         }
+
         private const val TRIM_SENTINEL = '\u0000'
 
         private val TRIM_SENTINEL_STRING = TRIM_SENTINEL.toString()

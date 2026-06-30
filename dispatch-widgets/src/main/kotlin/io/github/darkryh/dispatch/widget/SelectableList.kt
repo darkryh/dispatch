@@ -1,14 +1,13 @@
 package io.github.darkryh.dispatch.widget
 
 import androidx.compose.runtime.Composable
+import com.github.ajalt.mordant.rendering.TextStyle
 import io.github.darkryh.dispatch.layout.Column
 import io.github.darkryh.dispatch.layout.Row
 import io.github.darkryh.dispatch.layout.Spacer
 import io.github.darkryh.dispatch.modifier.Modifier
 import io.github.darkryh.dispatch.modifier.height
 import io.github.darkryh.dispatch.modifier.width
-import io.github.darkryh.dispatch.widget.Text
-import com.github.ajalt.mordant.rendering.TextStyle
 
 data class SelectableListStyles(
     val prefix: TextStyle,

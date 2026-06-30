@@ -5,10 +5,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import io.github.darkryh.dispatch.modifier.Modifier
-import io.github.darkryh.dispatch.runtime.rememberCallback
 import com.github.ajalt.mordant.rendering.TextColors.Companion.rgb
 import com.github.ajalt.mordant.rendering.TextStyle
+import io.github.darkryh.dispatch.modifier.Modifier
+import io.github.darkryh.dispatch.runtime.rememberCallback
 
 /**
  * A focusable button that cycles through a list of options on activation (Enter/Return/Space).

@@ -47,8 +47,20 @@ if (ktlintRequested) {
         ignoreFailures.set(false)
         additionalEditorconfig.set(
             mapOf(
-                // Dispatch uses Compose-style PascalCase names for @Dispatchable UI functions.
-                "ktlint_function_naming_ignore_when_annotated_with" to "Dispatchable,DispatchRenderer",
+                // Dispatch uses Compose-style PascalCase names for @Composable UI functions (and the
+                // framework's own @Dispatchable/@DispatchRenderer markers). Exempt them from camelCase.
+                "ktlint_function_naming_ignore_when_annotated_with" to "Composable,Dispatchable,DispatchRenderer",
+                // Allow on-demand (wildcard) imports for DSL/runtime packages where it is conventional.
+                "ij_kotlin_packages_to_use_import_on_demand" to
+                    "java.util.*,kotlinx.coroutines.*,kotlinx.coroutines.flow.*," +
+                    "androidx.compose.runtime.*,io.github.darkryh.dispatch.layout.*",
+                // File names intentionally group related declarations (e.g. DispatchUi.kt); not enforced.
+                "ktlint_standard_filename" to "disabled",
+                // `_state`-style backing properties are idiomatic; ktlint's stricter check is off.
+                "ktlint_standard_backing-property-naming" to "disabled",
+                // ktlint's own formatter wraps multi-annotation function types (@DispatchRenderer
+                // @Composable () -> Unit), which then trips this spacing rule — a self-conflict; off.
+                "ktlint_standard_function-type-modifier-spacing" to "disabled",
             ),
         )
 

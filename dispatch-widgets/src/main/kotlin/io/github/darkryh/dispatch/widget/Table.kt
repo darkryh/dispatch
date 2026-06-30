@@ -3,16 +3,16 @@ package io.github.darkryh.dispatch.widget
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
+import com.github.ajalt.mordant.input.KeyboardEvent
+import com.github.ajalt.mordant.rendering.TextAlign
+import com.github.ajalt.mordant.rendering.TextColors.Companion.rgb
+import com.github.ajalt.mordant.rendering.TextStyle
 import io.github.darkryh.dispatch.layout.Column
 import io.github.darkryh.dispatch.layout.Row
 import io.github.darkryh.dispatch.modifier.Modifier
 import io.github.darkryh.dispatch.runtime.LocalKeyboardInterceptor
 import io.github.darkryh.dispatch.runtime.LocalTerminalWidth
 import io.github.darkryh.dispatch.runtime.rememberCallback
-import com.github.ajalt.mordant.input.KeyboardEvent
-import com.github.ajalt.mordant.rendering.TextAlign
-import com.github.ajalt.mordant.rendering.TextColors.Companion.rgb
-import com.github.ajalt.mordant.rendering.TextStyle
 
 /**
  * Describes how a [TableColumn] is sized when the table is laid out.
@@ -31,7 +31,9 @@ sealed interface TableColumnWidth {
      *
      * @param chars The fixed width, in terminal cells.
      */
-    data class Fixed(val chars: Int) : TableColumnWidth
+    data class Fixed(
+        val chars: Int,
+    ) : TableColumnWidth
 
     /**
      * Distribute the remaining terminal width across all weighted columns proportionally.
@@ -41,7 +43,9 @@ sealed interface TableColumnWidth {
      *
      * @param weight The relative weight of this column among all weighted columns.
      */
-    data class Weight(val weight: Float) : TableColumnWidth
+    data class Weight(
+        val weight: Float,
+    ) : TableColumnWidth
 }
 
 /**

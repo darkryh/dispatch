@@ -1,10 +1,10 @@
 package io.github.darkryh.dispatch.widget
 
-import io.github.darkryh.dispatch.input.Key
-import io.github.darkryh.dispatch.input.asKeyEvent
 import com.github.ajalt.mordant.input.KeyboardEvent
 import com.github.ajalt.mordant.rendering.OverflowWrap
 import com.github.ajalt.mordant.rendering.Whitespace
+import io.github.darkryh.dispatch.input.Key
+import io.github.darkryh.dispatch.input.asKeyEvent
 
 internal var inputNowNanos: () -> Long = { System.nanoTime() }
 
@@ -195,7 +195,7 @@ internal class InputEditor(
                             (historyIndexState.index + 1).coerceIn(0, historyItems.size)
                         val next =
                             if (historyIndexState.index == historyItems.size) {
-                                historyIndexState.draft ?: ""
+                                historyIndexState.draft.orEmpty()
                             } else {
                                 historyItems.getOrElse(historyIndexState.index) { "" }
                             }

@@ -8,11 +8,12 @@ import kotlin.test.assertNull
 class ScoopUpdateProviderTest {
     @Test
     fun `parses latest version from scoop status`() {
-        val output = """
+        val output =
+            """
             Name  Installed Version  Latest Version  Missing Info
             ----  -----------------  -------------  ------------
             xtory 1.0.0              1.2.0
-        """.trimIndent()
+            """.trimIndent()
         val runner = RecordingCommandRunner(mapOf("scoop status" to CommandResult(0, output, "")))
         val provider = ScoopUpdateProvider("xtory", runner)
 
@@ -34,17 +35,19 @@ class ScoopUpdateProviderTest {
 
     @Test
     fun `refreshes before status when configured`() {
-        val output = """
+        val output =
+            """
             Name  Installed Version  Latest Version  Missing Info
             ----  -----------------  -------------  ------------
             xtory 1.0.0              2.0.0
-        """.trimIndent()
-        val runner = RecordingCommandRunner(
-            mapOf(
-                "scoop update" to CommandResult(0, "", ""),
-                "scoop status" to CommandResult(0, output, ""),
+            """.trimIndent()
+        val runner =
+            RecordingCommandRunner(
+                mapOf(
+                    "scoop update" to CommandResult(0, "", ""),
+                    "scoop status" to CommandResult(0, output, ""),
+                ),
             )
-        )
         val provider = ScoopUpdateProvider("xtory", runner, refreshBeforeCheck = true)
 
         val version = runBlocking { provider.latestVersion() }

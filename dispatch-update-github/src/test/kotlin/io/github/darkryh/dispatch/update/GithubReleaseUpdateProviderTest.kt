@@ -2,22 +2,22 @@ package io.github.darkryh.dispatch.update
 
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.mock.MockEngine
-import io.ktor.client.engine.mock.MockEngineConfig
 import io.ktor.client.engine.mock.respond
 import io.ktor.client.engine.mock.respondError
+import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.headersOf
-import io.ktor.http.HttpHeaders
-import io.ktor.http.ContentType
 import kotlinx.coroutines.runBlocking
-import java.util.concurrent.atomic.AtomicInteger
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNull
-import kotlin.test.assertTrue
 
 class GithubReleaseUpdateProviderTest {
-    private fun jsonEngine(body: String, status: HttpStatusCode = HttpStatusCode.OK): MockEngine =
+    private fun jsonEngine(
+        body: String,
+        status: HttpStatusCode = HttpStatusCode.OK,
+    ): MockEngine =
         MockEngine {
             respond(
                 content = body,

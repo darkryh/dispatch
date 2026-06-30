@@ -5,6 +5,7 @@ package io.github.darkryh.dispatch.sample.presentation.inputs
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import com.github.ajalt.mordant.rendering.TextColors.Companion.rgb
 import io.github.darkryh.dispatch.layout.Column
 import io.github.darkryh.dispatch.layout.Spacer
 import io.github.darkryh.dispatch.modifier.Modifier
@@ -24,7 +25,6 @@ import io.github.darkryh.dispatch.widget.Text
 import io.github.darkryh.dispatch.widget.TextField
 import io.github.darkryh.dispatch.widget.rememberInputHistoryIndexState
 import io.github.darkryh.dispatch.widget.rememberTextFieldState
-import com.github.ajalt.mordant.rendering.TextColors.Companion.rgb
 
 /**
  * Inputs playground.

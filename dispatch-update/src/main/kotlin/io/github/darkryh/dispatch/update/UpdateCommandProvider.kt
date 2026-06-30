@@ -1,12 +1,18 @@
 package io.github.darkryh.dispatch.update
 
 interface UpdateCommandProvider {
-    fun commandFor(source: UpdateSource, packageName: String): String?
+    fun commandFor(
+        source: UpdateSource,
+        packageName: String,
+    ): String?
 }
 
 class DefaultUpdateCommandProvider : UpdateCommandProvider {
-    override fun commandFor(source: UpdateSource, packageName: String): String? {
-        return when (source) {
+    override fun commandFor(
+        source: UpdateSource,
+        packageName: String,
+    ): String? =
+        when (source) {
             UpdateSource.HOMEBREW -> "brew update && brew upgrade $packageName"
             UpdateSource.SCOOP -> "scoop update && scoop update $packageName"
             UpdateSource.APT -> "sudo apt update && sudo apt install --only-upgrade $packageName"
@@ -14,5 +20,4 @@ class DefaultUpdateCommandProvider : UpdateCommandProvider {
             UpdateSource.MANUAL -> null
             UpdateSource.UNKNOWN -> null
         }
-    }
 }

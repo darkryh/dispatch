@@ -3,6 +3,8 @@
 package io.github.darkryh.dispatch.sample.widgets
 
 import androidx.compose.runtime.Composable
+import com.github.ajalt.mordant.rendering.TextColors.Companion.rgb
+import com.github.ajalt.mordant.rendering.TextStyle
 import io.github.darkryh.dispatch.layout.Column
 import io.github.darkryh.dispatch.layout.Row
 import io.github.darkryh.dispatch.layout.Spacer
@@ -10,8 +12,6 @@ import io.github.darkryh.dispatch.modifier.Modifier
 import io.github.darkryh.dispatch.modifier.fillMaxWidth
 import io.github.darkryh.dispatch.modifier.width
 import io.github.darkryh.dispatch.widget.Text
-import com.github.ajalt.mordant.rendering.TextColors.Companion.rgb
-import com.github.ajalt.mordant.rendering.TextStyle
 
 @Composable
 fun SectionHeader(

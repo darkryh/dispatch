@@ -13,20 +13,26 @@ interface UpdateEnvironment {
     val os: OperatingSystem
     val pathEntries: List<String>
     val classPathEntries: List<String>
+
     fun env(name: String): String?
+
     fun fileExists(path: String): Boolean
 }
 
 class SystemUpdateEnvironment : UpdateEnvironment {
     override val os: OperatingSystem = detectOs()
-    override val pathEntries: List<String> = System.getenv("PATH")
-        ?.split(File.pathSeparator)
-        ?.filter { it.isNotBlank() }
-        ?: emptyList()
-    override val classPathEntries: List<String> = System.getProperty("java.class.path")
-        ?.split(File.pathSeparator)
-        ?.filter { it.isNotBlank() }
-        ?: emptyList()
+    override val pathEntries: List<String> =
+        System
+            .getenv("PATH")
+            ?.split(File.pathSeparator)
+            ?.filter { it.isNotBlank() }
+            ?: emptyList()
+    override val classPathEntries: List<String> =
+        System
+            .getProperty("java.class.path")
+            ?.split(File.pathSeparator)
+            ?.filter { it.isNotBlank() }
+            ?: emptyList()
 
     override fun env(name: String): String? = System.getenv(name)
 

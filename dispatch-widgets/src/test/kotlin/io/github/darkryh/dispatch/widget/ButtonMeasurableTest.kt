@@ -1,8 +1,8 @@
 package io.github.darkryh.dispatch.widget
 
+import com.github.ajalt.mordant.rendering.TextStyle
 import io.github.darkryh.dispatch.constraints.Constraints
 import io.github.darkryh.dispatch.modifier.Modifier
-import com.github.ajalt.mordant.rendering.TextStyle
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue

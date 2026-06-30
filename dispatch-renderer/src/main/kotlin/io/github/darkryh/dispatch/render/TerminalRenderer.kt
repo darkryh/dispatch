@@ -486,17 +486,7 @@ private fun CharSequence.countOccurrences(token: String): Int {
     return count
 }
 
-private fun List<String>.trailingBlankLineCount(): Int {
-    var count = 0
-    for (index in lastIndex downTo 0) {
-        if (this[index].isDisplayBlank()) {
-            count += 1
-            continue
-        }
-        break
-    }
-    return count
-}
+private fun List<String>.trailingBlankLineCount(): Int = asReversed().takeWhile { it.isDisplayBlank() }.count()
 
 /**
  * A line is "display blank" if every visible character (ignoring ANSI escape runs) is whitespace.

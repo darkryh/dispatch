@@ -8,6 +8,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.github.ajalt.mordant.rendering.TextStyles
 import io.github.darkryh.dispatch.layout.Row
 import io.github.darkryh.dispatch.layout.Spacer
 import io.github.darkryh.dispatch.modifier.Modifier
@@ -16,15 +17,13 @@ import io.github.darkryh.dispatch.modifier.width
 import io.github.darkryh.dispatch.runtime.LocalHibernation
 import io.github.darkryh.dispatch.runtime.LocalTheme
 import io.github.darkryh.dispatch.widget.Text
-import com.github.ajalt.mordant.rendering.TextStyles
 import kotlinx.coroutines.delay
 
 /**
  * Whether the debug hibernation overlay should be shown. Gated on the `DISPATCH_SAMPLE_DEBUG_OVERLAY`
  * environment variable so it never appears in a normal run.
  */
-internal fun isHibernationOverlayEnabled(): Boolean =
-    System.getenv("DISPATCH_SAMPLE_DEBUG_OVERLAY")?.isNotBlank() == true
+internal fun isHibernationOverlayEnabled(): Boolean = System.getenv("DISPATCH_SAMPLE_DEBUG_OVERLAY")?.isNotBlank() == true
 
 /**
  * A single dim status line that surfaces the runtime's idle-hibernation state for live demos.
@@ -65,7 +64,7 @@ fun HibernationOverlay(modifier: Modifier = Modifier) {
         Spacer(Modifier.width(1))
         Text(stateLabel, style = stateStyle)
         Spacer(Modifier.width(2))
-        Text("fps ${currentFps}↻${handle.activeFps}/${handle.idleFps}", style = theme.muted)
+        Text("fps $currentFps↻${handle.activeFps}/${handle.idleFps}", style = theme.muted)
         Spacer(Modifier.width(2))
         Text(if (hibernating) "idle —" else "idle ${countdownSeconds}s", style = theme.muted)
         Spacer(Modifier.width(2))

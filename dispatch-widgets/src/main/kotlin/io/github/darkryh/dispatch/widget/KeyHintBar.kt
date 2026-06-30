@@ -1,13 +1,13 @@
 package io.github.darkryh.dispatch.widget
 
 import androidx.compose.runtime.Composable
+import com.github.ajalt.mordant.rendering.TextColors.Companion.rgb
+import com.github.ajalt.mordant.rendering.TextStyle
 import io.github.darkryh.dispatch.layout.Row
 import io.github.darkryh.dispatch.layout.Spacer
 import io.github.darkryh.dispatch.modifier.Modifier
 import io.github.darkryh.dispatch.modifier.fillMaxWidth
 import io.github.darkryh.dispatch.modifier.width
-import com.github.ajalt.mordant.rendering.TextColors.Companion.rgb
-import com.github.ajalt.mordant.rendering.TextStyle
 
 data class KeyHint(
     val key: String,

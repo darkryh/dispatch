@@ -2,6 +2,10 @@ package io.github.darkryh.dispatch.widget
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import com.github.ajalt.mordant.input.KeyboardEvent
+import com.github.ajalt.mordant.input.MouseEvent
+import com.github.ajalt.mordant.rendering.AnsiLevel
+import com.github.ajalt.mordant.terminal.Terminal
 import io.github.darkryh.dispatch.constraints.Constraints
 import io.github.darkryh.dispatch.runtime.Composer
 import io.github.darkryh.dispatch.runtime.DispatchConfig
@@ -16,10 +20,6 @@ import io.github.darkryh.dispatch.runtime.LocalTerminalWidth
 import io.github.darkryh.dispatch.runtime.LocalTheme
 import io.github.darkryh.dispatch.runtime.withComposer
 import io.github.darkryh.dispatch.theme.DispatchTheme
-import com.github.ajalt.mordant.input.KeyboardEvent
-import com.github.ajalt.mordant.input.MouseEvent
-import com.github.ajalt.mordant.rendering.AnsiLevel
-import com.github.ajalt.mordant.terminal.Terminal
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlin.test.Test

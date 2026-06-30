@@ -3,6 +3,8 @@
 package io.github.darkryh.dispatch.sample.designsystem
 
 import androidx.compose.runtime.Composable
+import com.github.ajalt.mordant.rendering.TextAlign
+import com.github.ajalt.mordant.rendering.TextStyles
 import io.github.darkryh.dispatch.layout.Column
 import io.github.darkryh.dispatch.layout.Row
 import io.github.darkryh.dispatch.layout.Spacer
@@ -16,8 +18,6 @@ import io.github.darkryh.dispatch.runtime.LocalTheme
 import io.github.darkryh.dispatch.sample.navigation.CatalogDestination
 import io.github.darkryh.dispatch.widget.Panel
 import io.github.darkryh.dispatch.widget.Text
-import com.github.ajalt.mordant.rendering.TextAlign
-import com.github.ajalt.mordant.rendering.TextStyles
 
 /** Fixed width of one launcher card. [CatalogDestination.COLUMNS] of these plus gaps form the menu block. */
 private const val CARD_WIDTH = 24

@@ -2,13 +2,13 @@ package io.github.darkryh.dispatch.widget
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import com.github.ajalt.mordant.rendering.TextColors.Companion.rgb
+import com.github.ajalt.mordant.rendering.TextStyle
 import io.github.darkryh.dispatch.layout.Column
 import io.github.darkryh.dispatch.layout.Row
 import io.github.darkryh.dispatch.modifier.Modifier
 import io.github.darkryh.dispatch.modifier.fillMaxWidth
 import io.github.darkryh.dispatch.modifier.height
-import com.github.ajalt.mordant.rendering.TextColors.Companion.rgb
-import com.github.ajalt.mordant.rendering.TextStyle
 
 /**
  * Which part of a diff [FileDiff] / [rememberFileDiff] focuses on.

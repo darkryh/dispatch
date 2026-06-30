@@ -8,6 +8,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.github.ajalt.mordant.input.KeyboardEvent
 import io.github.darkryh.dispatch.input.Key
 import io.github.darkryh.dispatch.input.asKeyEvent
 import io.github.darkryh.dispatch.input.ctrl
@@ -25,7 +26,6 @@ import io.github.darkryh.dispatch.sample.navigation.CatalogDestination
 import io.github.darkryh.dispatch.sample.navigation.HomeRoute
 import io.github.darkryh.dispatch.widget.Panel
 import io.github.darkryh.dispatch.widget.Text
-import com.github.ajalt.mordant.input.KeyboardEvent
 
 /**
  * Global "go to…" overlay. Opens with `Ctrl+P` from any screen and is navigable purely with the

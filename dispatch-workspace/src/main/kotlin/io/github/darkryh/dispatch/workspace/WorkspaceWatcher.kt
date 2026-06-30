@@ -6,19 +6,19 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.BufferOverflow
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.isActive
-import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.delay
 import java.io.InputStream
 import java.nio.file.FileSystems
+import java.nio.file.FileVisitOption
 import java.nio.file.FileVisitResult
 import java.nio.file.FileVisitResult.CONTINUE
 import java.nio.file.FileVisitResult.SKIP_SUBTREE
-import java.nio.file.FileVisitOption
 import java.nio.file.FileVisitor
 import java.nio.file.Files
 import java.nio.file.LinkOption
@@ -34,14 +34,17 @@ import java.util.HexFormat
 
 interface WorkspaceWatcher {
     val events: SharedFlow<WorkspaceEvent>
+
     fun start()
+
     fun stop()
 }
 
 class DefaultWorkspaceWatcher(
     private val config: WorkspaceWatchConfig,
     private val clock: () -> Long = System::currentTimeMillis,
-) : WorkspaceWatcher, AutoCloseable {
+) : WorkspaceWatcher,
+    AutoCloseable {
     private var scope: CoroutineScope = newScope()
     private val root = config.root.toAbsolutePath().normalize()
     private val includeMatchers = buildMatchers(config.includeGlobs)
@@ -49,11 +52,12 @@ class DefaultWorkspaceWatcher(
 
     // A SharedFlow lets multiple composables observe the same event stream without
     // stealing events from one another (a single-consumer Channel would).
-    private val eventFlow = MutableSharedFlow<WorkspaceEvent>(
-        replay = config.maxEventBatchSize,
-        extraBufferCapacity = config.maxEventBatchSize,
-        onBufferOverflow = BufferOverflow.DROP_OLDEST,
-    )
+    private val eventFlow =
+        MutableSharedFlow<WorkspaceEvent>(
+            replay = config.maxEventBatchSize,
+            extraBufferCapacity = config.maxEventBatchSize,
+            onBufferOverflow = BufferOverflow.DROP_OLDEST,
+        )
 
     private var job: Job? = null
     private var watchService: WatchService? = null
@@ -99,23 +103,41 @@ class DefaultWorkspaceWatcher(
 
     private fun registerRoot() {
         if (config.recursive) {
-            val options = if (config.followSymlinks) {
-                EnumSet.of(FileVisitOption.FOLLOW_LINKS)
-            } else {
-                EnumSet.noneOf(FileVisitOption::class.java)
-            }
-            Files.walkFileTree(root, options, Int.MAX_VALUE, object : FileVisitor<Path> {
-                override fun preVisitDirectory(dir: Path, attrs: java.nio.file.attribute.BasicFileAttributes): FileVisitResult {
-                    registerDirectory(dir)
-                    return CONTINUE
+            val options =
+                if (config.followSymlinks) {
+                    EnumSet.of(FileVisitOption.FOLLOW_LINKS)
+                } else {
+                    EnumSet.noneOf(FileVisitOption::class.java)
                 }
+            Files.walkFileTree(
+                root,
+                options,
+                Int.MAX_VALUE,
+                object : FileVisitor<Path> {
+                    override fun preVisitDirectory(
+                        dir: Path,
+                        attrs: java.nio.file.attribute.BasicFileAttributes,
+                    ): FileVisitResult {
+                        registerDirectory(dir)
+                        return CONTINUE
+                    }
 
-                override fun visitFile(file: Path, attrs: java.nio.file.attribute.BasicFileAttributes): FileVisitResult = CONTINUE
+                    override fun visitFile(
+                        file: Path,
+                        attrs: java.nio.file.attribute.BasicFileAttributes,
+                    ): FileVisitResult = CONTINUE
 
-                override fun visitFileFailed(file: Path, exc: java.io.IOException?): FileVisitResult = SKIP_SUBTREE
+                    override fun visitFileFailed(
+                        file: Path,
+                        exc: java.io.IOException?,
+                    ): FileVisitResult = SKIP_SUBTREE
 
-                override fun postVisitDirectory(dir: Path, exc: java.io.IOException?): FileVisitResult = CONTINUE
-            })
+                    override fun postVisitDirectory(
+                        dir: Path,
+                        exc: java.io.IOException?,
+                    ): FileVisitResult = CONTINUE
+                },
+            )
         } else {
             registerDirectory(root)
         }
@@ -123,23 +145,25 @@ class DefaultWorkspaceWatcher(
 
     private fun registerDirectory(dir: Path) {
         val service = watchService ?: return
-        val key = dir.register(
-            service,
-            StandardWatchEventKinds.ENTRY_CREATE,
-            StandardWatchEventKinds.ENTRY_MODIFY,
-            StandardWatchEventKinds.ENTRY_DELETE,
-        )
+        val key =
+            dir.register(
+                service,
+                StandardWatchEventKinds.ENTRY_CREATE,
+                StandardWatchEventKinds.ENTRY_MODIFY,
+                StandardWatchEventKinds.ENTRY_DELETE,
+            )
         keys[key] = dir
     }
 
     private suspend fun pollLoop() {
         val service = watchService ?: return
         while (currentCoroutineContext().isActive) {
-            val key = try {
-                service.take()
-            } catch (_: java.nio.file.ClosedWatchServiceException) {
-                return
-            }
+            val key =
+                try {
+                    service.take()
+                } catch (_: java.nio.file.ClosedWatchServiceException) {
+                    return
+                }
 
             val dir = keys[key] ?: continue
             val events = key.pollEvents()
@@ -153,11 +177,19 @@ class DefaultWorkspaceWatcher(
         }
     }
 
-    internal suspend fun processEventForTest(dir: Path, kind: WatchEvent.Kind<*>, context: Path? = null) {
+    internal suspend fun processEventForTest(
+        dir: Path,
+        kind: WatchEvent.Kind<*>,
+        context: Path? = null,
+    ) {
         processEvent(dir, kind, context)
     }
 
-    private suspend fun processEvent(dir: Path, kind: WatchEvent.Kind<*>, context: Path?) {
+    private suspend fun processEvent(
+        dir: Path,
+        kind: WatchEvent.Kind<*>,
+        context: Path?,
+    ) {
         if (kind == StandardWatchEventKinds.OVERFLOW) {
             emitEvent(root, WorkspaceEventType.OVERFLOW, null)
             return
@@ -172,34 +204,41 @@ class DefaultWorkspaceWatcher(
 
         if (!shouldEmit(resolved)) return
 
-        val type = when (kind) {
-            StandardWatchEventKinds.ENTRY_CREATE -> WorkspaceEventType.CREATED
-            StandardWatchEventKinds.ENTRY_MODIFY -> WorkspaceEventType.MODIFIED
-            StandardWatchEventKinds.ENTRY_DELETE -> WorkspaceEventType.DELETED
-            else -> return
-        }
+        val type =
+            when (kind) {
+                StandardWatchEventKinds.ENTRY_CREATE -> WorkspaceEventType.CREATED
+                StandardWatchEventKinds.ENTRY_MODIFY -> WorkspaceEventType.MODIFIED
+                StandardWatchEventKinds.ENTRY_DELETE -> WorkspaceEventType.DELETED
+                else -> return
+            }
 
-        val hash = when (config.hashing) {
-            HashingMode.NONE -> null
-            HashingMode.ON_MODIFY -> if (type == WorkspaceEventType.MODIFIED) hashFile(resolved) else null
-            HashingMode.ALWAYS -> if (type == WorkspaceEventType.DELETED) null else hashFile(resolved)
-        }
+        val hash =
+            when (config.hashing) {
+                HashingMode.NONE -> null
+                HashingMode.ON_MODIFY -> if (type == WorkspaceEventType.MODIFIED) hashFile(resolved) else null
+                HashingMode.ALWAYS -> if (type == WorkspaceEventType.DELETED) null else hashFile(resolved)
+            }
 
         emitEvent(resolved, type, hash)
     }
 
     private fun registerIfDirectory(path: Path) {
-        val isDir = if (config.followSymlinks) {
-            Files.isDirectory(path)
-        } else {
-            Files.isDirectory(path, LinkOption.NOFOLLOW_LINKS)
-        }
+        val isDir =
+            if (config.followSymlinks) {
+                Files.isDirectory(path)
+            } else {
+                Files.isDirectory(path, LinkOption.NOFOLLOW_LINKS)
+            }
         if (isDir) {
             registerDirectory(path)
         }
     }
 
-    private suspend fun emitEvent(path: Path, type: WorkspaceEventType, hash: String?) {
+    private suspend fun emitEvent(
+        path: Path,
+        type: WorkspaceEventType,
+        hash: String?,
+    ) {
         val debounceMs = config.debounce.inWholeMilliseconds
         if (debounceMs > 0) {
             val now = clock()
@@ -220,6 +259,9 @@ class DefaultWorkspaceWatcher(
         return includeMatchers.any { it.matches(relative) }
     }
 
+    // Hashing is best-effort: any failure (I/O, security, digest) degrades to "no hash" and is logged,
+    // never propagated, so a single unreadable file can't take down the watcher.
+    @Suppress("TooGenericExceptionCaught")
     internal fun hashFile(path: Path): String? {
         if (!Files.exists(path)) return null
         if (Files.isDirectory(path)) return null
@@ -239,7 +281,10 @@ class DefaultWorkspaceWatcher(
         }
     }
 
-    private fun updateDigest(digest: MessageDigest, input: InputStream) {
+    private fun updateDigest(
+        digest: MessageDigest,
+        input: InputStream,
+    ) {
         val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
         var read = input.read(buffer)
         while (read >= 0) {
@@ -268,7 +313,5 @@ class DefaultWorkspaceWatcher(
         }
     }
 
-    private fun fileSystemSeparator(): Char {
-        return root.fileSystem.separator.firstOrNull() ?: '/'
-    }
+    private fun fileSystemSeparator(): Char = root.fileSystem.separator.firstOrNull() ?: '/'
 }

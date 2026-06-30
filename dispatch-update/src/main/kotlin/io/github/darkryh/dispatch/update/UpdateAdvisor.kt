@@ -16,8 +16,9 @@ class UpdateAdvisor(
         if (current.isEmpty()) return null
 
         val appName = dispatchConfig.name ?: "dispatch"
-        val resolvedSource = updateConfig.sourceOverride
-            ?: sourceResolver.resolve(appName, updateConfig, environment)
+        val resolvedSource =
+            updateConfig.sourceOverride
+                ?: sourceResolver.resolve(appName, updateConfig, environment)
 
         val selected = selectProvider(resolvedSource)
         if (selected == null) return null
@@ -52,13 +53,14 @@ class UpdateAdvisor(
         if (!VersionComparator.isNewer(latest, current)) return null
 
         val packageName = updateConfig.packageIds[source] ?: appName
-        val command = if (updateConfig.commandOverride != null) {
-            updateConfig.commandOverride
-        } else if (!updateConfig.allowExternalCommands) {
-            null
-        } else {
-            commandProvider.commandFor(source, packageName)
-        }
+        val command =
+            if (updateConfig.commandOverride != null) {
+                updateConfig.commandOverride
+            } else if (!updateConfig.allowExternalCommands) {
+                null
+            } else {
+                commandProvider.commandFor(source, packageName)
+            }
 
         val message = buildMessage(current, latest, command)
 
@@ -71,11 +73,14 @@ class UpdateAdvisor(
         )
     }
 
-    private fun buildMessage(current: String, latest: String, command: String?): String {
-        return if (command.isNullOrBlank()) {
+    private fun buildMessage(
+        current: String,
+        latest: String,
+        command: String?,
+    ): String =
+        if (command.isNullOrBlank()) {
             "Update available: $current -> $latest"
         } else {
             "Update available: $current -> $latest. Run: $command"
         }
-    }
 }

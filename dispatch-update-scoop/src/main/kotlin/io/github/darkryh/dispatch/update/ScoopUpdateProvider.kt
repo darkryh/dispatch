@@ -20,20 +20,17 @@ class ScoopUpdateProvider(
         val lines = output.lines()
         if (lines.any { it.contains("No outdated apps", ignoreCase = true) }) return null
 
-        for (line in lines) {
-            val trimmed = line.trim()
-            if (trimmed.isEmpty()) continue
-            if (trimmed.startsWith("Name", ignoreCase = true)) continue
-            if (trimmed.startsWith("---")) continue
-            if (trimmed.contains("Installed Version", ignoreCase = true)) continue
-
-            val parts = trimmed.split(WHITESPACE).filter { it.isNotBlank() }
-            if (parts.size < 3) continue
-            if (!parts[0].equals(app, ignoreCase = true)) continue
-            return parts[2]
-        }
-
-        return null
+        return lines
+            .asSequence()
+            .map { it.trim() }
+            .filter { it.isNotEmpty() }
+            .filterNot { it.startsWith("Name", ignoreCase = true) }
+            .filterNot { it.startsWith("---") }
+            .filterNot { it.contains("Installed Version", ignoreCase = true) }
+            .map { line -> line.split(WHITESPACE).filter { it.isNotBlank() } }
+            .filter { it.size >= 3 }
+            .firstOrNull { it[0].equals(app, ignoreCase = true) }
+            ?.get(2)
     }
 
     private companion object {

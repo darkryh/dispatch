@@ -1,6 +1,7 @@
 package io.github.darkryh.dispatch.widget
 
 import androidx.compose.runtime.Composable
+import com.github.ajalt.mordant.rendering.TextColors.Companion.rgb
 import io.github.darkryh.dispatch.layout.Column
 import io.github.darkryh.dispatch.layout.Row
 import io.github.darkryh.dispatch.layout.Spacer
@@ -11,7 +12,6 @@ import io.github.darkryh.dispatch.modifier.weight
 import io.github.darkryh.dispatch.modifier.width
 import io.github.darkryh.dispatch.theme.DispatchTheme
 import io.github.darkryh.dispatch.widget.harness.ReliabilityHarness
-import com.github.ajalt.mordant.rendering.TextColors.Companion.rgb
 import kotlin.test.Test
 import kotlin.test.assertTrue
 

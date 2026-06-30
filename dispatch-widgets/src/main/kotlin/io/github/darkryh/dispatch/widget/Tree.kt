@@ -6,13 +6,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.github.ajalt.mordant.input.KeyboardEvent
 import io.github.darkryh.dispatch.input.Key
 import io.github.darkryh.dispatch.input.asKeyEvent
 import io.github.darkryh.dispatch.layout.Column
 import io.github.darkryh.dispatch.layout.Row
 import io.github.darkryh.dispatch.modifier.Modifier
 import io.github.darkryh.dispatch.runtime.LocalKeyboardInterceptor
-import com.github.ajalt.mordant.input.KeyboardEvent
 
 /**
  * A node in a [Tree].
@@ -156,7 +156,7 @@ fun rememberTreeState(
 fun <T> Tree(
     roots: List<TreeNode<T>>,
     modifier: Modifier = Modifier,
-    nodeKey: (T) -> Any = { it as Any },
+    nodeKey: (T) -> Any = { requireNotNull(it) { "Tree node key must be non-null" } },
     indentPerLevel: Int = 2,
     expandedGlyph: String = "▾ ",
     collapsedGlyph: String = "▸ ",
@@ -288,7 +288,10 @@ internal fun <T> flattenTree(
 ): List<TreeRow<T>> {
     val result = mutableListOf<TreeRow<T>>()
 
-    fun visit(node: TreeNode<T>, depth: Int) {
+    fun visit(
+        node: TreeNode<T>,
+        depth: Int,
+    ) {
         val key = nodeKey(node.value)
         val hasChildren = node.children.isNotEmpty()
         val expanded = hasChildren && isExpanded(key)

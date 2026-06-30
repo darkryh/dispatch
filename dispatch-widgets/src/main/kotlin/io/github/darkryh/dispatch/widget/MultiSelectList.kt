@@ -6,6 +6,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.github.ajalt.mordant.rendering.TextStyle
 import io.github.darkryh.dispatch.input.Key
 import io.github.darkryh.dispatch.input.asKeyEvent
 import io.github.darkryh.dispatch.layout.Column
@@ -16,7 +17,6 @@ import io.github.darkryh.dispatch.runtime.LocalFocusRegistry
 import io.github.darkryh.dispatch.runtime.LocalKeyboardInterceptor
 import io.github.darkryh.dispatch.runtime.LocalTerminalHeight
 import io.github.darkryh.dispatch.runtime.rememberCallback
-import com.github.ajalt.mordant.rendering.TextStyle
 
 /**
  * State holder for a [MultiSelectList].
@@ -95,8 +95,7 @@ class MultiSelectState<K>(
  * @param initialSelected Keys that should start out checked.
  */
 @Composable
-fun <K> rememberMultiSelectState(initialSelected: Set<K> = emptySet()): MultiSelectState<K> =
-    remember { MultiSelectState(initialSelected) }
+fun <K> rememberMultiSelectState(initialSelected: Set<K> = emptySet()): MultiSelectState<K> = remember { MultiSelectState(initialSelected) }
 
 /**
  * An interactive, keyboard-driven multi-select list.

@@ -1,10 +1,10 @@
 package io.github.darkryh.dispatch.widget
 
-import io.github.darkryh.dispatch.constraints.Constraints
-import io.github.darkryh.dispatch.modifier.Modifier
 import com.github.ajalt.mordant.rendering.AnsiLevel
 import com.github.ajalt.mordant.rendering.TextAlign
 import com.github.ajalt.mordant.terminal.Terminal
+import io.github.darkryh.dispatch.constraints.Constraints
+import io.github.darkryh.dispatch.modifier.Modifier
 import kotlin.test.Test
 import kotlin.test.assertTrue
 

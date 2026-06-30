@@ -9,7 +9,10 @@ object UpdateLog {
     private val enabled: Boolean =
         System.getProperty("dispatch.update.debug")?.toBoolean() == true
 
-    fun debug(message: String, throwable: Throwable? = null) {
+    fun debug(
+        message: String,
+        throwable: Throwable? = null,
+    ) {
         if (!enabled) return
         System.err.println("[dispatch-update] $message")
         throwable?.printStackTrace()

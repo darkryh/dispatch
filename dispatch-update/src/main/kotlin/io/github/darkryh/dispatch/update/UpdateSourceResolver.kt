@@ -3,11 +3,19 @@ package io.github.darkryh.dispatch.update
 import java.io.File
 
 interface UpdateSourceResolver {
-    fun resolve(appName: String, config: UpdateConfig, env: UpdateEnvironment): UpdateSource
+    fun resolve(
+        appName: String,
+        config: UpdateConfig,
+        env: UpdateEnvironment,
+    ): UpdateSource
 }
 
 class DefaultUpdateSourceResolver : UpdateSourceResolver {
-    override fun resolve(appName: String, config: UpdateConfig, env: UpdateEnvironment): UpdateSource {
+    override fun resolve(
+        appName: String,
+        config: UpdateConfig,
+        env: UpdateEnvironment,
+    ): UpdateSource {
         config.sourceOverride?.let { return it }
 
         return when (env.os) {
@@ -18,11 +26,15 @@ class DefaultUpdateSourceResolver : UpdateSourceResolver {
         }
     }
 
-    private fun commandExists(command: String, env: UpdateEnvironment): Boolean {
-        val extensions = when (env.os) {
-            OperatingSystem.WINDOWS -> listOf(".exe", ".cmd", ".bat", "")
-            else -> listOf("")
-        }
+    private fun commandExists(
+        command: String,
+        env: UpdateEnvironment,
+    ): Boolean {
+        val extensions =
+            when (env.os) {
+                OperatingSystem.WINDOWS -> listOf(".exe", ".cmd", ".bat", "")
+                else -> listOf("")
+            }
         for (path in env.pathEntries) {
             for (ext in extensions) {
                 val candidate = File(path, command + ext)

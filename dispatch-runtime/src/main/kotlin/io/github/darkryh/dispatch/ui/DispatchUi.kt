@@ -2,13 +2,11 @@
 
 package io.github.darkryh.dispatch.ui
 
-/**
+/*
  * Dispatch UI Facade - single import for common UI components.
  *
  * Usage:
- * ```kotlin
- * import io.github.darkryh.dispatch.ui.*
- * ```
+ *   import io.github.darkryh.dispatch.ui.*
  *
  * This provides access to all common UI components, layouts, modifiers,
  * state management, and utilities without needing multiple imports.

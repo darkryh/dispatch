@@ -45,9 +45,10 @@ abstract class ViewModel : Closeable {
      *
      * Cancelled when the ViewModel is cleared/closed.
      */
-    val viewModelScope: CoroutineScope = CoroutineScope(
-        SupervisorJob() + Dispatchers.Default + CoroutineName("ViewModel")
-    )
+    val viewModelScope: CoroutineScope =
+        CoroutineScope(
+            SupervisorJob() + Dispatchers.Default + CoroutineName("ViewModel"),
+        )
 
     /**
      * Whether this ViewModel has been cleared.
@@ -83,16 +84,17 @@ abstract class ViewModel : Closeable {
      */
     fun clear() {
         if (_isCleared.compareAndSet(false, true)) {
-            val toClose = synchronized(lock) {
-                val snapshot = closeables.toList()
-                closeables.clear()
-                snapshot
-            }
+            val toClose =
+                synchronized(lock) {
+                    val snapshot = closeables.toList()
+                    closeables.clear()
+                    snapshot
+                }
             toClose.forEach {
                 try {
                     it.close()
-                } catch (e: Exception) {
-                    // Ignore cleanup errors
+                } catch (ignored: Exception) {
+                    // Best-effort cleanup: a failing close() must not abort disposing the rest.
                 }
             }
             viewModelScope.cancel()
@@ -110,14 +112,15 @@ abstract class ViewModel : Closeable {
     fun addCloseable(closeable: Closeable) {
         // Decide whether to register or close immediately inside the lock so the
         // cleared flag and the closeables list stay consistent versus clear().
-        val closeNow = synchronized(lock) {
-            if (isCleared) {
-                true
-            } else {
-                closeables.add(closeable)
-                false
+        val closeNow =
+            synchronized(lock) {
+                if (isCleared) {
+                    true
+                } else {
+                    closeables.add(closeable)
+                    false
+                }
             }
-        }
         if (closeNow) {
             closeable.close()
         }
@@ -128,10 +131,8 @@ abstract class ViewModel : Closeable {
      */
     protected fun launch(
         context: CoroutineContext = Dispatchers.Default,
-        block: suspend CoroutineScope.() -> Unit
-    ): Job {
-        return viewModelScope.launch(context, block = block)
-    }
+        block: suspend CoroutineScope.() -> Unit,
+    ): Job = viewModelScope.launch(context, block = block)
 
     /**
      * Create a state flow that's automatically collected in the viewModelScope.
@@ -143,7 +144,9 @@ abstract class ViewModel : Closeable {
 /**
  * A ViewModel with a single UI state.
  */
-abstract class StateViewModel<S>(initialState: S) : ViewModel() {
+abstract class StateViewModel<S>(
+    initialState: S,
+) : ViewModel() {
     /**
      * Internal mutable state.
      */
@@ -177,7 +180,9 @@ abstract class StateViewModel<S>(initialState: S) : ViewModel() {
 /**
  * A ViewModel that follows MVI (Model-View-Intent) pattern.
  */
-abstract class MviViewModel<S, I>(initialState: S) : StateViewModel<S>(initialState) {
+abstract class MviViewModel<S, I>(
+    initialState: S,
+) : StateViewModel<S>(initialState) {
     /**
      * Intent channel for processing user actions. Unlimited so [sendIntent] can enqueue
      * synchronously in call order without dropping or allocating a coroutine per intent.
@@ -211,7 +216,9 @@ abstract class MviViewModel<S, I>(initialState: S) : StateViewModel<S>(initialSt
 /**
  * Side effects that should be handled once (like showing a toast, navigation).
  */
-abstract class SideEffectViewModel<S, E>(initialState: S) : StateViewModel<S>(initialState) {
+abstract class SideEffectViewModel<S, E>(
+    initialState: S,
+) : StateViewModel<S>(initialState) {
     /**
      * Channel for one-time side effects.
      */
@@ -235,7 +242,9 @@ abstract class SideEffectViewModel<S, E>(initialState: S) : StateViewModel<S>(in
 /**
  * Full MVI ViewModel with state, intents, and side effects.
  */
-abstract class FullMviViewModel<S, I, E>(initialState: S) : ViewModel() {
+abstract class FullMviViewModel<S, I, E>(
+    initialState: S,
+) : ViewModel() {
     protected val _state = MutableStateFlow(initialState)
     val state: StateFlow<S> = _state.asStateFlow()
     val currentState: S get() = _state.value
@@ -279,14 +288,22 @@ abstract class FullMviViewModel<S, I, E>(initialState: S) : ViewModel() {
  */
 sealed class LoadingState<out T> {
     object Loading : LoadingState<Nothing>()
-    data class Success<T>(val data: T) : LoadingState<T>()
-    data class Error(val message: String, val cause: Throwable? = null) : LoadingState<Nothing>()
+
+    data class Success<T>(
+        val data: T,
+    ) : LoadingState<T>()
+
+    data class Error(
+        val message: String,
+        val cause: Throwable? = null,
+    ) : LoadingState<Nothing>()
 
     val isLoading: Boolean get() = this is Loading
     val isSuccess: Boolean get() = this is Success
     val isError: Boolean get() = this is Error
 
     fun getOrNull(): T? = (this as? Success)?.data
+
     fun getOrDefault(default: @UnsafeVariance T): T = (this as? Success)?.data ?: default
 }
 
@@ -295,9 +312,17 @@ sealed class LoadingState<out T> {
  */
 sealed class Resource<out T> {
     object Idle : Resource<Nothing>()
+
     object Loading : Resource<Nothing>()
-    data class Success<T>(val data: T) : Resource<T>()
-    data class Error(val message: String, val cause: Throwable? = null) : Resource<Nothing>()
+
+    data class Success<T>(
+        val data: T,
+    ) : Resource<T>()
+
+    data class Error(
+        val message: String,
+        val cause: Throwable? = null,
+    ) : Resource<Nothing>()
 
     val isIdle: Boolean get() = this is Idle
     val isLoading: Boolean get() = this is Loading

@@ -153,12 +153,11 @@ class ScrollState(
             targetY += itemHeights[i]
         }
 
-        // If item is above viewport, scroll up to it
         if (targetY < offset) {
+            // Item is above the viewport: scroll up to it.
             offset = targetY
-        }
-        // If item is below viewport, scroll down to show it
-        else if (targetY + itemHeights.getOrElse(index) { 1 } > offset + viewportHeight) {
+        } else if (targetY + itemHeights.getOrElse(index) { 1 } > offset + viewportHeight) {
+            // Item is below the viewport: scroll down to show it.
             offset = targetY + itemHeights.getOrElse(index) { 1 } - viewportHeight
         }
 

@@ -1,14 +1,14 @@
 package io.github.darkryh.dispatch.widget
 
+import com.github.ajalt.mordant.rendering.AnsiLevel
+import com.github.ajalt.mordant.rendering.TextColors
+import com.github.ajalt.mordant.rendering.TextStyle
+import com.github.ajalt.mordant.terminal.Terminal
 import io.github.darkryh.dispatch.constraints.Constraints
 import io.github.darkryh.dispatch.layout.Measurable
 import io.github.darkryh.dispatch.layout.Placeable
 import io.github.darkryh.dispatch.layout.SimplePlaceable
 import io.github.darkryh.dispatch.modifier.Modifier
-import com.github.ajalt.mordant.rendering.AnsiLevel
-import com.github.ajalt.mordant.rendering.TextColors
-import com.github.ajalt.mordant.rendering.TextStyle
-import com.github.ajalt.mordant.terminal.Terminal
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
