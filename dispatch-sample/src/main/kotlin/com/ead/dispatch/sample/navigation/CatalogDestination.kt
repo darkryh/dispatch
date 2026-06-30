@@ -34,6 +34,6 @@ enum class CatalogDestination(
 
     companion object {
         /** Number of columns the centred launcher grid lays cards out in. */
-        const val COLUMNS: Int = 3
+        const val COLUMNS: Int = 4
     }
 }

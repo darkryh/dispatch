@@ -4,18 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="09adec4a-725e-47a4-af17-b0db55278204" name="Changes" comment="hibernate impl, docs">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dispatch-renderer/src/main/kotlin/com/ead/dispatch/render/TerminalRenderer.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-renderer/src/main/kotlin/com/ead/dispatch/render/TerminalRenderer.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dispatch-renderer/src/test/kotlin/com/ead/dispatch/render/GoldenAnsiEdgeCaseTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-renderer/src/test/kotlin/com/ead/dispatch/render/GoldenAnsiEdgeCaseTest.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dispatch-renderer/src/test/kotlin/com/ead/dispatch/render/GoldenAnsiStreamTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-renderer/src/test/kotlin/com/ead/dispatch/render/GoldenAnsiStreamTest.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dispatch-runtime/src/main/kotlin/com/ead/dispatch/theme/DispatchTheme.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-runtime/src/main/kotlin/com/ead/dispatch/theme/DispatchTheme.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dispatch-sample/src/main/kotlin/com/ead/dispatch/sample/designsystem/LauncherGrid.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-sample/src/main/kotlin/com/ead/dispatch/sample/designsystem/LauncherGrid.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dispatch-sample/src/main/kotlin/com/ead/dispatch/sample/navigation/CatalogDestination.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-sample/src/main/kotlin/com/ead/dispatch/sample/navigation/CatalogDestination.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dispatch-sample/src/test/kotlin/com/ead/dispatch/sample/e2e/TerminalApplicationE2eTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-sample/src/test/kotlin/com/ead/dispatch/sample/e2e/TerminalApplicationE2eTest.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dispatch-sample/src/test/kotlin/com/ead/dispatch/sample/e2e/TerminalApplicationStressTest.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-sample/src/test/kotlin/com/ead/dispatch/sample/e2e/TerminalApplicationStressTest.kt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/dispatch-widgets/src/main/kotlin/com/ead/dispatch/widget/Panel.kt" beforeDir="false" afterPath="$PROJECT_DIR$/dispatch-widgets/src/main/kotlin/com/ead/dispatch/widget/Panel.kt" afterDir="false" />
-    </list>
+    <list default="true" id="09adec4a-725e-47a4-af17-b0db55278204" name="Changes" comment="fixes sample" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -266,7 +255,15 @@
       <option name="project" value="LOCAL" />
       <updated>1782773177919</updated>
     </task>
-    <option name="localTasksCounter" value="14" />
+    <task id="LOCAL-00014" summary="fixes sample">
+      <option name="closed" value="true" />
+      <created>1782780780401</created>
+      <option name="number" value="00014" />
+      <option name="presentableId" value="LOCAL-00014" />
+      <option name="project" value="LOCAL" />
+      <updated>1782780780401</updated>
+    </task>
+    <option name="localTasksCounter" value="15" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -282,6 +279,7 @@
     <MESSAGE value="app initializer" />
     <MESSAGE value="documentation" />
     <MESSAGE value="hibernate impl, docs" />
-    <option name="LAST_COMMIT_MESSAGE" value="hibernate impl, docs" />
+    <MESSAGE value="fixes sample" />
+    <option name="LAST_COMMIT_MESSAGE" value="fixes sample" />
   </component>
 </project>
