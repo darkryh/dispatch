@@ -13,7 +13,7 @@ configure it in the `hibernation { }` block inside `config { }`. For the full pr
 Set the inactivity timeout and the idle frame rate:
 
 ```kotlin
-import com.ead.dispatch.runtime.DispatchApplication
+import io.github.darkryh.dispatch.runtime.DispatchApplication
 import kotlin.time.Duration.Companion.minutes
 
 fun main(args: Array<String>) =
@@ -51,7 +51,7 @@ show. Read the handle from composition and call `wakeNow()` when new data arrive
 
 ```kotlin
 import androidx.compose.runtime.LaunchedEffect
-import com.ead.dispatch.runtime.LocalHibernation
+import io.github.darkryh.dispatch.runtime.LocalHibernation
 
 @Composable
 fun LiveLogScreen(viewModel: LogViewModel) {
@@ -116,8 +116,8 @@ keypress to the wake.
 To show state on screen instead, read `LocalHibernation` in a small overlay composable:
 
 ```kotlin
-import com.ead.dispatch.runtime.LocalHibernation
-import com.ead.dispatch.widget.Text
+import io.github.darkryh.dispatch.runtime.LocalHibernation
+import io.github.darkryh.dispatch.widget.Text
 
 @Composable
 fun HibernationStatus() {

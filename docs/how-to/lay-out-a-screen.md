@@ -122,20 +122,20 @@ For a styled frame with a title, key hints, and Escape-to-go-back built in, use 
 ## Imports
 
 ```kotlin
-import com.ead.dispatch.layout.Column
-import com.ead.dispatch.layout.Row
-import com.ead.dispatch.layout.Box
-import com.ead.dispatch.layout.Spacer
-import com.ead.dispatch.layout.Arrangement
-import com.ead.dispatch.layout.Alignment
-import com.ead.dispatch.layout.TerminalScreen
-import com.ead.dispatch.layout.align
-import com.ead.dispatch.modifier.Modifier
-import com.ead.dispatch.modifier.fillMaxWidth
-import com.ead.dispatch.modifier.fillMaxSize
-import com.ead.dispatch.modifier.width
-import com.ead.dispatch.modifier.height
-import com.ead.dispatch.modifier.weight
+import io.github.darkryh.dispatch.layout.Column
+import io.github.darkryh.dispatch.layout.Row
+import io.github.darkryh.dispatch.layout.Box
+import io.github.darkryh.dispatch.layout.Spacer
+import io.github.darkryh.dispatch.layout.Arrangement
+import io.github.darkryh.dispatch.layout.Alignment
+import io.github.darkryh.dispatch.layout.TerminalScreen
+import io.github.darkryh.dispatch.layout.align
+import io.github.darkryh.dispatch.modifier.Modifier
+import io.github.darkryh.dispatch.modifier.fillMaxWidth
+import io.github.darkryh.dispatch.modifier.fillMaxSize
+import io.github.darkryh.dispatch.modifier.width
+import io.github.darkryh.dispatch.modifier.height
+import io.github.darkryh.dispatch.modifier.weight
 ```
 
 ## Related

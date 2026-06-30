@@ -1,348 +1,348 @@
-public final class com/ead/dispatch/layout/AlignModifierKt {
-	public static final fun align (Lcom/ead/dispatch/layout/BoxScope;Lcom/ead/dispatch/layout/Alignment$Alignment2D;)Lcom/ead/dispatch/modifier/Modifier;
-	public static final fun align (Lcom/ead/dispatch/layout/ColumnScope;Lcom/ead/dispatch/layout/Alignment$Horizontal;)Lcom/ead/dispatch/modifier/Modifier;
-	public static final fun align (Lcom/ead/dispatch/layout/RowScope;Lcom/ead/dispatch/layout/Alignment$Vertical;)Lcom/ead/dispatch/modifier/Modifier;
-	public static final fun boxAlign (Lcom/ead/dispatch/modifier/Modifier;)Lcom/ead/dispatch/layout/Alignment$Alignment2D;
-	public static final fun columnAlign (Lcom/ead/dispatch/modifier/Modifier;)Lcom/ead/dispatch/layout/Alignment$Horizontal;
-	public static final fun rowAlign (Lcom/ead/dispatch/modifier/Modifier;)Lcom/ead/dispatch/layout/Alignment$Vertical;
+public final class io/github/darkryh/dispatch/layout/AlignModifierKt {
+	public static final fun align (Lio/github/darkryh/dispatch/layout/BoxScope;Lio/github/darkryh/dispatch/layout/Alignment$Alignment2D;)Lio/github/darkryh/dispatch/modifier/Modifier;
+	public static final fun align (Lio/github/darkryh/dispatch/layout/ColumnScope;Lio/github/darkryh/dispatch/layout/Alignment$Horizontal;)Lio/github/darkryh/dispatch/modifier/Modifier;
+	public static final fun align (Lio/github/darkryh/dispatch/layout/RowScope;Lio/github/darkryh/dispatch/layout/Alignment$Vertical;)Lio/github/darkryh/dispatch/modifier/Modifier;
+	public static final fun boxAlign (Lio/github/darkryh/dispatch/modifier/Modifier;)Lio/github/darkryh/dispatch/layout/Alignment$Alignment2D;
+	public static final fun columnAlign (Lio/github/darkryh/dispatch/modifier/Modifier;)Lio/github/darkryh/dispatch/layout/Alignment$Horizontal;
+	public static final fun rowAlign (Lio/github/darkryh/dispatch/modifier/Modifier;)Lio/github/darkryh/dispatch/layout/Alignment$Vertical;
 }
 
-public final class com/ead/dispatch/layout/Alignment {
+public final class io/github/darkryh/dispatch/layout/Alignment {
 	public static final field $stable I
-	public static final field INSTANCE Lcom/ead/dispatch/layout/Alignment;
-	public final fun getBottomCenter ()Lcom/ead/dispatch/layout/Alignment$Alignment2D;
-	public final fun getBottomEnd ()Lcom/ead/dispatch/layout/Alignment$Alignment2D;
-	public final fun getBottomStart ()Lcom/ead/dispatch/layout/Alignment$Alignment2D;
-	public final fun getCenter ()Lcom/ead/dispatch/layout/Alignment$Alignment2D;
-	public final fun getCenterEnd ()Lcom/ead/dispatch/layout/Alignment$Alignment2D;
-	public final fun getCenterStart ()Lcom/ead/dispatch/layout/Alignment$Alignment2D;
-	public final fun getTopCenter ()Lcom/ead/dispatch/layout/Alignment$Alignment2D;
-	public final fun getTopEnd ()Lcom/ead/dispatch/layout/Alignment$Alignment2D;
-	public final fun getTopStart ()Lcom/ead/dispatch/layout/Alignment$Alignment2D;
+	public static final field INSTANCE Lio/github/darkryh/dispatch/layout/Alignment;
+	public final fun getBottomCenter ()Lio/github/darkryh/dispatch/layout/Alignment$Alignment2D;
+	public final fun getBottomEnd ()Lio/github/darkryh/dispatch/layout/Alignment$Alignment2D;
+	public final fun getBottomStart ()Lio/github/darkryh/dispatch/layout/Alignment$Alignment2D;
+	public final fun getCenter ()Lio/github/darkryh/dispatch/layout/Alignment$Alignment2D;
+	public final fun getCenterEnd ()Lio/github/darkryh/dispatch/layout/Alignment$Alignment2D;
+	public final fun getCenterStart ()Lio/github/darkryh/dispatch/layout/Alignment$Alignment2D;
+	public final fun getTopCenter ()Lio/github/darkryh/dispatch/layout/Alignment$Alignment2D;
+	public final fun getTopEnd ()Lio/github/darkryh/dispatch/layout/Alignment$Alignment2D;
+	public final fun getTopStart ()Lio/github/darkryh/dispatch/layout/Alignment$Alignment2D;
 }
 
-public final class com/ead/dispatch/layout/Alignment$Alignment2D {
+public final class io/github/darkryh/dispatch/layout/Alignment$Alignment2D {
 	public static final field $stable I
-	public fun <init> (Lcom/ead/dispatch/layout/Alignment$Horizontal;Lcom/ead/dispatch/layout/Alignment$Vertical;)V
+	public fun <init> (Lio/github/darkryh/dispatch/layout/Alignment$Horizontal;Lio/github/darkryh/dispatch/layout/Alignment$Vertical;)V
 	public final fun align (IIII)Lkotlin/Pair;
-	public final fun component1 ()Lcom/ead/dispatch/layout/Alignment$Horizontal;
-	public final fun component2 ()Lcom/ead/dispatch/layout/Alignment$Vertical;
-	public final fun copy (Lcom/ead/dispatch/layout/Alignment$Horizontal;Lcom/ead/dispatch/layout/Alignment$Vertical;)Lcom/ead/dispatch/layout/Alignment$Alignment2D;
-	public static synthetic fun copy$default (Lcom/ead/dispatch/layout/Alignment$Alignment2D;Lcom/ead/dispatch/layout/Alignment$Horizontal;Lcom/ead/dispatch/layout/Alignment$Vertical;ILjava/lang/Object;)Lcom/ead/dispatch/layout/Alignment$Alignment2D;
+	public final fun component1 ()Lio/github/darkryh/dispatch/layout/Alignment$Horizontal;
+	public final fun component2 ()Lio/github/darkryh/dispatch/layout/Alignment$Vertical;
+	public final fun copy (Lio/github/darkryh/dispatch/layout/Alignment$Horizontal;Lio/github/darkryh/dispatch/layout/Alignment$Vertical;)Lio/github/darkryh/dispatch/layout/Alignment$Alignment2D;
+	public static synthetic fun copy$default (Lio/github/darkryh/dispatch/layout/Alignment$Alignment2D;Lio/github/darkryh/dispatch/layout/Alignment$Horizontal;Lio/github/darkryh/dispatch/layout/Alignment$Vertical;ILjava/lang/Object;)Lio/github/darkryh/dispatch/layout/Alignment$Alignment2D;
 	public fun equals (Ljava/lang/Object;)Z
-	public final fun getHorizontal ()Lcom/ead/dispatch/layout/Alignment$Horizontal;
-	public final fun getVertical ()Lcom/ead/dispatch/layout/Alignment$Vertical;
+	public final fun getHorizontal ()Lio/github/darkryh/dispatch/layout/Alignment$Horizontal;
+	public final fun getVertical ()Lio/github/darkryh/dispatch/layout/Alignment$Vertical;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/ead/dispatch/layout/Alignment$Bottom : com/ead/dispatch/layout/Alignment$Vertical {
+public final class io/github/darkryh/dispatch/layout/Alignment$Bottom : io/github/darkryh/dispatch/layout/Alignment$Vertical {
 	public static final field $stable I
-	public static final field INSTANCE Lcom/ead/dispatch/layout/Alignment$Bottom;
+	public static final field INSTANCE Lio/github/darkryh/dispatch/layout/Alignment$Bottom;
 	public fun align (II)I
 }
 
-public final class com/ead/dispatch/layout/Alignment$CenterHorizontally : com/ead/dispatch/layout/Alignment$Horizontal {
+public final class io/github/darkryh/dispatch/layout/Alignment$CenterHorizontally : io/github/darkryh/dispatch/layout/Alignment$Horizontal {
 	public static final field $stable I
-	public static final field INSTANCE Lcom/ead/dispatch/layout/Alignment$CenterHorizontally;
+	public static final field INSTANCE Lio/github/darkryh/dispatch/layout/Alignment$CenterHorizontally;
 	public fun align (II)I
 }
 
-public final class com/ead/dispatch/layout/Alignment$CenterVertically : com/ead/dispatch/layout/Alignment$Vertical {
+public final class io/github/darkryh/dispatch/layout/Alignment$CenterVertically : io/github/darkryh/dispatch/layout/Alignment$Vertical {
 	public static final field $stable I
-	public static final field INSTANCE Lcom/ead/dispatch/layout/Alignment$CenterVertically;
+	public static final field INSTANCE Lio/github/darkryh/dispatch/layout/Alignment$CenterVertically;
 	public fun align (II)I
 }
 
-public final class com/ead/dispatch/layout/Alignment$End : com/ead/dispatch/layout/Alignment$Horizontal {
+public final class io/github/darkryh/dispatch/layout/Alignment$End : io/github/darkryh/dispatch/layout/Alignment$Horizontal {
 	public static final field $stable I
-	public static final field INSTANCE Lcom/ead/dispatch/layout/Alignment$End;
+	public static final field INSTANCE Lio/github/darkryh/dispatch/layout/Alignment$End;
 	public fun align (II)I
 }
 
-public abstract interface class com/ead/dispatch/layout/Alignment$Horizontal {
+public abstract interface class io/github/darkryh/dispatch/layout/Alignment$Horizontal {
 	public abstract fun align (II)I
 }
 
-public final class com/ead/dispatch/layout/Alignment$Start : com/ead/dispatch/layout/Alignment$Horizontal {
+public final class io/github/darkryh/dispatch/layout/Alignment$Start : io/github/darkryh/dispatch/layout/Alignment$Horizontal {
 	public static final field $stable I
-	public static final field INSTANCE Lcom/ead/dispatch/layout/Alignment$Start;
+	public static final field INSTANCE Lio/github/darkryh/dispatch/layout/Alignment$Start;
 	public fun align (II)I
 }
 
-public final class com/ead/dispatch/layout/Alignment$Top : com/ead/dispatch/layout/Alignment$Vertical {
+public final class io/github/darkryh/dispatch/layout/Alignment$Top : io/github/darkryh/dispatch/layout/Alignment$Vertical {
 	public static final field $stable I
-	public static final field INSTANCE Lcom/ead/dispatch/layout/Alignment$Top;
+	public static final field INSTANCE Lio/github/darkryh/dispatch/layout/Alignment$Top;
 	public fun align (II)I
 }
 
-public abstract interface class com/ead/dispatch/layout/Alignment$Vertical {
+public abstract interface class io/github/darkryh/dispatch/layout/Alignment$Vertical {
 	public abstract fun align (II)I
 }
 
-public final class com/ead/dispatch/layout/Arrangement {
+public final class io/github/darkryh/dispatch/layout/Arrangement {
 	public static final field $stable I
-	public static final field INSTANCE Lcom/ead/dispatch/layout/Arrangement;
-	public final fun spacedBy (I)Lcom/ead/dispatch/layout/Arrangement$HorizontalOrVertical;
+	public static final field INSTANCE Lio/github/darkryh/dispatch/layout/Arrangement;
+	public final fun spacedBy (I)Lio/github/darkryh/dispatch/layout/Arrangement$HorizontalOrVertical;
 }
 
-public final class com/ead/dispatch/layout/Arrangement$Bottom : com/ead/dispatch/layout/Arrangement$Vertical {
+public final class io/github/darkryh/dispatch/layout/Arrangement$Bottom : io/github/darkryh/dispatch/layout/Arrangement$Vertical {
 	public static final field $stable I
-	public static final field INSTANCE Lcom/ead/dispatch/layout/Arrangement$Bottom;
+	public static final field INSTANCE Lio/github/darkryh/dispatch/layout/Arrangement$Bottom;
 	public fun arrange (ILjava/util/List;)Ljava/util/List;
 }
 
-public final class com/ead/dispatch/layout/Arrangement$Center : com/ead/dispatch/layout/Arrangement$HorizontalOrVertical {
+public final class io/github/darkryh/dispatch/layout/Arrangement$Center : io/github/darkryh/dispatch/layout/Arrangement$HorizontalOrVertical {
 	public static final field $stable I
-	public static final field INSTANCE Lcom/ead/dispatch/layout/Arrangement$Center;
+	public static final field INSTANCE Lio/github/darkryh/dispatch/layout/Arrangement$Center;
 	public fun arrange (ILjava/util/List;)Ljava/util/List;
 }
 
-public final class com/ead/dispatch/layout/Arrangement$End : com/ead/dispatch/layout/Arrangement$Horizontal {
+public final class io/github/darkryh/dispatch/layout/Arrangement$End : io/github/darkryh/dispatch/layout/Arrangement$Horizontal {
 	public static final field $stable I
-	public static final field INSTANCE Lcom/ead/dispatch/layout/Arrangement$End;
+	public static final field INSTANCE Lio/github/darkryh/dispatch/layout/Arrangement$End;
 	public fun arrange (ILjava/util/List;)Ljava/util/List;
 }
 
-public abstract interface class com/ead/dispatch/layout/Arrangement$Horizontal {
+public abstract interface class io/github/darkryh/dispatch/layout/Arrangement$Horizontal {
 	public abstract fun arrange (ILjava/util/List;)Ljava/util/List;
 }
 
-public abstract interface class com/ead/dispatch/layout/Arrangement$HorizontalOrVertical : com/ead/dispatch/layout/Arrangement$Horizontal, com/ead/dispatch/layout/Arrangement$Vertical {
+public abstract interface class io/github/darkryh/dispatch/layout/Arrangement$HorizontalOrVertical : io/github/darkryh/dispatch/layout/Arrangement$Horizontal, io/github/darkryh/dispatch/layout/Arrangement$Vertical {
 }
 
-public final class com/ead/dispatch/layout/Arrangement$SpaceAround : com/ead/dispatch/layout/Arrangement$HorizontalOrVertical {
+public final class io/github/darkryh/dispatch/layout/Arrangement$SpaceAround : io/github/darkryh/dispatch/layout/Arrangement$HorizontalOrVertical {
 	public static final field $stable I
-	public static final field INSTANCE Lcom/ead/dispatch/layout/Arrangement$SpaceAround;
+	public static final field INSTANCE Lio/github/darkryh/dispatch/layout/Arrangement$SpaceAround;
 	public fun arrange (ILjava/util/List;)Ljava/util/List;
 }
 
-public final class com/ead/dispatch/layout/Arrangement$SpaceBetween : com/ead/dispatch/layout/Arrangement$HorizontalOrVertical {
+public final class io/github/darkryh/dispatch/layout/Arrangement$SpaceBetween : io/github/darkryh/dispatch/layout/Arrangement$HorizontalOrVertical {
 	public static final field $stable I
-	public static final field INSTANCE Lcom/ead/dispatch/layout/Arrangement$SpaceBetween;
+	public static final field INSTANCE Lio/github/darkryh/dispatch/layout/Arrangement$SpaceBetween;
 	public fun arrange (ILjava/util/List;)Ljava/util/List;
 }
 
-public final class com/ead/dispatch/layout/Arrangement$SpaceEvenly : com/ead/dispatch/layout/Arrangement$HorizontalOrVertical {
+public final class io/github/darkryh/dispatch/layout/Arrangement$SpaceEvenly : io/github/darkryh/dispatch/layout/Arrangement$HorizontalOrVertical {
 	public static final field $stable I
-	public static final field INSTANCE Lcom/ead/dispatch/layout/Arrangement$SpaceEvenly;
+	public static final field INSTANCE Lio/github/darkryh/dispatch/layout/Arrangement$SpaceEvenly;
 	public fun arrange (ILjava/util/List;)Ljava/util/List;
 }
 
-public final class com/ead/dispatch/layout/Arrangement$SpacedBy : com/ead/dispatch/layout/Arrangement$HorizontalOrVertical {
+public final class io/github/darkryh/dispatch/layout/Arrangement$SpacedBy : io/github/darkryh/dispatch/layout/Arrangement$HorizontalOrVertical {
 	public static final field $stable I
 	public fun <init> (I)V
 	public fun arrange (ILjava/util/List;)Ljava/util/List;
 }
 
-public final class com/ead/dispatch/layout/Arrangement$Start : com/ead/dispatch/layout/Arrangement$Horizontal {
+public final class io/github/darkryh/dispatch/layout/Arrangement$Start : io/github/darkryh/dispatch/layout/Arrangement$Horizontal {
 	public static final field $stable I
-	public static final field INSTANCE Lcom/ead/dispatch/layout/Arrangement$Start;
+	public static final field INSTANCE Lio/github/darkryh/dispatch/layout/Arrangement$Start;
 	public fun arrange (ILjava/util/List;)Ljava/util/List;
 }
 
-public final class com/ead/dispatch/layout/Arrangement$Top : com/ead/dispatch/layout/Arrangement$Vertical {
+public final class io/github/darkryh/dispatch/layout/Arrangement$Top : io/github/darkryh/dispatch/layout/Arrangement$Vertical {
 	public static final field $stable I
-	public static final field INSTANCE Lcom/ead/dispatch/layout/Arrangement$Top;
+	public static final field INSTANCE Lio/github/darkryh/dispatch/layout/Arrangement$Top;
 	public fun arrange (ILjava/util/List;)Ljava/util/List;
 }
 
-public abstract interface class com/ead/dispatch/layout/Arrangement$Vertical {
+public abstract interface class io/github/darkryh/dispatch/layout/Arrangement$Vertical {
 	public abstract fun arrange (ILjava/util/List;)Ljava/util/List;
 }
 
-public final class com/ead/dispatch/layout/BannerLayoutKt {
-	public static final fun BannerLayout (Lcom/ead/dispatch/modifier/Modifier;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;II)V
-	public static final fun FooterLayout (Lcom/ead/dispatch/modifier/Modifier;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;II)V
-	public static final fun HeaderLayout (Lcom/ead/dispatch/modifier/Modifier;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;II)V
+public final class io/github/darkryh/dispatch/layout/BannerLayoutKt {
+	public static final fun BannerLayout (Lio/github/darkryh/dispatch/modifier/Modifier;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;II)V
+	public static final fun FooterLayout (Lio/github/darkryh/dispatch/modifier/Modifier;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;II)V
+	public static final fun HeaderLayout (Lio/github/darkryh/dispatch/modifier/Modifier;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;II)V
 }
 
-public final class com/ead/dispatch/layout/BoxAlignModifier : com/ead/dispatch/modifier/Modifier$Element {
+public final class io/github/darkryh/dispatch/layout/BoxAlignModifier : io/github/darkryh/dispatch/modifier/Modifier$Element {
 	public static final field $stable I
-	public fun <init> (Lcom/ead/dispatch/layout/Alignment$Alignment2D;)V
+	public fun <init> (Lio/github/darkryh/dispatch/layout/Alignment$Alignment2D;)V
 	public fun allOf (Ljava/lang/Class;)Ljava/util/List;
 	public fun any (Lkotlin/jvm/functions/Function1;)Z
-	public final fun component1 ()Lcom/ead/dispatch/layout/Alignment$Alignment2D;
-	public final fun copy (Lcom/ead/dispatch/layout/Alignment$Alignment2D;)Lcom/ead/dispatch/layout/BoxAlignModifier;
-	public static synthetic fun copy$default (Lcom/ead/dispatch/layout/BoxAlignModifier;Lcom/ead/dispatch/layout/Alignment$Alignment2D;ILjava/lang/Object;)Lcom/ead/dispatch/layout/BoxAlignModifier;
+	public final fun component1 ()Lio/github/darkryh/dispatch/layout/Alignment$Alignment2D;
+	public final fun copy (Lio/github/darkryh/dispatch/layout/Alignment$Alignment2D;)Lio/github/darkryh/dispatch/layout/BoxAlignModifier;
+	public static synthetic fun copy$default (Lio/github/darkryh/dispatch/layout/BoxAlignModifier;Lio/github/darkryh/dispatch/layout/Alignment$Alignment2D;ILjava/lang/Object;)Lio/github/darkryh/dispatch/layout/BoxAlignModifier;
 	public fun equals (Ljava/lang/Object;)Z
-	public fun firstOrNull (Ljava/lang/Class;)Lcom/ead/dispatch/modifier/Modifier$Element;
+	public fun firstOrNull (Ljava/lang/Class;)Lio/github/darkryh/dispatch/modifier/Modifier$Element;
 	public fun foldIn (Ljava/lang/Object;Lkotlin/jvm/functions/Function2;)Ljava/lang/Object;
 	public fun foldOut (Ljava/lang/Object;Lkotlin/jvm/functions/Function2;)Ljava/lang/Object;
-	public final fun getAlignment ()Lcom/ead/dispatch/layout/Alignment$Alignment2D;
+	public final fun getAlignment ()Lio/github/darkryh/dispatch/layout/Alignment$Alignment2D;
 	public fun hashCode ()I
-	public fun then (Lcom/ead/dispatch/modifier/Modifier;)Lcom/ead/dispatch/modifier/Modifier;
+	public fun then (Lio/github/darkryh/dispatch/modifier/Modifier;)Lio/github/darkryh/dispatch/modifier/Modifier;
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/ead/dispatch/layout/BoxKt {
-	public static final fun Box (Lcom/ead/dispatch/modifier/Modifier;Lcom/ead/dispatch/layout/Alignment$Alignment2D;Lkotlin/jvm/functions/Function3;Landroidx/compose/runtime/Composer;II)V
-	public static final fun Spacer (Lcom/ead/dispatch/modifier/Modifier;Landroidx/compose/runtime/Composer;II)V
+public final class io/github/darkryh/dispatch/layout/BoxKt {
+	public static final fun Box (Lio/github/darkryh/dispatch/modifier/Modifier;Lio/github/darkryh/dispatch/layout/Alignment$Alignment2D;Lkotlin/jvm/functions/Function3;Landroidx/compose/runtime/Composer;II)V
+	public static final fun Spacer (Lio/github/darkryh/dispatch/modifier/Modifier;Landroidx/compose/runtime/Composer;II)V
 }
 
-public abstract interface class com/ead/dispatch/layout/BoxScope : com/ead/dispatch/layout/LayoutScope {
-	public abstract fun getContentAlignment ()Lcom/ead/dispatch/layout/Alignment$Alignment2D;
+public abstract interface class io/github/darkryh/dispatch/layout/BoxScope : io/github/darkryh/dispatch/layout/LayoutScope {
+	public abstract fun getContentAlignment ()Lio/github/darkryh/dispatch/layout/Alignment$Alignment2D;
 }
 
-public final class com/ead/dispatch/layout/BoxScope$DefaultImpls {
-	public static fun getItemModifier (Lcom/ead/dispatch/layout/BoxScope;)Lcom/ead/dispatch/modifier/Modifier;
+public final class io/github/darkryh/dispatch/layout/BoxScope$DefaultImpls {
+	public static fun getItemModifier (Lio/github/darkryh/dispatch/layout/BoxScope;)Lio/github/darkryh/dispatch/modifier/Modifier;
 }
 
-public final class com/ead/dispatch/layout/BoxScopeInstance : com/ead/dispatch/layout/BoxScope {
+public final class io/github/darkryh/dispatch/layout/BoxScopeInstance : io/github/darkryh/dispatch/layout/BoxScope {
 	public static final field $stable I
-	public fun <init> (Lcom/ead/dispatch/layout/Alignment$Alignment2D;)V
-	public final fun component1 ()Lcom/ead/dispatch/layout/Alignment$Alignment2D;
-	public final fun copy (Lcom/ead/dispatch/layout/Alignment$Alignment2D;)Lcom/ead/dispatch/layout/BoxScopeInstance;
-	public static synthetic fun copy$default (Lcom/ead/dispatch/layout/BoxScopeInstance;Lcom/ead/dispatch/layout/Alignment$Alignment2D;ILjava/lang/Object;)Lcom/ead/dispatch/layout/BoxScopeInstance;
+	public fun <init> (Lio/github/darkryh/dispatch/layout/Alignment$Alignment2D;)V
+	public final fun component1 ()Lio/github/darkryh/dispatch/layout/Alignment$Alignment2D;
+	public final fun copy (Lio/github/darkryh/dispatch/layout/Alignment$Alignment2D;)Lio/github/darkryh/dispatch/layout/BoxScopeInstance;
+	public static synthetic fun copy$default (Lio/github/darkryh/dispatch/layout/BoxScopeInstance;Lio/github/darkryh/dispatch/layout/Alignment$Alignment2D;ILjava/lang/Object;)Lio/github/darkryh/dispatch/layout/BoxScopeInstance;
 	public fun equals (Ljava/lang/Object;)Z
-	public fun getContentAlignment ()Lcom/ead/dispatch/layout/Alignment$Alignment2D;
-	public fun getItemModifier ()Lcom/ead/dispatch/modifier/Modifier;
+	public fun getContentAlignment ()Lio/github/darkryh/dispatch/layout/Alignment$Alignment2D;
+	public fun getItemModifier ()Lio/github/darkryh/dispatch/modifier/Modifier;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/ead/dispatch/layout/ColumnAlignModifier : com/ead/dispatch/modifier/Modifier$Element {
+public final class io/github/darkryh/dispatch/layout/ColumnAlignModifier : io/github/darkryh/dispatch/modifier/Modifier$Element {
 	public static final field $stable I
-	public fun <init> (Lcom/ead/dispatch/layout/Alignment$Horizontal;)V
+	public fun <init> (Lio/github/darkryh/dispatch/layout/Alignment$Horizontal;)V
 	public fun allOf (Ljava/lang/Class;)Ljava/util/List;
 	public fun any (Lkotlin/jvm/functions/Function1;)Z
-	public final fun component1 ()Lcom/ead/dispatch/layout/Alignment$Horizontal;
-	public final fun copy (Lcom/ead/dispatch/layout/Alignment$Horizontal;)Lcom/ead/dispatch/layout/ColumnAlignModifier;
-	public static synthetic fun copy$default (Lcom/ead/dispatch/layout/ColumnAlignModifier;Lcom/ead/dispatch/layout/Alignment$Horizontal;ILjava/lang/Object;)Lcom/ead/dispatch/layout/ColumnAlignModifier;
+	public final fun component1 ()Lio/github/darkryh/dispatch/layout/Alignment$Horizontal;
+	public final fun copy (Lio/github/darkryh/dispatch/layout/Alignment$Horizontal;)Lio/github/darkryh/dispatch/layout/ColumnAlignModifier;
+	public static synthetic fun copy$default (Lio/github/darkryh/dispatch/layout/ColumnAlignModifier;Lio/github/darkryh/dispatch/layout/Alignment$Horizontal;ILjava/lang/Object;)Lio/github/darkryh/dispatch/layout/ColumnAlignModifier;
 	public fun equals (Ljava/lang/Object;)Z
-	public fun firstOrNull (Ljava/lang/Class;)Lcom/ead/dispatch/modifier/Modifier$Element;
+	public fun firstOrNull (Ljava/lang/Class;)Lio/github/darkryh/dispatch/modifier/Modifier$Element;
 	public fun foldIn (Ljava/lang/Object;Lkotlin/jvm/functions/Function2;)Ljava/lang/Object;
 	public fun foldOut (Ljava/lang/Object;Lkotlin/jvm/functions/Function2;)Ljava/lang/Object;
-	public final fun getAlignment ()Lcom/ead/dispatch/layout/Alignment$Horizontal;
+	public final fun getAlignment ()Lio/github/darkryh/dispatch/layout/Alignment$Horizontal;
 	public fun hashCode ()I
-	public fun then (Lcom/ead/dispatch/modifier/Modifier;)Lcom/ead/dispatch/modifier/Modifier;
+	public fun then (Lio/github/darkryh/dispatch/modifier/Modifier;)Lio/github/darkryh/dispatch/modifier/Modifier;
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/ead/dispatch/layout/ColumnKt {
-	public static final fun Column (Lcom/ead/dispatch/modifier/Modifier;Lcom/ead/dispatch/layout/Arrangement$Vertical;Lcom/ead/dispatch/layout/Alignment$Horizontal;Lkotlin/jvm/functions/Function3;Landroidx/compose/runtime/Composer;II)V
+public final class io/github/darkryh/dispatch/layout/ColumnKt {
+	public static final fun Column (Lio/github/darkryh/dispatch/modifier/Modifier;Lio/github/darkryh/dispatch/layout/Arrangement$Vertical;Lio/github/darkryh/dispatch/layout/Alignment$Horizontal;Lkotlin/jvm/functions/Function3;Landroidx/compose/runtime/Composer;II)V
 }
 
-public abstract interface class com/ead/dispatch/layout/ColumnScope : com/ead/dispatch/layout/LayoutScope {
-	public abstract fun getHorizontalAlignment ()Lcom/ead/dispatch/layout/Alignment$Horizontal;
+public abstract interface class io/github/darkryh/dispatch/layout/ColumnScope : io/github/darkryh/dispatch/layout/LayoutScope {
+	public abstract fun getHorizontalAlignment ()Lio/github/darkryh/dispatch/layout/Alignment$Horizontal;
 }
 
-public final class com/ead/dispatch/layout/ColumnScope$DefaultImpls {
-	public static fun getItemModifier (Lcom/ead/dispatch/layout/ColumnScope;)Lcom/ead/dispatch/modifier/Modifier;
+public final class io/github/darkryh/dispatch/layout/ColumnScope$DefaultImpls {
+	public static fun getItemModifier (Lio/github/darkryh/dispatch/layout/ColumnScope;)Lio/github/darkryh/dispatch/modifier/Modifier;
 }
 
-public final class com/ead/dispatch/layout/ColumnScopeInstance : com/ead/dispatch/layout/ColumnScope {
+public final class io/github/darkryh/dispatch/layout/ColumnScopeInstance : io/github/darkryh/dispatch/layout/ColumnScope {
 	public static final field $stable I
-	public fun <init> (Lcom/ead/dispatch/layout/Alignment$Horizontal;)V
-	public final fun component1 ()Lcom/ead/dispatch/layout/Alignment$Horizontal;
-	public final fun copy (Lcom/ead/dispatch/layout/Alignment$Horizontal;)Lcom/ead/dispatch/layout/ColumnScopeInstance;
-	public static synthetic fun copy$default (Lcom/ead/dispatch/layout/ColumnScopeInstance;Lcom/ead/dispatch/layout/Alignment$Horizontal;ILjava/lang/Object;)Lcom/ead/dispatch/layout/ColumnScopeInstance;
+	public fun <init> (Lio/github/darkryh/dispatch/layout/Alignment$Horizontal;)V
+	public final fun component1 ()Lio/github/darkryh/dispatch/layout/Alignment$Horizontal;
+	public final fun copy (Lio/github/darkryh/dispatch/layout/Alignment$Horizontal;)Lio/github/darkryh/dispatch/layout/ColumnScopeInstance;
+	public static synthetic fun copy$default (Lio/github/darkryh/dispatch/layout/ColumnScopeInstance;Lio/github/darkryh/dispatch/layout/Alignment$Horizontal;ILjava/lang/Object;)Lio/github/darkryh/dispatch/layout/ColumnScopeInstance;
 	public fun equals (Ljava/lang/Object;)Z
-	public fun getHorizontalAlignment ()Lcom/ead/dispatch/layout/Alignment$Horizontal;
-	public fun getItemModifier ()Lcom/ead/dispatch/modifier/Modifier;
+	public fun getHorizontalAlignment ()Lio/github/darkryh/dispatch/layout/Alignment$Horizontal;
+	public fun getItemModifier ()Lio/github/darkryh/dispatch/modifier/Modifier;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/ead/dispatch/layout/ComposableSingletons$BoxKt {
-	public static final field INSTANCE Lcom/ead/dispatch/layout/ComposableSingletons$BoxKt;
+public final class io/github/darkryh/dispatch/layout/ComposableSingletons$BoxKt {
+	public static final field INSTANCE Lio/github/darkryh/dispatch/layout/ComposableSingletons$BoxKt;
 	public fun <init> ()V
-	public final fun getLambda$1612611018$io_github_darkryh_dispatch_dispatch_layout ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$1625927735$io_github_darkryh_dispatch_layout ()Lkotlin/jvm/functions/Function3;
 }
 
-public abstract interface class com/ead/dispatch/layout/FlowColumnScope : com/ead/dispatch/layout/LayoutScope {
+public abstract interface class io/github/darkryh/dispatch/layout/FlowColumnScope : io/github/darkryh/dispatch/layout/LayoutScope {
 }
 
-public final class com/ead/dispatch/layout/FlowColumnScope$DefaultImpls {
-	public static fun getItemModifier (Lcom/ead/dispatch/layout/FlowColumnScope;)Lcom/ead/dispatch/modifier/Modifier;
+public final class io/github/darkryh/dispatch/layout/FlowColumnScope$DefaultImpls {
+	public static fun getItemModifier (Lio/github/darkryh/dispatch/layout/FlowColumnScope;)Lio/github/darkryh/dispatch/modifier/Modifier;
 }
 
-public final class com/ead/dispatch/layout/FlowColumnScopeInstance : com/ead/dispatch/layout/FlowColumnScope {
+public final class io/github/darkryh/dispatch/layout/FlowColumnScopeInstance : io/github/darkryh/dispatch/layout/FlowColumnScope {
 	public static final field $stable I
-	public static final field INSTANCE Lcom/ead/dispatch/layout/FlowColumnScopeInstance;
-	public fun getItemModifier ()Lcom/ead/dispatch/modifier/Modifier;
+	public static final field INSTANCE Lio/github/darkryh/dispatch/layout/FlowColumnScopeInstance;
+	public fun getItemModifier ()Lio/github/darkryh/dispatch/modifier/Modifier;
 }
 
-public final class com/ead/dispatch/layout/FlowLayoutKt {
-	public static final fun FlowColumn (Lcom/ead/dispatch/modifier/Modifier;Lcom/ead/dispatch/layout/Arrangement$Vertical;Lcom/ead/dispatch/layout/Arrangement$Horizontal;ILkotlin/jvm/functions/Function3;Landroidx/compose/runtime/Composer;II)V
-	public static final fun FlowRow (Lcom/ead/dispatch/modifier/Modifier;Lcom/ead/dispatch/layout/Arrangement$Horizontal;Lcom/ead/dispatch/layout/Arrangement$Vertical;ILkotlin/jvm/functions/Function3;Landroidx/compose/runtime/Composer;II)V
+public final class io/github/darkryh/dispatch/layout/FlowLayoutKt {
+	public static final fun FlowColumn (Lio/github/darkryh/dispatch/modifier/Modifier;Lio/github/darkryh/dispatch/layout/Arrangement$Vertical;Lio/github/darkryh/dispatch/layout/Arrangement$Horizontal;ILkotlin/jvm/functions/Function3;Landroidx/compose/runtime/Composer;II)V
+	public static final fun FlowRow (Lio/github/darkryh/dispatch/modifier/Modifier;Lio/github/darkryh/dispatch/layout/Arrangement$Horizontal;Lio/github/darkryh/dispatch/layout/Arrangement$Vertical;ILkotlin/jvm/functions/Function3;Landroidx/compose/runtime/Composer;II)V
 }
 
-public abstract interface class com/ead/dispatch/layout/FlowRowScope : com/ead/dispatch/layout/LayoutScope {
+public abstract interface class io/github/darkryh/dispatch/layout/FlowRowScope : io/github/darkryh/dispatch/layout/LayoutScope {
 }
 
-public final class com/ead/dispatch/layout/FlowRowScope$DefaultImpls {
-	public static fun getItemModifier (Lcom/ead/dispatch/layout/FlowRowScope;)Lcom/ead/dispatch/modifier/Modifier;
+public final class io/github/darkryh/dispatch/layout/FlowRowScope$DefaultImpls {
+	public static fun getItemModifier (Lio/github/darkryh/dispatch/layout/FlowRowScope;)Lio/github/darkryh/dispatch/modifier/Modifier;
 }
 
-public final class com/ead/dispatch/layout/FlowRowScopeInstance : com/ead/dispatch/layout/FlowRowScope {
+public final class io/github/darkryh/dispatch/layout/FlowRowScopeInstance : io/github/darkryh/dispatch/layout/FlowRowScope {
 	public static final field $stable I
-	public static final field INSTANCE Lcom/ead/dispatch/layout/FlowRowScopeInstance;
-	public fun getItemModifier ()Lcom/ead/dispatch/modifier/Modifier;
+	public static final field INSTANCE Lio/github/darkryh/dispatch/layout/FlowRowScopeInstance;
+	public fun getItemModifier ()Lio/github/darkryh/dispatch/modifier/Modifier;
 }
 
-public final class com/ead/dispatch/layout/LayoutKt {
-	public static final fun Layout (Lcom/ead/dispatch/modifier/Modifier;Lcom/ead/dispatch/layout/MeasurePolicy;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;II)V
+public final class io/github/darkryh/dispatch/layout/LayoutKt {
+	public static final fun Layout (Lio/github/darkryh/dispatch/modifier/Modifier;Lio/github/darkryh/dispatch/layout/MeasurePolicy;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;II)V
 }
 
-public abstract interface class com/ead/dispatch/layout/LayoutScope {
-	public fun getItemModifier ()Lcom/ead/dispatch/modifier/Modifier;
+public abstract interface class io/github/darkryh/dispatch/layout/LayoutScope {
+	public fun getItemModifier ()Lio/github/darkryh/dispatch/modifier/Modifier;
 }
 
-public final class com/ead/dispatch/layout/LayoutScope$DefaultImpls {
-	public static fun getItemModifier (Lcom/ead/dispatch/layout/LayoutScope;)Lcom/ead/dispatch/modifier/Modifier;
+public final class io/github/darkryh/dispatch/layout/LayoutScope$DefaultImpls {
+	public static fun getItemModifier (Lio/github/darkryh/dispatch/layout/LayoutScope;)Lio/github/darkryh/dispatch/modifier/Modifier;
 }
 
-public class com/ead/dispatch/layout/LayoutScopeInstance : com/ead/dispatch/layout/LayoutScope {
+public class io/github/darkryh/dispatch/layout/LayoutScopeInstance : io/github/darkryh/dispatch/layout/LayoutScope {
 	public static final field $stable I
 	public fun <init> ()V
-	public fun getItemModifier ()Lcom/ead/dispatch/modifier/Modifier;
+	public fun getItemModifier ()Lio/github/darkryh/dispatch/modifier/Modifier;
 }
 
-public final class com/ead/dispatch/layout/RowAlignModifier : com/ead/dispatch/modifier/Modifier$Element {
+public final class io/github/darkryh/dispatch/layout/RowAlignModifier : io/github/darkryh/dispatch/modifier/Modifier$Element {
 	public static final field $stable I
-	public fun <init> (Lcom/ead/dispatch/layout/Alignment$Vertical;)V
+	public fun <init> (Lio/github/darkryh/dispatch/layout/Alignment$Vertical;)V
 	public fun allOf (Ljava/lang/Class;)Ljava/util/List;
 	public fun any (Lkotlin/jvm/functions/Function1;)Z
-	public final fun component1 ()Lcom/ead/dispatch/layout/Alignment$Vertical;
-	public final fun copy (Lcom/ead/dispatch/layout/Alignment$Vertical;)Lcom/ead/dispatch/layout/RowAlignModifier;
-	public static synthetic fun copy$default (Lcom/ead/dispatch/layout/RowAlignModifier;Lcom/ead/dispatch/layout/Alignment$Vertical;ILjava/lang/Object;)Lcom/ead/dispatch/layout/RowAlignModifier;
+	public final fun component1 ()Lio/github/darkryh/dispatch/layout/Alignment$Vertical;
+	public final fun copy (Lio/github/darkryh/dispatch/layout/Alignment$Vertical;)Lio/github/darkryh/dispatch/layout/RowAlignModifier;
+	public static synthetic fun copy$default (Lio/github/darkryh/dispatch/layout/RowAlignModifier;Lio/github/darkryh/dispatch/layout/Alignment$Vertical;ILjava/lang/Object;)Lio/github/darkryh/dispatch/layout/RowAlignModifier;
 	public fun equals (Ljava/lang/Object;)Z
-	public fun firstOrNull (Ljava/lang/Class;)Lcom/ead/dispatch/modifier/Modifier$Element;
+	public fun firstOrNull (Ljava/lang/Class;)Lio/github/darkryh/dispatch/modifier/Modifier$Element;
 	public fun foldIn (Ljava/lang/Object;Lkotlin/jvm/functions/Function2;)Ljava/lang/Object;
 	public fun foldOut (Ljava/lang/Object;Lkotlin/jvm/functions/Function2;)Ljava/lang/Object;
-	public final fun getAlignment ()Lcom/ead/dispatch/layout/Alignment$Vertical;
+	public final fun getAlignment ()Lio/github/darkryh/dispatch/layout/Alignment$Vertical;
 	public fun hashCode ()I
-	public fun then (Lcom/ead/dispatch/modifier/Modifier;)Lcom/ead/dispatch/modifier/Modifier;
+	public fun then (Lio/github/darkryh/dispatch/modifier/Modifier;)Lio/github/darkryh/dispatch/modifier/Modifier;
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/ead/dispatch/layout/RowKt {
-	public static final fun Row (Lcom/ead/dispatch/modifier/Modifier;Lcom/ead/dispatch/layout/Arrangement$Horizontal;Lcom/ead/dispatch/layout/Alignment$Vertical;Lkotlin/jvm/functions/Function3;Landroidx/compose/runtime/Composer;II)V
+public final class io/github/darkryh/dispatch/layout/RowKt {
+	public static final fun Row (Lio/github/darkryh/dispatch/modifier/Modifier;Lio/github/darkryh/dispatch/layout/Arrangement$Horizontal;Lio/github/darkryh/dispatch/layout/Alignment$Vertical;Lkotlin/jvm/functions/Function3;Landroidx/compose/runtime/Composer;II)V
 }
 
-public abstract interface class com/ead/dispatch/layout/RowScope : com/ead/dispatch/layout/LayoutScope {
-	public abstract fun getVerticalAlignment ()Lcom/ead/dispatch/layout/Alignment$Vertical;
+public abstract interface class io/github/darkryh/dispatch/layout/RowScope : io/github/darkryh/dispatch/layout/LayoutScope {
+	public abstract fun getVerticalAlignment ()Lio/github/darkryh/dispatch/layout/Alignment$Vertical;
 }
 
-public final class com/ead/dispatch/layout/RowScope$DefaultImpls {
-	public static fun getItemModifier (Lcom/ead/dispatch/layout/RowScope;)Lcom/ead/dispatch/modifier/Modifier;
+public final class io/github/darkryh/dispatch/layout/RowScope$DefaultImpls {
+	public static fun getItemModifier (Lio/github/darkryh/dispatch/layout/RowScope;)Lio/github/darkryh/dispatch/modifier/Modifier;
 }
 
-public final class com/ead/dispatch/layout/RowScopeInstance : com/ead/dispatch/layout/RowScope {
+public final class io/github/darkryh/dispatch/layout/RowScopeInstance : io/github/darkryh/dispatch/layout/RowScope {
 	public static final field $stable I
-	public fun <init> (Lcom/ead/dispatch/layout/Alignment$Vertical;)V
-	public final fun component1 ()Lcom/ead/dispatch/layout/Alignment$Vertical;
-	public final fun copy (Lcom/ead/dispatch/layout/Alignment$Vertical;)Lcom/ead/dispatch/layout/RowScopeInstance;
-	public static synthetic fun copy$default (Lcom/ead/dispatch/layout/RowScopeInstance;Lcom/ead/dispatch/layout/Alignment$Vertical;ILjava/lang/Object;)Lcom/ead/dispatch/layout/RowScopeInstance;
+	public fun <init> (Lio/github/darkryh/dispatch/layout/Alignment$Vertical;)V
+	public final fun component1 ()Lio/github/darkryh/dispatch/layout/Alignment$Vertical;
+	public final fun copy (Lio/github/darkryh/dispatch/layout/Alignment$Vertical;)Lio/github/darkryh/dispatch/layout/RowScopeInstance;
+	public static synthetic fun copy$default (Lio/github/darkryh/dispatch/layout/RowScopeInstance;Lio/github/darkryh/dispatch/layout/Alignment$Vertical;ILjava/lang/Object;)Lio/github/darkryh/dispatch/layout/RowScopeInstance;
 	public fun equals (Ljava/lang/Object;)Z
-	public fun getItemModifier ()Lcom/ead/dispatch/modifier/Modifier;
-	public fun getVerticalAlignment ()Lcom/ead/dispatch/layout/Alignment$Vertical;
+	public fun getItemModifier ()Lio/github/darkryh/dispatch/modifier/Modifier;
+	public fun getVerticalAlignment ()Lio/github/darkryh/dispatch/layout/Alignment$Vertical;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/ead/dispatch/layout/TerminalScreenKt {
-	public static final fun TerminalScreen (Lcom/ead/dispatch/modifier/Modifier;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function3;Landroidx/compose/runtime/Composer;II)V
+public final class io/github/darkryh/dispatch/layout/TerminalScreenKt {
+	public static final fun TerminalScreen (Lio/github/darkryh/dispatch/modifier/Modifier;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function3;Landroidx/compose/runtime/Composer;II)V
 }
 

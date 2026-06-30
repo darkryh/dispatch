@@ -4,7 +4,7 @@ plugins {
 }
 
 application {
-    mainClass.set("com.ead.dispatch.sample.MainKt")
+    mainClass.set("io.github.darkryh.dispatch.sample.MainKt")
     applicationDefaultJvmArgs =
         listOf(
             "-Dfile.encoding=utf-8",

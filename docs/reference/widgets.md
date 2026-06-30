@@ -1,6 +1,6 @@
 # Widgets reference
 
-Package: `com.ead.dispatch.widget`. Module: `dispatch-widgets`.
+Package: `io.github.darkryh.dispatch.widget`. Module: `dispatch-widgets`.
 
 This page documents every public widget, grouped by purpose. Each entry gives the composable's
 signature, its parameters, and a short example. Widgets accept a

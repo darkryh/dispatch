@@ -32,10 +32,10 @@ plugins {
 }
 
 dependencies {
-    implementation("io.github.darkryh.dispatch:dispatch-core:1.0.0")
-    implementation("io.github.darkryh.dispatch:dispatch-widgets:1.0.0")
-    implementation("io.github.darkryh.dispatch:dispatch-navigation:1.0.0")
-    implementation("io.github.darkryh.dispatch:dispatch-koin:1.0.0")
+    implementation("io.github.darkryh:dispatch-core:1.0.0-beta01")
+    implementation("io.github.darkryh:dispatch-widgets:1.0.0-beta01")
+    implementation("io.github.darkryh:dispatch-navigation:1.0.0-beta01")
+    implementation("io.github.darkryh:dispatch-koin:1.0.0-beta01")
 }
 ```
 
@@ -66,7 +66,7 @@ carries the note id.
 
 ```kotlin
 // Routes.kt
-import com.ead.dispatch.navigation.NavKey
+import io.github.darkryh.dispatch.navigation.NavKey
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -84,7 +84,7 @@ two intents.
 
 ```kotlin
 // HomeViewModel.kt
-import com.ead.dispatch.viewmodel.MviViewModel
+import io.github.darkryh.dispatch.viewmodel.MviViewModel
 
 data class HomeState(val notes: List<Note> = emptyList(), val selected: Int = 0)
 
@@ -117,15 +117,15 @@ keys. Open a note by navigating to its `DetailRoute`.
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import com.ead.dispatch.input.Key
-import com.ead.dispatch.layout.Column
-import com.ead.dispatch.navigation.LocalNavigator
-import com.ead.dispatch.runtime.KeyBindings
-import com.ead.dispatch.runtime.LocalTheme
-import com.ead.dispatch.viewmodel.viewModel
-import com.ead.dispatch.widget.SelectableList
-import com.ead.dispatch.widget.SelectableListStyles
-import com.ead.dispatch.widget.Text
+import io.github.darkryh.dispatch.input.Key
+import io.github.darkryh.dispatch.layout.Column
+import io.github.darkryh.dispatch.navigation.LocalNavigator
+import io.github.darkryh.dispatch.runtime.KeyBindings
+import io.github.darkryh.dispatch.runtime.LocalTheme
+import io.github.darkryh.dispatch.viewmodel.viewModel
+import io.github.darkryh.dispatch.widget.SelectableList
+import io.github.darkryh.dispatch.widget.SelectableListStyles
+import io.github.darkryh.dispatch.widget.Text
 import com.github.ajalt.mordant.rendering.TextStyle
 
 @Composable
@@ -164,9 +164,9 @@ note.
 
 ```kotlin
 // DetailViewModel.kt
-import com.ead.dispatch.navigation.toRoute
-import com.ead.dispatch.runtime.SavedStateHandle
-import com.ead.dispatch.viewmodel.StateViewModel
+import io.github.darkryh.dispatch.navigation.toRoute
+import io.github.darkryh.dispatch.runtime.SavedStateHandle
+import io.github.darkryh.dispatch.viewmodel.StateViewModel
 
 data class DetailState(val note: Note? = null)
 
@@ -208,8 +208,8 @@ Koin passes through as a parameter — declare it with `get()`.
 
 ```kotlin
 // AppModule.kt
-import com.ead.dispatch.koin.dispatchModule
-import com.ead.dispatch.runtime.SavedStateHandle
+import io.github.darkryh.dispatch.koin.dispatchModule
+import io.github.darkryh.dispatch.runtime.SavedStateHandle
 
 val appModule = dispatchModule {
     single { NoteRepository() }
@@ -226,14 +226,14 @@ each screen's view model resolves from Koin.
 
 ```kotlin
 // Main.kt
-import com.ead.dispatch.koin.KoinViewModelFactory
-import com.ead.dispatch.koin.koin
-import com.ead.dispatch.navigation.NavDisplay
-import com.ead.dispatch.navigation.entryProvider
-import com.ead.dispatch.navigation.rememberNavBackStack
-import com.ead.dispatch.runtime.DispatchApplication
-import com.ead.dispatch.runtime.ExitKeyBinding
-import com.ead.dispatch.theme.DispatchTheme
+import io.github.darkryh.dispatch.koin.KoinViewModelFactory
+import io.github.darkryh.dispatch.koin.koin
+import io.github.darkryh.dispatch.navigation.NavDisplay
+import io.github.darkryh.dispatch.navigation.entryProvider
+import io.github.darkryh.dispatch.navigation.rememberNavBackStack
+import io.github.darkryh.dispatch.runtime.DispatchApplication
+import io.github.darkryh.dispatch.runtime.ExitKeyBinding
+import io.github.darkryh.dispatch.theme.DispatchTheme
 
 fun main(args: Array<String>) =
     DispatchApplication(args) {

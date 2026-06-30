@@ -6,7 +6,7 @@ updates when files change on disk. It assumes a working app.
 Add the dependency:
 
 ```kotlin
-implementation("io.github.darkryh.dispatch:dispatch-workspace:1.0.0")
+implementation("io.github.darkryh:dispatch-workspace:1.0.0-beta01")
 ```
 
 ## Describe what to watch
@@ -14,7 +14,7 @@ implementation("io.github.darkryh.dispatch:dispatch-workspace:1.0.0")
 A `WorkspaceWatchConfig` names the root directory and which paths to include or exclude.
 
 ```kotlin
-import com.ead.dispatch.workspace.WorkspaceWatchConfig
+import io.github.darkryh.dispatch.workspace.WorkspaceWatchConfig
 import java.nio.file.Path
 
 val config = WorkspaceWatchConfig(
@@ -30,7 +30,7 @@ val config = WorkspaceWatchConfig(
 event. The watcher starts and stops with the composition.
 
 ```kotlin
-import com.ead.dispatch.workspace.rememberWorkspaceState
+import io.github.darkryh.dispatch.workspace.rememberWorkspaceState
 
 @Composable
 fun StatusLine() {
@@ -51,8 +51,8 @@ To process each change yourself — rebuild, reload, re-run — collect the even
 `rememberWorkspaceEvents`.
 
 ```kotlin
-import com.ead.dispatch.workspace.WorkspaceEventType
-import com.ead.dispatch.workspace.rememberWorkspaceEvents
+import io.github.darkryh.dispatch.workspace.WorkspaceEventType
+import io.github.darkryh.dispatch.workspace.rememberWorkspaceEvents
 import androidx.compose.runtime.LaunchedEffect
 
 @Composable
@@ -79,7 +79,7 @@ To know whether a file's contents actually changed (not just its modified time),
 event then carries a `hash` you can compare against the previous one.
 
 ```kotlin
-import com.ead.dispatch.workspace.HashingMode
+import io.github.darkryh.dispatch.workspace.HashingMode
 
 val config = WorkspaceWatchConfig(
     root = Path.of("."),
@@ -93,8 +93,8 @@ Install a watcher into composition locals with `WorkspaceProvider`, then reach i
 composables with `requireWorkspaceWatcher()`:
 
 ```kotlin
-import com.ead.dispatch.workspace.WorkspaceProvider
-import com.ead.dispatch.workspace.requireWorkspaceWatcher
+import io.github.darkryh.dispatch.workspace.WorkspaceProvider
+import io.github.darkryh.dispatch.workspace.requireWorkspaceWatcher
 
 WorkspaceProvider(config) {
     // anywhere inside:

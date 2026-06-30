@@ -11,14 +11,14 @@ Validate how Android and Jetpack Compose internals work (API surface, lifecycle,
 ## Dispatch Architecture (Current)
 
 **Modules**
-- `dispatch-core`: Entry point and app orchestration. See `dispatch-core/src/main/kotlin/com/ead/dispatch/runtime/DispatchApplication.kt`.
-- `dispatch-runtime`: Composition engine, state, composition locals, modifiers, and constraints. See `dispatch-runtime/src/main/kotlin/com/ead/dispatch/runtime/DispatchComposition.kt` and `dispatch-runtime/src/main/kotlin/com/ead/dispatch/state`.
-- `dispatch-renderer`: Terminal rendering, frame diff, and active-area rendering. See `dispatch-renderer/src/main/kotlin/com/ead/dispatch/render/TerminalRenderer.kt`.
-- `dispatch-layout`: Layout primitives (Row/Column/Box) and measure/placement policy. See `dispatch-layout/src/main/kotlin/com/ead/dispatch/layout/Layout.kt`.
-- `dispatch-widgets`: UI components built on layout/runtime. See `dispatch-widgets/src/main/kotlin/com/ead/dispatch/widget`.
-- `dispatch-navigation`: Back stack, entry lifecycle, saved state, and navigation display. See `dispatch-navigation/src/main/kotlin/com/ead/dispatch/navigation/NavDisplay.kt`.
-- `dispatch-viewmodel`: ViewModel base class and composition integration. See `dispatch-viewmodel/src/main/kotlin/com/ead/dispatch/viewmodel/ViewModel.kt`.
-- `dispatch-lifecycle`: Minimal lifecycle state registry. See `dispatch-lifecycle/src/main/kotlin/com/ead/dispatch/lifecycle/Lifecycle.kt`.
+- `dispatch-core`: Entry point and app orchestration. See `dispatch-core/src/main/kotlin/io/github/darkryh/dispatch/runtime/DispatchApplication.kt`.
+- `dispatch-runtime`: Composition engine, state, composition locals, modifiers, and constraints. See `dispatch-runtime/src/main/kotlin/io/github/darkryh/dispatch/runtime/DispatchComposition.kt` and `dispatch-runtime/src/main/kotlin/io/github/darkryh/dispatch/state`.
+- `dispatch-renderer`: Terminal rendering, frame diff, and active-area rendering. See `dispatch-renderer/src/main/kotlin/io/github/darkryh/dispatch/render/TerminalRenderer.kt`.
+- `dispatch-layout`: Layout primitives (Row/Column/Box) and measure/placement policy. See `dispatch-layout/src/main/kotlin/io/github/darkryh/dispatch/layout/Layout.kt`.
+- `dispatch-widgets`: UI components built on layout/runtime. See `dispatch-widgets/src/main/kotlin/io/github/darkryh/dispatch/widget`.
+- `dispatch-navigation`: Back stack, entry lifecycle, saved state, and navigation display. See `dispatch-navigation/src/main/kotlin/io/github/darkryh/dispatch/navigation/NavDisplay.kt`.
+- `dispatch-viewmodel`: ViewModel base class and composition integration. See `dispatch-viewmodel/src/main/kotlin/io/github/darkryh/dispatch/viewmodel/ViewModel.kt`.
+- `dispatch-lifecycle`: Minimal lifecycle state registry. See `dispatch-lifecycle/src/main/kotlin/io/github/darkryh/dispatch/lifecycle/Lifecycle.kt`.
 - `dispatch-koin`: Koin DI integration for dispatch navigation/viewmodel.
 - `dispatch-update*`: Update tooling for multiple package managers.
 

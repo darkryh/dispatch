@@ -1,9 +1,9 @@
-public final class com/ead/dispatch/runtime/DispatchApplicationKt {
+public final class io/github/darkryh/dispatch/runtime/DispatchApplicationKt {
 	public static final fun DispatchApplication ([Ljava/lang/String;Lkotlin/jvm/functions/Function1;)V
 	public static synthetic fun DispatchApplication$default ([Ljava/lang/String;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)V
 }
 
-public final class com/ead/dispatch/runtime/util/PathExtensionsKt {
+public final class io/github/darkryh/dispatch/runtime/util/PathExtensionsKt {
 	public static final fun toCliPathString (Ljava/nio/file/Path;)Ljava/lang/String;
 }
 

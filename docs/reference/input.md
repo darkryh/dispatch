@@ -1,6 +1,6 @@
 # Keyboard input reference
 
-Packages: `com.ead.dispatch.input`, `com.ead.dispatch.runtime`. Module: `dispatch-runtime`.
+Packages: `io.github.darkryh.dispatch.input`, `io.github.darkryh.dispatch.runtime`. Module: `dispatch-runtime`.
 
 Dispatch has two layers for the keyboard:
 

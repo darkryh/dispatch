@@ -1,6 +1,6 @@
-public final class com/ead/dispatch/update/GithubReleaseUpdateProvider : com/ead/dispatch/update/UpdateProvider, java/lang/AutoCloseable {
+public final class io/github/darkryh/dispatch/update/GithubReleaseUpdateProvider : io/github/darkryh/dispatch/update/UpdateProvider, java/lang/AutoCloseable {
 	public static final field $stable I
-	public static final field Companion Lcom/ead/dispatch/update/GithubReleaseUpdateProvider$Companion;
+	public static final field Companion Lio/github/darkryh/dispatch/update/GithubReleaseUpdateProvider$Companion;
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/ktor/client/HttpClient;Ljava/lang/String;)V
 	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/ktor/client/HttpClient;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/ktor/client/engine/HttpClientEngine;Ljava/lang/String;)V
@@ -11,6 +11,6 @@ public final class com/ead/dispatch/update/GithubReleaseUpdateProvider : com/ead
 	public fun latestVersion (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
-public final class com/ead/dispatch/update/GithubReleaseUpdateProvider$Companion {
+public final class io/github/darkryh/dispatch/update/GithubReleaseUpdateProvider$Companion {
 }
 

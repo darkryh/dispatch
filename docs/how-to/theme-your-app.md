@@ -23,7 +23,7 @@ config {
 Read the current theme with `LocalTheme.current` and pass a style to a widget's `style` argument.
 
 ```kotlin
-import com.ead.dispatch.runtime.LocalTheme
+import io.github.darkryh.dispatch.runtime.LocalTheme
 
 @Composable
 fun Status(ok: Boolean) {
@@ -40,7 +40,7 @@ Available styles: `primary`, `secondary`, `muted`, `accent`, `success`, `warning
 Compose a color style with a text attribute using `+`:
 
 ```kotlin
-import com.ead.dispatch.theme.DispatchTextStyle
+import io.github.darkryh.dispatch.theme.DispatchTextStyle
 
 Text("Important", style = theme.error + DispatchTextStyle.Bold)
 ```

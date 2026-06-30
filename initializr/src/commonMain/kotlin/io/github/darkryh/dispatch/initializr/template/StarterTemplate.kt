@@ -6,7 +6,7 @@ package io.github.darkryh.dispatch.initializr.template
  * substitutes the `{{...}}` tokens with the user's [io.github.darkryh.dispatch.initializr.model.ProjectConfig].
  *
  * What it produces is a single-screen Dispatch app wired with Koin DI and the library's MVI base
- * class ([com.ead.dispatch.viewmodel.MviViewModel]) — the blessed pattern, kept as small as possible:
+ * class ([io.github.darkryh.dispatch.viewmodel.MviViewModel]) — the blessed pattern, kept as small as possible:
  * `DispatchApplication { config { koin { … } }; content { … } }`, one `AppModule`, one screen, one
  * view-model with a tiny counter intent loop, all driven by the keyboard.
  *
@@ -18,11 +18,10 @@ package io.github.darkryh.dispatch.initializr.template
 object StarterTemplate {
     /**
      * The Dispatch artifact version the generated project depends on. The modules are published to
-     * Maven Central under `io.github.darkryh.dispatch:*`; flipping this one constant is all that is
-     * needed when a new release lands. NOTE: the generated project only resolves once this version is
-     * actually published (the library is currently on a `-SNAPSHOT`).
+     * Maven Central under `io.github.darkryh:*`; flipping this one constant is all that is
+     * needed when a new release lands. Pinned to the first public release, the `1.0.0` beta line.
      */
-    const val DISPATCH_VERSION: String = "1.0.0"
+    const val DISPATCH_VERSION: String = "1.0.0-beta01"
 
     /** Kotlin version for the generated project — kept in lockstep with the library's own. */
     const val KOTLIN_VERSION: String = "2.4.0"
@@ -88,11 +87,11 @@ object StarterTemplate {
         dependencies {
             // `dispatch-widgets` transitively brings runtime, layout, viewmodel, the Compose runtime,
             // coroutines and Mordant; the others are listed explicitly for clarity.
-            implementation("io.github.darkryh.dispatch:dispatch-runtime:{{DISPATCH_VERSION}}")
-            implementation("io.github.darkryh.dispatch:dispatch-layout:{{DISPATCH_VERSION}}")
-            implementation("io.github.darkryh.dispatch:dispatch-widgets:{{DISPATCH_VERSION}}")
-            implementation("io.github.darkryh.dispatch:dispatch-viewmodel:{{DISPATCH_VERSION}}")
-            implementation("io.github.darkryh.dispatch:dispatch-koin:{{DISPATCH_VERSION}}")
+            implementation("io.github.darkryh:dispatch-runtime:{{DISPATCH_VERSION}}")
+            implementation("io.github.darkryh:dispatch-layout:{{DISPATCH_VERSION}}")
+            implementation("io.github.darkryh:dispatch-widgets:{{DISPATCH_VERSION}}")
+            implementation("io.github.darkryh:dispatch-viewmodel:{{DISPATCH_VERSION}}")
+            implementation("io.github.darkryh:dispatch-koin:{{DISPATCH_VERSION}}")
 
             // Silence SLF4J's "no providers" notice so it can't corrupt the terminal UI.
             runtimeOnly("org.slf4j:slf4j-nop:2.0.18")
@@ -122,11 +121,11 @@ object StarterTemplate {
         """
         package {{PACKAGE}}
 
-        import com.ead.dispatch.koin.KoinViewModelFactory
-        import com.ead.dispatch.runtime.DispatchApplication
-        import com.ead.dispatch.runtime.ExitKeyBinding
-        import com.ead.dispatch.theme.DispatchTheme
-        import com.ead.dispatch.viewmodel.ViewModelProviderScope
+        import io.github.darkryh.dispatch.koin.KoinViewModelFactory
+        import io.github.darkryh.dispatch.runtime.DispatchApplication
+        import io.github.darkryh.dispatch.runtime.ExitKeyBinding
+        import io.github.darkryh.dispatch.theme.DispatchTheme
+        import io.github.darkryh.dispatch.viewmodel.ViewModelProviderScope
         import {{PACKAGE}}.di.appModule
         import kotlin.time.Duration.Companion.milliseconds
         import kotlin.time.Duration.Companion.minutes
@@ -177,14 +176,14 @@ object StarterTemplate {
         import androidx.compose.runtime.DisposableEffect
         import androidx.compose.runtime.collectAsState
         import androidx.compose.runtime.getValue
-        import com.ead.dispatch.input.Key
-        import com.ead.dispatch.input.asKeyEvent
-        import com.ead.dispatch.layout.Column
-        import com.ead.dispatch.runtime.LocalKeyboardInterceptor
-        import com.ead.dispatch.runtime.LocalTheme
-        import com.ead.dispatch.viewmodel.viewModel
-        import com.ead.dispatch.widget.Panel
-        import com.ead.dispatch.widget.Text
+        import io.github.darkryh.dispatch.input.Key
+        import io.github.darkryh.dispatch.input.asKeyEvent
+        import io.github.darkryh.dispatch.layout.Column
+        import io.github.darkryh.dispatch.runtime.LocalKeyboardInterceptor
+        import io.github.darkryh.dispatch.runtime.LocalTheme
+        import io.github.darkryh.dispatch.viewmodel.viewModel
+        import io.github.darkryh.dispatch.widget.Panel
+        import io.github.darkryh.dispatch.widget.Text
 
         /**
          * The single screen. It renders [MainViewModel]'s state and turns ↑/↓ key presses into MVI
@@ -222,7 +221,7 @@ object StarterTemplate {
         """
         package {{PACKAGE}}
 
-        import com.ead.dispatch.viewmodel.MviViewModel
+        import io.github.darkryh.dispatch.viewmodel.MviViewModel
 
         /** Immutable UI state for [MainScreen]. */
         data class CounterState(val count: Int = 0)
@@ -253,7 +252,7 @@ object StarterTemplate {
         """
         package {{PACKAGE}}.di
 
-        import com.ead.dispatch.koin.dispatchModule
+        import io.github.darkryh.dispatch.koin.dispatchModule
         import {{PACKAGE}}.MainViewModel
 
         /**

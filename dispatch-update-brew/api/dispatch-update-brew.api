@@ -1,6 +1,6 @@
-public final class com/ead/dispatch/update/BrewUpdateProvider : com/ead/dispatch/update/CommandBasedUpdateProvider {
+public final class io/github/darkryh/dispatch/update/BrewUpdateProvider : io/github/darkryh/dispatch/update/CommandBasedUpdateProvider {
 	public static final field $stable I
-	public fun <init> (Ljava/lang/String;Lcom/ead/dispatch/update/CommandRunner;)V
+	public fun <init> (Ljava/lang/String;Lio/github/darkryh/dispatch/update/CommandRunner;)V
 	public fun latestVersion (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 

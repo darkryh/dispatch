@@ -2,7 +2,7 @@
 
 > A declarative terminal UI framework for Kotlin, built on the Jetpack Compose runtime.
 
-[![Maven Central](https://img.shields.io/maven-central/v/io.github.darkryh.dispatch/dispatch-core.svg?label=Maven%20Central)](https://central.sonatype.com/namespace/io.github.darkryh.dispatch)
+[![Maven Central](https://img.shields.io/maven-central/v/io.github.darkryh/dispatch-core.svg?label=Maven%20Central)](https://central.sonatype.com/namespace/io.github.darkryh)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 
 Dispatch lets you build rich, interactive command-line apps the same way you build Compose UIs —
@@ -76,27 +76,27 @@ plugins {
 }
 
 dependencies {
-    implementation("io.github.darkryh.dispatch:dispatch-core:1.0.0")
-    implementation("io.github.darkryh.dispatch:dispatch-widgets:1.0.0")
+    implementation("io.github.darkryh:dispatch-core:1.0.0-beta01")
+    implementation("io.github.darkryh:dispatch-widgets:1.0.0-beta01")
 
     // Add as needed:
-    implementation("io.github.darkryh.dispatch:dispatch-navigation:1.0.0")
-    implementation("io.github.darkryh.dispatch:dispatch-koin:1.0.0")
+    implementation("io.github.darkryh:dispatch-navigation:1.0.0-beta01")
+    implementation("io.github.darkryh:dispatch-koin:1.0.0-beta01")
 }
 ```
 
-All artifacts share the group `io.github.darkryh.dispatch` and the same version. See
+All artifacts share the group `io.github.darkryh` and the same version. See
 [Modules](#modules) for the full list.
 
 ## Quick start
 
 ```kotlin
-import com.ead.dispatch.layout.Column
-import com.ead.dispatch.runtime.DispatchApplication
-import com.ead.dispatch.runtime.ExitKeyBinding
-import com.ead.dispatch.runtime.LocalTheme
-import com.ead.dispatch.theme.DispatchTheme
-import com.ead.dispatch.widget.Text
+import io.github.darkryh.dispatch.layout.Column
+import io.github.darkryh.dispatch.runtime.DispatchApplication
+import io.github.darkryh.dispatch.runtime.ExitKeyBinding
+import io.github.darkryh.dispatch.runtime.LocalTheme
+import io.github.darkryh.dispatch.theme.DispatchTheme
+import io.github.darkryh.dispatch.widget.Text
 import androidx.compose.runtime.Composable
 
 fun main(args: Array<String>) =

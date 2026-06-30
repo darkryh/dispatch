@@ -7,7 +7,7 @@ that uses view models and navigation.
 Add the dependency:
 
 ```kotlin
-implementation("io.github.darkryh.dispatch:dispatch-koin:1.0.0")
+implementation("io.github.darkryh:dispatch-koin:1.0.0-beta01")
 ```
 
 ## Declare a module
@@ -16,7 +16,7 @@ Build a module with `dispatchModule`. Use `single` for shared objects, `factory`
 objects, and `viewModel` for view models. Resolve constructor dependencies with `get()`.
 
 ```kotlin
-import com.ead.dispatch.koin.dispatchModule
+import io.github.darkryh.dispatch.koin.dispatchModule
 
 val appModule = dispatchModule {
     single { ChatRepository() }
@@ -33,7 +33,7 @@ Call `koin { }` inside `config { }`, passing your module(s). It starts Koin, val
 models resolve, and stops Koin on exit.
 
 ```kotlin
-import com.ead.dispatch.koin.koin
+import io.github.darkryh.dispatch.koin.koin
 
 fun main(args: Array<String>) =
     DispatchApplication(args) {
@@ -50,7 +50,7 @@ fun main(args: Array<String>) =
 Pass a `KoinViewModelFactory` to `NavDisplay` so each screen's view model is resolved from Koin.
 
 ```kotlin
-import com.ead.dispatch.koin.KoinViewModelFactory
+import io.github.darkryh.dispatch.koin.KoinViewModelFactory
 
 @Composable
 fun App() {
@@ -72,7 +72,7 @@ In a screen, call `viewModel()` with no arguments — it now resolves through Ko
 all.
 
 ```kotlin
-import com.ead.dispatch.viewmodel.viewModel
+import io.github.darkryh.dispatch.viewmodel.viewModel
 
 @Composable
 fun ChatScreen(viewModel: ChatViewModel = viewModel()) {
@@ -86,7 +86,7 @@ fun ChatScreen(viewModel: ChatViewModel = viewModel()) {
 To resolve a dependency outside a view model, use the `inject` delegate:
 
 ```kotlin
-import com.ead.dispatch.koin.inject
+import io.github.darkryh.dispatch.koin.inject
 
 val repository: ChatRepository by inject()
 ```
@@ -97,7 +97,7 @@ If a composable subtree is not hosted by `NavDisplay` but still needs Koin-resol
 wrap it in `KoinViewModelProviderScope`:
 
 ```kotlin
-import com.ead.dispatch.koin.KoinViewModelProviderScope
+import io.github.darkryh.dispatch.koin.KoinViewModelProviderScope
 
 KoinViewModelProviderScope {
     SettingsScreen()   // viewModel() inside here resolves from Koin

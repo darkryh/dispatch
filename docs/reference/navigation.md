@@ -1,6 +1,6 @@
 # Navigation reference
 
-Package: `com.ead.dispatch.navigation`. Module: `dispatch-navigation`.
+Package: `io.github.darkryh.dispatch.navigation`. Module: `dispatch-navigation`.
 
 Dispatch navigation is a typed, serializable back stack. You define routes as `NavKey`
 implementations, host them in a `NavDisplay`, and move between them through a `Navigator`. Each entry
@@ -16,7 +16,7 @@ interface NavKey
 ```
 
 ```kotlin
-import com.ead.dispatch.navigation.NavKey
+import io.github.darkryh.dispatch.navigation.NavKey
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 

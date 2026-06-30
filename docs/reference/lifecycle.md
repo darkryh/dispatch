@@ -1,6 +1,6 @@
 # Lifecycle reference
 
-Package: `com.ead.dispatch.lifecycle`. Module: `dispatch-lifecycle`.
+Package: `io.github.darkryh.dispatch.lifecycle`. Module: `dispatch-lifecycle`.
 
 Each navigation entry owns a lifecycle. The lifecycle module is small: a state enum, an owner
 interface, and an observable registry. Navigation drives these for you; read them when you need to

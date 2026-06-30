@@ -1,25 +1,25 @@
-public abstract interface class com/ead/dispatch/lifecycle/LifecycleOwner {
-	public abstract fun getLifecycle ()Lcom/ead/dispatch/lifecycle/LifecycleRegistry;
+public abstract interface class io/github/darkryh/dispatch/lifecycle/LifecycleOwner {
+	public abstract fun getLifecycle ()Lio/github/darkryh/dispatch/lifecycle/LifecycleRegistry;
 }
 
-public final class com/ead/dispatch/lifecycle/LifecycleRegistry {
+public final class io/github/darkryh/dispatch/lifecycle/LifecycleRegistry {
 	public static final field $stable I
 	public fun <init> ()V
-	public fun <init> (Lcom/ead/dispatch/lifecycle/LifecycleState;)V
-	public synthetic fun <init> (Lcom/ead/dispatch/lifecycle/LifecycleState;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lio/github/darkryh/dispatch/lifecycle/LifecycleState;)V
+	public synthetic fun <init> (Lio/github/darkryh/dispatch/lifecycle/LifecycleState;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun addObserver (Lkotlin/jvm/functions/Function1;)Ljava/lang/AutoCloseable;
-	public final fun getCurrentState ()Lcom/ead/dispatch/lifecycle/LifecycleState;
-	public final fun moveTo (Lcom/ead/dispatch/lifecycle/LifecycleState;)V
+	public final fun getCurrentState ()Lio/github/darkryh/dispatch/lifecycle/LifecycleState;
+	public final fun moveTo (Lio/github/darkryh/dispatch/lifecycle/LifecycleState;)V
 	public final fun removeObserver (Lkotlin/jvm/functions/Function1;)V
 }
 
-public final class com/ead/dispatch/lifecycle/LifecycleState : java/lang/Enum {
-	public static final field DESTROYED Lcom/ead/dispatch/lifecycle/LifecycleState;
-	public static final field INITIALIZED Lcom/ead/dispatch/lifecycle/LifecycleState;
-	public static final field STARTED Lcom/ead/dispatch/lifecycle/LifecycleState;
-	public static final field STOPPED Lcom/ead/dispatch/lifecycle/LifecycleState;
+public final class io/github/darkryh/dispatch/lifecycle/LifecycleState : java/lang/Enum {
+	public static final field DESTROYED Lio/github/darkryh/dispatch/lifecycle/LifecycleState;
+	public static final field INITIALIZED Lio/github/darkryh/dispatch/lifecycle/LifecycleState;
+	public static final field STARTED Lio/github/darkryh/dispatch/lifecycle/LifecycleState;
+	public static final field STOPPED Lio/github/darkryh/dispatch/lifecycle/LifecycleState;
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Lcom/ead/dispatch/lifecycle/LifecycleState;
-	public static fun values ()[Lcom/ead/dispatch/lifecycle/LifecycleState;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/darkryh/dispatch/lifecycle/LifecycleState;
+	public static fun values ()[Lio/github/darkryh/dispatch/lifecycle/LifecycleState;
 }
 

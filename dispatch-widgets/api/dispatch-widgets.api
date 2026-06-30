@@ -1,32 +1,32 @@
-public final class com/ead/dispatch/widget/ButtonKt {
-	public static final fun Button (Ljava/lang/String;Lkotlin/jvm/functions/Function0;Lcom/ead/dispatch/modifier/Modifier;ZLcom/ead/dispatch/widget/ButtonStyle;Landroidx/compose/runtime/Composer;II)V
-	public static final fun ButtonRow (Lcom/ead/dispatch/modifier/Modifier;ILkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;II)V
-	public static final fun IconButton (Ljava/lang/String;Lkotlin/jvm/functions/Function0;Lcom/ead/dispatch/modifier/Modifier;ZZLandroidx/compose/runtime/Composer;II)V
-	public static final fun RadioButton (ZLkotlin/jvm/functions/Function0;Lcom/ead/dispatch/modifier/Modifier;Ljava/lang/String;ZLandroidx/compose/runtime/Composer;II)V
-	public static final fun ToggleButton (ZLkotlin/jvm/functions/Function1;Lcom/ead/dispatch/modifier/Modifier;Ljava/lang/String;ZLcom/ead/dispatch/widget/ToggleStyle;Landroidx/compose/runtime/Composer;II)V
-	public static final fun clickable (Lcom/ead/dispatch/modifier/Modifier;ZLkotlin/jvm/functions/Function0;Landroidx/compose/runtime/Composer;II)Lcom/ead/dispatch/modifier/Modifier;
+public final class io/github/darkryh/dispatch/widget/ButtonKt {
+	public static final fun Button (Ljava/lang/String;Lkotlin/jvm/functions/Function0;Lio/github/darkryh/dispatch/modifier/Modifier;ZLio/github/darkryh/dispatch/widget/ButtonStyle;Landroidx/compose/runtime/Composer;II)V
+	public static final fun ButtonRow (Lio/github/darkryh/dispatch/modifier/Modifier;ILkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;II)V
+	public static final fun IconButton (Ljava/lang/String;Lkotlin/jvm/functions/Function0;Lio/github/darkryh/dispatch/modifier/Modifier;ZZLandroidx/compose/runtime/Composer;II)V
+	public static final fun RadioButton (ZLkotlin/jvm/functions/Function0;Lio/github/darkryh/dispatch/modifier/Modifier;Ljava/lang/String;ZLandroidx/compose/runtime/Composer;II)V
+	public static final fun ToggleButton (ZLkotlin/jvm/functions/Function1;Lio/github/darkryh/dispatch/modifier/Modifier;Ljava/lang/String;ZLio/github/darkryh/dispatch/widget/ToggleStyle;Landroidx/compose/runtime/Composer;II)V
+	public static final fun clickable (Lio/github/darkryh/dispatch/modifier/Modifier;ZLkotlin/jvm/functions/Function0;Landroidx/compose/runtime/Composer;II)Lio/github/darkryh/dispatch/modifier/Modifier;
 }
 
-public final class com/ead/dispatch/widget/ButtonStyle : java/lang/Enum {
-	public static final field Angled Lcom/ead/dispatch/widget/ButtonStyle;
-	public static final field Filled Lcom/ead/dispatch/widget/ButtonStyle;
-	public static final field Outlined Lcom/ead/dispatch/widget/ButtonStyle;
-	public static final field Rounded Lcom/ead/dispatch/widget/ButtonStyle;
-	public static final field Text Lcom/ead/dispatch/widget/ButtonStyle;
+public final class io/github/darkryh/dispatch/widget/ButtonStyle : java/lang/Enum {
+	public static final field Angled Lio/github/darkryh/dispatch/widget/ButtonStyle;
+	public static final field Filled Lio/github/darkryh/dispatch/widget/ButtonStyle;
+	public static final field Outlined Lio/github/darkryh/dispatch/widget/ButtonStyle;
+	public static final field Rounded Lio/github/darkryh/dispatch/widget/ButtonStyle;
+	public static final field Text Lio/github/darkryh/dispatch/widget/ButtonStyle;
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Lcom/ead/dispatch/widget/ButtonStyle;
-	public static fun values ()[Lcom/ead/dispatch/widget/ButtonStyle;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/darkryh/dispatch/widget/ButtonStyle;
+	public static fun values ()[Lio/github/darkryh/dispatch/widget/ButtonStyle;
 }
 
-public final class com/ead/dispatch/widget/ChecklistItem {
+public final class io/github/darkryh/dispatch/widget/ChecklistItem {
 	public static final field $stable I
 	public fun <init> (Ljava/lang/String;ZZ)V
 	public synthetic fun <init> (Ljava/lang/String;ZZILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Ljava/lang/String;
 	public final fun component2 ()Z
 	public final fun component3 ()Z
-	public final fun copy (Ljava/lang/String;ZZ)Lcom/ead/dispatch/widget/ChecklistItem;
-	public static synthetic fun copy$default (Lcom/ead/dispatch/widget/ChecklistItem;Ljava/lang/String;ZZILjava/lang/Object;)Lcom/ead/dispatch/widget/ChecklistItem;
+	public final fun copy (Ljava/lang/String;ZZ)Lio/github/darkryh/dispatch/widget/ChecklistItem;
+	public static synthetic fun copy$default (Lio/github/darkryh/dispatch/widget/ChecklistItem;Ljava/lang/String;ZZILjava/lang/Object;)Lio/github/darkryh/dispatch/widget/ChecklistItem;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getChecked ()Z
 	public final fun getEnabled ()Z
@@ -35,23 +35,23 @@ public final class com/ead/dispatch/widget/ChecklistItem {
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/ead/dispatch/widget/ChecklistKt {
-	public static final fun Checklist (Ljava/util/List;Lcom/ead/dispatch/modifier/Modifier;ILcom/ead/dispatch/widget/ChecklistStyle;Lcom/ead/dispatch/widget/ChecklistTextStyles;Landroidx/compose/runtime/Composer;II)V
+public final class io/github/darkryh/dispatch/widget/ChecklistKt {
+	public static final fun Checklist (Ljava/util/List;Lio/github/darkryh/dispatch/modifier/Modifier;ILio/github/darkryh/dispatch/widget/ChecklistStyle;Lio/github/darkryh/dispatch/widget/ChecklistTextStyles;Landroidx/compose/runtime/Composer;II)V
 }
 
-public final class com/ead/dispatch/widget/ChecklistStyle : java/lang/Enum {
-	public static final field Checkbox Lcom/ead/dispatch/widget/ChecklistStyle;
-	public static final field Circle Lcom/ead/dispatch/widget/ChecklistStyle;
-	public static final field Emoji Lcom/ead/dispatch/widget/ChecklistStyle;
-	public static final field Square Lcom/ead/dispatch/widget/ChecklistStyle;
+public final class io/github/darkryh/dispatch/widget/ChecklistStyle : java/lang/Enum {
+	public static final field Checkbox Lio/github/darkryh/dispatch/widget/ChecklistStyle;
+	public static final field Circle Lio/github/darkryh/dispatch/widget/ChecklistStyle;
+	public static final field Emoji Lio/github/darkryh/dispatch/widget/ChecklistStyle;
+	public static final field Square Lio/github/darkryh/dispatch/widget/ChecklistStyle;
 	public final fun getCheckedChar ()Ljava/lang/String;
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public final fun getUncheckedChar ()Ljava/lang/String;
-	public static fun valueOf (Ljava/lang/String;)Lcom/ead/dispatch/widget/ChecklistStyle;
-	public static fun values ()[Lcom/ead/dispatch/widget/ChecklistStyle;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/darkryh/dispatch/widget/ChecklistStyle;
+	public static fun values ()[Lio/github/darkryh/dispatch/widget/ChecklistStyle;
 }
 
-public final class com/ead/dispatch/widget/ChecklistTextStyles {
+public final class io/github/darkryh/dispatch/widget/ChecklistTextStyles {
 	public static final field $stable I
 	public fun <init> ()V
 	public fun <init> (Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;)V
@@ -65,8 +65,8 @@ public final class com/ead/dispatch/widget/ChecklistTextStyles {
 	public final fun component7 ()Lcom/github/ajalt/mordant/rendering/TextStyle;
 	public final fun component8 ()Lcom/github/ajalt/mordant/rendering/TextStyle;
 	public final fun component9 ()Lcom/github/ajalt/mordant/rendering/TextStyle;
-	public final fun copy (Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;)Lcom/ead/dispatch/widget/ChecklistTextStyles;
-	public static synthetic fun copy$default (Lcom/ead/dispatch/widget/ChecklistTextStyles;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;ILjava/lang/Object;)Lcom/ead/dispatch/widget/ChecklistTextStyles;
+	public final fun copy (Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;)Lio/github/darkryh/dispatch/widget/ChecklistTextStyles;
+	public static synthetic fun copy$default (Lio/github/darkryh/dispatch/widget/ChecklistTextStyles;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;ILjava/lang/Object;)Lio/github/darkryh/dispatch/widget/ChecklistTextStyles;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getCheckedIndicator ()Lcom/github/ajalt/mordant/rendering/TextStyle;
 	public final fun getCheckedText ()Lcom/github/ajalt/mordant/rendering/TextStyle;
@@ -81,12 +81,12 @@ public final class com/ead/dispatch/widget/ChecklistTextStyles {
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/ead/dispatch/widget/ChipKt {
-	public static final fun Chip (Ljava/lang/String;Lcom/ead/dispatch/modifier/Modifier;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;ILandroidx/compose/runtime/Composer;II)V
-	public static final fun ChipRow (Ljava/util/List;Lcom/ead/dispatch/modifier/Modifier;ILcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Landroidx/compose/runtime/Composer;II)V
+public final class io/github/darkryh/dispatch/widget/ChipKt {
+	public static final fun Chip (Ljava/lang/String;Lio/github/darkryh/dispatch/modifier/Modifier;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;ILandroidx/compose/runtime/Composer;II)V
+	public static final fun ChipRow (Ljava/util/List;Lio/github/darkryh/dispatch/modifier/Modifier;ILcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Landroidx/compose/runtime/Composer;II)V
 }
 
-public final class com/ead/dispatch/widget/CommandOption {
+public final class io/github/darkryh/dispatch/widget/CommandOption {
 	public static final field $stable I
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;Z)V
 	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;ZILkotlin/jvm/internal/DefaultConstructorMarker;)V
@@ -95,8 +95,8 @@ public final class com/ead/dispatch/widget/CommandOption {
 	public final fun component3 ()Ljava/lang/String;
 	public final fun component4 ()Ljava/lang/Object;
 	public final fun component5 ()Z
-	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;Z)Lcom/ead/dispatch/widget/CommandOption;
-	public static synthetic fun copy$default (Lcom/ead/dispatch/widget/CommandOption;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;ZILjava/lang/Object;)Lcom/ead/dispatch/widget/CommandOption;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;Z)Lio/github/darkryh/dispatch/widget/CommandOption;
+	public static synthetic fun copy$default (Lio/github/darkryh/dispatch/widget/CommandOption;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Object;ZILjava/lang/Object;)Lio/github/darkryh/dispatch/widget/CommandOption;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getData ()Ljava/lang/Object;
 	public final fun getDescription ()Ljava/lang/String;
@@ -107,12 +107,12 @@ public final class com/ead/dispatch/widget/CommandOption {
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/ead/dispatch/widget/CommandPaletteKt {
-	public static final fun CommandPalette (Ljava/util/List;Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lcom/ead/dispatch/modifier/Modifier;CLjava/lang/String;Ljava/lang/String;ILcom/ead/dispatch/widget/CommandPaletteTextStyles;ZZLjava/lang/String;ZLcom/ead/dispatch/widget/CommandPaletteState;Landroidx/compose/runtime/Composer;III)V
-	public static final fun rememberCommandPaletteState (ZILandroidx/compose/runtime/Composer;II)Lcom/ead/dispatch/widget/CommandPaletteState;
+public final class io/github/darkryh/dispatch/widget/CommandPaletteKt {
+	public static final fun CommandPalette (Ljava/util/List;Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lio/github/darkryh/dispatch/modifier/Modifier;CLjava/lang/String;Ljava/lang/String;ILio/github/darkryh/dispatch/widget/CommandPaletteTextStyles;ZZLjava/lang/String;ZLio/github/darkryh/dispatch/widget/CommandPaletteState;Landroidx/compose/runtime/Composer;III)V
+	public static final fun rememberCommandPaletteState (ZILandroidx/compose/runtime/Composer;II)Lio/github/darkryh/dispatch/widget/CommandPaletteState;
 }
 
-public final class com/ead/dispatch/widget/CommandPaletteState {
+public final class io/github/darkryh/dispatch/widget/CommandPaletteState {
 	public static final field $stable I
 	public fun <init> ()V
 	public fun <init> (ZI)V
@@ -121,11 +121,11 @@ public final class com/ead/dispatch/widget/CommandPaletteState {
 	public final fun getFilteredOptions ()Ljava/util/List;
 	public final fun getHasResults ()Z
 	public final fun getSelectedIndex ()I
-	public final fun getSelectedOption ()Lcom/ead/dispatch/widget/CommandOption;
+	public final fun getSelectedOption ()Lio/github/darkryh/dispatch/widget/CommandOption;
 	public final fun isVisible ()Z
 }
 
-public final class com/ead/dispatch/widget/CommandPaletteTextStyles {
+public final class io/github/darkryh/dispatch/widget/CommandPaletteTextStyles {
 	public static final field $stable I
 	public fun <init> ()V
 	public fun <init> (Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;)V
@@ -138,8 +138,8 @@ public final class com/ead/dispatch/widget/CommandPaletteTextStyles {
 	public final fun component6 ()Lcom/github/ajalt/mordant/rendering/TextStyle;
 	public final fun component7 ()Lcom/github/ajalt/mordant/rendering/TextStyle;
 	public final fun component8 ()Lcom/github/ajalt/mordant/rendering/TextStyle;
-	public final fun copy (Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;)Lcom/ead/dispatch/widget/CommandPaletteTextStyles;
-	public static synthetic fun copy$default (Lcom/ead/dispatch/widget/CommandPaletteTextStyles;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;ILjava/lang/Object;)Lcom/ead/dispatch/widget/CommandPaletteTextStyles;
+	public final fun copy (Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;)Lio/github/darkryh/dispatch/widget/CommandPaletteTextStyles;
+	public static synthetic fun copy$default (Lio/github/darkryh/dispatch/widget/CommandPaletteTextStyles;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;ILjava/lang/Object;)Lio/github/darkryh/dispatch/widget/CommandPaletteTextStyles;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getDescription ()Lcom/github/ajalt/mordant/rendering/TextStyle;
 	public final fun getDisabledLabel ()Lcom/github/ajalt/mordant/rendering/TextStyle;
@@ -153,30 +153,30 @@ public final class com/ead/dispatch/widget/CommandPaletteTextStyles {
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/ead/dispatch/widget/ComposableSingletons$FileDiffKt {
-	public static final field INSTANCE Lcom/ead/dispatch/widget/ComposableSingletons$FileDiffKt;
+public final class io/github/darkryh/dispatch/widget/ComposableSingletons$FileDiffKt {
+	public static final field INSTANCE Lio/github/darkryh/dispatch/widget/ComposableSingletons$FileDiffKt;
 	public fun <init> ()V
-	public final fun getLambda$431836124$io_github_darkryh_dispatch_dispatch_widgets ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$2081083407$io_github_darkryh_dispatch_widgets ()Lkotlin/jvm/functions/Function3;
 }
 
-public final class com/ead/dispatch/widget/DecisionOption {
+public final class io/github/darkryh/dispatch/widget/DecisionOption {
 	public static final field $stable I
 	public fun <init> (Ljava/lang/String;)V
 	public final fun component1 ()Ljava/lang/String;
-	public final fun copy (Ljava/lang/String;)Lcom/ead/dispatch/widget/DecisionOption;
-	public static synthetic fun copy$default (Lcom/ead/dispatch/widget/DecisionOption;Ljava/lang/String;ILjava/lang/Object;)Lcom/ead/dispatch/widget/DecisionOption;
+	public final fun copy (Ljava/lang/String;)Lio/github/darkryh/dispatch/widget/DecisionOption;
+	public static synthetic fun copy$default (Lio/github/darkryh/dispatch/widget/DecisionOption;Ljava/lang/String;ILjava/lang/Object;)Lio/github/darkryh/dispatch/widget/DecisionOption;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getLabel ()Ljava/lang/String;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/ead/dispatch/widget/DecisionPromptKt {
-	public static final fun DecisionPrompt (Ljava/lang/String;Ljava/util/List;Lkotlin/jvm/functions/Function1;Lcom/ead/dispatch/modifier/Modifier;Ljava/lang/String;ZZLjava/lang/String;Ljava/lang/String;Lcom/ead/dispatch/widget/DecisionPromptState;Lcom/ead/dispatch/widget/DecisionPromptTextStyles;Landroidx/compose/runtime/Composer;III)V
-	public static final fun rememberDecisionPromptState (ILjava/lang/String;Landroidx/compose/runtime/Composer;II)Lcom/ead/dispatch/widget/DecisionPromptState;
+public final class io/github/darkryh/dispatch/widget/DecisionPromptKt {
+	public static final fun DecisionPrompt (Ljava/lang/String;Ljava/util/List;Lkotlin/jvm/functions/Function1;Lio/github/darkryh/dispatch/modifier/Modifier;Ljava/lang/String;ZZLjava/lang/String;Ljava/lang/String;Lio/github/darkryh/dispatch/widget/DecisionPromptState;Lio/github/darkryh/dispatch/widget/DecisionPromptTextStyles;Landroidx/compose/runtime/Composer;III)V
+	public static final fun rememberDecisionPromptState (ILjava/lang/String;Landroidx/compose/runtime/Composer;II)Lio/github/darkryh/dispatch/widget/DecisionPromptState;
 }
 
-public final class com/ead/dispatch/widget/DecisionPromptState {
+public final class io/github/darkryh/dispatch/widget/DecisionPromptState {
 	public static final field $stable I
 	public fun <init> ()V
 	public fun <init> (ILjava/lang/String;)V
@@ -187,7 +187,7 @@ public final class com/ead/dispatch/widget/DecisionPromptState {
 	public final fun setSelectedIndex (I)V
 }
 
-public final class com/ead/dispatch/widget/DecisionPromptTextStyles {
+public final class io/github/darkryh/dispatch/widget/DecisionPromptTextStyles {
 	public static final field $stable I
 	public fun <init> ()V
 	public fun <init> (Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;)V
@@ -199,8 +199,8 @@ public final class com/ead/dispatch/widget/DecisionPromptTextStyles {
 	public final fun component5 ()Lcom/github/ajalt/mordant/rendering/TextStyle;
 	public final fun component6 ()Lcom/github/ajalt/mordant/rendering/TextStyle;
 	public final fun component7 ()Lcom/github/ajalt/mordant/rendering/TextStyle;
-	public final fun copy (Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;)Lcom/ead/dispatch/widget/DecisionPromptTextStyles;
-	public static synthetic fun copy$default (Lcom/ead/dispatch/widget/DecisionPromptTextStyles;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;ILjava/lang/Object;)Lcom/ead/dispatch/widget/DecisionPromptTextStyles;
+	public final fun copy (Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;)Lio/github/darkryh/dispatch/widget/DecisionPromptTextStyles;
+	public static synthetic fun copy$default (Lio/github/darkryh/dispatch/widget/DecisionPromptTextStyles;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;ILjava/lang/Object;)Lio/github/darkryh/dispatch/widget/DecisionPromptTextStyles;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getCustomText ()Lcom/github/ajalt/mordant/rendering/TextStyle;
 	public final fun getOption ()Lcom/github/ajalt/mordant/rendering/TextStyle;
@@ -213,36 +213,36 @@ public final class com/ead/dispatch/widget/DecisionPromptTextStyles {
 	public fun toString ()Ljava/lang/String;
 }
 
-public abstract interface class com/ead/dispatch/widget/DecisionSelection {
+public abstract interface class io/github/darkryh/dispatch/widget/DecisionSelection {
 }
 
-public final class com/ead/dispatch/widget/DecisionSelection$Custom : com/ead/dispatch/widget/DecisionSelection {
+public final class io/github/darkryh/dispatch/widget/DecisionSelection$Custom : io/github/darkryh/dispatch/widget/DecisionSelection {
 	public static final field $stable I
 	public fun <init> (Ljava/lang/String;)V
 	public final fun component1 ()Ljava/lang/String;
-	public final fun copy (Ljava/lang/String;)Lcom/ead/dispatch/widget/DecisionSelection$Custom;
-	public static synthetic fun copy$default (Lcom/ead/dispatch/widget/DecisionSelection$Custom;Ljava/lang/String;ILjava/lang/Object;)Lcom/ead/dispatch/widget/DecisionSelection$Custom;
+	public final fun copy (Ljava/lang/String;)Lio/github/darkryh/dispatch/widget/DecisionSelection$Custom;
+	public static synthetic fun copy$default (Lio/github/darkryh/dispatch/widget/DecisionSelection$Custom;Ljava/lang/String;ILjava/lang/Object;)Lio/github/darkryh/dispatch/widget/DecisionSelection$Custom;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getText ()Ljava/lang/String;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/ead/dispatch/widget/DecisionSelection$Option : com/ead/dispatch/widget/DecisionSelection {
+public final class io/github/darkryh/dispatch/widget/DecisionSelection$Option : io/github/darkryh/dispatch/widget/DecisionSelection {
 	public static final field $stable I
-	public fun <init> (Lcom/ead/dispatch/widget/DecisionOption;)V
-	public final fun component1 ()Lcom/ead/dispatch/widget/DecisionOption;
-	public final fun copy (Lcom/ead/dispatch/widget/DecisionOption;)Lcom/ead/dispatch/widget/DecisionSelection$Option;
-	public static synthetic fun copy$default (Lcom/ead/dispatch/widget/DecisionSelection$Option;Lcom/ead/dispatch/widget/DecisionOption;ILjava/lang/Object;)Lcom/ead/dispatch/widget/DecisionSelection$Option;
+	public fun <init> (Lio/github/darkryh/dispatch/widget/DecisionOption;)V
+	public final fun component1 ()Lio/github/darkryh/dispatch/widget/DecisionOption;
+	public final fun copy (Lio/github/darkryh/dispatch/widget/DecisionOption;)Lio/github/darkryh/dispatch/widget/DecisionSelection$Option;
+	public static synthetic fun copy$default (Lio/github/darkryh/dispatch/widget/DecisionSelection$Option;Lio/github/darkryh/dispatch/widget/DecisionOption;ILjava/lang/Object;)Lio/github/darkryh/dispatch/widget/DecisionSelection$Option;
 	public fun equals (Ljava/lang/Object;)Z
-	public final fun getOption ()Lcom/ead/dispatch/widget/DecisionOption;
+	public final fun getOption ()Lio/github/darkryh/dispatch/widget/DecisionOption;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/ead/dispatch/widget/DiffColors {
+public final class io/github/darkryh/dispatch/widget/DiffColors {
 	public static final field $stable I
-	public static final field Companion Lcom/ead/dispatch/widget/DiffColors$Companion;
+	public static final field Companion Lio/github/darkryh/dispatch/widget/DiffColors$Companion;
 	public fun <init> ()V
 	public fun <init> (Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;)V
 	public synthetic fun <init> (Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
@@ -252,8 +252,8 @@ public final class com/ead/dispatch/widget/DiffColors {
 	public final fun component4 ()Lcom/github/ajalt/mordant/rendering/TextStyle;
 	public final fun component5 ()Lcom/github/ajalt/mordant/rendering/TextStyle;
 	public final fun component6 ()Lcom/github/ajalt/mordant/rendering/TextStyle;
-	public final fun copy (Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;)Lcom/ead/dispatch/widget/DiffColors;
-	public static synthetic fun copy$default (Lcom/ead/dispatch/widget/DiffColors;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;ILjava/lang/Object;)Lcom/ead/dispatch/widget/DiffColors;
+	public final fun copy (Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;)Lio/github/darkryh/dispatch/widget/DiffColors;
+	public static synthetic fun copy$default (Lio/github/darkryh/dispatch/widget/DiffColors;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;ILjava/lang/Object;)Lio/github/darkryh/dispatch/widget/DiffColors;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getAdded ()Lcom/github/ajalt/mordant/rendering/TextStyle;
 	public final fun getContent ()Lcom/github/ajalt/mordant/rendering/TextStyle;
@@ -265,21 +265,21 @@ public final class com/ead/dispatch/widget/DiffColors {
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/ead/dispatch/widget/DiffColors$Companion {
-	public final fun getDefault ()Lcom/ead/dispatch/widget/DiffColors;
+public final class io/github/darkryh/dispatch/widget/DiffColors$Companion {
+	public final fun getDefault ()Lio/github/darkryh/dispatch/widget/DiffColors;
 }
 
-public final class com/ead/dispatch/widget/DiffFocus : java/lang/Enum {
-	public static final field Additions Lcom/ead/dispatch/widget/DiffFocus;
-	public static final field Changes Lcom/ead/dispatch/widget/DiffFocus;
-	public static final field Deletions Lcom/ead/dispatch/widget/DiffFocus;
-	public static final field Full Lcom/ead/dispatch/widget/DiffFocus;
+public final class io/github/darkryh/dispatch/widget/DiffFocus : java/lang/Enum {
+	public static final field Additions Lio/github/darkryh/dispatch/widget/DiffFocus;
+	public static final field Changes Lio/github/darkryh/dispatch/widget/DiffFocus;
+	public static final field Deletions Lio/github/darkryh/dispatch/widget/DiffFocus;
+	public static final field Full Lio/github/darkryh/dispatch/widget/DiffFocus;
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Lcom/ead/dispatch/widget/DiffFocus;
-	public static fun values ()[Lcom/ead/dispatch/widget/DiffFocus;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/darkryh/dispatch/widget/DiffFocus;
+	public static fun values ()[Lio/github/darkryh/dispatch/widget/DiffFocus;
 }
 
-public final class com/ead/dispatch/widget/DiffRow {
+public final class io/github/darkryh/dispatch/widget/DiffRow {
 	public static final field $stable I
 	public fun <init> ()V
 	public final fun component1 ()Z
@@ -287,8 +287,8 @@ public final class com/ead/dispatch/widget/DiffRow {
 	public final fun component3 ()Ljava/lang/Integer;
 	public final fun component4 ()C
 	public final fun component5 ()Ljava/lang/String;
-	public final fun copy (ZLjava/lang/Integer;Ljava/lang/Integer;CLjava/lang/String;)Lcom/ead/dispatch/widget/DiffRow;
-	public static synthetic fun copy$default (Lcom/ead/dispatch/widget/DiffRow;ZLjava/lang/Integer;Ljava/lang/Integer;CLjava/lang/String;ILjava/lang/Object;)Lcom/ead/dispatch/widget/DiffRow;
+	public final fun copy (ZLjava/lang/Integer;Ljava/lang/Integer;CLjava/lang/String;)Lio/github/darkryh/dispatch/widget/DiffRow;
+	public static synthetic fun copy$default (Lio/github/darkryh/dispatch/widget/DiffRow;ZLjava/lang/Integer;Ljava/lang/Integer;CLjava/lang/String;ILjava/lang/Object;)Lio/github/darkryh/dispatch/widget/DiffRow;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getContent ()Ljava/lang/String;
 	public final fun getMarker ()C
@@ -299,15 +299,15 @@ public final class com/ead/dispatch/widget/DiffRow {
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/ead/dispatch/widget/DiffStats {
+public final class io/github/darkryh/dispatch/widget/DiffStats {
 	public static final field $stable I
 	public fun <init> (IIII)V
 	public final fun component1 ()I
 	public final fun component2 ()I
 	public final fun component3 ()I
 	public final fun component4 ()I
-	public final fun copy (IIII)Lcom/ead/dispatch/widget/DiffStats;
-	public static synthetic fun copy$default (Lcom/ead/dispatch/widget/DiffStats;IIIIILjava/lang/Object;)Lcom/ead/dispatch/widget/DiffStats;
+	public final fun copy (IIII)Lio/github/darkryh/dispatch/widget/DiffStats;
+	public static synthetic fun copy$default (Lio/github/darkryh/dispatch/widget/DiffStats;IIIIILjava/lang/Object;)Lio/github/darkryh/dispatch/widget/DiffStats;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getAddedLines ()I
 	public final fun getDeletedLines ()I
@@ -317,40 +317,40 @@ public final class com/ead/dispatch/widget/DiffStats {
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/ead/dispatch/widget/DividerKt {
-	public static final fun HorizontalDivider (Lcom/ead/dispatch/modifier/Modifier;CLandroidx/compose/runtime/Composer;II)V
-	public static final fun HorizontalDivider (Lcom/ead/dispatch/widget/DividerStyle;Lcom/ead/dispatch/modifier/Modifier;Landroidx/compose/runtime/Composer;II)V
-	public static final fun VerticalDivider (Lcom/ead/dispatch/modifier/Modifier;CLandroidx/compose/runtime/Composer;II)V
-	public static final fun VerticalDivider (Lcom/ead/dispatch/widget/DividerStyle;Lcom/ead/dispatch/modifier/Modifier;Landroidx/compose/runtime/Composer;II)V
+public final class io/github/darkryh/dispatch/widget/DividerKt {
+	public static final fun HorizontalDivider (Lio/github/darkryh/dispatch/modifier/Modifier;CLandroidx/compose/runtime/Composer;II)V
+	public static final fun HorizontalDivider (Lio/github/darkryh/dispatch/widget/DividerStyle;Lio/github/darkryh/dispatch/modifier/Modifier;Landroidx/compose/runtime/Composer;II)V
+	public static final fun VerticalDivider (Lio/github/darkryh/dispatch/modifier/Modifier;CLandroidx/compose/runtime/Composer;II)V
+	public static final fun VerticalDivider (Lio/github/darkryh/dispatch/widget/DividerStyle;Lio/github/darkryh/dispatch/modifier/Modifier;Landroidx/compose/runtime/Composer;II)V
 }
 
-public final class com/ead/dispatch/widget/DividerStyle : java/lang/Enum {
-	public static final field Dashed Lcom/ead/dispatch/widget/DividerStyle;
-	public static final field Dotted Lcom/ead/dispatch/widget/DividerStyle;
-	public static final field Double Lcom/ead/dispatch/widget/DividerStyle;
-	public static final field Heavy Lcom/ead/dispatch/widget/DividerStyle;
-	public static final field Light Lcom/ead/dispatch/widget/DividerStyle;
-	public static final field Space Lcom/ead/dispatch/widget/DividerStyle;
+public final class io/github/darkryh/dispatch/widget/DividerStyle : java/lang/Enum {
+	public static final field Dashed Lio/github/darkryh/dispatch/widget/DividerStyle;
+	public static final field Dotted Lio/github/darkryh/dispatch/widget/DividerStyle;
+	public static final field Double Lio/github/darkryh/dispatch/widget/DividerStyle;
+	public static final field Heavy Lio/github/darkryh/dispatch/widget/DividerStyle;
+	public static final field Light Lio/github/darkryh/dispatch/widget/DividerStyle;
+	public static final field Space Lio/github/darkryh/dispatch/widget/DividerStyle;
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public final fun getHorizontal ()C
 	public final fun getVertical ()C
-	public static fun valueOf (Ljava/lang/String;)Lcom/ead/dispatch/widget/DividerStyle;
-	public static fun values ()[Lcom/ead/dispatch/widget/DividerStyle;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/darkryh/dispatch/widget/DividerStyle;
+	public static fun values ()[Lio/github/darkryh/dispatch/widget/DividerStyle;
 }
 
-public final class com/ead/dispatch/widget/FileDiffKt {
-	public static final fun FileDiff (Ljava/lang/String;Ljava/lang/String;Lcom/ead/dispatch/modifier/Modifier;Ljava/lang/String;Lcom/ead/dispatch/widget/DiffFocus;IZZLcom/ead/dispatch/widget/DiffColors;Ljava/lang/Integer;Ljava/util/Set;Lcom/github/ajalt/mordant/rendering/TextStyle;Landroidx/compose/runtime/Composer;III)V
-	public static final fun rememberFileDiff (Ljava/lang/String;Ljava/lang/String;Lcom/ead/dispatch/widget/DiffFocus;ILandroidx/compose/runtime/Composer;II)Lcom/ead/dispatch/widget/FileDiffResult;
+public final class io/github/darkryh/dispatch/widget/FileDiffKt {
+	public static final fun FileDiff (Ljava/lang/String;Ljava/lang/String;Lio/github/darkryh/dispatch/modifier/Modifier;Ljava/lang/String;Lio/github/darkryh/dispatch/widget/DiffFocus;IZZLio/github/darkryh/dispatch/widget/DiffColors;Ljava/lang/Integer;Ljava/util/Set;Lcom/github/ajalt/mordant/rendering/TextStyle;Landroidx/compose/runtime/Composer;III)V
+	public static final fun rememberFileDiff (Ljava/lang/String;Ljava/lang/String;Lio/github/darkryh/dispatch/widget/DiffFocus;ILandroidx/compose/runtime/Composer;II)Lio/github/darkryh/dispatch/widget/FileDiffResult;
 }
 
-public final class com/ead/dispatch/widget/FileDiffPage {
+public final class io/github/darkryh/dispatch/widget/FileDiffPage {
 	public static final field $stable I
 	public fun <init> (Ljava/util/List;II)V
 	public final fun component1 ()Ljava/util/List;
 	public final fun component2 ()I
 	public final fun component3 ()I
-	public final fun copy (Ljava/util/List;II)Lcom/ead/dispatch/widget/FileDiffPage;
-	public static synthetic fun copy$default (Lcom/ead/dispatch/widget/FileDiffPage;Ljava/util/List;IIILjava/lang/Object;)Lcom/ead/dispatch/widget/FileDiffPage;
+	public final fun copy (Ljava/util/List;II)Lio/github/darkryh/dispatch/widget/FileDiffPage;
+	public static synthetic fun copy$default (Lio/github/darkryh/dispatch/widget/FileDiffPage;Ljava/util/List;IIILjava/lang/Object;)Lio/github/darkryh/dispatch/widget/FileDiffPage;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getPageCount ()I
 	public final fun getPageIndex ()I
@@ -359,19 +359,19 @@ public final class com/ead/dispatch/widget/FileDiffPage {
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/ead/dispatch/widget/FileDiffResult {
+public final class io/github/darkryh/dispatch/widget/FileDiffResult {
 	public static final field $stable I
 	public final fun getRows ()Ljava/util/List;
-	public final fun getStats ()Lcom/ead/dispatch/widget/DiffStats;
-	public final fun page (II)Lcom/ead/dispatch/widget/FileDiffPage;
+	public final fun getStats ()Lio/github/darkryh/dispatch/widget/DiffStats;
+	public final fun page (II)Lio/github/darkryh/dispatch/widget/FileDiffPage;
 }
 
-public final class com/ead/dispatch/widget/FilterableSelectorKt {
-	public static final fun handleSelectorKeyEvent (Lcom/github/ajalt/mordant/input/KeyboardEvent;Lcom/ead/dispatch/widget/SelectorKeyBindings;)Z
-	public static final fun rememberSelectorState (ZILjava/lang/String;Landroidx/compose/runtime/Composer;II)Lcom/ead/dispatch/widget/FilterableSelectorState;
+public final class io/github/darkryh/dispatch/widget/FilterableSelectorKt {
+	public static final fun handleSelectorKeyEvent (Lcom/github/ajalt/mordant/input/KeyboardEvent;Lio/github/darkryh/dispatch/widget/SelectorKeyBindings;)Z
+	public static final fun rememberSelectorState (ZILjava/lang/String;Landroidx/compose/runtime/Composer;II)Lio/github/darkryh/dispatch/widget/FilterableSelectorState;
 }
 
-public final class com/ead/dispatch/widget/FilterableSelectorState {
+public final class io/github/darkryh/dispatch/widget/FilterableSelectorState {
 	public static final field $stable I
 	public fun <init> (ZILjava/lang/String;)V
 	public synthetic fun <init> (ZILjava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
@@ -395,7 +395,7 @@ public final class com/ead/dispatch/widget/FilterableSelectorState {
 	public final fun updateFilteredOptions (Ljava/util/List;)V
 }
 
-public final class com/ead/dispatch/widget/FilterableTableState {
+public final class io/github/darkryh/dispatch/widget/FilterableTableState {
 	public static final field $stable I
 	public fun <init> ()V
 	public fun <init> (ZI)V
@@ -413,39 +413,39 @@ public final class com/ead/dispatch/widget/FilterableTableState {
 	public final fun removeLastFilter ()V
 }
 
-public abstract class com/ead/dispatch/widget/GridCells {
+public abstract class io/github/darkryh/dispatch/widget/GridCells {
 	public static final field $stable I
 }
 
-public final class com/ead/dispatch/widget/GridCells$Adaptive : com/ead/dispatch/widget/GridCells {
+public final class io/github/darkryh/dispatch/widget/GridCells$Adaptive : io/github/darkryh/dispatch/widget/GridCells {
 	public static final field $stable I
 	public fun <init> (I)V
 	public final fun component1 ()I
-	public final fun copy (I)Lcom/ead/dispatch/widget/GridCells$Adaptive;
-	public static synthetic fun copy$default (Lcom/ead/dispatch/widget/GridCells$Adaptive;IILjava/lang/Object;)Lcom/ead/dispatch/widget/GridCells$Adaptive;
+	public final fun copy (I)Lio/github/darkryh/dispatch/widget/GridCells$Adaptive;
+	public static synthetic fun copy$default (Lio/github/darkryh/dispatch/widget/GridCells$Adaptive;IILjava/lang/Object;)Lio/github/darkryh/dispatch/widget/GridCells$Adaptive;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getMinSize ()I
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/ead/dispatch/widget/GridCells$Fixed : com/ead/dispatch/widget/GridCells {
+public final class io/github/darkryh/dispatch/widget/GridCells$Fixed : io/github/darkryh/dispatch/widget/GridCells {
 	public static final field $stable I
 	public fun <init> (I)V
 	public final fun component1 ()I
-	public final fun copy (I)Lcom/ead/dispatch/widget/GridCells$Fixed;
-	public static synthetic fun copy$default (Lcom/ead/dispatch/widget/GridCells$Fixed;IILjava/lang/Object;)Lcom/ead/dispatch/widget/GridCells$Fixed;
+	public final fun copy (I)Lio/github/darkryh/dispatch/widget/GridCells$Fixed;
+	public static synthetic fun copy$default (Lio/github/darkryh/dispatch/widget/GridCells$Fixed;IILjava/lang/Object;)Lio/github/darkryh/dispatch/widget/GridCells$Fixed;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getCount ()I
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/ead/dispatch/widget/GridKt {
-	public static final fun Grid (Ljava/util/List;Lcom/ead/dispatch/modifier/Modifier;Lcom/ead/dispatch/widget/GridCells;IIZLkotlin/jvm/functions/Function4;Landroidx/compose/runtime/Composer;II)V
+public final class io/github/darkryh/dispatch/widget/GridKt {
+	public static final fun Grid (Ljava/util/List;Lio/github/darkryh/dispatch/modifier/Modifier;Lio/github/darkryh/dispatch/widget/GridCells;IIZLkotlin/jvm/functions/Function4;Landroidx/compose/runtime/Composer;II)V
 }
 
-public final class com/ead/dispatch/widget/InputHistoryIndexState {
+public final class io/github/darkryh/dispatch/widget/InputHistoryIndexState {
 	public static final field $stable I
 	public fun <init> ()V
 	public final fun getDraft ()Ljava/lang/String;
@@ -454,23 +454,23 @@ public final class com/ead/dispatch/widget/InputHistoryIndexState {
 	public final fun setIndex (I)V
 }
 
-public final class com/ead/dispatch/widget/InputKt {
-	public static final fun BasicTextFieldRenderer (Lcom/ead/dispatch/widget/TextFieldState;Lcom/ead/dispatch/modifier/Modifier;Ljava/lang/String;Ljava/lang/String;ZZZLjava/lang/String;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Landroidx/compose/runtime/Composer;III)V
-	public static final fun BasicTextFieldRenderer (Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lcom/ead/dispatch/modifier/Modifier;Ljava/lang/String;Ljava/lang/String;ZZZLjava/lang/String;Ljava/lang/Integer;ILcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Landroidx/compose/runtime/Composer;III)V
-	public static final fun PasswordField (Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lcom/ead/dispatch/modifier/Modifier;Ljava/lang/String;Ljava/lang/String;ZCLandroidx/compose/runtime/Composer;II)V
-	public static final fun TextField (Lcom/ead/dispatch/widget/TextFieldState;Lcom/ead/dispatch/modifier/Modifier;Ljava/lang/String;Ljava/lang/String;ZLkotlin/jvm/functions/Function1;ZLjava/lang/String;Ljava/lang/Integer;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Ljava/util/List;Lcom/ead/dispatch/widget/InputHistoryIndexState;Ljava/lang/Character;Landroidx/compose/runtime/Composer;III)V
-	public static final fun TextField (Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lcom/ead/dispatch/modifier/Modifier;Ljava/lang/String;Ljava/lang/String;ZLkotlin/jvm/functions/Function1;ZLjava/lang/String;Ljava/lang/Integer;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Ljava/lang/Integer;Lkotlin/jvm/functions/Function1;Ljava/util/List;Lcom/ead/dispatch/widget/InputHistoryIndexState;Ljava/lang/Character;Landroidx/compose/runtime/Composer;III)V
-	public static final fun rememberInputHistoryIndexState (Landroidx/compose/runtime/Composer;I)Lcom/ead/dispatch/widget/InputHistoryIndexState;
-	public static final fun rememberTextFieldState (Ljava/lang/String;Landroidx/compose/runtime/Composer;II)Lcom/ead/dispatch/widget/TextFieldState;
+public final class io/github/darkryh/dispatch/widget/InputKt {
+	public static final fun BasicTextFieldRenderer (Lio/github/darkryh/dispatch/widget/TextFieldState;Lio/github/darkryh/dispatch/modifier/Modifier;Ljava/lang/String;Ljava/lang/String;ZZZLjava/lang/String;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Landroidx/compose/runtime/Composer;III)V
+	public static final fun BasicTextFieldRenderer (Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lio/github/darkryh/dispatch/modifier/Modifier;Ljava/lang/String;Ljava/lang/String;ZZZLjava/lang/String;Ljava/lang/Integer;ILcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Landroidx/compose/runtime/Composer;III)V
+	public static final fun PasswordField (Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lio/github/darkryh/dispatch/modifier/Modifier;Ljava/lang/String;Ljava/lang/String;ZCLandroidx/compose/runtime/Composer;II)V
+	public static final fun TextField (Lio/github/darkryh/dispatch/widget/TextFieldState;Lio/github/darkryh/dispatch/modifier/Modifier;Ljava/lang/String;Ljava/lang/String;ZLkotlin/jvm/functions/Function1;ZLjava/lang/String;Ljava/lang/Integer;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Ljava/util/List;Lio/github/darkryh/dispatch/widget/InputHistoryIndexState;Ljava/lang/Character;Landroidx/compose/runtime/Composer;III)V
+	public static final fun TextField (Ljava/lang/String;Lkotlin/jvm/functions/Function1;Lio/github/darkryh/dispatch/modifier/Modifier;Ljava/lang/String;Ljava/lang/String;ZLkotlin/jvm/functions/Function1;ZLjava/lang/String;Ljava/lang/Integer;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Ljava/lang/Integer;Lkotlin/jvm/functions/Function1;Ljava/util/List;Lio/github/darkryh/dispatch/widget/InputHistoryIndexState;Ljava/lang/Character;Landroidx/compose/runtime/Composer;III)V
+	public static final fun rememberInputHistoryIndexState (Landroidx/compose/runtime/Composer;I)Lio/github/darkryh/dispatch/widget/InputHistoryIndexState;
+	public static final fun rememberTextFieldState (Ljava/lang/String;Landroidx/compose/runtime/Composer;II)Lio/github/darkryh/dispatch/widget/TextFieldState;
 }
 
-public final class com/ead/dispatch/widget/KeyHint {
+public final class io/github/darkryh/dispatch/widget/KeyHint {
 	public static final field $stable I
 	public fun <init> (Ljava/lang/String;Ljava/lang/String;)V
 	public final fun component1 ()Ljava/lang/String;
 	public final fun component2 ()Ljava/lang/String;
-	public final fun copy (Ljava/lang/String;Ljava/lang/String;)Lcom/ead/dispatch/widget/KeyHint;
-	public static synthetic fun copy$default (Lcom/ead/dispatch/widget/KeyHint;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/ead/dispatch/widget/KeyHint;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;)Lio/github/darkryh/dispatch/widget/KeyHint;
+	public static synthetic fun copy$default (Lio/github/darkryh/dispatch/widget/KeyHint;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/github/darkryh/dispatch/widget/KeyHint;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getDescription ()Ljava/lang/String;
 	public final fun getKey ()Ljava/lang/String;
@@ -478,43 +478,43 @@ public final class com/ead/dispatch/widget/KeyHint {
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/ead/dispatch/widget/KeyHintBarKt {
-	public static final fun KeyHintBar (Ljava/util/List;Lcom/ead/dispatch/modifier/Modifier;ILcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Ljava/lang/String;Lcom/github/ajalt/mordant/rendering/TextStyle;Landroidx/compose/runtime/Composer;II)V
+public final class io/github/darkryh/dispatch/widget/KeyHintBarKt {
+	public static final fun KeyHintBar (Ljava/util/List;Lio/github/darkryh/dispatch/modifier/Modifier;ILcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Ljava/lang/String;Lcom/github/ajalt/mordant/rendering/TextStyle;Landroidx/compose/runtime/Composer;II)V
 }
 
-public final class com/ead/dispatch/widget/LazyColumnKt {
-	public static final fun LazyColumn (Lcom/ead/dispatch/modifier/Modifier;Lcom/ead/dispatch/widget/ScrollState;ZLkotlin/jvm/functions/Function3;Landroidx/compose/runtime/Composer;II)V
+public final class io/github/darkryh/dispatch/widget/LazyColumnKt {
+	public static final fun LazyColumn (Lio/github/darkryh/dispatch/modifier/Modifier;Lio/github/darkryh/dispatch/widget/ScrollState;ZLkotlin/jvm/functions/Function3;Landroidx/compose/runtime/Composer;II)V
 }
 
-public abstract interface class com/ead/dispatch/widget/LazyListScope {
+public abstract interface class io/github/darkryh/dispatch/widget/LazyListScope {
 	public abstract fun item (Ljava/lang/Object;Lkotlin/jvm/functions/Function2;)V
-	public static synthetic fun item$default (Lcom/ead/dispatch/widget/LazyListScope;Ljava/lang/Object;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)V
+	public static synthetic fun item$default (Lio/github/darkryh/dispatch/widget/LazyListScope;Ljava/lang/Object;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)V
 	public abstract fun items (Ljava/util/List;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function3;)V
-	public static synthetic fun items$default (Lcom/ead/dispatch/widget/LazyListScope;Ljava/util/List;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function3;ILjava/lang/Object;)V
+	public static synthetic fun items$default (Lio/github/darkryh/dispatch/widget/LazyListScope;Ljava/util/List;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function3;ILjava/lang/Object;)V
 }
 
-public final class com/ead/dispatch/widget/LazyListScope$DefaultImpls {
-	public static synthetic fun item$default (Lcom/ead/dispatch/widget/LazyListScope;Ljava/lang/Object;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)V
-	public static synthetic fun items$default (Lcom/ead/dispatch/widget/LazyListScope;Ljava/util/List;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function3;ILjava/lang/Object;)V
+public final class io/github/darkryh/dispatch/widget/LazyListScope$DefaultImpls {
+	public static synthetic fun item$default (Lio/github/darkryh/dispatch/widget/LazyListScope;Ljava/lang/Object;Lkotlin/jvm/functions/Function2;ILjava/lang/Object;)V
+	public static synthetic fun items$default (Lio/github/darkryh/dispatch/widget/LazyListScope;Ljava/util/List;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function3;ILjava/lang/Object;)V
 }
 
-public final class com/ead/dispatch/widget/LinearProgressIndicatorStyle : java/lang/Enum {
-	public static final field Arrows Lcom/ead/dispatch/widget/LinearProgressIndicatorStyle;
-	public static final field Ascii Lcom/ead/dispatch/widget/LinearProgressIndicatorStyle;
-	public static final field Blocks Lcom/ead/dispatch/widget/LinearProgressIndicatorStyle;
-	public static final field Dots Lcom/ead/dispatch/widget/LinearProgressIndicatorStyle;
-	public static final field Line Lcom/ead/dispatch/widget/LinearProgressIndicatorStyle;
-	public static final field Minimal Lcom/ead/dispatch/widget/LinearProgressIndicatorStyle;
+public final class io/github/darkryh/dispatch/widget/LinearProgressIndicatorStyle : java/lang/Enum {
+	public static final field Arrows Lio/github/darkryh/dispatch/widget/LinearProgressIndicatorStyle;
+	public static final field Ascii Lio/github/darkryh/dispatch/widget/LinearProgressIndicatorStyle;
+	public static final field Blocks Lio/github/darkryh/dispatch/widget/LinearProgressIndicatorStyle;
+	public static final field Dots Lio/github/darkryh/dispatch/widget/LinearProgressIndicatorStyle;
+	public static final field Line Lio/github/darkryh/dispatch/widget/LinearProgressIndicatorStyle;
+	public static final field Minimal Lio/github/darkryh/dispatch/widget/LinearProgressIndicatorStyle;
 	public final fun getEmpty ()C
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public final fun getFilled ()C
 	public final fun getLeftCap ()C
 	public final fun getRightCap ()C
-	public static fun valueOf (Ljava/lang/String;)Lcom/ead/dispatch/widget/LinearProgressIndicatorStyle;
-	public static fun values ()[Lcom/ead/dispatch/widget/LinearProgressIndicatorStyle;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/darkryh/dispatch/widget/LinearProgressIndicatorStyle;
+	public static fun values ()[Lio/github/darkryh/dispatch/widget/LinearProgressIndicatorStyle;
 }
 
-public final class com/ead/dispatch/widget/MenuEntry {
+public final class io/github/darkryh/dispatch/widget/MenuEntry {
 	public static final field $stable I
 	public fun <init> (Ljava/lang/Object;Ljava/lang/String;ZLkotlin/jvm/functions/Function1;)V
 	public synthetic fun <init> (Ljava/lang/Object;Ljava/lang/String;ZLkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
@@ -522,27 +522,27 @@ public final class com/ead/dispatch/widget/MenuEntry {
 	public final fun component2 ()Ljava/lang/String;
 	public final fun component3 ()Z
 	public final fun component4 ()Lkotlin/jvm/functions/Function1;
-	public final fun copy (Ljava/lang/Object;Ljava/lang/String;ZLkotlin/jvm/functions/Function1;)Lcom/ead/dispatch/widget/MenuEntry;
-	public static synthetic fun copy$default (Lcom/ead/dispatch/widget/MenuEntry;Ljava/lang/Object;Ljava/lang/String;ZLkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lcom/ead/dispatch/widget/MenuEntry;
+	public final fun copy (Ljava/lang/Object;Ljava/lang/String;ZLkotlin/jvm/functions/Function1;)Lio/github/darkryh/dispatch/widget/MenuEntry;
+	public static synthetic fun copy$default (Lio/github/darkryh/dispatch/widget/MenuEntry;Ljava/lang/Object;Ljava/lang/String;ZLkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lio/github/darkryh/dispatch/widget/MenuEntry;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getEnabled ()Z
 	public final fun getLabel ()Ljava/lang/String;
 	public final fun getOnSelect ()Lkotlin/jvm/functions/Function1;
 	public final fun getValue ()Ljava/lang/Object;
 	public fun hashCode ()I
-	public final fun toMenuItem ()Lcom/ead/dispatch/widget/MenuItem;
+	public final fun toMenuItem ()Lio/github/darkryh/dispatch/widget/MenuItem;
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/ead/dispatch/widget/MenuItem {
+public final class io/github/darkryh/dispatch/widget/MenuItem {
 	public static final field $stable I
 	public fun <init> (Ljava/lang/String;ZLkotlin/jvm/functions/Function0;)V
 	public synthetic fun <init> (Ljava/lang/String;ZLkotlin/jvm/functions/Function0;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Ljava/lang/String;
 	public final fun component2 ()Z
 	public final fun component3 ()Lkotlin/jvm/functions/Function0;
-	public final fun copy (Ljava/lang/String;ZLkotlin/jvm/functions/Function0;)Lcom/ead/dispatch/widget/MenuItem;
-	public static synthetic fun copy$default (Lcom/ead/dispatch/widget/MenuItem;Ljava/lang/String;ZLkotlin/jvm/functions/Function0;ILjava/lang/Object;)Lcom/ead/dispatch/widget/MenuItem;
+	public final fun copy (Ljava/lang/String;ZLkotlin/jvm/functions/Function0;)Lio/github/darkryh/dispatch/widget/MenuItem;
+	public static synthetic fun copy$default (Lio/github/darkryh/dispatch/widget/MenuItem;Ljava/lang/String;ZLkotlin/jvm/functions/Function0;ILjava/lang/Object;)Lio/github/darkryh/dispatch/widget/MenuItem;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getEnabled ()Z
 	public final fun getLabel ()Ljava/lang/String;
@@ -551,12 +551,12 @@ public final class com/ead/dispatch/widget/MenuItem {
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/ead/dispatch/widget/MultiSelectListKt {
-	public static final fun MultiSelectList (Ljava/util/List;Lkotlin/jvm/functions/Function1;Lcom/ead/dispatch/modifier/Modifier;Lcom/ead/dispatch/widget/MultiSelectState;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Integer;Lcom/ead/dispatch/widget/SelectableListStyles;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function5;Landroidx/compose/runtime/Composer;III)V
-	public static final fun rememberMultiSelectState (Ljava/util/Set;Landroidx/compose/runtime/Composer;II)Lcom/ead/dispatch/widget/MultiSelectState;
+public final class io/github/darkryh/dispatch/widget/MultiSelectListKt {
+	public static final fun MultiSelectList (Ljava/util/List;Lkotlin/jvm/functions/Function1;Lio/github/darkryh/dispatch/modifier/Modifier;Lio/github/darkryh/dispatch/widget/MultiSelectState;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Integer;Lio/github/darkryh/dispatch/widget/SelectableListStyles;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function5;Landroidx/compose/runtime/Composer;III)V
+	public static final fun rememberMultiSelectState (Ljava/util/Set;Landroidx/compose/runtime/Composer;II)Lio/github/darkryh/dispatch/widget/MultiSelectState;
 }
 
-public final class com/ead/dispatch/widget/MultiSelectState {
+public final class io/github/darkryh/dispatch/widget/MultiSelectState {
 	public static final field $stable I
 	public fun <init> ()V
 	public fun <init> (Ljava/util/Set;)V
@@ -570,21 +570,21 @@ public final class com/ead/dispatch/widget/MultiSelectState {
 	public final fun toggle (Ljava/lang/Object;)V
 }
 
-public final class com/ead/dispatch/widget/PanelKt {
-	public static final fun Panel (Lcom/ead/dispatch/modifier/Modifier;Ljava/lang/String;Lcom/ead/dispatch/modifier/BorderStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;ZLkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;II)V
+public final class io/github/darkryh/dispatch/widget/PanelKt {
+	public static final fun Panel (Lio/github/darkryh/dispatch/modifier/Modifier;Ljava/lang/String;Lio/github/darkryh/dispatch/modifier/BorderStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;ZLkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;II)V
 }
 
-public final class com/ead/dispatch/widget/ProgressIndicatorsKt {
-	public static final fun LinearProgressIndicator (FLcom/ead/dispatch/modifier/Modifier;Lcom/ead/dispatch/widget/LinearProgressIndicatorStyle;ZLandroidx/compose/runtime/Composer;II)V
-	public static final fun LoadingIndicator (ILcom/ead/dispatch/modifier/Modifier;Ljava/lang/String;Lcom/ead/dispatch/widget/SpinnerStyle;Landroidx/compose/runtime/Composer;II)V
-	public static final fun Spinner (ILcom/ead/dispatch/modifier/Modifier;Lcom/ead/dispatch/widget/SpinnerStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Landroidx/compose/runtime/Composer;II)V
+public final class io/github/darkryh/dispatch/widget/ProgressIndicatorsKt {
+	public static final fun LinearProgressIndicator (FLio/github/darkryh/dispatch/modifier/Modifier;Lio/github/darkryh/dispatch/widget/LinearProgressIndicatorStyle;ZLandroidx/compose/runtime/Composer;II)V
+	public static final fun LoadingIndicator (ILio/github/darkryh/dispatch/modifier/Modifier;Ljava/lang/String;Lio/github/darkryh/dispatch/widget/SpinnerStyle;Landroidx/compose/runtime/Composer;II)V
+	public static final fun Spinner (ILio/github/darkryh/dispatch/modifier/Modifier;Lio/github/darkryh/dispatch/widget/SpinnerStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Landroidx/compose/runtime/Composer;II)V
 }
 
-public final class com/ead/dispatch/widget/ScaffoldKt {
-	public static final fun Scaffold (Lcom/ead/dispatch/modifier/Modifier;Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;Ljava/util/List;Lkotlin/jvm/functions/Function0;ZLkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;II)V
+public final class io/github/darkryh/dispatch/widget/ScaffoldKt {
+	public static final fun Scaffold (Lio/github/darkryh/dispatch/modifier/Modifier;Ljava/lang/String;Ljava/lang/String;Lkotlin/jvm/functions/Function2;Lkotlin/jvm/functions/Function2;Ljava/util/List;Lkotlin/jvm/functions/Function0;ZLkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;II)V
 }
 
-public final class com/ead/dispatch/widget/ScrollState {
+public final class io/github/darkryh/dispatch/widget/ScrollState {
 	public static final field $stable I
 	public fun <init> ()V
 	public fun <init> (I)V
@@ -603,22 +603,22 @@ public final class com/ead/dispatch/widget/ScrollState {
 	public final fun scrollToTop ()V
 }
 
-public final class com/ead/dispatch/widget/ScrollableListKt {
-	public static final fun ScrollableList (Ljava/util/List;Lcom/ead/dispatch/modifier/Modifier;Lcom/ead/dispatch/widget/ScrollState;Lkotlin/jvm/functions/Function3;Landroidx/compose/runtime/Composer;II)V
-	public static final fun ScrollableListWithIndicator (Ljava/util/List;Lcom/ead/dispatch/modifier/Modifier;Lcom/ead/dispatch/widget/ScrollState;ZLkotlin/jvm/functions/Function3;Landroidx/compose/runtime/Composer;II)V
-	public static final fun rememberScrollState (ILandroidx/compose/runtime/Composer;II)Lcom/ead/dispatch/widget/ScrollState;
+public final class io/github/darkryh/dispatch/widget/ScrollableListKt {
+	public static final fun ScrollableList (Ljava/util/List;Lio/github/darkryh/dispatch/modifier/Modifier;Lio/github/darkryh/dispatch/widget/ScrollState;Lkotlin/jvm/functions/Function3;Landroidx/compose/runtime/Composer;II)V
+	public static final fun ScrollableListWithIndicator (Ljava/util/List;Lio/github/darkryh/dispatch/modifier/Modifier;Lio/github/darkryh/dispatch/widget/ScrollState;ZLkotlin/jvm/functions/Function3;Landroidx/compose/runtime/Composer;II)V
+	public static final fun rememberScrollState (ILandroidx/compose/runtime/Composer;II)Lio/github/darkryh/dispatch/widget/ScrollState;
 }
 
-public final class com/ead/dispatch/widget/SegmentedButtonKt {
-	public static final fun SegmentedButton (Ljava/lang/String;Ljava/util/List;Lkotlin/jvm/functions/Function1;Lcom/ead/dispatch/modifier/Modifier;ZLjava/lang/String;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;IILandroidx/compose/runtime/Composer;III)V
+public final class io/github/darkryh/dispatch/widget/SegmentedButtonKt {
+	public static final fun SegmentedButton (Ljava/lang/String;Ljava/util/List;Lkotlin/jvm/functions/Function1;Lio/github/darkryh/dispatch/modifier/Modifier;ZLjava/lang/String;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;IILandroidx/compose/runtime/Composer;III)V
 }
 
-public final class com/ead/dispatch/widget/SelectMenuKt {
-	public static final fun SelectMenu (Ljava/util/List;Lcom/ead/dispatch/modifier/Modifier;Lcom/ead/dispatch/widget/SelectMenuState;Ljava/lang/String;Lcom/ead/dispatch/widget/SelectableListStyles;Ljava/lang/Integer;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Landroidx/compose/runtime/Composer;II)V
-	public static final fun rememberSelectMenuState (ILandroidx/compose/runtime/Composer;II)Lcom/ead/dispatch/widget/SelectMenuState;
+public final class io/github/darkryh/dispatch/widget/SelectMenuKt {
+	public static final fun SelectMenu (Ljava/util/List;Lio/github/darkryh/dispatch/modifier/Modifier;Lio/github/darkryh/dispatch/widget/SelectMenuState;Ljava/lang/String;Lio/github/darkryh/dispatch/widget/SelectableListStyles;Ljava/lang/Integer;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Landroidx/compose/runtime/Composer;II)V
+	public static final fun rememberSelectMenuState (ILandroidx/compose/runtime/Composer;II)Lio/github/darkryh/dispatch/widget/SelectMenuState;
 }
 
-public final class com/ead/dispatch/widget/SelectMenuState {
+public final class io/github/darkryh/dispatch/widget/SelectMenuState {
 	public static final field $stable I
 	public fun <init> ()V
 	public fun <init> (I)V
@@ -626,11 +626,11 @@ public final class com/ead/dispatch/widget/SelectMenuState {
 	public final fun getCursorIndex ()I
 }
 
-public final class com/ead/dispatch/widget/SelectableListKt {
-	public static final fun SelectableList (Ljava/util/List;ILcom/ead/dispatch/widget/SelectableListStyles;Lcom/ead/dispatch/modifier/Modifier;ILkotlin/jvm/functions/Function4;Landroidx/compose/runtime/Composer;II)V
+public final class io/github/darkryh/dispatch/widget/SelectableListKt {
+	public static final fun SelectableList (Ljava/util/List;ILio/github/darkryh/dispatch/widget/SelectableListStyles;Lio/github/darkryh/dispatch/modifier/Modifier;ILkotlin/jvm/functions/Function4;Landroidx/compose/runtime/Composer;II)V
 }
 
-public final class com/ead/dispatch/widget/SelectableListStyles {
+public final class io/github/darkryh/dispatch/widget/SelectableListStyles {
 	public static final field $stable I
 	public fun <init> (Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Ljava/lang/String;Ljava/lang/String;)V
 	public synthetic fun <init> (Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
@@ -638,8 +638,8 @@ public final class com/ead/dispatch/widget/SelectableListStyles {
 	public final fun component2 ()Lcom/github/ajalt/mordant/rendering/TextStyle;
 	public final fun component3 ()Ljava/lang/String;
 	public final fun component4 ()Ljava/lang/String;
-	public final fun copy (Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Ljava/lang/String;Ljava/lang/String;)Lcom/ead/dispatch/widget/SelectableListStyles;
-	public static synthetic fun copy$default (Lcom/ead/dispatch/widget/SelectableListStyles;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/ead/dispatch/widget/SelectableListStyles;
+	public final fun copy (Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Ljava/lang/String;Ljava/lang/String;)Lio/github/darkryh/dispatch/widget/SelectableListStyles;
+	public static synthetic fun copy$default (Lio/github/darkryh/dispatch/widget/SelectableListStyles;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/github/darkryh/dispatch/widget/SelectableListStyles;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getPrefix ()Lcom/github/ajalt/mordant/rendering/TextStyle;
 	public final fun getPrefixText ()Ljava/lang/String;
@@ -649,12 +649,12 @@ public final class com/ead/dispatch/widget/SelectableListStyles {
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/ead/dispatch/widget/SelectableWindowedListKt {
-	public static final fun SelectableWindowedList (Ljava/util/List;IILcom/ead/dispatch/widget/SelectableListStyles;Lcom/ead/dispatch/modifier/Modifier;ILkotlin/jvm/functions/Function4;Landroidx/compose/runtime/Composer;II)V
-	public static final fun computeWindowSlice (Ljava/util/List;II)Lcom/ead/dispatch/widget/WindowSlice;
+public final class io/github/darkryh/dispatch/widget/SelectableWindowedListKt {
+	public static final fun SelectableWindowedList (Ljava/util/List;IILio/github/darkryh/dispatch/widget/SelectableListStyles;Lio/github/darkryh/dispatch/modifier/Modifier;ILkotlin/jvm/functions/Function4;Landroidx/compose/runtime/Composer;II)V
+	public static final fun computeWindowSlice (Ljava/util/List;II)Lio/github/darkryh/dispatch/widget/WindowSlice;
 }
 
-public final class com/ead/dispatch/widget/SelectorKeyBindings {
+public final class io/github/darkryh/dispatch/widget/SelectorKeyBindings {
 	public static final field $stable I
 	public fun <init> (Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)V
 	public synthetic fun <init> (Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
@@ -666,8 +666,8 @@ public final class com/ead/dispatch/widget/SelectorKeyBindings {
 	public final fun component6 ()Lkotlin/jvm/functions/Function0;
 	public final fun component7 ()Lkotlin/jvm/functions/Function1;
 	public final fun component8 ()Lkotlin/jvm/functions/Function1;
-	public final fun copy (Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)Lcom/ead/dispatch/widget/SelectorKeyBindings;
-	public static synthetic fun copy$default (Lcom/ead/dispatch/widget/SelectorKeyBindings;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lcom/ead/dispatch/widget/SelectorKeyBindings;
+	public final fun copy (Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;)Lio/github/darkryh/dispatch/widget/SelectorKeyBindings;
+	public static synthetic fun copy$default (Lio/github/darkryh/dispatch/widget/SelectorKeyBindings;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function0;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lio/github/darkryh/dispatch/widget/SelectorKeyBindings;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getOnBackspace ()Lkotlin/jvm/functions/Function0;
 	public final fun getOnCancel ()Lkotlin/jvm/functions/Function0;
@@ -681,28 +681,28 @@ public final class com/ead/dispatch/widget/SelectorKeyBindings {
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/ead/dispatch/widget/SpinnerStyle : java/lang/Enum {
-	public static final field Circle Lcom/ead/dispatch/widget/SpinnerStyle;
-	public static final field Dots Lcom/ead/dispatch/widget/SpinnerStyle;
-	public static final field Growing Lcom/ead/dispatch/widget/SpinnerStyle;
-	public static final field Pulse Lcom/ead/dispatch/widget/SpinnerStyle;
-	public static final field Quadrants Lcom/ead/dispatch/widget/SpinnerStyle;
-	public static final field Shades Lcom/ead/dispatch/widget/SpinnerStyle;
+public final class io/github/darkryh/dispatch/widget/SpinnerStyle : java/lang/Enum {
+	public static final field Circle Lio/github/darkryh/dispatch/widget/SpinnerStyle;
+	public static final field Dots Lio/github/darkryh/dispatch/widget/SpinnerStyle;
+	public static final field Growing Lio/github/darkryh/dispatch/widget/SpinnerStyle;
+	public static final field Pulse Lio/github/darkryh/dispatch/widget/SpinnerStyle;
+	public static final field Quadrants Lio/github/darkryh/dispatch/widget/SpinnerStyle;
+	public static final field Shades Lio/github/darkryh/dispatch/widget/SpinnerStyle;
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public final fun getFrames ()Ljava/util/List;
-	public static fun valueOf (Ljava/lang/String;)Lcom/ead/dispatch/widget/SpinnerStyle;
-	public static fun values ()[Lcom/ead/dispatch/widget/SpinnerStyle;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/darkryh/dispatch/widget/SpinnerStyle;
+	public static fun values ()[Lio/github/darkryh/dispatch/widget/SpinnerStyle;
 }
 
-public final class com/ead/dispatch/widget/SurfaceBox {
+public final class io/github/darkryh/dispatch/widget/SurfaceBox {
 	public static final field $stable I
 	public fun <init> ()V
 	public fun <init> (II)V
 	public synthetic fun <init> (IIILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()I
 	public final fun component2 ()I
-	public final fun copy (II)Lcom/ead/dispatch/widget/SurfaceBox;
-	public static synthetic fun copy$default (Lcom/ead/dispatch/widget/SurfaceBox;IIILjava/lang/Object;)Lcom/ead/dispatch/widget/SurfaceBox;
+	public final fun copy (II)Lio/github/darkryh/dispatch/widget/SurfaceBox;
+	public static synthetic fun copy$default (Lio/github/darkryh/dispatch/widget/SurfaceBox;IIILjava/lang/Object;)Lio/github/darkryh/dispatch/widget/SurfaceBox;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getPaddingHorizontal ()I
 	public final fun getPaddingVertical ()I
@@ -710,19 +710,19 @@ public final class com/ead/dispatch/widget/SurfaceBox {
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/ead/dispatch/widget/SurfaceKt {
-	public static final fun Surface (Lcom/ead/dispatch/modifier/Modifier;Lcom/ead/dispatch/widget/SurfaceStyle;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;II)V
+public final class io/github/darkryh/dispatch/widget/SurfaceKt {
+	public static final fun Surface (Lio/github/darkryh/dispatch/modifier/Modifier;Lio/github/darkryh/dispatch/widget/SurfaceStyle;Lkotlin/jvm/functions/Function2;Landroidx/compose/runtime/Composer;II)V
 }
 
-public final class com/ead/dispatch/widget/SurfaceRule {
+public final class io/github/darkryh/dispatch/widget/SurfaceRule {
 	public static final field $stable I
 	public fun <init> ()V
 	public fun <init> (CLcom/github/ajalt/mordant/rendering/TextStyle;)V
 	public synthetic fun <init> (CLcom/github/ajalt/mordant/rendering/TextStyle;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()C
 	public final fun component2 ()Lcom/github/ajalt/mordant/rendering/TextStyle;
-	public final fun copy (CLcom/github/ajalt/mordant/rendering/TextStyle;)Lcom/ead/dispatch/widget/SurfaceRule;
-	public static synthetic fun copy$default (Lcom/ead/dispatch/widget/SurfaceRule;CLcom/github/ajalt/mordant/rendering/TextStyle;ILjava/lang/Object;)Lcom/ead/dispatch/widget/SurfaceRule;
+	public final fun copy (CLcom/github/ajalt/mordant/rendering/TextStyle;)Lio/github/darkryh/dispatch/widget/SurfaceRule;
+	public static synthetic fun copy$default (Lio/github/darkryh/dispatch/widget/SurfaceRule;CLcom/github/ajalt/mordant/rendering/TextStyle;ILjava/lang/Object;)Lio/github/darkryh/dispatch/widget/SurfaceRule;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getChar ()C
 	public final fun getStyle ()Lcom/github/ajalt/mordant/rendering/TextStyle;
@@ -730,101 +730,101 @@ public final class com/ead/dispatch/widget/SurfaceRule {
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/ead/dispatch/widget/SurfaceStyle {
+public final class io/github/darkryh/dispatch/widget/SurfaceStyle {
 	public static final field $stable I
-	public static final field Companion Lcom/ead/dispatch/widget/SurfaceStyle$Companion;
+	public static final field Companion Lio/github/darkryh/dispatch/widget/SurfaceStyle$Companion;
 	public fun <init> ()V
-	public fun <init> (Lcom/ead/dispatch/widget/SurfaceRule;Lcom/ead/dispatch/widget/SurfaceRule;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/ead/dispatch/widget/SurfaceBox;)V
-	public synthetic fun <init> (Lcom/ead/dispatch/widget/SurfaceRule;Lcom/ead/dispatch/widget/SurfaceRule;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/ead/dispatch/widget/SurfaceBox;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public final fun component1 ()Lcom/ead/dispatch/widget/SurfaceRule;
-	public final fun component2 ()Lcom/ead/dispatch/widget/SurfaceRule;
+	public fun <init> (Lio/github/darkryh/dispatch/widget/SurfaceRule;Lio/github/darkryh/dispatch/widget/SurfaceRule;Lcom/github/ajalt/mordant/rendering/TextStyle;Lio/github/darkryh/dispatch/widget/SurfaceBox;)V
+	public synthetic fun <init> (Lio/github/darkryh/dispatch/widget/SurfaceRule;Lio/github/darkryh/dispatch/widget/SurfaceRule;Lcom/github/ajalt/mordant/rendering/TextStyle;Lio/github/darkryh/dispatch/widget/SurfaceBox;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lio/github/darkryh/dispatch/widget/SurfaceRule;
+	public final fun component2 ()Lio/github/darkryh/dispatch/widget/SurfaceRule;
 	public final fun component3 ()Lcom/github/ajalt/mordant/rendering/TextStyle;
-	public final fun component4 ()Lcom/ead/dispatch/widget/SurfaceBox;
-	public final fun copy (Lcom/ead/dispatch/widget/SurfaceRule;Lcom/ead/dispatch/widget/SurfaceRule;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/ead/dispatch/widget/SurfaceBox;)Lcom/ead/dispatch/widget/SurfaceStyle;
-	public static synthetic fun copy$default (Lcom/ead/dispatch/widget/SurfaceStyle;Lcom/ead/dispatch/widget/SurfaceRule;Lcom/ead/dispatch/widget/SurfaceRule;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/ead/dispatch/widget/SurfaceBox;ILjava/lang/Object;)Lcom/ead/dispatch/widget/SurfaceStyle;
+	public final fun component4 ()Lio/github/darkryh/dispatch/widget/SurfaceBox;
+	public final fun copy (Lio/github/darkryh/dispatch/widget/SurfaceRule;Lio/github/darkryh/dispatch/widget/SurfaceRule;Lcom/github/ajalt/mordant/rendering/TextStyle;Lio/github/darkryh/dispatch/widget/SurfaceBox;)Lio/github/darkryh/dispatch/widget/SurfaceStyle;
+	public static synthetic fun copy$default (Lio/github/darkryh/dispatch/widget/SurfaceStyle;Lio/github/darkryh/dispatch/widget/SurfaceRule;Lio/github/darkryh/dispatch/widget/SurfaceRule;Lcom/github/ajalt/mordant/rendering/TextStyle;Lio/github/darkryh/dispatch/widget/SurfaceBox;ILjava/lang/Object;)Lio/github/darkryh/dispatch/widget/SurfaceStyle;
 	public fun equals (Ljava/lang/Object;)Z
-	public final fun getBottomRule ()Lcom/ead/dispatch/widget/SurfaceRule;
-	public final fun getBox ()Lcom/ead/dispatch/widget/SurfaceBox;
+	public final fun getBottomRule ()Lio/github/darkryh/dispatch/widget/SurfaceRule;
+	public final fun getBox ()Lio/github/darkryh/dispatch/widget/SurfaceBox;
 	public final fun getFill ()Lcom/github/ajalt/mordant/rendering/TextStyle;
-	public final fun getTopRule ()Lcom/ead/dispatch/widget/SurfaceRule;
+	public final fun getTopRule ()Lio/github/darkryh/dispatch/widget/SurfaceRule;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/ead/dispatch/widget/SurfaceStyle$Companion {
-	public final fun fill (Lcom/github/ajalt/mordant/rendering/TextStyle;II)Lcom/ead/dispatch/widget/SurfaceStyle;
-	public static synthetic fun fill$default (Lcom/ead/dispatch/widget/SurfaceStyle$Companion;Lcom/github/ajalt/mordant/rendering/TextStyle;IIILjava/lang/Object;)Lcom/ead/dispatch/widget/SurfaceStyle;
-	public final fun getNone ()Lcom/ead/dispatch/widget/SurfaceStyle;
-	public final fun lines (CLcom/github/ajalt/mordant/rendering/TextStyle;)Lcom/ead/dispatch/widget/SurfaceStyle;
-	public static synthetic fun lines$default (Lcom/ead/dispatch/widget/SurfaceStyle$Companion;CLcom/github/ajalt/mordant/rendering/TextStyle;ILjava/lang/Object;)Lcom/ead/dispatch/widget/SurfaceStyle;
+public final class io/github/darkryh/dispatch/widget/SurfaceStyle$Companion {
+	public final fun fill (Lcom/github/ajalt/mordant/rendering/TextStyle;II)Lio/github/darkryh/dispatch/widget/SurfaceStyle;
+	public static synthetic fun fill$default (Lio/github/darkryh/dispatch/widget/SurfaceStyle$Companion;Lcom/github/ajalt/mordant/rendering/TextStyle;IIILjava/lang/Object;)Lio/github/darkryh/dispatch/widget/SurfaceStyle;
+	public final fun getNone ()Lio/github/darkryh/dispatch/widget/SurfaceStyle;
+	public final fun lines (CLcom/github/ajalt/mordant/rendering/TextStyle;)Lio/github/darkryh/dispatch/widget/SurfaceStyle;
+	public static synthetic fun lines$default (Lio/github/darkryh/dispatch/widget/SurfaceStyle$Companion;CLcom/github/ajalt/mordant/rendering/TextStyle;ILjava/lang/Object;)Lio/github/darkryh/dispatch/widget/SurfaceStyle;
 }
 
-public final class com/ead/dispatch/widget/TableColumn {
+public final class io/github/darkryh/dispatch/widget/TableColumn {
 	public static final field $stable I
-	public fun <init> (Ljava/lang/String;Lcom/ead/dispatch/widget/TableColumnWidth;Lcom/github/ajalt/mordant/rendering/TextAlign;Lkotlin/jvm/functions/Function1;)V
-	public synthetic fun <init> (Ljava/lang/String;Lcom/ead/dispatch/widget/TableColumnWidth;Lcom/github/ajalt/mordant/rendering/TextAlign;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Ljava/lang/String;Lio/github/darkryh/dispatch/widget/TableColumnWidth;Lcom/github/ajalt/mordant/rendering/TextAlign;Lkotlin/jvm/functions/Function1;)V
+	public synthetic fun <init> (Ljava/lang/String;Lio/github/darkryh/dispatch/widget/TableColumnWidth;Lcom/github/ajalt/mordant/rendering/TextAlign;Lkotlin/jvm/functions/Function1;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Ljava/lang/String;
-	public final fun component2 ()Lcom/ead/dispatch/widget/TableColumnWidth;
+	public final fun component2 ()Lio/github/darkryh/dispatch/widget/TableColumnWidth;
 	public final fun component3 ()Lcom/github/ajalt/mordant/rendering/TextAlign;
 	public final fun component4 ()Lkotlin/jvm/functions/Function1;
-	public final fun copy (Ljava/lang/String;Lcom/ead/dispatch/widget/TableColumnWidth;Lcom/github/ajalt/mordant/rendering/TextAlign;Lkotlin/jvm/functions/Function1;)Lcom/ead/dispatch/widget/TableColumn;
-	public static synthetic fun copy$default (Lcom/ead/dispatch/widget/TableColumn;Ljava/lang/String;Lcom/ead/dispatch/widget/TableColumnWidth;Lcom/github/ajalt/mordant/rendering/TextAlign;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lcom/ead/dispatch/widget/TableColumn;
+	public final fun copy (Ljava/lang/String;Lio/github/darkryh/dispatch/widget/TableColumnWidth;Lcom/github/ajalt/mordant/rendering/TextAlign;Lkotlin/jvm/functions/Function1;)Lio/github/darkryh/dispatch/widget/TableColumn;
+	public static synthetic fun copy$default (Lio/github/darkryh/dispatch/widget/TableColumn;Ljava/lang/String;Lio/github/darkryh/dispatch/widget/TableColumnWidth;Lcom/github/ajalt/mordant/rendering/TextAlign;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lio/github/darkryh/dispatch/widget/TableColumn;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getAlign ()Lcom/github/ajalt/mordant/rendering/TextAlign;
 	public final fun getHeader ()Ljava/lang/String;
 	public final fun getValueOf ()Lkotlin/jvm/functions/Function1;
-	public final fun getWidth ()Lcom/ead/dispatch/widget/TableColumnWidth;
+	public final fun getWidth ()Lio/github/darkryh/dispatch/widget/TableColumnWidth;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
-public abstract interface class com/ead/dispatch/widget/TableColumnWidth {
+public abstract interface class io/github/darkryh/dispatch/widget/TableColumnWidth {
 }
 
-public final class com/ead/dispatch/widget/TableColumnWidth$Auto : com/ead/dispatch/widget/TableColumnWidth {
+public final class io/github/darkryh/dispatch/widget/TableColumnWidth$Auto : io/github/darkryh/dispatch/widget/TableColumnWidth {
 	public static final field $stable I
-	public static final field INSTANCE Lcom/ead/dispatch/widget/TableColumnWidth$Auto;
+	public static final field INSTANCE Lio/github/darkryh/dispatch/widget/TableColumnWidth$Auto;
 	public fun equals (Ljava/lang/Object;)Z
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/ead/dispatch/widget/TableColumnWidth$Fixed : com/ead/dispatch/widget/TableColumnWidth {
+public final class io/github/darkryh/dispatch/widget/TableColumnWidth$Fixed : io/github/darkryh/dispatch/widget/TableColumnWidth {
 	public static final field $stable I
 	public fun <init> (I)V
 	public final fun component1 ()I
-	public final fun copy (I)Lcom/ead/dispatch/widget/TableColumnWidth$Fixed;
-	public static synthetic fun copy$default (Lcom/ead/dispatch/widget/TableColumnWidth$Fixed;IILjava/lang/Object;)Lcom/ead/dispatch/widget/TableColumnWidth$Fixed;
+	public final fun copy (I)Lio/github/darkryh/dispatch/widget/TableColumnWidth$Fixed;
+	public static synthetic fun copy$default (Lio/github/darkryh/dispatch/widget/TableColumnWidth$Fixed;IILjava/lang/Object;)Lio/github/darkryh/dispatch/widget/TableColumnWidth$Fixed;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getChars ()I
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/ead/dispatch/widget/TableColumnWidth$Weight : com/ead/dispatch/widget/TableColumnWidth {
+public final class io/github/darkryh/dispatch/widget/TableColumnWidth$Weight : io/github/darkryh/dispatch/widget/TableColumnWidth {
 	public static final field $stable I
 	public fun <init> (F)V
 	public final fun component1 ()F
-	public final fun copy (F)Lcom/ead/dispatch/widget/TableColumnWidth$Weight;
-	public static synthetic fun copy$default (Lcom/ead/dispatch/widget/TableColumnWidth$Weight;FILjava/lang/Object;)Lcom/ead/dispatch/widget/TableColumnWidth$Weight;
+	public final fun copy (F)Lio/github/darkryh/dispatch/widget/TableColumnWidth$Weight;
+	public static synthetic fun copy$default (Lio/github/darkryh/dispatch/widget/TableColumnWidth$Weight;FILjava/lang/Object;)Lio/github/darkryh/dispatch/widget/TableColumnWidth$Weight;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getWeight ()F
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/ead/dispatch/widget/TableKt {
-	public static final fun FilterableTable (Ljava/util/List;Ljava/util/List;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function0;Lcom/ead/dispatch/modifier/Modifier;Lkotlin/jvm/functions/Function2;ZZILjava/lang/String;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Ljava/lang/String;ZLcom/ead/dispatch/widget/FilterableTableState;Landroidx/compose/runtime/Composer;III)V
-	public static final fun Table (Ljava/util/List;Ljava/util/List;Lcom/ead/dispatch/modifier/Modifier;ZLcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Ljava/lang/Integer;Landroidx/compose/runtime/Composer;II)V
-	public static final fun rememberTableState (ZILandroidx/compose/runtime/Composer;II)Lcom/ead/dispatch/widget/FilterableTableState;
+public final class io/github/darkryh/dispatch/widget/TableKt {
+	public static final fun FilterableTable (Ljava/util/List;Ljava/util/List;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function0;Lio/github/darkryh/dispatch/modifier/Modifier;Lkotlin/jvm/functions/Function2;ZZILjava/lang/String;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Ljava/lang/String;ZLio/github/darkryh/dispatch/widget/FilterableTableState;Landroidx/compose/runtime/Composer;III)V
+	public static final fun Table (Ljava/util/List;Ljava/util/List;Lio/github/darkryh/dispatch/modifier/Modifier;ZLcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Ljava/lang/Integer;Landroidx/compose/runtime/Composer;II)V
+	public static final fun rememberTableState (ZILandroidx/compose/runtime/Composer;II)Lio/github/darkryh/dispatch/widget/FilterableTableState;
 }
 
-public final class com/ead/dispatch/widget/TaskListKt {
-	public static final fun TaskList (Ljava/util/List;Lcom/ead/dispatch/modifier/Modifier;IZLjava/util/List;Ljava/util/List;Lcom/ead/dispatch/widget/TaskListTextStyles;Landroidx/compose/runtime/Composer;II)V
-	public static final fun TaskList (Ljava/util/List;Lcom/ead/dispatch/modifier/Modifier;IZLkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lcom/ead/dispatch/widget/TaskListTextStyles;Landroidx/compose/runtime/Composer;II)V
+public final class io/github/darkryh/dispatch/widget/TaskListKt {
+	public static final fun TaskList (Ljava/util/List;Lio/github/darkryh/dispatch/modifier/Modifier;IZLjava/util/List;Ljava/util/List;Lio/github/darkryh/dispatch/widget/TaskListTextStyles;Landroidx/compose/runtime/Composer;II)V
+	public static final fun TaskList (Ljava/util/List;Lio/github/darkryh/dispatch/modifier/Modifier;IZLkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lkotlin/jvm/functions/Function1;Lio/github/darkryh/dispatch/widget/TaskListTextStyles;Landroidx/compose/runtime/Composer;II)V
 }
 
-public final class com/ead/dispatch/widget/TaskListTextStyles {
+public final class io/github/darkryh/dispatch/widget/TaskListTextStyles {
 	public static final field $stable I
 	public fun <init> ()V
 	public fun <init> (Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;)V
@@ -835,8 +835,8 @@ public final class com/ead/dispatch/widget/TaskListTextStyles {
 	public final fun component4 ()Lcom/github/ajalt/mordant/rendering/TextStyle;
 	public final fun component5 ()Lcom/github/ajalt/mordant/rendering/TextStyle;
 	public final fun component6 ()Lcom/github/ajalt/mordant/rendering/TextStyle;
-	public final fun copy (Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;)Lcom/ead/dispatch/widget/TaskListTextStyles;
-	public static synthetic fun copy$default (Lcom/ead/dispatch/widget/TaskListTextStyles;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;ILjava/lang/Object;)Lcom/ead/dispatch/widget/TaskListTextStyles;
+	public final fun copy (Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;)Lio/github/darkryh/dispatch/widget/TaskListTextStyles;
+	public static synthetic fun copy$default (Lio/github/darkryh/dispatch/widget/TaskListTextStyles;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;ILjava/lang/Object;)Lio/github/darkryh/dispatch/widget/TaskListTextStyles;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getCompleted ()Lcom/github/ajalt/mordant/rendering/TextStyle;
 	public final fun getDetails ()Lcom/github/ajalt/mordant/rendering/TextStyle;
@@ -848,18 +848,18 @@ public final class com/ead/dispatch/widget/TaskListTextStyles {
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/ead/dispatch/widget/TaskStatus : java/lang/Enum {
-	public static final field Completed Lcom/ead/dispatch/widget/TaskStatus;
-	public static final field Failed Lcom/ead/dispatch/widget/TaskStatus;
-	public static final field InProgress Lcom/ead/dispatch/widget/TaskStatus;
-	public static final field Pending Lcom/ead/dispatch/widget/TaskStatus;
-	public static final field Skipped Lcom/ead/dispatch/widget/TaskStatus;
+public final class io/github/darkryh/dispatch/widget/TaskStatus : java/lang/Enum {
+	public static final field Completed Lio/github/darkryh/dispatch/widget/TaskStatus;
+	public static final field Failed Lio/github/darkryh/dispatch/widget/TaskStatus;
+	public static final field InProgress Lio/github/darkryh/dispatch/widget/TaskStatus;
+	public static final field Pending Lio/github/darkryh/dispatch/widget/TaskStatus;
+	public static final field Skipped Lio/github/darkryh/dispatch/widget/TaskStatus;
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Lcom/ead/dispatch/widget/TaskStatus;
-	public static fun values ()[Lcom/ead/dispatch/widget/TaskStatus;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/darkryh/dispatch/widget/TaskStatus;
+	public static fun values ()[Lio/github/darkryh/dispatch/widget/TaskStatus;
 }
 
-public final class com/ead/dispatch/widget/TextFieldState {
+public final class io/github/darkryh/dispatch/widget/TextFieldState {
 	public static final field $stable I
 	public fun <init> ()V
 	public fun <init> (Ljava/lang/String;)V
@@ -887,45 +887,45 @@ public final class com/ead/dispatch/widget/TextFieldState {
 	public final fun setValue (Ljava/lang/String;)V
 }
 
-public final class com/ead/dispatch/widget/TextKt {
-	public static final fun Text (Ljava/lang/String;Lcom/ead/dispatch/modifier/Modifier;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextAlign;Ljava/lang/Integer;Lcom/ead/dispatch/widget/TextOverflow;ZLandroidx/compose/runtime/Composer;II)V
+public final class io/github/darkryh/dispatch/widget/TextKt {
+	public static final fun Text (Ljava/lang/String;Lio/github/darkryh/dispatch/modifier/Modifier;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextAlign;Ljava/lang/Integer;Lio/github/darkryh/dispatch/widget/TextOverflow;ZLandroidx/compose/runtime/Composer;II)V
 }
 
-public final class com/ead/dispatch/widget/TextOverflow : java/lang/Enum {
-	public static final field Clip Lcom/ead/dispatch/widget/TextOverflow;
-	public static final field Ellipsis Lcom/ead/dispatch/widget/TextOverflow;
-	public static final field Visible Lcom/ead/dispatch/widget/TextOverflow;
+public final class io/github/darkryh/dispatch/widget/TextOverflow : java/lang/Enum {
+	public static final field Clip Lio/github/darkryh/dispatch/widget/TextOverflow;
+	public static final field Ellipsis Lio/github/darkryh/dispatch/widget/TextOverflow;
+	public static final field Visible Lio/github/darkryh/dispatch/widget/TextOverflow;
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Lcom/ead/dispatch/widget/TextOverflow;
-	public static fun values ()[Lcom/ead/dispatch/widget/TextOverflow;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/darkryh/dispatch/widget/TextOverflow;
+	public static fun values ()[Lio/github/darkryh/dispatch/widget/TextOverflow;
 }
 
-public final class com/ead/dispatch/widget/ToggleStyle : java/lang/Enum {
-	public static final field Checkbox Lcom/ead/dispatch/widget/ToggleStyle;
-	public static final field Circle Lcom/ead/dispatch/widget/ToggleStyle;
-	public static final field Emoji Lcom/ead/dispatch/widget/ToggleStyle;
-	public static final field Square Lcom/ead/dispatch/widget/ToggleStyle;
-	public static final field Switch Lcom/ead/dispatch/widget/ToggleStyle;
+public final class io/github/darkryh/dispatch/widget/ToggleStyle : java/lang/Enum {
+	public static final field Checkbox Lio/github/darkryh/dispatch/widget/ToggleStyle;
+	public static final field Circle Lio/github/darkryh/dispatch/widget/ToggleStyle;
+	public static final field Emoji Lio/github/darkryh/dispatch/widget/ToggleStyle;
+	public static final field Square Lio/github/darkryh/dispatch/widget/ToggleStyle;
+	public static final field Switch Lio/github/darkryh/dispatch/widget/ToggleStyle;
 	public final fun getCheckedChar ()Ljava/lang/String;
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
 	public final fun getUncheckedChar ()Ljava/lang/String;
-	public static fun valueOf (Ljava/lang/String;)Lcom/ead/dispatch/widget/ToggleStyle;
-	public static fun values ()[Lcom/ead/dispatch/widget/ToggleStyle;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/darkryh/dispatch/widget/ToggleStyle;
+	public static fun values ()[Lio/github/darkryh/dispatch/widget/ToggleStyle;
 }
 
-public final class com/ead/dispatch/widget/TreeKt {
-	public static final fun Tree (Ljava/util/List;Lcom/ead/dispatch/modifier/Modifier;Lkotlin/jvm/functions/Function1;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Integer;ZLcom/ead/dispatch/widget/TreeState;Lkotlin/jvm/functions/Function5;Landroidx/compose/runtime/Composer;III)V
-	public static final fun rememberTreeState (Ljava/util/Set;ILandroidx/compose/runtime/Composer;II)Lcom/ead/dispatch/widget/TreeState;
+public final class io/github/darkryh/dispatch/widget/TreeKt {
+	public static final fun Tree (Ljava/util/List;Lio/github/darkryh/dispatch/modifier/Modifier;Lkotlin/jvm/functions/Function1;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;Ljava/lang/Integer;ZLio/github/darkryh/dispatch/widget/TreeState;Lkotlin/jvm/functions/Function5;Landroidx/compose/runtime/Composer;III)V
+	public static final fun rememberTreeState (Ljava/util/Set;ILandroidx/compose/runtime/Composer;II)Lio/github/darkryh/dispatch/widget/TreeState;
 }
 
-public final class com/ead/dispatch/widget/TreeNode {
+public final class io/github/darkryh/dispatch/widget/TreeNode {
 	public static final field $stable I
 	public fun <init> (Ljava/lang/Object;Ljava/util/List;)V
 	public synthetic fun <init> (Ljava/lang/Object;Ljava/util/List;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Ljava/lang/Object;
 	public final fun component2 ()Ljava/util/List;
-	public final fun copy (Ljava/lang/Object;Ljava/util/List;)Lcom/ead/dispatch/widget/TreeNode;
-	public static synthetic fun copy$default (Lcom/ead/dispatch/widget/TreeNode;Ljava/lang/Object;Ljava/util/List;ILjava/lang/Object;)Lcom/ead/dispatch/widget/TreeNode;
+	public final fun copy (Ljava/lang/Object;Ljava/util/List;)Lio/github/darkryh/dispatch/widget/TreeNode;
+	public static synthetic fun copy$default (Lio/github/darkryh/dispatch/widget/TreeNode;Ljava/lang/Object;Ljava/util/List;ILjava/lang/Object;)Lio/github/darkryh/dispatch/widget/TreeNode;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getChildren ()Ljava/util/List;
 	public final fun getValue ()Ljava/lang/Object;
@@ -933,7 +933,7 @@ public final class com/ead/dispatch/widget/TreeNode {
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/ead/dispatch/widget/TreeState {
+public final class io/github/darkryh/dispatch/widget/TreeState {
 	public static final field $stable I
 	public fun <init> ()V
 	public fun <init> (Ljava/util/Set;I)V
@@ -948,15 +948,15 @@ public final class com/ead/dispatch/widget/TreeState {
 	public final fun toggle (Ljava/lang/Object;)V
 }
 
-public final class com/ead/dispatch/widget/WindowSlice {
+public final class io/github/darkryh/dispatch/widget/WindowSlice {
 	public static final field $stable I
 	public fun <init> (Ljava/util/List;III)V
 	public final fun component1 ()Ljava/util/List;
 	public final fun component2 ()I
 	public final fun component3 ()I
 	public final fun component4 ()I
-	public final fun copy (Ljava/util/List;III)Lcom/ead/dispatch/widget/WindowSlice;
-	public static synthetic fun copy$default (Lcom/ead/dispatch/widget/WindowSlice;Ljava/util/List;IIIILjava/lang/Object;)Lcom/ead/dispatch/widget/WindowSlice;
+	public final fun copy (Ljava/util/List;III)Lio/github/darkryh/dispatch/widget/WindowSlice;
+	public static synthetic fun copy$default (Lio/github/darkryh/dispatch/widget/WindowSlice;Ljava/util/List;IIIILjava/lang/Object;)Lio/github/darkryh/dispatch/widget/WindowSlice;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getEndIndex ()I
 	public final fun getLocalSelected ()I

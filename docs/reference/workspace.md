@@ -1,6 +1,6 @@
 # Workspace watching reference
 
-Package: `com.ead.dispatch.workspace`. Module: `dispatch-workspace`.
+Package: `io.github.darkryh.dispatch.workspace`. Module: `dispatch-workspace`.
 
 The workspace module watches a directory tree and emits filesystem events — for live-reload-style
 workflows where the UI reacts to files changing on disk. It is optional; depend on it only if you

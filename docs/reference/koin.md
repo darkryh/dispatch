@@ -1,6 +1,6 @@
 # Koin DI reference
 
-Package: `com.ead.dispatch.koin`. Module: `dispatch-koin`.
+Package: `io.github.darkryh.dispatch.koin`. Module: `dispatch-koin`.
 
 The Koin module integrates [Koin](https://insert-koin.io/) so you can declare dependencies once and
 resolve view models — with their constructor arguments — automatically. You install Koin from the

@@ -1,6 +1,6 @@
 # Self-update reference
 
-Package: `com.ead.dispatch.update`. Modules: `dispatch-update` (core), plus one provider artifact per
+Package: `io.github.darkryh.dispatch.update`. Modules: `dispatch-update` (core), plus one provider artifact per
 channel: `dispatch-update-github`, `dispatch-update-brew`, `dispatch-update-scoop`,
 `dispatch-update-apt`.
 

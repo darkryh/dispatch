@@ -6,7 +6,7 @@ them, and navigate forward and back. It assumes a working single-screen app.
 Add the dependency:
 
 ```kotlin
-implementation("io.github.darkryh.dispatch:dispatch-navigation:1.0.0")
+implementation("io.github.darkryh:dispatch-navigation:1.0.0-beta01")
 ```
 
 ## Define routes
@@ -16,7 +16,7 @@ arguments, and a `data class` to carry arguments. Add `@SerialName` so the back 
 and restored.
 
 ```kotlin
-import com.ead.dispatch.navigation.NavKey
+import io.github.darkryh.dispatch.navigation.NavKey
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -41,9 +41,9 @@ Create a back stack seeded with your start route and render it in a `NavDisplay`
 maps each route to its screen.
 
 ```kotlin
-import com.ead.dispatch.navigation.NavDisplay
-import com.ead.dispatch.navigation.entryProvider
-import com.ead.dispatch.navigation.rememberNavBackStack
+import io.github.darkryh.dispatch.navigation.NavDisplay
+import io.github.darkryh.dispatch.navigation.entryProvider
+import io.github.darkryh.dispatch.navigation.rememberNavBackStack
 
 @Composable
 fun App() {
@@ -66,7 +66,7 @@ The `entry<DetailRoute>` lambda receives the route instance, so you can read its
 Get the `Navigator` from `LocalNavigator` and push or pop routes.
 
 ```kotlin
-import com.ead.dispatch.navigation.LocalNavigator
+import io.github.darkryh.dispatch.navigation.LocalNavigator
 
 @Composable
 fun HomeScreen() {
@@ -99,7 +99,7 @@ above). Inside a view model, the route arrives as the entry's `SavedStateHandle`
 `toRoute`:
 
 ```kotlin
-import com.ead.dispatch.navigation.toRoute
+import io.github.darkryh.dispatch.navigation.toRoute
 
 class DetailViewModel(handle: SavedStateHandle) : StateViewModel<DetailState>(DetailState()) {
     private val route = handle.toRoute<DetailRoute>()   // throws if missing

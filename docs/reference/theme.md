@@ -1,6 +1,6 @@
 # Theme reference
 
-Package: `com.ead.dispatch.theme`. Module: `dispatch-runtime`.
+Package: `io.github.darkryh.dispatch.theme`. Module: `dispatch-runtime`.
 
 A theme is a palette of named [Mordant](https://github.com/ajalt/mordant) `TextStyle`s. You set one
 in `config { theme = … }`, and read it in composition with `LocalTheme.current`.
@@ -103,7 +103,7 @@ Text("Important", style = theme.error + DispatchTextStyle.Bold)
 ## Composition local
 
 ```kotlin
-// com.ead.dispatch.runtime.LocalTheme (note: the runtime package, not com.ead.dispatch.theme)
+// io.github.darkryh.dispatch.runtime.LocalTheme (note: the runtime package, not io.github.darkryh.dispatch.theme)
 val LocalTheme: ProvidableCompositionLocal<DispatchTheme>   // default DispatchTheme.Dark
 ```
 

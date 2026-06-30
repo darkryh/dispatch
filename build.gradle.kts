@@ -15,11 +15,11 @@ apiValidation {
 }
 
 allprojects {
-    // NOTE: was "com.github.ajalt.mordant.dispatch" — that is the Mordant author's namespace and
-    // cannot be published/signed to Maven Central. Using the project owner's own group. Confirm the
-    // final coordinates before the first non-SNAPSHOT release.
-    group = "io.github.darkryh.dispatch"
-    version = "1.0.0-SNAPSHOT"
+    // Coordinates confirmed for Maven Central: the group is the project owner's own verified
+    // namespace (the earlier "com.github.ajalt.mordant.dispatch" was the Mordant author's and could
+    // not be signed/published). First public release is the 1.0.0 beta line.
+    group = "io.github.darkryh"
+    version = "1.0.0-beta01"
 
     repositories {
         google()

@@ -1,6 +1,6 @@
 # Modifiers reference
 
-Package: `com.ead.dispatch.modifier`. Module: `dispatch-runtime`.
+Package: `io.github.darkryh.dispatch.modifier`. Module: `dispatch-runtime`.
 
 A `Modifier` configures a layout node: its size, padding, border, position, scrolling, and focus. As
 in Jetpack Compose, modifiers form an immutable, ordered chain. Start from the `Modifier` identity

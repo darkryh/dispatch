@@ -6,7 +6,7 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose") version "2.4.0"
 }
 
-group = "io.github.darkryh.dispatch"
+group = "io.github.darkryh"
 version = "1.0.0-SNAPSHOT"
 
 kotlin {

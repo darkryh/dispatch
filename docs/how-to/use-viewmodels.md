@@ -48,7 +48,7 @@ Pass the initial state to the super constructor and override `handleIntent`. Cha
 `viewModelScope`, and emit effects with `emitSideEffect`.
 
 ```kotlin
-import com.ead.dispatch.viewmodel.FullMviViewModel
+import io.github.darkryh.dispatch.viewmodel.FullMviViewModel
 
 class ChatViewModel(
     private val repository: ChatRepository,
@@ -81,7 +81,7 @@ no-arg constructor, the no-arg overload is enough; otherwise pass a `factory` (o
 [Koin](use-koin-di.md), which resolves dependencies automatically).
 
 ```kotlin
-import com.ead.dispatch.viewmodel.viewModel
+import io.github.darkryh.dispatch.viewmodel.viewModel
 
 @Composable
 fun ChatScreen(viewModel: ChatViewModel = viewModel { ChatViewModel(repository) }) {
@@ -118,7 +118,7 @@ Effects are one-time signals — a scroll, a beep, a navigation. Collect them wi
 which runs in a `LaunchedEffect`.
 
 ```kotlin
-import com.ead.dispatch.viewmodel.collectSideEffect
+import io.github.darkryh.dispatch.viewmodel.collectSideEffect
 
 val scrollState = rememberScrollState()
 viewModel.sideEffect.collectSideEffect { effect ->

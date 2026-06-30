@@ -1,14 +1,14 @@
-public abstract interface class com/ead/dispatch/update/CommandBasedUpdateProvider : com/ead/dispatch/update/UpdateProvider {
+public abstract interface class io/github/darkryh/dispatch/update/CommandBasedUpdateProvider : io/github/darkryh/dispatch/update/UpdateProvider {
 }
 
-public final class com/ead/dispatch/update/CommandResult {
+public final class io/github/darkryh/dispatch/update/CommandResult {
 	public static final field $stable I
 	public fun <init> (ILjava/lang/String;Ljava/lang/String;)V
 	public final fun component1 ()I
 	public final fun component2 ()Ljava/lang/String;
 	public final fun component3 ()Ljava/lang/String;
-	public final fun copy (ILjava/lang/String;Ljava/lang/String;)Lcom/ead/dispatch/update/CommandResult;
-	public static synthetic fun copy$default (Lcom/ead/dispatch/update/CommandResult;ILjava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/ead/dispatch/update/CommandResult;
+	public final fun copy (ILjava/lang/String;Ljava/lang/String;)Lio/github/darkryh/dispatch/update/CommandResult;
+	public static synthetic fun copy$default (Lio/github/darkryh/dispatch/update/CommandResult;ILjava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/github/darkryh/dispatch/update/CommandResult;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getExitCode ()I
 	public final fun getStderr ()Ljava/lang/String;
@@ -18,105 +18,105 @@ public final class com/ead/dispatch/update/CommandResult {
 	public fun toString ()Ljava/lang/String;
 }
 
-public abstract interface class com/ead/dispatch/update/CommandRunner {
-	public abstract fun run ([Ljava/lang/String;)Lcom/ead/dispatch/update/CommandResult;
+public abstract interface class io/github/darkryh/dispatch/update/CommandRunner {
+	public abstract fun run ([Ljava/lang/String;)Lio/github/darkryh/dispatch/update/CommandResult;
 }
 
-public final class com/ead/dispatch/update/DefaultUpdateCommandProvider : com/ead/dispatch/update/UpdateCommandProvider {
+public final class io/github/darkryh/dispatch/update/DefaultUpdateCommandProvider : io/github/darkryh/dispatch/update/UpdateCommandProvider {
 	public static final field $stable I
 	public fun <init> ()V
-	public fun commandFor (Lcom/ead/dispatch/update/UpdateSource;Ljava/lang/String;)Ljava/lang/String;
+	public fun commandFor (Lio/github/darkryh/dispatch/update/UpdateSource;Ljava/lang/String;)Ljava/lang/String;
 }
 
-public final class com/ead/dispatch/update/DefaultUpdateSourceResolver : com/ead/dispatch/update/UpdateSourceResolver {
+public final class io/github/darkryh/dispatch/update/DefaultUpdateSourceResolver : io/github/darkryh/dispatch/update/UpdateSourceResolver {
 	public static final field $stable I
 	public fun <init> ()V
-	public fun resolve (Ljava/lang/String;Lcom/ead/dispatch/update/UpdateConfig;Lcom/ead/dispatch/update/UpdateEnvironment;)Lcom/ead/dispatch/update/UpdateSource;
+	public fun resolve (Ljava/lang/String;Lio/github/darkryh/dispatch/update/UpdateConfig;Lio/github/darkryh/dispatch/update/UpdateEnvironment;)Lio/github/darkryh/dispatch/update/UpdateSource;
 }
 
-public final class com/ead/dispatch/update/OperatingSystem : java/lang/Enum {
-	public static final field LINUX Lcom/ead/dispatch/update/OperatingSystem;
-	public static final field MAC Lcom/ead/dispatch/update/OperatingSystem;
-	public static final field OTHER Lcom/ead/dispatch/update/OperatingSystem;
-	public static final field WINDOWS Lcom/ead/dispatch/update/OperatingSystem;
+public final class io/github/darkryh/dispatch/update/OperatingSystem : java/lang/Enum {
+	public static final field LINUX Lio/github/darkryh/dispatch/update/OperatingSystem;
+	public static final field MAC Lio/github/darkryh/dispatch/update/OperatingSystem;
+	public static final field OTHER Lio/github/darkryh/dispatch/update/OperatingSystem;
+	public static final field WINDOWS Lio/github/darkryh/dispatch/update/OperatingSystem;
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Lcom/ead/dispatch/update/OperatingSystem;
-	public static fun values ()[Lcom/ead/dispatch/update/OperatingSystem;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/darkryh/dispatch/update/OperatingSystem;
+	public static fun values ()[Lio/github/darkryh/dispatch/update/OperatingSystem;
 }
 
-public final class com/ead/dispatch/update/StaticUpdateProvider : com/ead/dispatch/update/UpdateProvider {
+public final class io/github/darkryh/dispatch/update/StaticUpdateProvider : io/github/darkryh/dispatch/update/UpdateProvider {
 	public static final field $stable I
 	public fun <init> (Ljava/lang/String;)V
 	public fun latestVersion (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
-public final class com/ead/dispatch/update/SystemUpdateEnvironment : com/ead/dispatch/update/UpdateEnvironment {
+public final class io/github/darkryh/dispatch/update/SystemUpdateEnvironment : io/github/darkryh/dispatch/update/UpdateEnvironment {
 	public static final field $stable I
 	public fun <init> ()V
 	public fun env (Ljava/lang/String;)Ljava/lang/String;
 	public fun fileExists (Ljava/lang/String;)Z
 	public fun getClassPathEntries ()Ljava/util/List;
-	public fun getOs ()Lcom/ead/dispatch/update/OperatingSystem;
+	public fun getOs ()Lio/github/darkryh/dispatch/update/OperatingSystem;
 	public fun getPathEntries ()Ljava/util/List;
 }
 
-public final class com/ead/dispatch/update/UpdateAdvice {
+public final class io/github/darkryh/dispatch/update/UpdateAdvice {
 	public static final field $stable I
-	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lcom/ead/dispatch/update/UpdateSource;Ljava/lang/String;Ljava/lang/String;)V
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lio/github/darkryh/dispatch/update/UpdateSource;Ljava/lang/String;Ljava/lang/String;)V
 	public final fun component1 ()Ljava/lang/String;
 	public final fun component2 ()Ljava/lang/String;
-	public final fun component3 ()Lcom/ead/dispatch/update/UpdateSource;
+	public final fun component3 ()Lio/github/darkryh/dispatch/update/UpdateSource;
 	public final fun component4 ()Ljava/lang/String;
 	public final fun component5 ()Ljava/lang/String;
-	public final fun copy (Ljava/lang/String;Ljava/lang/String;Lcom/ead/dispatch/update/UpdateSource;Ljava/lang/String;Ljava/lang/String;)Lcom/ead/dispatch/update/UpdateAdvice;
-	public static synthetic fun copy$default (Lcom/ead/dispatch/update/UpdateAdvice;Ljava/lang/String;Ljava/lang/String;Lcom/ead/dispatch/update/UpdateSource;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lcom/ead/dispatch/update/UpdateAdvice;
+	public final fun copy (Ljava/lang/String;Ljava/lang/String;Lio/github/darkryh/dispatch/update/UpdateSource;Ljava/lang/String;Ljava/lang/String;)Lio/github/darkryh/dispatch/update/UpdateAdvice;
+	public static synthetic fun copy$default (Lio/github/darkryh/dispatch/update/UpdateAdvice;Ljava/lang/String;Ljava/lang/String;Lio/github/darkryh/dispatch/update/UpdateSource;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lio/github/darkryh/dispatch/update/UpdateAdvice;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getCommand ()Ljava/lang/String;
 	public final fun getCurrentVersion ()Ljava/lang/String;
 	public final fun getLatestVersion ()Ljava/lang/String;
 	public final fun getMessage ()Ljava/lang/String;
-	public final fun getSource ()Lcom/ead/dispatch/update/UpdateSource;
+	public final fun getSource ()Lio/github/darkryh/dispatch/update/UpdateSource;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
-public final class com/ead/dispatch/update/UpdateAdvisor {
+public final class io/github/darkryh/dispatch/update/UpdateAdvisor {
 	public static final field $stable I
-	public fun <init> (Lcom/ead/dispatch/runtime/DispatchConfig;Lcom/ead/dispatch/update/UpdateConfig;Lcom/ead/dispatch/update/UpdateSourceResolver;Lcom/ead/dispatch/update/UpdateCommandProvider;Lcom/ead/dispatch/update/UpdateEnvironment;)V
-	public synthetic fun <init> (Lcom/ead/dispatch/runtime/DispatchConfig;Lcom/ead/dispatch/update/UpdateConfig;Lcom/ead/dispatch/update/UpdateSourceResolver;Lcom/ead/dispatch/update/UpdateCommandProvider;Lcom/ead/dispatch/update/UpdateEnvironment;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lio/github/darkryh/dispatch/runtime/DispatchConfig;Lio/github/darkryh/dispatch/update/UpdateConfig;Lio/github/darkryh/dispatch/update/UpdateSourceResolver;Lio/github/darkryh/dispatch/update/UpdateCommandProvider;Lio/github/darkryh/dispatch/update/UpdateEnvironment;)V
+	public synthetic fun <init> (Lio/github/darkryh/dispatch/runtime/DispatchConfig;Lio/github/darkryh/dispatch/update/UpdateConfig;Lio/github/darkryh/dispatch/update/UpdateSourceResolver;Lio/github/darkryh/dispatch/update/UpdateCommandProvider;Lio/github/darkryh/dispatch/update/UpdateEnvironment;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun check (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
-public final class com/ead/dispatch/update/UpdateCheckThrottle {
+public final class io/github/darkryh/dispatch/update/UpdateCheckThrottle {
 	public static final field $stable I
-	public static final field INSTANCE Lcom/ead/dispatch/update/UpdateCheckThrottle;
+	public static final field INSTANCE Lio/github/darkryh/dispatch/update/UpdateCheckThrottle;
 	public final fun shouldCheck-8Mi8wO0 (Ljava/lang/String;JJ)Z
-	public static synthetic fun shouldCheck-8Mi8wO0$default (Lcom/ead/dispatch/update/UpdateCheckThrottle;Ljava/lang/String;JJILjava/lang/Object;)Z
+	public static synthetic fun shouldCheck-8Mi8wO0$default (Lio/github/darkryh/dispatch/update/UpdateCheckThrottle;Ljava/lang/String;JJILjava/lang/Object;)Z
 }
 
-public abstract interface class com/ead/dispatch/update/UpdateCommandProvider {
-	public abstract fun commandFor (Lcom/ead/dispatch/update/UpdateSource;Ljava/lang/String;)Ljava/lang/String;
+public abstract interface class io/github/darkryh/dispatch/update/UpdateCommandProvider {
+	public abstract fun commandFor (Lio/github/darkryh/dispatch/update/UpdateSource;Ljava/lang/String;)Ljava/lang/String;
 }
 
-public final class com/ead/dispatch/update/UpdateComposableKt {
-	public static final fun rememberUpdateAdvice (Lcom/ead/dispatch/update/UpdateConfig;Lcom/ead/dispatch/update/UpdateSourceResolver;Lcom/ead/dispatch/update/UpdateCommandProvider;Lcom/ead/dispatch/update/UpdateEnvironment;Landroidx/compose/runtime/Composer;II)Lcom/ead/dispatch/update/UpdateAdvice;
+public final class io/github/darkryh/dispatch/update/UpdateComposableKt {
+	public static final fun rememberUpdateAdvice (Lio/github/darkryh/dispatch/update/UpdateConfig;Lio/github/darkryh/dispatch/update/UpdateSourceResolver;Lio/github/darkryh/dispatch/update/UpdateCommandProvider;Lio/github/darkryh/dispatch/update/UpdateEnvironment;Landroidx/compose/runtime/Composer;II)Lio/github/darkryh/dispatch/update/UpdateAdvice;
 }
 
-public final class com/ead/dispatch/update/UpdateConfig {
+public final class io/github/darkryh/dispatch/update/UpdateConfig {
 	public static final field $stable I
-	public synthetic fun <init> (ZZJLjava/util/Map;Ljava/util/Map;Lcom/ead/dispatch/update/UpdateSource;Ljava/lang/String;ZZILkotlin/jvm/internal/DefaultConstructorMarker;)V
-	public synthetic fun <init> (ZZJLjava/util/Map;Ljava/util/Map;Lcom/ead/dispatch/update/UpdateSource;Ljava/lang/String;ZZLkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (ZZJLjava/util/Map;Ljava/util/Map;Lio/github/darkryh/dispatch/update/UpdateSource;Ljava/lang/String;ZZILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public synthetic fun <init> (ZZJLjava/util/Map;Ljava/util/Map;Lio/github/darkryh/dispatch/update/UpdateSource;Ljava/lang/String;ZZLkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Z
 	public final fun component2 ()Z
 	public final fun component3-UwyO8pc ()J
 	public final fun component4 ()Ljava/util/Map;
 	public final fun component5 ()Ljava/util/Map;
-	public final fun component6 ()Lcom/ead/dispatch/update/UpdateSource;
+	public final fun component6 ()Lio/github/darkryh/dispatch/update/UpdateSource;
 	public final fun component7 ()Ljava/lang/String;
 	public final fun component8 ()Z
 	public final fun component9 ()Z
-	public final fun copy-OCcUtpk (ZZJLjava/util/Map;Ljava/util/Map;Lcom/ead/dispatch/update/UpdateSource;Ljava/lang/String;ZZ)Lcom/ead/dispatch/update/UpdateConfig;
-	public static synthetic fun copy-OCcUtpk$default (Lcom/ead/dispatch/update/UpdateConfig;ZZJLjava/util/Map;Ljava/util/Map;Lcom/ead/dispatch/update/UpdateSource;Ljava/lang/String;ZZILjava/lang/Object;)Lcom/ead/dispatch/update/UpdateConfig;
+	public final fun copy-OCcUtpk (ZZJLjava/util/Map;Ljava/util/Map;Lio/github/darkryh/dispatch/update/UpdateSource;Ljava/lang/String;ZZ)Lio/github/darkryh/dispatch/update/UpdateConfig;
+	public static synthetic fun copy-OCcUtpk$default (Lio/github/darkryh/dispatch/update/UpdateConfig;ZZJLjava/util/Map;Ljava/util/Map;Lio/github/darkryh/dispatch/update/UpdateSource;Ljava/lang/String;ZZILjava/lang/Object;)Lio/github/darkryh/dispatch/update/UpdateConfig;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getAllowExternalCommands ()Z
 	public final fun getCheckInterval-UwyO8pc ()J
@@ -126,49 +126,49 @@ public final class com/ead/dispatch/update/UpdateConfig {
 	public final fun getPackageIds ()Ljava/util/Map;
 	public final fun getProviders ()Ljava/util/Map;
 	public final fun getRefreshBeforeCheck ()Z
-	public final fun getSourceOverride ()Lcom/ead/dispatch/update/UpdateSource;
+	public final fun getSourceOverride ()Lio/github/darkryh/dispatch/update/UpdateSource;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
 
-public abstract interface class com/ead/dispatch/update/UpdateEnvironment {
+public abstract interface class io/github/darkryh/dispatch/update/UpdateEnvironment {
 	public abstract fun env (Ljava/lang/String;)Ljava/lang/String;
 	public abstract fun fileExists (Ljava/lang/String;)Z
 	public abstract fun getClassPathEntries ()Ljava/util/List;
-	public abstract fun getOs ()Lcom/ead/dispatch/update/OperatingSystem;
+	public abstract fun getOs ()Lio/github/darkryh/dispatch/update/OperatingSystem;
 	public abstract fun getPathEntries ()Ljava/util/List;
 }
 
-public final class com/ead/dispatch/update/UpdateLog {
+public final class io/github/darkryh/dispatch/update/UpdateLog {
 	public static final field $stable I
-	public static final field INSTANCE Lcom/ead/dispatch/update/UpdateLog;
+	public static final field INSTANCE Lio/github/darkryh/dispatch/update/UpdateLog;
 	public final fun debug (Ljava/lang/String;Ljava/lang/Throwable;)V
-	public static synthetic fun debug$default (Lcom/ead/dispatch/update/UpdateLog;Ljava/lang/String;Ljava/lang/Throwable;ILjava/lang/Object;)V
+	public static synthetic fun debug$default (Lio/github/darkryh/dispatch/update/UpdateLog;Ljava/lang/String;Ljava/lang/Throwable;ILjava/lang/Object;)V
 }
 
-public abstract interface class com/ead/dispatch/update/UpdateProvider {
+public abstract interface class io/github/darkryh/dispatch/update/UpdateProvider {
 	public abstract fun latestVersion (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
-public final class com/ead/dispatch/update/UpdateSource : java/lang/Enum {
-	public static final field APT Lcom/ead/dispatch/update/UpdateSource;
-	public static final field GITHUB Lcom/ead/dispatch/update/UpdateSource;
-	public static final field HOMEBREW Lcom/ead/dispatch/update/UpdateSource;
-	public static final field MANUAL Lcom/ead/dispatch/update/UpdateSource;
-	public static final field SCOOP Lcom/ead/dispatch/update/UpdateSource;
-	public static final field UNKNOWN Lcom/ead/dispatch/update/UpdateSource;
+public final class io/github/darkryh/dispatch/update/UpdateSource : java/lang/Enum {
+	public static final field APT Lio/github/darkryh/dispatch/update/UpdateSource;
+	public static final field GITHUB Lio/github/darkryh/dispatch/update/UpdateSource;
+	public static final field HOMEBREW Lio/github/darkryh/dispatch/update/UpdateSource;
+	public static final field MANUAL Lio/github/darkryh/dispatch/update/UpdateSource;
+	public static final field SCOOP Lio/github/darkryh/dispatch/update/UpdateSource;
+	public static final field UNKNOWN Lio/github/darkryh/dispatch/update/UpdateSource;
 	public static fun getEntries ()Lkotlin/enums/EnumEntries;
-	public static fun valueOf (Ljava/lang/String;)Lcom/ead/dispatch/update/UpdateSource;
-	public static fun values ()[Lcom/ead/dispatch/update/UpdateSource;
+	public static fun valueOf (Ljava/lang/String;)Lio/github/darkryh/dispatch/update/UpdateSource;
+	public static fun values ()[Lio/github/darkryh/dispatch/update/UpdateSource;
 }
 
-public abstract interface class com/ead/dispatch/update/UpdateSourceResolver {
-	public abstract fun resolve (Ljava/lang/String;Lcom/ead/dispatch/update/UpdateConfig;Lcom/ead/dispatch/update/UpdateEnvironment;)Lcom/ead/dispatch/update/UpdateSource;
+public abstract interface class io/github/darkryh/dispatch/update/UpdateSourceResolver {
+	public abstract fun resolve (Ljava/lang/String;Lio/github/darkryh/dispatch/update/UpdateConfig;Lio/github/darkryh/dispatch/update/UpdateEnvironment;)Lio/github/darkryh/dispatch/update/UpdateSource;
 }
 
-public final class com/ead/dispatch/update/VersionComparator {
+public final class io/github/darkryh/dispatch/update/VersionComparator {
 	public static final field $stable I
-	public static final field INSTANCE Lcom/ead/dispatch/update/VersionComparator;
+	public static final field INSTANCE Lio/github/darkryh/dispatch/update/VersionComparator;
 	public final fun compare (Ljava/lang/String;Ljava/lang/String;)I
 	public final fun isNewer (Ljava/lang/String;Ljava/lang/String;)Z
 }

@@ -24,8 +24,11 @@ java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(21))
     }
-    withSourcesJar()
-    withJavadocJar()
+    // NOTE: do NOT call withSourcesJar()/withJavadocJar() here. The vanniktech maven-publish plugin
+    // (applied via dispatch.publishing-conventions) already attaches a sources JAR and a Dokka-based
+    // javadoc JAR to each publication; adding them again produces two artifacts with the same
+    // 'javadoc'/'sources' classifier and fails publishing with "multiple artifacts with the identical
+    // extension and classifier".
 }
 
 kotlin {

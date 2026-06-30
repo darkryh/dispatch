@@ -41,8 +41,8 @@ repositories {
 }
 
 dependencies {
-    implementation("io.github.darkryh.dispatch:dispatch-core:1.0.0")
-    implementation("io.github.darkryh.dispatch:dispatch-widgets:1.0.0")
+    implementation("io.github.darkryh:dispatch-core:1.0.0-beta01")
+    implementation("io.github.darkryh:dispatch-widgets:1.0.0-beta01")
 }
 
 application {
@@ -63,11 +63,11 @@ Create `src/main/kotlin/Main.kt` with the smallest app that runs:
 
 ```kotlin
 import androidx.compose.runtime.Composable
-import com.ead.dispatch.runtime.DispatchApplication
-import com.ead.dispatch.runtime.ExitKeyBinding
-import com.ead.dispatch.runtime.LocalTheme
-import com.ead.dispatch.theme.DispatchTheme
-import com.ead.dispatch.widget.Text
+import io.github.darkryh.dispatch.runtime.DispatchApplication
+import io.github.darkryh.dispatch.runtime.ExitKeyBinding
+import io.github.darkryh.dispatch.runtime.LocalTheme
+import io.github.darkryh.dispatch.theme.DispatchTheme
+import io.github.darkryh.dispatch.widget.Text
 
 fun main(args: Array<String>) =
     DispatchApplication(args) {
@@ -116,9 +116,9 @@ One line is not much. Add a header and structure with `Column`, which stacks chi
 Replace `App` with:
 
 ```kotlin
-import com.ead.dispatch.layout.Column
-import com.ead.dispatch.layout.Spacer
-import com.ead.dispatch.modifier.height
+import io.github.darkryh.dispatch.layout.Column
+import io.github.darkryh.dispatch.layout.Spacer
+import io.github.darkryh.dispatch.modifier.height
 
 @Composable
 fun App() {
@@ -135,7 +135,7 @@ fun App() {
 Add the `Modifier` import too:
 
 ```kotlin
-import com.ead.dispatch.modifier.Modifier
+import io.github.darkryh.dispatch.modifier.Modifier
 ```
 
 Rebuild and relaunch the same way — `./gradlew installDist` then `./build/install/<project>/bin/<project>`. You should see:
@@ -183,8 +183,8 @@ Wire keys to the counter with `KeyBindings`, the declarative way to register sho
 **`+`** to increment, **`-`** to decrement, and **`r`** to reset.
 
 ```kotlin
-import com.ead.dispatch.input.Key
-import com.ead.dispatch.runtime.KeyBindings
+import io.github.darkryh.dispatch.input.Key
+import io.github.darkryh.dispatch.runtime.KeyBindings
 
 @Composable
 fun App() {
@@ -229,17 +229,17 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import com.ead.dispatch.input.Key
-import com.ead.dispatch.layout.Column
-import com.ead.dispatch.layout.Spacer
-import com.ead.dispatch.modifier.Modifier
-import com.ead.dispatch.modifier.height
-import com.ead.dispatch.runtime.DispatchApplication
-import com.ead.dispatch.runtime.ExitKeyBinding
-import com.ead.dispatch.runtime.KeyBindings
-import com.ead.dispatch.runtime.LocalTheme
-import com.ead.dispatch.theme.DispatchTheme
-import com.ead.dispatch.widget.Text
+import io.github.darkryh.dispatch.input.Key
+import io.github.darkryh.dispatch.layout.Column
+import io.github.darkryh.dispatch.layout.Spacer
+import io.github.darkryh.dispatch.modifier.Modifier
+import io.github.darkryh.dispatch.modifier.height
+import io.github.darkryh.dispatch.runtime.DispatchApplication
+import io.github.darkryh.dispatch.runtime.ExitKeyBinding
+import io.github.darkryh.dispatch.runtime.KeyBindings
+import io.github.darkryh.dispatch.runtime.LocalTheme
+import io.github.darkryh.dispatch.theme.DispatchTheme
+import io.github.darkryh.dispatch.widget.Text
 
 fun main(args: Array<String>) =
     DispatchApplication(args) {

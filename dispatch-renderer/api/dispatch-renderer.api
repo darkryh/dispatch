@@ -1,4 +1,4 @@
-public final class com/ead/dispatch/render/AnsiCodes {
+public final class io/github/darkryh/dispatch/render/AnsiCodes {
 	public static final field $stable I
 	public static final field CLEAR_LINE Ljava/lang/String;
 	public static final field CLEAR_SCREEN Ljava/lang/String;
@@ -7,50 +7,50 @@ public final class com/ead/dispatch/render/AnsiCodes {
 	public static final field CURSOR_HIDE Ljava/lang/String;
 	public static final field CURSOR_HOME Ljava/lang/String;
 	public static final field CURSOR_SHOW Ljava/lang/String;
-	public static final field INSTANCE Lcom/ead/dispatch/render/AnsiCodes;
+	public static final field INSTANCE Lio/github/darkryh/dispatch/render/AnsiCodes;
 	public static final field RESTORE_CURSOR Ljava/lang/String;
 	public static final field SAVE_CURSOR Ljava/lang/String;
 	public final fun appendMoveTo (Ljava/lang/StringBuilder;II)V
 	public final fun moveDown (I)Ljava/lang/String;
-	public static synthetic fun moveDown$default (Lcom/ead/dispatch/render/AnsiCodes;IILjava/lang/Object;)Ljava/lang/String;
+	public static synthetic fun moveDown$default (Lio/github/darkryh/dispatch/render/AnsiCodes;IILjava/lang/Object;)Ljava/lang/String;
 	public final fun moveLeft (I)Ljava/lang/String;
-	public static synthetic fun moveLeft$default (Lcom/ead/dispatch/render/AnsiCodes;IILjava/lang/Object;)Ljava/lang/String;
+	public static synthetic fun moveLeft$default (Lio/github/darkryh/dispatch/render/AnsiCodes;IILjava/lang/Object;)Ljava/lang/String;
 	public final fun moveRight (I)Ljava/lang/String;
-	public static synthetic fun moveRight$default (Lcom/ead/dispatch/render/AnsiCodes;IILjava/lang/Object;)Ljava/lang/String;
+	public static synthetic fun moveRight$default (Lio/github/darkryh/dispatch/render/AnsiCodes;IILjava/lang/Object;)Ljava/lang/String;
 	public final fun moveTo (II)Ljava/lang/String;
 	public final fun moveUp (I)Ljava/lang/String;
-	public static synthetic fun moveUp$default (Lcom/ead/dispatch/render/AnsiCodes;IILjava/lang/Object;)Ljava/lang/String;
+	public static synthetic fun moveUp$default (Lio/github/darkryh/dispatch/render/AnsiCodes;IILjava/lang/Object;)Ljava/lang/String;
 	public final fun scrollDown (I)Ljava/lang/String;
-	public static synthetic fun scrollDown$default (Lcom/ead/dispatch/render/AnsiCodes;IILjava/lang/Object;)Ljava/lang/String;
+	public static synthetic fun scrollDown$default (Lio/github/darkryh/dispatch/render/AnsiCodes;IILjava/lang/Object;)Ljava/lang/String;
 	public final fun scrollUp (I)Ljava/lang/String;
-	public static synthetic fun scrollUp$default (Lcom/ead/dispatch/render/AnsiCodes;IILjava/lang/Object;)Ljava/lang/String;
+	public static synthetic fun scrollUp$default (Lio/github/darkryh/dispatch/render/AnsiCodes;IILjava/lang/Object;)Ljava/lang/String;
 }
 
-public final class com/ead/dispatch/render/OutputCapture {
+public final class io/github/darkryh/dispatch/render/OutputCapture {
 	public static final field $stable I
-	public static final field INSTANCE Lcom/ead/dispatch/render/OutputCapture;
+	public static final field INSTANCE Lio/github/darkryh/dispatch/render/OutputCapture;
 	public final fun isSuppressed ()Z
 	public final fun suppress (Lkotlin/jvm/functions/Function0;)Ljava/lang/Object;
 }
 
-public final class com/ead/dispatch/render/RenderDiagnostics {
+public final class io/github/darkryh/dispatch/render/RenderDiagnostics {
 	public static final field $stable I
-	public static final field INSTANCE Lcom/ead/dispatch/render/RenderDiagnostics;
+	public static final field INSTANCE Lio/github/darkryh/dispatch/render/RenderDiagnostics;
 	public final fun isEnabled ()Z
 	public final fun record (Ljava/lang/String;Ljava/util/Map;)V
-	public static synthetic fun record$default (Lcom/ead/dispatch/render/RenderDiagnostics;Ljava/lang/String;Ljava/util/Map;ILjava/lang/Object;)V
+	public static synthetic fun record$default (Lio/github/darkryh/dispatch/render/RenderDiagnostics;Ljava/lang/String;Ljava/util/Map;ILjava/lang/Object;)V
 	public final fun recordMemoryIfDue (J)V
-	public static synthetic fun recordMemoryIfDue$default (Lcom/ead/dispatch/render/RenderDiagnostics;JILjava/lang/Object;)V
+	public static synthetic fun recordMemoryIfDue$default (Lio/github/darkryh/dispatch/render/RenderDiagnostics;JILjava/lang/Object;)V
 }
 
-public final class com/ead/dispatch/render/TerminalRenderer {
+public final class io/github/darkryh/dispatch/render/TerminalRenderer {
 	public static final field $stable I
 	public fun <init> (Lcom/github/ajalt/mordant/terminal/Terminal;)V
 	public final fun appendScrollingContent (Ljava/util/List;)V
 	public final fun bell ()V
 	public final fun clearActiveArea ()V
 	public final fun clearScreen (Z)V
-	public static synthetic fun clearScreen$default (Lcom/ead/dispatch/render/TerminalRenderer;ZILjava/lang/Object;)V
+	public static synthetic fun clearScreen$default (Lio/github/darkryh/dispatch/render/TerminalRenderer;ZILjava/lang/Object;)V
 	public final fun getTerminalHeight ()I
 	public final fun getTerminalWidth ()I
 	public final fun handoffToShellPrompt ()V
@@ -58,7 +58,7 @@ public final class com/ead/dispatch/render/TerminalRenderer {
 	public final fun markVisibleContentHeight (I)V
 	public final fun moveCursor (II)V
 	public final fun rewriteViewport (Ljava/util/List;Ljava/util/List;Z)V
-	public static synthetic fun rewriteViewport$default (Lcom/ead/dispatch/render/TerminalRenderer;Ljava/util/List;Ljava/util/List;ZILjava/lang/Object;)V
+	public static synthetic fun rewriteViewport$default (Lio/github/darkryh/dispatch/render/TerminalRenderer;Ljava/util/List;Ljava/util/List;ZILjava/lang/Object;)V
 	public final fun showCursor ()V
 	public final fun updateActiveArea (Ljava/util/List;)V
 }

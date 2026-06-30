@@ -46,7 +46,7 @@ full-repaint behavior are unchanged.
 
 ### Fixed
 
-- Maven coordinates corrected from `com.github.ajalt.mordant.dispatch` to `io.github.darkryh.dispatch`
+- Maven coordinates corrected from `com.github.ajalt.mordant.dispatch` to `io.github.darkryh`
   (the previous group is the Mordant author's namespace and could not be published).
 
 ### Added

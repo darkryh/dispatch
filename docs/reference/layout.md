@@ -1,6 +1,6 @@
 # Layout reference
 
-Package: `com.ead.dispatch.layout`. Modules: `dispatch-layout`, `dispatch-runtime`.
+Package: `io.github.darkryh.dispatch.layout`. Modules: `dispatch-layout`, `dispatch-runtime`.
 
 Layout in Dispatch mirrors Jetpack Compose: containers measure and place children, alignment and
 arrangement control positioning, and `weight` distributes leftover space. Everything is measured in
@@ -220,8 +220,8 @@ Column {
 ## Custom layouts
 
 To build a layout that the built-in containers don't cover, use `Layout` with a `MeasurePolicy`.
-These APIs live in `dispatch-runtime` (packages `com.ead.dispatch.layout`,
-`com.ead.dispatch.constraints`).
+These APIs live in `dispatch-runtime` (packages `io.github.darkryh.dispatch.layout`,
+`io.github.darkryh.dispatch.constraints`).
 
 ```kotlin
 @Composable
@@ -300,7 +300,7 @@ Bounds passed down during measurement. Helpers: `hasBoundedWidth`, `hasBoundedHe
 `Constraints.Zero`, `Constraints.fixed(w, h)`, `fixedWidth(w)`, `fixedHeight(h)`, `maxSize(w, h)`,
 `minSize(w, h)`.
 
-A `ConstraintValidator` (`object`, package `com.ead.dispatch.constraints`) checks measured sizes
+A `ConstraintValidator` (`object`, package `io.github.darkryh.dispatch.constraints`) checks measured sizes
 against constraints; its `mode` is `STRICT`, `LENIENT`, or `SILENT`.
 
 ## See also

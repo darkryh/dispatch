@@ -13,9 +13,9 @@ the techniques here for your own shortcuts and navigation.
 unregisters when it leaves.
 
 ```kotlin
-import com.ead.dispatch.input.Key
-import com.ead.dispatch.input.ctrl
-import com.ead.dispatch.runtime.KeyBindings
+import io.github.darkryh.dispatch.input.Key
+import io.github.darkryh.dispatch.input.ctrl
+import io.github.darkryh.dispatch.runtime.KeyBindings
 
 KeyBindings {
     on(Key.char('n'), "new") { create() }
@@ -33,8 +33,8 @@ For dynamic handling — say, routing arrow keys to a custom list — register o
 interceptor and inspect the typed event. Convert the raw event with `asKeyEvent()`.
 
 ```kotlin
-import com.ead.dispatch.input.asKeyEvent
-import com.ead.dispatch.runtime.LocalKeyboardInterceptor
+import io.github.darkryh.dispatch.input.asKeyEvent
+import io.github.darkryh.dispatch.runtime.LocalKeyboardInterceptor
 import androidx.compose.runtime.DisposableEffect
 
 val interceptor = LocalKeyboardInterceptor.current

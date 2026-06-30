@@ -1,6 +1,6 @@
 # Application & configuration reference
 
-Package: `com.ead.dispatch.runtime` (unless noted). Modules: `dispatch-core`, `dispatch-runtime`.
+Package: `io.github.darkryh.dispatch.runtime` (unless noted). Modules: `dispatch-core`, `dispatch-runtime`.
 
 Every Dispatch app starts with `DispatchApplication`. It boots the runtime, runs your `config { }`
 and `content { }` blocks, drives the compose/render loop, and exits the process.
@@ -27,9 +27,9 @@ with that code; a clean (code 0) exit simply returns.
 **Example**
 
 ```kotlin
-import com.ead.dispatch.runtime.DispatchApplication
-import com.ead.dispatch.runtime.ExitKeyBinding
-import com.ead.dispatch.theme.DispatchTheme
+import io.github.darkryh.dispatch.runtime.DispatchApplication
+import io.github.darkryh.dispatch.runtime.ExitKeyBinding
+import io.github.darkryh.dispatch.theme.DispatchTheme
 
 fun main(args: Array<String>) =
     DispatchApplication(args) {
@@ -165,7 +165,7 @@ Registers a shutdown callback. Callbacks run in reverse registration order at ex
 When you depend on `dispatch-koin`, an extension adds the `koin { }` block usable inside `config`:
 
 ```kotlin
-// package com.ead.dispatch.koin
+// package io.github.darkryh.dispatch.koin
 fun DispatchConfig.koin(
     vararg validateViewModels: KClass<out ViewModel>,
     stopOnExit: Boolean = true,
@@ -335,7 +335,7 @@ locals in [Composition locals](#composition-locals).
 
 ## Composition helpers
 
-Package `com.ead.dispatch.runtime`. Convenience composables for reading runtime state.
+Package `io.github.darkryh.dispatch.runtime`. Convenience composables for reading runtime state.
 
 ```kotlin
 @Composable fun dispatchScope(): DispatchScope
@@ -362,7 +362,7 @@ The `require*` variants throw a clear error when the value is absent:
 
 ## Composition locals
 
-Package `com.ead.dispatch.runtime`. Read these with `LocalX.current`.
+Package `io.github.darkryh.dispatch.runtime`. Read these with `LocalX.current`.
 
 | Local | Type | Default |
 |---|---|---|

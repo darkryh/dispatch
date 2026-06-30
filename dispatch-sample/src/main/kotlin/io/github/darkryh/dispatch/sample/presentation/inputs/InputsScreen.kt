@@ -1,0 +1,131 @@
+@file:Suppress("ktlint:standard:function-naming")
+
+package io.github.darkryh.dispatch.sample.presentation.inputs
+
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import io.github.darkryh.dispatch.layout.Column
+import io.github.darkryh.dispatch.layout.Spacer
+import io.github.darkryh.dispatch.modifier.Modifier
+import io.github.darkryh.dispatch.modifier.fillMaxWidth
+import io.github.darkryh.dispatch.modifier.height
+import io.github.darkryh.dispatch.runtime.LocalTheme
+import io.github.darkryh.dispatch.sample.designsystem.ControlPanel
+import io.github.darkryh.dispatch.sample.designsystem.ControlSpec
+import io.github.darkryh.dispatch.sample.designsystem.PlaygroundScaffold
+import io.github.darkryh.dispatch.viewmodel.viewModel
+import io.github.darkryh.dispatch.widget.BasicTextFieldRenderer
+import io.github.darkryh.dispatch.widget.KeyHint
+import io.github.darkryh.dispatch.widget.PasswordField
+import io.github.darkryh.dispatch.widget.Surface
+import io.github.darkryh.dispatch.widget.SurfaceStyle
+import io.github.darkryh.dispatch.widget.Text
+import io.github.darkryh.dispatch.widget.TextField
+import io.github.darkryh.dispatch.widget.rememberInputHistoryIndexState
+import io.github.darkryh.dispatch.widget.rememberTextFieldState
+import com.github.ajalt.mordant.rendering.TextColors.Companion.rgb
+
+/**
+ * Inputs playground.
+ *
+ * Demonstrates: the value-based [TextField] (with input history fed from submitted names and a
+ * leading icon), the [TextFieldState]-based [TextField] overload, [PasswordField] character masking,
+ * and the display-only [BasicTextFieldRenderer]. The fields own the keyboard themselves — they
+ * register at priority -1 and handle typing, cursor movement, Tab focus traversal and ↑/↓ history —
+ * so this screen deliberately skips [io.github.darkryh.dispatch.sample.designsystem.PlaygroundController]; the
+ * controls pane is a read-only echo of the live state.
+ */
+@Composable
+fun InputsScreen(viewModel: InputsViewModel = viewModel()) {
+    val state by viewModel.state.collectAsState()
+
+    PlaygroundScaffold(
+        title = "Inputs",
+        subtitle = "Text fields, password masking and ↑/↓ history. Tab moves between fields.",
+        showControlHints = false,
+        hints =
+            listOf(
+                KeyHint("Tab", "next field"),
+                KeyHint("↑/↓", "history"),
+                KeyHint("Enter", "submit"),
+            ),
+        controls = {
+            ControlPanel(
+                specs =
+                    listOf(
+                        ControlSpec.Value("Submitted", state.submitted.size.toString()),
+                        ControlSpec.Value("Last", state.submitted.lastOrNull() ?: "—"),
+                        ControlSpec.Value("Notes len", state.notes.length.toString()),
+                    ),
+                selected = -1,
+            )
+        },
+        preview = { InputsPreview(state, viewModel::sendIntent) },
+    )
+}
+
+@Composable
+private fun InputsPreview(
+    state: InputsState,
+    onIntent: (InputsIntent) -> Unit,
+) {
+    val theme = LocalTheme.current
+    val notesState = rememberTextFieldState()
+    val nameHistory = rememberInputHistoryIndexState()
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        // Value-based TextField — Enter submits the trimmed name; ↑/↓ recall earlier submissions.
+        Text("TextField (value) — Enter submits", style = theme.muted)
+        Surface(style = SurfaceStyle.fill(rgb("#303846"))) {
+            TextField(
+                value = state.name,
+                onValueChange = { onIntent(InputsIntent.UpdateName(it)) },
+                modifier = Modifier.fillMaxWidth(),
+                icon = "name ",
+                placeholder = "Ada Lovelace",
+                onSubmit = { onIntent(InputsIntent.Submit) },
+                historyItems = state.submitted,
+                historyIndexState = nameHistory,
+            )
+        }
+        Spacer(Modifier.height(1))
+
+        // PasswordField — every character is masked with the mask char.
+        Text("PasswordField — masked input", style = theme.muted)
+        PasswordField(
+            value = state.password,
+            onValueChange = { onIntent(InputsIntent.UpdatePassword(it)) },
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = "secret",
+            maskChar = '●',
+        )
+        Spacer(Modifier.height(1))
+
+        // State-based TextField — drives a TextFieldState and notifies the VM of edits.
+        Text("TextField (TextFieldState) — multi-line notes", style = theme.muted)
+        TextField(
+            state = notesState,
+            modifier = Modifier.fillMaxWidth(),
+            icon = "› ",
+            placeholder = "Jot a few notes…",
+            maxLines = 3,
+            onSubmit = { onIntent(InputsIntent.UpdateNotes(notesState.value)) },
+        )
+        Spacer(Modifier.height(1))
+
+        // BasicTextFieldRenderer — pure display widget, no keyboard handling.
+        Text("BasicTextFieldRenderer — display only", style = theme.muted)
+        BasicTextFieldRenderer(
+            value = state.name.ifEmpty { "—" },
+            onValueChange = {},
+            modifier = Modifier.fillMaxWidth(),
+            icon = "echo ",
+            enabled = false,
+            showCursor = false,
+        )
+        Spacer(Modifier.height(1))
+
+        Text("Tab moves between fields · ↑/↓ recalls history · Enter submits", style = theme.muted)
+    }
+}

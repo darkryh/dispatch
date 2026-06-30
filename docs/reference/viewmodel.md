@@ -1,6 +1,6 @@
 # View models & MVI reference
 
-Package: `com.ead.dispatch.viewmodel`. Module: `dispatch-viewmodel`.
+Package: `io.github.darkryh.dispatch.viewmodel`. Module: `dispatch-viewmodel`.
 
 A view model holds a screen's state and logic, surviving recomposition and scoped to a navigation
 entry. Dispatch provides a base `ViewModel` plus MVI-flavored subclasses, helpers for adapting

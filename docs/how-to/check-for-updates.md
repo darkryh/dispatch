@@ -6,8 +6,8 @@ releases or a package manager (Homebrew, Scoop, APT). It assumes a working app.
 The feature is opt-in. Add the core module plus a provider for each channel you ship through:
 
 ```kotlin
-implementation("io.github.darkryh.dispatch:dispatch-update:1.0.0")
-implementation("io.github.darkryh.dispatch:dispatch-update-github:1.0.0")
+implementation("io.github.darkryh:dispatch-update:1.0.0-beta01")
+implementation("io.github.darkryh:dispatch-update-github:1.0.0-beta01")
 // or -brew / -scoop / -apt
 ```
 
@@ -19,10 +19,10 @@ The check reads your app's current version from `config.version`, so make sure t
 `null` when you are up to date. Configure which provider serves which channel.
 
 ```kotlin
-import com.ead.dispatch.update.UpdateConfig
-import com.ead.dispatch.update.UpdateSource
-import com.ead.dispatch.update.rememberUpdateAdvice
-import com.ead.dispatch.update.GithubReleaseUpdateProvider
+import io.github.darkryh.dispatch.update.UpdateConfig
+import io.github.darkryh.dispatch.update.UpdateSource
+import io.github.darkryh.dispatch.update.rememberUpdateAdvice
+import io.github.darkryh.dispatch.update.GithubReleaseUpdateProvider
 
 @Composable
 fun App() {
@@ -71,7 +71,7 @@ Command-based providers read the latest version by shelling out. Supply a `Comma
 provider to its source:
 
 ```kotlin
-import com.ead.dispatch.update.BrewUpdateProvider
+import io.github.darkryh.dispatch.update.BrewUpdateProvider
 
 UpdateConfig(
     providers = mapOf(
@@ -89,7 +89,7 @@ To check without a composable — for example in a `--check-updates` flag — us
 directly:
 
 ```kotlin
-import com.ead.dispatch.update.UpdateAdvisor
+import io.github.darkryh.dispatch.update.UpdateAdvisor
 
 val advisor = UpdateAdvisor(dispatchConfig = config, updateConfig = updateConfig)
 val advice = advisor.check()   // suspend; null when up to date
