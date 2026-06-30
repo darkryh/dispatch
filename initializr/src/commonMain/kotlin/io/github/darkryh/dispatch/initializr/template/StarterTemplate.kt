@@ -85,8 +85,11 @@ object StarterTemplate {
         }
 
         dependencies {
-            // `dispatch-widgets` transitively brings runtime, layout, viewmodel, the Compose runtime,
-            // coroutines and Mordant; the others are listed explicitly for clarity.
+            // `dispatch-core` provides the DispatchApplication entry point (it is not pulled in
+            // transitively — module boundaries forbid widgets/renderer/navigation → core). `dispatch-widgets`
+            // brings the widgets + transitively runtime/layout/viewmodel, the Compose runtime, coroutines
+            // and Mordant; the rest are listed explicitly for clarity.
+            implementation("io.github.darkryh.dispatch:dispatch-core:{{DISPATCH_VERSION}}")
             implementation("io.github.darkryh.dispatch:dispatch-runtime:{{DISPATCH_VERSION}}")
             implementation("io.github.darkryh.dispatch:dispatch-layout:{{DISPATCH_VERSION}}")
             implementation("io.github.darkryh.dispatch:dispatch-widgets:{{DISPATCH_VERSION}}")
@@ -122,6 +125,7 @@ object StarterTemplate {
         package {{PACKAGE}}
 
         import io.github.darkryh.dispatch.koin.KoinViewModelFactory
+        import io.github.darkryh.dispatch.koin.koin
         import io.github.darkryh.dispatch.runtime.DispatchApplication
         import io.github.darkryh.dispatch.runtime.ExitKeyBinding
         import io.github.darkryh.dispatch.theme.DispatchTheme
