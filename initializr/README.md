@@ -71,7 +71,7 @@ it builds the Wasm distribution and publishes it to Pages on every push under `i
 ## Notes & trade-offs
 
 - **The generated project depends on published artifacts.** It references
-  `io.github.darkryh:*:<version>` from Maven Central. Until the library is actually published
+  `io.github.darkryh.dispatch:*:<version>` from Maven Central. Until the library is actually published
   (it is currently on a `-SNAPSHOT`), the download will not resolve. When you publish, bump the single
   constant `StarterTemplate.DISPATCH_VERSION`.
 - **Bundle size.** Compose Multiplatform renders via Skia, so the site ships an ~8 MB `skiko.wasm`

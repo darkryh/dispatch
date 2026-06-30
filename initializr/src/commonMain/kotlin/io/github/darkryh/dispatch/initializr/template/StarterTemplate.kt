@@ -18,7 +18,7 @@ package io.github.darkryh.dispatch.initializr.template
 object StarterTemplate {
     /**
      * The Dispatch artifact version the generated project depends on. The modules are published to
-     * Maven Central under `io.github.darkryh:*`; flipping this one constant is all that is
+     * Maven Central under `io.github.darkryh.dispatch:*`; flipping this one constant is all that is
      * needed when a new release lands. Pinned to the first public release, the `1.0.0` beta line.
      */
     const val DISPATCH_VERSION: String = "1.0.0-beta01"
@@ -87,11 +87,11 @@ object StarterTemplate {
         dependencies {
             // `dispatch-widgets` transitively brings runtime, layout, viewmodel, the Compose runtime,
             // coroutines and Mordant; the others are listed explicitly for clarity.
-            implementation("io.github.darkryh:dispatch-runtime:{{DISPATCH_VERSION}}")
-            implementation("io.github.darkryh:dispatch-layout:{{DISPATCH_VERSION}}")
-            implementation("io.github.darkryh:dispatch-widgets:{{DISPATCH_VERSION}}")
-            implementation("io.github.darkryh:dispatch-viewmodel:{{DISPATCH_VERSION}}")
-            implementation("io.github.darkryh:dispatch-koin:{{DISPATCH_VERSION}}")
+            implementation("io.github.darkryh.dispatch:dispatch-runtime:{{DISPATCH_VERSION}}")
+            implementation("io.github.darkryh.dispatch:dispatch-layout:{{DISPATCH_VERSION}}")
+            implementation("io.github.darkryh.dispatch:dispatch-widgets:{{DISPATCH_VERSION}}")
+            implementation("io.github.darkryh.dispatch:dispatch-viewmodel:{{DISPATCH_VERSION}}")
+            implementation("io.github.darkryh.dispatch:dispatch-koin:{{DISPATCH_VERSION}}")
 
             // Silence SLF4J's "no providers" notice so it can't corrupt the terminal UI.
             runtimeOnly("org.slf4j:slf4j-nop:2.0.18")

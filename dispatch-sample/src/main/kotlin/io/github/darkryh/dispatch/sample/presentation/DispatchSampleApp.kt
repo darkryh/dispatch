@@ -73,7 +73,8 @@ fun DispatchSampleApp() {
     }
 
     if (showOverlay) {
-        // Opt-in debug build: pin the screen above a one-line hibernation status footer.
+        // Default: reserve the bottom for the hibernation banner, which only renders while the
+        // runtime is actually hibernating (hide entirely via DISPATCH_SAMPLE_DEBUG_OVERLAY=0).
         Column(modifier = Modifier.fillMaxSize()) {
             navDisplay(Modifier.weight(1f))
             HibernationOverlay()

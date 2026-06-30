@@ -6,7 +6,7 @@ them, and navigate forward and back. It assumes a working single-screen app.
 Add the dependency:
 
 ```kotlin
-implementation("io.github.darkryh:dispatch-navigation:1.0.0-beta01")
+implementation("io.github.darkryh.dispatch:dispatch-navigation:1.0.0-beta01")
 ```
 
 ## Define routes

@@ -18,7 +18,7 @@ allprojects {
     // Coordinates confirmed for Maven Central: the group is the project owner's own verified
     // namespace (the earlier "com.github.ajalt.mordant.dispatch" was the Mordant author's and could
     // not be signed/published). First public release is the 1.0.0 beta line.
-    group = "io.github.darkryh"
+    group = "io.github.darkryh.dispatch"
     version = "1.0.0-beta01"
 
     repositories {

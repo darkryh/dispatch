@@ -56,7 +56,7 @@ class GenerationTest {
     fun buildFileReferencesMavenCentralCoordinates() {
         val build = ProjectGenerator.generate(config).single { it.path == "build.gradle.kts" }.content
         assertTrue(
-            build.contains("io.github.darkryh:dispatch-widgets:${StarterTemplate.DISPATCH_VERSION}"),
+            build.contains("io.github.darkryh.dispatch:dispatch-widgets:${StarterTemplate.DISPATCH_VERSION}"),
             "build.gradle.kts missing published dispatch-widgets coordinate",
         )
         assertTrue(build.contains("kotlin(\"jvm\") version \"${StarterTemplate.KOTLIN_VERSION}\""))

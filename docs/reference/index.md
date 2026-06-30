@@ -5,7 +5,7 @@ and class, with its signature, parameters, defaults, and behavior. It mirrors th
 structure. Look things up here; to learn or to accomplish a task, use the
 [tutorials](../tutorials/index.md) and [how-to guides](../how-to/index.md).
 
-All artifacts share the group `io.github.darkryh` and a single version. Packages are listed
+All artifacts share the group `io.github.darkryh.dispatch` and a single version. Packages are listed
 per page.
 
 ## Pages
