@@ -1,0 +1,16 @@
+name: 'Setup JDK + Gradle'
+description: 'Temurin JDK 21 + Gradle with dependency/build caching, shared by every Dispatch workflow.'
+runs:
+  using: composite
+  steps:
+    - name: Set up JDK 21
+      uses: actions/setup-java@v4 # renovate/dependabot keeps this current; pin to a SHA for max supply-chain safety
+      with:
+        distribution: temurin
+        java-version: '21'
+    - name: Set up Gradle (with caching)
+      uses: gradle/actions/setup-gradle@v4
+      with:
+        # On PRs the cache is read-only; only pushes to the default branch write it. This is the
+        # single biggest minute-saver on a cold private runner.
+        cache-read-only: ${{ github.event_name == 'pull_request' }}

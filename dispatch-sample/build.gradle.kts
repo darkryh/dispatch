@@ -124,6 +124,11 @@ val terminalDiagnosticsReport =
         }
     }
 
-tasks.check {
-    dependsOn(terminalE2eTest)
+// The PTY end-to-end suite is slow and needs a real pseudo-terminal, so it is NOT wired into the
+// default `check` lifecycle (that keeps `./gradlew check` fast and CI-safe everywhere). CI runs it as
+// its own dedicated job, and you can opt in locally with `-PrunTerminalE2e`.
+if (providers.gradleProperty("runTerminalE2e").isPresent) {
+    tasks.check {
+        dependsOn(terminalE2eTest)
+    }
 }

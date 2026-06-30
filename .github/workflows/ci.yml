@@ -1,0 +1,58 @@
+name: CI
+
+# Validation gate for the library. Two REQUIRED jobs run in parallel: the fast static/unit gate, and
+# the slower PTY end-to-end suite (decoupled from `check` so it runs only here, not on every build).
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+
+# Cancel superseded runs of the same ref to save Actions minutes (matters on a private repo).
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read # least privilege; CI never needs write or secrets (it can run on fork PRs)
+
+jobs:
+  build-test-quality:
+    name: Build · test · quality · API
+    runs-on: ubuntu-latest # PTY tests are terminal-geometry sensitive, not OS sensitive — never pay macOS 10x
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      # `check` already runs unit/render tests + detekt(detektMain/detektTest, type resolution) + ktlint
+      # + apiCheck per module. terminalE2eTest is NOT in `check` (decoupled), so this stays fast & green.
+      - name: Validate
+        run: ./gradlew check verifyModuleBoundaries --stacktrace
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: validation-reports
+          path: '**/build/reports/'
+          if-no-files-found: ignore
+          retention-days: 7
+
+  pty-e2e:
+    name: PTY end-to-end
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+      # Drives the installed sample binary through a real pseudo-terminal. Grid navigation is computed
+      # from CatalogDestination (ordinal + COLUMNS), so it is robust to layout changes.
+      - name: Terminal e2e
+        run: ./gradlew :dispatch-sample:terminalE2eTest --stacktrace
+      - name: Upload e2e report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: terminal-e2e-report
+          path: dispatch-sample/build/reports/
+          if-no-files-found: ignore
+          retention-days: 7

@@ -27,8 +27,8 @@ if (detektRequested) {
     }
 
     tasks.withType<io.gitlab.arturbosch.detekt.Detekt>().configureEach {
-        // Detekt 1.23.x currently supports JVM targets up to 22.
-        jvmTarget = "22"
+        // Match the project's JDK 21 toolchain so detekt analyzes against the same bytecode target.
+        jvmTarget = "21"
         reports {
             html.required.set(true)
             xml.required.set(true)

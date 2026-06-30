@@ -12,7 +12,11 @@ plugins {
 }
 
 mavenPublishing {
-    publishToMavenCentral()
+    // Auto-release straight to Maven Central ONLY when the release pipeline passes -PautoRelease=true.
+    // Every other publish (local / manual `publishToMavenCentral`) stays USER_MANAGED — a staged
+    // deployment you review and release in the Central Portal — so a dev machine can never auto-ship.
+    val autoRelease = providers.gradleProperty("autoRelease").map(String::toBoolean).getOrElse(false)
+    publishToMavenCentral(automaticRelease = autoRelease)
     signAllPublications()
 
     coordinates(

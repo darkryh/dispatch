@@ -1,13 +1,20 @@
 name: Deploy initializr to GitHub Pages
 
 # Builds the Kotlin/Wasm + Compose Multiplatform web initializer and publishes the static browser
-# distribution to GitHub Pages. Runs on pushes that touch the initializer, and on demand.
+# distribution to GitHub Pages. Runs when the initializer changes, when a release is published (so the
+# live site always tracks the latest version), and on demand.
+#
+# PREREQUISITE: repo Settings → Pages → Source must be "GitHub Actions" for the deploy job below to
+# work. (It is currently "Deploy from a branch / gh-pages" — the manual stopgap. Flip the source and
+# retire the gh-pages branch when Actions minutes are available.)
 on:
   push:
     branches: [master]
     paths:
       - "initializr/**"
       - ".github/workflows/initializr-pages.yml"
+  release:
+    types: [published] # a new library release republishes the site
   workflow_dispatch:
 
 # Allow the workflow to publish to Pages via OIDC.
@@ -24,20 +31,12 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: "21"
-
-      - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
-
+      - uses: ./.github/actions/setup
       - name: Build Wasm browser distribution
-        run: ./gradlew -p initializr wasmJsBrowserDistribution --no-daemon
+        run: ./gradlew -p initializr wasmJsBrowserDistribution --stacktrace
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

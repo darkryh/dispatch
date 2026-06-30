@@ -247,7 +247,7 @@ public final class io/github/darkryh/dispatch/layout/ColumnScopeInstance : io/gi
 public final class io/github/darkryh/dispatch/layout/ComposableSingletons$BoxKt {
 	public static final field INSTANCE Lio/github/darkryh/dispatch/layout/ComposableSingletons$BoxKt;
 	public fun <init> ()V
-	public final fun getLambda$1625927735$io_github_darkryh_dispatch_layout ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$1625927735$io_github_darkryh_dispatch_dispatch_layout ()Lkotlin/jvm/functions/Function3;
 }
 
 public abstract interface class io/github/darkryh/dispatch/layout/FlowColumnScope : io/github/darkryh/dispatch/layout/LayoutScope {

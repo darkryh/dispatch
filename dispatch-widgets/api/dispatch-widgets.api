@@ -156,7 +156,7 @@ public final class io/github/darkryh/dispatch/widget/CommandPaletteTextStyles {
 public final class io/github/darkryh/dispatch/widget/ComposableSingletons$FileDiffKt {
 	public static final field INSTANCE Lio/github/darkryh/dispatch/widget/ComposableSingletons$FileDiffKt;
 	public fun <init> ()V
-	public final fun getLambda$2081083407$io_github_darkryh_dispatch_widgets ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$2081083407$io_github_darkryh_dispatch_dispatch_widgets ()Lkotlin/jvm/functions/Function3;
 }
 
 public final class io/github/darkryh/dispatch/widget/DecisionOption {

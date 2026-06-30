@@ -33,6 +33,15 @@
 # Root aggregate build output (reports, etc.) — generated, never source
 /build/
 
+# Secrets — never commit signing keys or local credential files (CI uses repo secrets)
+*.gpg
+*.asc
+secring.*
+secret*.properties
+*.p12
+.env
+.env.*
+
 # macOS / editor cruft
 .DS_Store
 /koog-context-orchestrator/build/

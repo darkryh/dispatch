@@ -1,0 +1,10 @@
+version: 2
+updates:
+  # Keep the GitHub Actions (and the composite action's pinned actions) current and secure.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ['*']

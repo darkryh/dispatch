@@ -19,7 +19,9 @@ allprojects {
     // namespace (the earlier "com.github.ajalt.mordant.dispatch" was the Mordant author's and could
     // not be signed/published). First public release is the 1.0.0 beta line.
     group = "io.github.darkryh.dispatch"
-    version = "1.0.0-beta01"
+    // Version is supplied by the release pipeline via -PVERSION_NAME=<git tag without the leading 'v'>.
+    // Local/dev builds default to a SNAPSHOT so they never collide with a published release.
+    version = providers.gradleProperty("VERSION_NAME").getOrElse("1.0.0-beta01-SNAPSHOT")
 
     repositories {
         google()

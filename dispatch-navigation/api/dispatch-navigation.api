@@ -1,7 +1,7 @@
 public final class io/github/darkryh/dispatch/navigation/ComposableSingletons$NavDisplayKt {
 	public static final field INSTANCE Lio/github/darkryh/dispatch/navigation/ComposableSingletons$NavDisplayKt;
 	public fun <init> ()V
-	public final fun getLambda$-832275320$io_github_darkryh_dispatch_navigation ()Lkotlin/jvm/functions/Function3;
+	public final fun getLambda$-832275320$io_github_darkryh_dispatch_dispatch_navigation ()Lkotlin/jvm/functions/Function3;
 }
 
 public abstract interface annotation class io/github/darkryh/dispatch/navigation/EntryDsl : java/lang/annotation/Annotation {

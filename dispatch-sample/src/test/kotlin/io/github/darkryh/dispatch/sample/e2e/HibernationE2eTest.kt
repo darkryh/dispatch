@@ -1,5 +1,6 @@
 package io.github.darkryh.dispatch.sample.e2e
 
+import io.github.darkryh.dispatch.sample.navigation.CatalogDestination
 import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Tag
@@ -133,7 +134,13 @@ class HibernationE2eTest {
     private fun openProgress(terminal: PtyTerminalSession) {
         terminal.awaitText(HOME_TITLE)
         val start = terminal.checkpoint()
-        repeat(2) { terminal.sendDown() }
+        // Navigate the launcher grid to PROGRESS, computed from the enum (ordinal + COLUMNS) so a
+        // future column/order change can't silently break this — it did once when the grid went 3→4
+        // columns and a hard-coded "two Downs" started landing on Layout instead of Progress.
+        val cols = CatalogDestination.COLUMNS
+        val ordinal = CatalogDestination.PROGRESS.ordinal
+        repeat(ordinal / cols) { terminal.sendDown() }
+        repeat(ordinal % cols) { terminal.sendRight() }
         terminal.sendEnter()
         terminal.awaitText("$BANNER Progress", after = start)
     }
