@@ -1,7 +1,7 @@
 # Dispatch Initializr
 
-A [Spring-Initializr](https://start.spring.io)-style project generator for **Dispatch**, written
-fully in Kotlin (Kotlin/Wasm + Compose Multiplatform) and hosted as a static site on GitHub Pages.
+A browser-based project generator for **Dispatch**, written fully in Kotlin (Kotlin/Wasm + Compose
+Multiplatform) and hosted as a static site on GitHub Pages.
 
 Fill in a project name, group/artifact id, package and version → download a ready-to-run Dispatch
 app, zipped entirely in the browser. There is **no backend**: the whole thing is static files.

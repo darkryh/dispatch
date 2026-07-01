@@ -39,15 +39,21 @@ different — a terminal — so Dispatch is built around what a terminal can and
 
 ## Create a new project
 
-The fastest way to start is the **Dispatch Initializr** — a Spring-Initializr-style generator that
-scaffolds a ready-to-run project in your browser:
+The recommended way to start is the **Dispatch Initializr** — a browser-based project generator that
+scaffolds a complete, ready-to-run app. No install, no manual Gradle setup:
 
-**[start.dispatch → darkryh.github.io/dispatch](https://darkryh.github.io/dispatch/)**
+**[darkryh.github.io/dispatch](https://darkryh.github.io/dispatch/)**
 
-Fill in a project name, package, and version, then download a zipped, complete Dispatch app — a
-single screen wired with Koin dependency injection and an MVI view model, the blessed starting
-pattern. The generated project pins Kotlin, Gradle, the JVM toolchain, and the Dispatch version for
-you. It runs entirely in the browser; there is no backend.
+[![The Dispatch Initializr — a browser-based project generator for Dispatch](docs/assets/initializr.png)](https://darkryh.github.io/dispatch/)
+
+Type a **project name**, **package**, and **version**, and the generator shows the exact file tree it
+will produce — `build.gradle.kts`, a `run.sh` launcher, and a `src/` tree with `Main.kt`,
+`MainScreen.kt`, `MainViewModel.kt`, and Koin DI in `di/AppModule.kt`. Press **generate project** to
+download it as a zip, built entirely in your browser — there is no backend.
+
+The result is a single screen wired with Koin dependency injection and an MVI view model — the
+blessed starting pattern — with Kotlin, Gradle, the JVM toolchain, and the Dispatch version already
+pinned for you. Nothing to configure by hand.
 
 After unzipping, generate the Gradle wrapper once and run it:
 
@@ -60,13 +66,13 @@ The generated project ships a `run.sh` because a terminal UI needs a real TTY: `
 captures stdin/stdout and garbles the rendering, so `run.sh` builds a native launcher with
 `installDist` and execs it directly.
 
-Prefer to wire it up by hand? Follow [Installation](#installation) below.
+Adding Dispatch to an existing project instead? Follow [Installation](#installation) below.
 
 ## Installation
 
-Add the Compose compiler plugin and the Dispatch dependencies. The entry point lives in
-`dispatch-core`; `dispatch-widgets` brings the widgets, layout, modifiers, theme, and view-model
-APIs with it.
+To add Dispatch to an existing Gradle project by hand, add the Compose compiler plugin and the
+Dispatch dependencies. The entry point lives in `dispatch-core`; `dispatch-widgets` brings the
+widgets, layout, modifiers, theme, and view-model APIs with it.
 
 ```kotlin
 // build.gradle.kts
