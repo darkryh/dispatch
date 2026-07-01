@@ -35,8 +35,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
+      # Pin the generated projects (and the footer version) to the released Dispatch version, so the
+      # live site tracks whatever tag was cut — alpha, beta, rc or stable. On a release it's the release
+      # tag; otherwise the most recent release (incl. pre-releases). Empty falls back to the build default.
+      - name: Resolve Dispatch version to pin
+        id: ver
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "${{ github.event_name }}" = "release" ]; then
+            V="${{ github.event.release.tag_name }}"
+          else
+            V="$(gh release list --limit 1 --json tagName -q '.[0].tagName' 2>/dev/null || true)"
+          fi
+          V="${V#v}"
+          echo "version=$V" >> "$GITHUB_OUTPUT"
+          echo "Pinning generated projects to Dispatch version: ${V:-<build default>}"
       - name: Build Wasm browser distribution
-        run: ./gradlew -p initializr wasmJsBrowserDistribution --stacktrace
+        run: ./gradlew -p initializr wasmJsBrowserDistribution -PdispatchVersion="${{ steps.ver.outputs.version }}" --stacktrace
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

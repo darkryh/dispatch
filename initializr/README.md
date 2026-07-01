@@ -71,9 +71,10 @@ it builds the Wasm distribution and publishes it to Pages on every push under `i
 ## Notes & trade-offs
 
 - **The generated project depends on published artifacts.** It references
-  `io.github.darkryh.dispatch:*:<version>` from Maven Central. Until the library is actually published
-  (it is currently on a `-SNAPSHOT`), the download will not resolve. When you publish, bump the single
-  constant `StarterTemplate.DISPATCH_VERSION`.
+  `io.github.darkryh.dispatch:*:<version>` from Maven Central. The pinned version is injected at build
+  time (`-PdispatchVersion`, default in `build.gradle.kts`): the Pages workflow derives it from the
+  released tag, so cutting any release — alpha, beta, rc or stable — republishes the site pinned to that
+  version automatically. No constant to bump.
 - **Bundle size.** Compose Multiplatform renders via Skia, so the site ships an ~8 MB `skiko.wasm`
   (cached after first load). If a smaller footprint matters more than the Compose-canvas look, the same
   Kotlin UI code could target **Kotlin/JS + Compose HTML** (DOM-based, no Skia) — a drop-in alternative

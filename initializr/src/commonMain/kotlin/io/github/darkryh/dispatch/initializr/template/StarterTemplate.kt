@@ -17,11 +17,13 @@ package io.github.darkryh.dispatch.initializr.template
  */
 object StarterTemplate {
     /**
-     * The Dispatch artifact version the generated project depends on. The modules are published to
-     * Maven Central under `io.github.darkryh.dispatch:*`; flipping this one constant is all that is
-     * needed when a new release lands. Pinned to the first public release, the `1.0.0` beta line.
+     * The Dispatch artifact version the generated project depends on (published to Maven Central under
+     * `io.github.darkryh.dispatch:*`). Injected at build time from [BuildInfo]: the Pages workflow
+     * passes the released tag via `-PdispatchVersion`, so cutting any release — alpha, beta, rc or
+     * stable — makes the live initializr generate projects pinned to that exact version, no edit here.
+     * The default in `initializr/build.gradle.kts` is used for local and non-release builds.
      */
-    const val DISPATCH_VERSION: String = "1.0.0-beta01"
+    val DISPATCH_VERSION: String = BuildInfo.DISPATCH_VERSION
 
     /** Kotlin version for the generated project — kept in lockstep with the library's own. */
     const val KOTLIN_VERSION: String = "2.4.0"
