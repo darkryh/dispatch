@@ -44,8 +44,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/setup
-      # Drives the installed sample binary through a real pseudo-terminal. Grid navigation is computed
-      # from CatalogDestination (ordinal + COLUMNS), so it is robust to layout changes.
+        with:
+          cache-read-only: 'true' # build-test-quality owns the cache write on push; don't race it
+      # Drives the installed sample binary through a real pseudo-terminal. Screen navigation goes
+      # through the command palette (a 1-D list), so it is robust to launcher-grid layout and to
+      # slow-runner key timing.
       - name: Terminal e2e
         run: ./gradlew :dispatch-sample:terminalE2eTest --stacktrace
       - name: Upload e2e report

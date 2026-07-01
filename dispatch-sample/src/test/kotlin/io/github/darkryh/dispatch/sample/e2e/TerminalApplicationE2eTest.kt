@@ -375,15 +375,17 @@ class TerminalApplicationE2eTest {
 
     private fun openProgress(terminal: PtyTerminalSession) {
         val start = terminal.checkpoint()
-        // Navigate the launcher grid to PROGRESS, computed from the enum (ordinal + COLUMNS) so a
-        // future column/order change can't silently break this — it did once when the grid went 3→4
-        // columns and a hard-coded "two Downs" started landing on Layout instead of Progress.
-        val cols = CatalogDestination.COLUMNS
-        val ordinal = CatalogDestination.PROGRESS.ordinal
-        repeat(ordinal / cols) { terminal.sendDown() }
-        repeat(ordinal % cols) { terminal.sendRight() }
+        // Reach Progress through the command palette — the same route the all-screen navigator proves
+        // reliable on slow CI runners. Driving the 2-D launcher grid directly (Down + Right) raced
+        // here: on a loaded runner the movement keys were dropped before the grid became interactive,
+        // so Enter opened the default Inputs card and the wait below timed out. The palette is a 1-D
+        // list gated on being open, so every keystroke lands. Progress sits ordinal + 1 Down presses
+        // in (index 0 resets to Home), computed from the enum so a reorder can't silently break it.
+        terminal.sendCtrlP()
+        awaitPaletteOpen(terminal, after = start)
+        repeat(CatalogDestination.PROGRESS.ordinal + 1) { terminal.sendDown() }
         terminal.sendEnter()
-        terminal.awaitText("$BANNER Progress", after = start)
+        terminal.awaitText("$BANNER Progress", after = start, timeout = Duration.ofSeconds(12))
     }
 
     private fun sendMessage(

@@ -128,21 +128,24 @@ class HibernationE2eTest {
 
     /**
      * Opens the animated Progress screen (continuous spinner/bar motion) so the idle FPS throttle has
-     * something to act on. Mirrors the launcher-grid navigation used by the other PTY suites: Progress
-     * is ordinal 6 (row 2, column 0), two Down presses from the top-left card.
+     * something to act on. Navigates via the command palette (a 1-D list gated on being open) rather
+     * than the 2-D launcher grid, so movement keystrokes can't be dropped before the grid is
+     * interactive on a slow CI runner.
      */
     private fun openProgress(terminal: PtyTerminalSession) {
         terminal.awaitText(HOME_TITLE)
         val start = terminal.checkpoint()
-        // Navigate the launcher grid to PROGRESS, computed from the enum (ordinal + COLUMNS) so a
-        // future column/order change can't silently break this — it did once when the grid went 3→4
-        // columns and a hard-coded "two Downs" started landing on Layout instead of Progress.
-        val cols = CatalogDestination.COLUMNS
-        val ordinal = CatalogDestination.PROGRESS.ordinal
-        repeat(ordinal / cols) { terminal.sendDown() }
-        repeat(ordinal % cols) { terminal.sendRight() }
+        // Reach Progress through the command palette — the same route the all-screen navigator proves
+        // reliable on slow CI runners. Driving the 2-D launcher grid directly (Down + Right) raced
+        // here: on a loaded runner the movement keys were dropped before the grid became interactive,
+        // so Enter opened the default Inputs card and the wait below timed out. The palette is a 1-D
+        // list gated on being open, so every keystroke lands. Progress sits ordinal + 1 Down presses
+        // in (index 0 resets to Home), computed from the enum so a reorder can't silently break it.
+        terminal.sendCtrlP()
+        terminal.awaitText("Chat — Live streaming", after = start)
+        repeat(CatalogDestination.PROGRESS.ordinal + 1) { terminal.sendDown() }
         terminal.sendEnter()
-        terminal.awaitText("$BANNER Progress", after = start)
+        terminal.awaitText("$BANNER Progress", after = start, timeout = Duration.ofSeconds(12))
     }
 
     /** Polls the diagnostics jsonl (from [after]) until a line carrying `"event":"<name>"` appears. */

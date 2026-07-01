@@ -1,5 +1,12 @@
 name: 'Setup JDK + Gradle'
 description: 'Temurin JDK 21 + Gradle with dependency/build caching, shared by every Dispatch workflow.'
+inputs:
+  cache-read-only:
+    description: >-
+      Force this job's Gradle cache to read-only (on top of the automatic PR read-only). Set 'true'
+      on every job but one per workflow so only that job writes the shared cache — otherwise parallel
+      jobs race the same cache key and log a harmless ReserveCacheError.
+    default: 'false'
 runs:
   using: composite
   steps:
@@ -11,6 +18,7 @@ runs:
     - name: Set up Gradle (with caching)
       uses: gradle/actions/setup-gradle@v4
       with:
-        # On PRs the cache is read-only; only pushes to the default branch write it. This is the
-        # single biggest minute-saver on a cold private runner.
-        cache-read-only: ${{ github.event_name == 'pull_request' }}
+        # Read-only on PRs (never write from a fork) and on any job the caller marks read-only; only a
+        # single push-triggered writer job populates the cache. The biggest minute-saver on a cold
+        # private runner.
+        cache-read-only: ${{ inputs.cache-read-only == 'true' || github.event_name == 'pull_request' }}
