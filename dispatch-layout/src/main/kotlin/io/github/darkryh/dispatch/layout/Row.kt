@@ -105,8 +105,18 @@ internal class RowMeasurePolicy(
 
         val placeables = arrayOfNulls<Placeable>(count)
 
+        // Fixed inter-child gaps inserted by the arrangement (e.g. spacedBy). They occupy real
+        // columns, so they must join the reported width and be reserved out of the width budget;
+        // otherwise the row under-reports and whatever follows paints over the last child.
+        val gapTotal = (count - 1).coerceAtLeast(0) * horizontalArrangement.spacing
+
         // Measure fixed children first
-        var remainingWidthForFixed = if (constraints.hasBoundedWidth) constraints.maxWidth else Int.MAX_VALUE
+        var remainingWidthForFixed =
+            if (constraints.hasBoundedWidth) {
+                (constraints.maxWidth - gapTotal).coerceAtLeast(0)
+            } else {
+                Int.MAX_VALUE
+            }
 
         for (index in 0 until count) {
             if (!weights[index].isNaN()) continue
@@ -162,9 +172,9 @@ internal class RowMeasurePolicy(
         // Calculate layout size
         val layoutWidth =
             if (constraints.hasBoundedWidth) {
-                constraints.constrainWidth(contentWidth)
+                constraints.constrainWidth(contentWidth + gapTotal)
             } else {
-                contentWidth
+                contentWidth + gapTotal
             }
 
         val layoutHeight =

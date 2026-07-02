@@ -72,4 +72,56 @@ class RowMeasurePolicyTest {
         assertEquals(0, seen?.minWidth)
         assertEquals(Int.MAX_VALUE, seen?.maxWidth)
     }
+
+    @Test
+    fun `spacedBy reports width including gaps and places children past them`() {
+        val children = List(3) { SimplePlaceable(width = 38, height = 1, lines = listOf("x".repeat(38))) }
+
+        val policy =
+            RowMeasurePolicy(
+                horizontalArrangement = Arrangement.spacedBy(2),
+                verticalAlignment = Alignment.Top,
+            )
+
+        val result =
+            policy.measure(
+                measurables = children.map { CapturingMeasurable(onMeasure = {}, placeable = it) },
+                constraints = Constraints(minWidth = 0, maxWidth = Int.MAX_VALUE, minHeight = 0, maxHeight = 24),
+            )
+        result.placementBlock(SimplePlacementScope())
+
+        // 3 children x 38 cells + 2 gaps x 2 cells: the reported width must cover the placed span.
+        assertEquals(118, result.width)
+        assertEquals(listOf(0, 40, 80), children.map { it.x })
+    }
+
+    @Test
+    fun `spacedBy gaps are reserved out of the bounded width budget`() {
+        val seenMaxWidths = mutableListOf<Int>()
+
+        val measurables =
+            List(2) {
+                CapturingMeasurable(
+                    onMeasure = { seenMaxWidths += it.maxWidth },
+                    placeable = SimplePlaceable(width = 3, height = 1, lines = listOf("abc")),
+                )
+            }
+
+        val policy =
+            RowMeasurePolicy(
+                horizontalArrangement = Arrangement.spacedBy(2),
+                verticalAlignment = Alignment.Top,
+            )
+
+        val result =
+            policy.measure(
+                measurables = measurables,
+                constraints = Constraints(minWidth = 0, maxWidth = 10, minHeight = 0, maxHeight = Int.MAX_VALUE),
+            )
+
+        // The gap between the two children consumes 2 of the 10 cells up front: the first child
+        // may use at most 8, the second whatever the first left over.
+        assertEquals(listOf(8, 5), seenMaxWidths)
+        assertEquals(8, result.width)
+    }
 }

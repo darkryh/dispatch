@@ -9,6 +9,15 @@ object Arrangement {
      */
     sealed interface Vertical {
         /**
+         * The fixed gap this arrangement inserts between adjacent children, in cells.
+         *
+         * Layouts must reserve `(childCount - 1) * spacing` in their measured size so the
+         * reported bounds cover the positions produced by [arrange]. Arrangements that only
+         * distribute leftover space (Top, Bottom, Center, SpaceBetween, ...) report `0`.
+         */
+        val spacing: Int get() = 0
+
+        /**
          * Calculate positions for children.
          *
          * @param totalSize Total available height.
@@ -25,6 +34,15 @@ object Arrangement {
      * Horizontal arrangement options for Row.
      */
     sealed interface Horizontal {
+        /**
+         * The fixed gap this arrangement inserts between adjacent children, in cells.
+         *
+         * Layouts must reserve `(childCount - 1) * spacing` in their measured size so the
+         * reported bounds cover the positions produced by [arrange]. Arrangements that only
+         * distribute leftover space (Start, End, Center, SpaceBetween, ...) report `0`.
+         */
+        val spacing: Int get() = 0
+
         /**
          * Calculate positions for children.
          *
@@ -43,7 +61,9 @@ object Arrangement {
      */
     sealed interface HorizontalOrVertical :
         Vertical,
-        Horizontal
+        Horizontal {
+        override val spacing: Int get() = 0
+    }
 
     // ========================================================================
     // Vertical Arrangements
@@ -235,7 +255,7 @@ object Arrangement {
      * @param spacing Space between children.
      */
     class SpacedBy(
-        private val spacing: Int,
+        override val spacing: Int,
     ) : HorizontalOrVertical {
         override fun arrange(
             totalSize: Int,
