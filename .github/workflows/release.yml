@@ -1,9 +1,10 @@
 name: Release
 
 # Tag-driven CD. Pushing a `vX.Y.Z[-betaNN]` tag (or running this manually) validates, then publishes
-# every library module to Maven Central stamped with the tag version, then cuts a GitHub Release.
-# Pages is intentionally NOT redeployed here — the GitHub Release fires `release: published`, which the
-# initializr-pages workflow listens for (one deploy, no duplication).
+# every library module to Maven Central stamped with the tag version, then cuts a GitHub Release and
+# dispatches the initializr-pages workflow. The dispatch is explicit because a release created with
+# GITHUB_TOKEN never fires `release: published` for other workflows (GitHub's recursion guard);
+# workflow_dispatch is exempt from that guard, so this is the one deploy path that always runs.
 on:
   push:
     tags: ['v*']
@@ -63,9 +64,16 @@ jobs:
           ORG_GRADLE_PROJECT_mavenCentralUsername: ${{ secrets.MAVEN_CENTRAL_USERNAME }}
           ORG_GRADLE_PROJECT_mavenCentralPassword: ${{ secrets.MAVEN_CENTRAL_PASSWORD }}
           ORG_GRADLE_PROJECT_signingInMemoryKey: ${{ secrets.SIGNING_IN_MEMORY_KEY }}
-          ORG_GRADLE_PROJECT_signingInMemoryKeyId: ${{ secrets.SIGNING_IN_MEMORY_KEY_ID }}
+          SIGNING_KEY_ID: ${{ secrets.SIGNING_IN_MEMORY_KEY_ID }}
           ORG_GRADLE_PROJECT_signingInMemoryKeyPassword: ${{ secrets.SIGNING_IN_MEMORY_KEY_PASSWORD }}
-        run: ./gradlew publishToMavenCentral -PVERSION_NAME=${{ steps.ver.outputs.version }} -PautoRelease=true --stacktrace
+        run: |
+          # The key ID is optional for in-memory PGP keys, but an empty-string property makes
+          # Gradle's signing plugin fail ("The key ID must be in a valid form"). Only pass it
+          # through when the secret is actually set.
+          if [ -n "$SIGNING_KEY_ID" ]; then
+            export ORG_GRADLE_PROJECT_signingInMemoryKeyId="$SIGNING_KEY_ID"
+          fi
+          ./gradlew publishToMavenCentral -PVERSION_NAME=${{ steps.ver.outputs.version }} -PautoRelease=true --stacktrace
 
   github-release:
     name: GitHub Release
@@ -73,12 +81,13 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
-      contents: write # only this job needs write, only to create the Release
+      contents: write # create the Release
+      actions: write # dispatch the initializr-pages redeploy
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Create GitHub Release (fires release:published → Pages redeploy)
+      - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
@@ -86,3 +95,10 @@ jobs:
           PRERELEASE=""
           case "$V" in *-*) PRERELEASE="--prerelease" ;; esac
           gh release create "v$V" --title "v$V" --generate-notes $PRERELEASE
+      # A GITHUB_TOKEN-created release never fires `release: published` for other workflows
+      # (GitHub's recursion guard), so kick the Pages redeploy explicitly — workflow_dispatch is
+      # exempt from that guard, and initializr-pages resolves the version from the latest release.
+      - name: Redeploy initializr Pages with the released version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run initializr-pages.yml --ref master
