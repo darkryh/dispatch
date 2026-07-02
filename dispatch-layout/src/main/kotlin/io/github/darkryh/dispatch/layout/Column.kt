@@ -106,6 +106,11 @@ internal class ColumnMeasurePolicy(
 
         val placeables = arrayOfNulls<Placeable>(count)
 
+        // Fixed inter-child gaps inserted by the arrangement (e.g. spacedBy). They occupy real
+        // rows, so they must join the reported height and be reserved before weighting children;
+        // otherwise the column under-reports and the next sibling paints over the last child.
+        val gapTotal = (count - 1).coerceAtLeast(0) * verticalArrangement.spacing
+
         // Measure fixed children first
         val childConstraints =
             Constraints(
@@ -125,7 +130,7 @@ internal class ColumnMeasurePolicy(
             fixedHeight += placeable.height
         }
 
-        val remainingHeight = (constraints.maxHeight - fixedHeight).coerceAtLeast(0)
+        val remainingHeight = (constraints.maxHeight - fixedHeight - gapTotal).coerceAtLeast(0)
 
         // Measure weighted children
         if (weightsEnabled && totalWeight > 0) {
@@ -167,9 +172,9 @@ internal class ColumnMeasurePolicy(
 
         val layoutHeight =
             if (constraints.hasBoundedHeight) {
-                constraints.constrainHeight(contentHeight)
+                constraints.constrainHeight(contentHeight + gapTotal)
             } else {
-                contentHeight
+                contentHeight + gapTotal
             }
 
         // Arrange children vertically

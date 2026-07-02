@@ -189,7 +189,7 @@ internal class FlowRowMeasurePolicy(
         // single line (we must not assume infinite space and then wrap inside it).
         val wrapByWidth = constraints.hasBoundedWidth
         val maxWidth = constraints.maxWidth
-        val itemSpacing = horizontalArrangement.itemSpacing()
+        val itemSpacing = horizontalArrangement.spacing
         val maxItems = maxItemsInEachRow.coerceAtLeast(1)
 
         // Greedy packing: walk children in order, breaking the contiguous run into lines. Children on
@@ -242,7 +242,7 @@ internal class FlowRowMeasurePolicy(
         }
 
         // Reserve vertical room for the spacing the vertical arrangement inserts between lines.
-        val lineSpacing = verticalArrangement.itemSpacing()
+        val lineSpacing = verticalArrangement.spacing
         var contentHeight = lineSpacing * (numLines - 1).coerceAtLeast(0)
         for (line in 0 until numLines) {
             contentHeight += lineHeights[line]
@@ -341,7 +341,7 @@ internal class FlowColumnMeasurePolicy(
         // a single column (we must not assume infinite space and then wrap inside it).
         val wrapByHeight = constraints.hasBoundedHeight
         val maxHeight = constraints.maxHeight
-        val itemSpacing = verticalArrangement.itemSpacing()
+        val itemSpacing = verticalArrangement.spacing
         val maxItems = maxItemsInEachColumn.coerceAtLeast(1)
 
         // Greedy packing: walk children in order, breaking the contiguous run into columns. Children
@@ -394,7 +394,7 @@ internal class FlowColumnMeasurePolicy(
         }
 
         // Reserve horizontal room for the spacing the horizontal arrangement inserts between columns.
-        val columnSpacing = horizontalArrangement.itemSpacing()
+        val columnSpacing = horizontalArrangement.spacing
         var contentWidth = columnSpacing * (numColumns - 1).coerceAtLeast(0)
         for (column in 0 until numColumns) {
             contentWidth += columnWidths[column]
@@ -441,30 +441,3 @@ internal class FlowColumnMeasurePolicy(
         }
     }
 }
-
-/**
- * The fixed gap a horizontal [Arrangement] inserts between two adjacent items.
- *
- * Probing the arrangement with two zero-size items in a zero-size container isolates the fixed
- * inter-item spacing: gap-free arrangements (Start, End, Center, SpaceBetween, SpaceAround,
- * SpaceEvenly) report `0`, while [Arrangement.SpacedBy] reports its spacing. This value is used to
- * make the greedy wrapping decision agree with how the line is later positioned, using only the
- * public `arrange` API.
- */
-private fun Arrangement.Horizontal.itemSpacing(): Int {
-    val probe = arrange(0, ZERO_PAIR)
-    return (probe.getOrElse(1) { 0 } - probe.getOrElse(0) { 0 }).coerceAtLeast(0)
-}
-
-/**
- * The fixed gap a vertical [Arrangement] inserts between two adjacent items.
- *
- * @see itemSpacing for the horizontal counterpart and the probing rationale.
- */
-private fun Arrangement.Vertical.itemSpacing(): Int {
-    val probe = arrange(0, ZERO_PAIR)
-    return (probe.getOrElse(1) { 0 } - probe.getOrElse(0) { 0 }).coerceAtLeast(0)
-}
-
-/** Two zero-size items used to probe an arrangement's fixed inter-item spacing. */
-private val ZERO_PAIR = listOf(0, 0)

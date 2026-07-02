@@ -90,65 +90,89 @@ public final class io/github/darkryh/dispatch/layout/Arrangement$Bottom : io/git
 	public static final field $stable I
 	public static final field INSTANCE Lio/github/darkryh/dispatch/layout/Arrangement$Bottom;
 	public fun arrange (ILjava/util/List;)Ljava/util/List;
+	public fun getSpacing ()I
 }
 
 public final class io/github/darkryh/dispatch/layout/Arrangement$Center : io/github/darkryh/dispatch/layout/Arrangement$HorizontalOrVertical {
 	public static final field $stable I
 	public static final field INSTANCE Lio/github/darkryh/dispatch/layout/Arrangement$Center;
 	public fun arrange (ILjava/util/List;)Ljava/util/List;
+	public fun getSpacing ()I
 }
 
 public final class io/github/darkryh/dispatch/layout/Arrangement$End : io/github/darkryh/dispatch/layout/Arrangement$Horizontal {
 	public static final field $stable I
 	public static final field INSTANCE Lio/github/darkryh/dispatch/layout/Arrangement$End;
 	public fun arrange (ILjava/util/List;)Ljava/util/List;
+	public fun getSpacing ()I
 }
 
 public abstract interface class io/github/darkryh/dispatch/layout/Arrangement$Horizontal {
 	public abstract fun arrange (ILjava/util/List;)Ljava/util/List;
+	public fun getSpacing ()I
+}
+
+public final class io/github/darkryh/dispatch/layout/Arrangement$Horizontal$DefaultImpls {
+	public static fun getSpacing (Lio/github/darkryh/dispatch/layout/Arrangement$Horizontal;)I
 }
 
 public abstract interface class io/github/darkryh/dispatch/layout/Arrangement$HorizontalOrVertical : io/github/darkryh/dispatch/layout/Arrangement$Horizontal, io/github/darkryh/dispatch/layout/Arrangement$Vertical {
+	public fun getSpacing ()I
+}
+
+public final class io/github/darkryh/dispatch/layout/Arrangement$HorizontalOrVertical$DefaultImpls {
+	public static fun getSpacing (Lio/github/darkryh/dispatch/layout/Arrangement$HorizontalOrVertical;)I
 }
 
 public final class io/github/darkryh/dispatch/layout/Arrangement$SpaceAround : io/github/darkryh/dispatch/layout/Arrangement$HorizontalOrVertical {
 	public static final field $stable I
 	public static final field INSTANCE Lio/github/darkryh/dispatch/layout/Arrangement$SpaceAround;
 	public fun arrange (ILjava/util/List;)Ljava/util/List;
+	public fun getSpacing ()I
 }
 
 public final class io/github/darkryh/dispatch/layout/Arrangement$SpaceBetween : io/github/darkryh/dispatch/layout/Arrangement$HorizontalOrVertical {
 	public static final field $stable I
 	public static final field INSTANCE Lio/github/darkryh/dispatch/layout/Arrangement$SpaceBetween;
 	public fun arrange (ILjava/util/List;)Ljava/util/List;
+	public fun getSpacing ()I
 }
 
 public final class io/github/darkryh/dispatch/layout/Arrangement$SpaceEvenly : io/github/darkryh/dispatch/layout/Arrangement$HorizontalOrVertical {
 	public static final field $stable I
 	public static final field INSTANCE Lio/github/darkryh/dispatch/layout/Arrangement$SpaceEvenly;
 	public fun arrange (ILjava/util/List;)Ljava/util/List;
+	public fun getSpacing ()I
 }
 
 public final class io/github/darkryh/dispatch/layout/Arrangement$SpacedBy : io/github/darkryh/dispatch/layout/Arrangement$HorizontalOrVertical {
 	public static final field $stable I
 	public fun <init> (I)V
 	public fun arrange (ILjava/util/List;)Ljava/util/List;
+	public fun getSpacing ()I
 }
 
 public final class io/github/darkryh/dispatch/layout/Arrangement$Start : io/github/darkryh/dispatch/layout/Arrangement$Horizontal {
 	public static final field $stable I
 	public static final field INSTANCE Lio/github/darkryh/dispatch/layout/Arrangement$Start;
 	public fun arrange (ILjava/util/List;)Ljava/util/List;
+	public fun getSpacing ()I
 }
 
 public final class io/github/darkryh/dispatch/layout/Arrangement$Top : io/github/darkryh/dispatch/layout/Arrangement$Vertical {
 	public static final field $stable I
 	public static final field INSTANCE Lio/github/darkryh/dispatch/layout/Arrangement$Top;
 	public fun arrange (ILjava/util/List;)Ljava/util/List;
+	public fun getSpacing ()I
 }
 
 public abstract interface class io/github/darkryh/dispatch/layout/Arrangement$Vertical {
 	public abstract fun arrange (ILjava/util/List;)Ljava/util/List;
+	public fun getSpacing ()I
+}
+
+public final class io/github/darkryh/dispatch/layout/Arrangement$Vertical$DefaultImpls {
+	public static fun getSpacing (Lio/github/darkryh/dispatch/layout/Arrangement$Vertical;)I
 }
 
 public final class io/github/darkryh/dispatch/layout/BannerLayoutKt {
