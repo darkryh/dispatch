@@ -36,6 +36,10 @@ Text("Heads up", style = theme.warning)
 There are also convenience methods that wrap a string in the style's ANSI codes, for when you need a
 pre-styled `String`:
 
+> **Requires 1.0.0-beta03 or newer.** On beta02 and earlier these methods were accidentally
+> self-recursive and crash with a `StackOverflowError` — on those versions pass the style property
+> instead (`Text("hi", style = theme.primary)` or `theme.primary.invoke("hi")`).
+
 ```kotlin
 fun primary(text: String): String
 fun secondary(text: String): String

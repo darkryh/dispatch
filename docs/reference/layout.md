@@ -300,8 +300,11 @@ Bounds passed down during measurement. Helpers: `hasBoundedWidth`, `hasBoundedHe
 `Constraints.Zero`, `Constraints.fixed(w, h)`, `fixedWidth(w)`, `fixedHeight(h)`, `maxSize(w, h)`,
 `minSize(w, h)`.
 
-A `ConstraintValidator` (`object`, package `io.github.darkryh.dispatch.constraints`) checks measured sizes
-against constraints; its `mode` is `STRICT`, `LENIENT`, or `SILENT`.
+A `ConstraintValidator` (`object`, package `io.github.darkryh.dispatch.constraints`) is an
+**opt-in** helper for custom layout code: call `validate(...)`/`coerce(...)` from your own
+`MeasurePolicy` to check measured sizes against constraints (its `mode` is `STRICT`, `LENIENT`, or
+`SILENT`). The built-in layouts never call it — by default an out-of-bounds child is simply clipped
+by the render canvas, not flagged.
 
 ## See also
 

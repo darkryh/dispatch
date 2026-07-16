@@ -32,10 +32,10 @@ plugins {
 }
 
 dependencies {
-    implementation("io.github.darkryh.dispatch:dispatch-core:1.0.0-beta01")
-    implementation("io.github.darkryh.dispatch:dispatch-widgets:1.0.0-beta01")
-    implementation("io.github.darkryh.dispatch:dispatch-navigation:1.0.0-beta01")
-    implementation("io.github.darkryh.dispatch:dispatch-koin:1.0.0-beta01")
+    implementation("io.github.darkryh.dispatch:dispatch-core:1.0.0-beta03")
+    implementation("io.github.darkryh.dispatch:dispatch-widgets:1.0.0-beta03")
+    implementation("io.github.darkryh.dispatch:dispatch-navigation:1.0.0-beta03")
+    implementation("io.github.darkryh.dispatch:dispatch-koin:1.0.0-beta03")
 }
 ```
 

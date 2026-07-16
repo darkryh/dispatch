@@ -11,6 +11,11 @@ data class UpdateConfig(
     val providers: Map<UpdateSource, UpdateProvider> = emptyMap(),
     val sourceOverride: UpdateSource? = null,
     val commandOverride: String? = null,
+    @Deprecated(
+        "Has no effect — nothing reads this flag. Pass refreshBeforeCheck to " +
+            "ScoopUpdateProvider's constructor instead, which is the only provider that " +
+            "supports a pre-check refresh.",
+    )
     val refreshBeforeCheck: Boolean = false,
     val allowExternalCommands: Boolean = true,
 )

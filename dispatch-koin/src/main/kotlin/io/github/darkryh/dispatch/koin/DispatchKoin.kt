@@ -190,9 +190,20 @@ private fun resolveViewModel(
 
 private fun isRoutePayloadFailure(error: Throwable): Boolean =
     generateSequence(error) { it.cause }.any { cause ->
-        if (cause is IllegalArgumentException) {
-            cause.message?.startsWith("Missing route payload for") == true
-        } else {
-            cause::class.qualifiedName == "kotlinx.serialization.SerializationException"
-        }
+        isSerializationException(cause) ||
+            (
+                cause is IllegalArgumentException &&
+                    cause.message?.startsWith("Missing route payload for") == true
+            )
     }
+
+/**
+ * True when [error] is kotlinx.serialization's SerializationException or any subclass of it
+ * (e.g. MissingFieldException, thrown when the synthetic "{}" validation payload lacks a route's
+ * required field). Checked by walking the class hierarchy by name: serialization is not on this
+ * module's compile classpath, and an exact-name equality check would miss the subclasses that
+ * required-field routes actually throw.
+ */
+private fun isSerializationException(error: Throwable): Boolean =
+    generateSequence<Class<*>>(error.javaClass) { it.superclass }
+        .any { it.name == "kotlinx.serialization.SerializationException" }

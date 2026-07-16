@@ -165,6 +165,23 @@ DisposableEffect(interceptor) {
 For an app-wide raw hook outside composition, see
 [`DispatchScope.onKeyEvent`](application.md#dispatchscope).
 
+## Terminal limitations
+
+Terminals report key **presses** only — some events you may expect from GUI toolkits simply do not
+exist at this layer:
+
+- **No key-up/release events**, no held-key duration, and no auto-repeat distinction — a held key
+  arrives as repeated presses.
+- **Not all modifier combinations or special keys are reported by all terminal emulators** (this is
+  Mordant's own caveat on `KeyboardEvent`); treat exotic combos as best-effort.
+- **Function keys cap at F12** — `F13` and beyond map to `Key.Named.Unknown`.
+- **Pasted text does not arrive as typed keys.** A multi-character paste payload maps to
+  `Key.Named.Unknown`; `PasteStart`/`PasteEnd` only mark the bracketed-paste boundaries. `TextField`
+  handles paste internally — a custom `KeyBindings`-based reader cannot capture paste content.
+- **The configured exit keys are resolved before any interceptor runs.** Under the default config,
+  `KeyBindings { on(ctrl('c')) { ... } }` never fires — reconfigure
+  `exitKeyBindings`/`exitKeyPredicate` first if you need Ctrl+C for something else.
+
 ## See also
 
 - [Handle keyboard input](../how-to/handle-keyboard-input.md) — a task-focused guide.

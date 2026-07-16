@@ -113,7 +113,7 @@ class DispatchConfig : DispatchLifecycleHooks
 | `exitTimeoutOnDoublePress` | `Duration` | `1500.milliseconds` | Window in which the second exit press counts. |
 | `exitKeyBindings` | `List<ExitKeyBinding>` | `listOf(ExitKeyBinding.ctrl("C"))` | Bindings that trigger exit. |
 | `exitKeyPredicate` | `((KeyboardEvent) -> Boolean)?` | `null` | Custom exit predicate; overrides `exitKeyBindings` when set. |
-| `captureSystemOutput` | `Boolean` | `true` | Whether app `stdout`/`stderr` is captured during rendering. |
+| `captureSystemOutput` | `Boolean` | `true` | **Deprecated, no effect** — the renderer always guards its own writes; nothing reads this flag. |
 | `hibernation` | `HibernationConfig` | enabled, 5 min idle | Idle-hibernation settings — see [Idle hibernation](#idle-hibernation). |
 
 Read-only collections populated by the DSL functions below:
@@ -373,10 +373,6 @@ Package `io.github.darkryh.dispatch.runtime`. Read these with `LocalX.current`.
 | `LocalDispatchContext` | `DispatchContext` | required |
 | `LocalDispatchConfig` | `DispatchConfig` | required |
 | `LocalSavedStateHandle` | `SavedStateHandle?` | `null` |
-| `LocalFocused` | `Boolean` | `false` |
-| `LocalEnabled` | `Boolean` | `true` |
-| `LocalContentAlpha` | `Float` | `1.0f` |
-| `LocalPosition` | `Position` | `Position(0, 0)` |
 | `LocalKeyboardInterceptor` | `KeyboardInterceptor` | required |
 | `LocalExitPromptState` | `ExitPromptState` | `ExitPromptState()` |
 | `LocalFocusRegistry` | `FocusRegistry` | required |
@@ -384,9 +380,10 @@ Package `io.github.darkryh.dispatch.runtime`. Read these with `LocalX.current`.
 | `LocalTerminalWidth` | `Int` | `80` |
 | `LocalTerminalHeight` | `Int` | `24` |
 
-```kotlin
-data class Position(val x: Int, val y: Int)
-```
+> `LocalFocused`, `LocalEnabled`, `LocalContentAlpha`, and `LocalPosition` also exist but are
+> **deprecated** — the framework never provides them, so they always hold their defaults. For focus
+> styling, check `LocalFocusRegistry.current.isFocused(token)` against your `Modifier.focusable(token)`
+> token (the pattern every built-in interactive widget uses).
 
 ## Saved state
 

@@ -82,12 +82,12 @@ plugins {
 }
 
 dependencies {
-    implementation("io.github.darkryh.dispatch:dispatch-core:1.0.0-beta01")
-    implementation("io.github.darkryh.dispatch:dispatch-widgets:1.0.0-beta01")
+    implementation("io.github.darkryh.dispatch:dispatch-core:1.0.0-beta03")
+    implementation("io.github.darkryh.dispatch:dispatch-widgets:1.0.0-beta03")
 
     // Add as needed:
-    implementation("io.github.darkryh.dispatch:dispatch-navigation:1.0.0-beta01")
-    implementation("io.github.darkryh.dispatch:dispatch-koin:1.0.0-beta01")
+    implementation("io.github.darkryh.dispatch:dispatch-navigation:1.0.0-beta03")
+    implementation("io.github.darkryh.dispatch:dispatch-koin:1.0.0-beta03")
 }
 ```
 
@@ -121,12 +121,14 @@ fun Hello() {
     val theme = LocalTheme.current
     Column {
         Text("Hello, Dispatch!", style = theme.primary)
-        Text("Press Ctrl+C to quit.", style = theme.muted)
+        Text("Press Ctrl+C twice to quit.", style = theme.muted)
     }
 }
 ```
 
-Run it, and the two lines render in your terminal. Press Ctrl+C to quit. The
+Run it, and the two lines render in your terminal. Press Ctrl+C **twice within 1.5 s** to quit —
+exit is double-press by default so a stray Ctrl+C can't kill a long-running session (set
+`requireExitDoublePress = false` in `config` for single-press). The
 [Getting started tutorial](docs/getting-started.md) builds this up step by step.
 
 ## Documentation

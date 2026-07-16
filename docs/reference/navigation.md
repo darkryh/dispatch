@@ -137,6 +137,11 @@ fun <K : T> entry(
 )
 ```
 
+Both forms also have a second overload taking `metadata` as a lambda — `metadata: (key: K) ->
+Map<String, Any>` — for metadata derived from the key (four `entry` overloads in total, and the
+same pairs exist for `addEntryProvider`). Registering the same key or class twice throws
+`IllegalArgumentException` when the provider is built.
+
 Each resolved destination is a `NavEntry`:
 
 ```kotlin
@@ -187,7 +192,9 @@ open class NavEntryDecorator<T : NavKey>(
 ```
 
 Wrap every entry with shared behavior or providers; `onPop` runs when an entry is popped, enabling
-custom disposal. Pass decorators to `NavDisplay(entryDecorators = …)`.
+custom disposal. Pass decorators to `NavDisplay(entryDecorators = …)`. Note both constructor
+parameters are `internal val`s: you can construct a decorator with named arguments from any module,
+but only `dispatch-navigation` itself can read `onPop`/`decorate` back.
 
 ## Serialization
 

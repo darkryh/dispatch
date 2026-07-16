@@ -47,3 +47,7 @@ secret*.properties
 /koog-context-orchestrator/build/
 /koog-agent-benchmark-core/build/
 /koog-agent-benchmark-koog/build/
+# IDE state and machine-local config — never source
+.idea/
+local.properties
+**/local.properties

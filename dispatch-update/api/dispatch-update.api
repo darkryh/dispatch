@@ -50,6 +50,12 @@ public final class io/github/darkryh/dispatch/update/StaticUpdateProvider : io/g
 	public fun latestVersion (Lkotlin/coroutines/Continuation;)Ljava/lang/Object;
 }
 
+public final class io/github/darkryh/dispatch/update/SystemCommandRunner : io/github/darkryh/dispatch/update/CommandRunner {
+	public static final field $stable I
+	public fun <init> ()V
+	public fun run ([Ljava/lang/String;)Lio/github/darkryh/dispatch/update/CommandResult;
+}
+
 public final class io/github/darkryh/dispatch/update/SystemUpdateEnvironment : io/github/darkryh/dispatch/update/UpdateEnvironment {
 	public static final field $stable I
 	public fun <init> ()V

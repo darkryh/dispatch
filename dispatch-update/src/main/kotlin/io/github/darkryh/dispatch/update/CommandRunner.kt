@@ -16,7 +16,14 @@ data class CommandResult(
         get() = exitCode == 0
 }
 
-internal class SystemCommandRunner : CommandRunner {
+/**
+ * Default [CommandRunner] backed by [ProcessBuilder].
+ *
+ * Public so applications can hand it to the command-based providers
+ * (BrewUpdateProvider, ScoopUpdateProvider, AptUpdateProvider) without writing their own
+ * process plumbing.
+ */
+class SystemCommandRunner : CommandRunner {
     override fun run(vararg args: String): CommandResult {
         var process: Process? = null
         return try {

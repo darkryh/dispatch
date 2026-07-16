@@ -15,7 +15,9 @@ CI/CD lives in `.github/workflows/`. This is the operator runbook.
    - **publishes + auto-releases** all 15 `io.github.darkryh.dispatch:dispatch-*` modules to Maven Central
      (`publishToMavenCentral -PautoRelease=true`) — signed, straight to live;
    - creates a **GitHub Release** (`--generate-notes`, `--prerelease` for any `-`-qualified version);
-   - the Release's `published` event triggers `initializr-pages.yml`, which **redeploys the Pages site**.
+   - explicitly dispatches `initializr-pages.yml` (`gh workflow run`), which **redeploys the Pages
+     site** — a `GITHUB_TOKEN`-created release never fires the `published` event for other
+     workflows (GitHub's recursion guard), so the redeploy is kicked directly.
 
    The `maven-central` Environment gates the publish job with a **required reviewer** — so even with
    auto-release, a human approves the run before anything ships.
@@ -24,7 +26,7 @@ CI/CD lives in `.github/workflows/`. This is the operator runbook.
 
 ## Versioning
 
-- The root build version is `(-PVERSION_NAME) ?: "1.0.0-beta01-SNAPSHOT"`.
+- The root build version is `(-PVERSION_NAME) ?: "1.0.0-beta03-SNAPSHOT"`.
 - Local/dev builds and `publishToMavenLocal` are therefore **SNAPSHOT** and never collide with a release.
 - Only the release pipeline passes a concrete `-PVERSION_NAME`.
 

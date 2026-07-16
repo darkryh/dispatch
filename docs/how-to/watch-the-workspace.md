@@ -6,7 +6,7 @@ updates when files change on disk. It assumes a working app.
 Add the dependency:
 
 ```kotlin
-implementation("io.github.darkryh.dispatch:dispatch-workspace:1.0.0-beta01")
+implementation("io.github.darkryh.dispatch:dispatch-workspace:1.0.0-beta03")
 ```
 
 ## Describe what to watch
