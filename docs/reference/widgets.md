@@ -628,7 +628,7 @@ columns of at least `minSize` cells as the width allows.
 fun <T> Tree(
     roots: List<TreeNode<T>>,
     modifier: Modifier = Modifier,
-    nodeKey: (T) -> Any = { it as Any },
+    nodeKey: (T) -> Any = { requireNotNull(it) { "Tree node key must be non-null" } },
     indentPerLevel: Int = 2,
     expandedGlyph: String = "▾ ",
     collapsedGlyph: String = "▸ ",

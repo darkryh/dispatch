@@ -7,7 +7,7 @@ that uses view models and navigation.
 Add the dependency:
 
 ```kotlin
-implementation("io.github.darkryh.dispatch:dispatch-koin:1.0.0-beta01")
+implementation("io.github.darkryh.dispatch:dispatch-koin:1.0.0-beta03")
 ```
 
 ## Declare a module

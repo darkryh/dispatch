@@ -6,8 +6,8 @@ releases or a package manager (Homebrew, Scoop, APT). It assumes a working app.
 The feature is opt-in. Add the core module plus a provider for each channel you ship through:
 
 ```kotlin
-implementation("io.github.darkryh.dispatch:dispatch-update:1.0.0-beta01")
-implementation("io.github.darkryh.dispatch:dispatch-update-github:1.0.0-beta01")
+implementation("io.github.darkryh.dispatch:dispatch-update:1.0.0-beta03")
+implementation("io.github.darkryh.dispatch:dispatch-update-github:1.0.0-beta03")
 // or -brew / -scoop / -apt
 ```
 

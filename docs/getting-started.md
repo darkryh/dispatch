@@ -41,8 +41,8 @@ repositories {
 }
 
 dependencies {
-    implementation("io.github.darkryh.dispatch:dispatch-core:1.0.0-beta01")
-    implementation("io.github.darkryh.dispatch:dispatch-widgets:1.0.0-beta01")
+    implementation("io.github.darkryh.dispatch:dispatch-core:1.0.0-beta03")
+    implementation("io.github.darkryh.dispatch:dispatch-widgets:1.0.0-beta03")
 }
 
 application {
@@ -108,7 +108,10 @@ You should see:
 Hello, Dispatch!
 ```
 
-The app keeps running. Press **Ctrl+C** to quit. You now have a working Dispatch app.
+The app keeps running. Press **Ctrl+C twice within 1.5 seconds** to quit — the first press only
+*arms* the exit prompt (`requireExitDoublePress` defaults to `true`, protecting long-running
+sessions from a stray Ctrl+C; set it to `false` in `config` for single-press exit). You now have a
+working Dispatch app.
 
 ## Step 3: Lay out a screen
 

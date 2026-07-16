@@ -14,7 +14,7 @@ version = "1.0.0-SNAPSHOT"
 // so the published site tracks whatever release was just cut — alpha, beta, rc or stable. Falls back
 // to the current line for local and non-release builds.
 val dispatchVersion: String =
-    (findProperty("dispatchVersion") as String?)?.takeIf { it.isNotBlank() } ?: "1.0.0-beta01"
+    (findProperty("dispatchVersion") as String?)?.takeIf { it.isNotBlank() } ?: "1.0.0-beta03"
 
 // Emits BuildInfo.DISPATCH_VERSION into commonMain so StarterTemplate reads the injected value.
 val generateInitializrBuildInfo by tasks.registering {

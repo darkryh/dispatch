@@ -7,10 +7,15 @@ in Jetpack Compose, modifiers form an immutable, ordered chain. Start from the `
 and append with extension functions or `then`:
 
 ```kotlin
-Modifier.fillMaxWidth().padding(1).border(BorderStyle.Rounded)
+Modifier.fillMaxWidth().width(40).offset(y = 1)
 ```
 
 All dimensions are terminal cells: widths in columns, heights in rows.
+
+> **Not every modifier is honored by the built-in layouts yet.** Size modifiers, `offset`,
+> `focusable`, and `semantics` are fully wired in. `padding`, `border`, and the scroll markers are
+> **chain metadata only** today — no built-in container or widget reads them, so on their own they
+> have no visual effect (see the notes in each section for what to use instead).
 
 > Dispatch has **no** `Modifier.background` and **no** `Modifier.onKeyEvent`. For backgrounds, wrap
 > content in a [`Surface`](widgets.md#surface) or [`Panel`](widgets.md#panel). For key handling, use
@@ -84,7 +89,13 @@ fun Modifier.totalPadding(): PaddingValues
 fun Modifier.getPadding(): PaddingValues?
 ```
 
-Insets a node's content. Values must be `>= 0`.
+Declares content insets. Values must be `>= 0`.
+
+> **Currently inert on built-in components.** No built-in measure policy or widget reads
+> `getPadding()` — a `Modifier.padding(...)` on a `Box`/`Column`/`Row`/`Text` changes nothing
+> visually. For real insets, use [`Panel`](widgets.md#panel)/[`Surface`](widgets.md#surface) (which
+> inset their content) or explicit `Spacer`s/`Arrangement.spacedBy`. The accessors exist so a
+> **custom** `MeasurePolicy` can honor padding (fold with `totalPadding()`/`getPadding()`).
 
 ```kotlin
 data class PaddingValues(val start: Int, val end: Int, val top: Int, val bottom: Int) {
@@ -103,13 +114,15 @@ fun Modifier.border(style: BorderStyle = BorderStyle.Rounded, title: String, tex
 fun Modifier.getBorder(): BorderModifierElement?
 ```
 
-Draws a box-drawing border around a node, optionally titled and styled.
+Declares a box-drawing border for a node, optionally titled and styled.
 
 **`BorderStyle`** (enum): `None`, `Ascii`, `Rounded`, `Square`, `Heavy`, `Double`, `Dashed`.
 
-```kotlin
-Text("Boxed", modifier = Modifier.border(BorderStyle.Square, title = "Note"))
-```
+> **Currently inert on built-in components.** No built-in measure policy or widget reads
+> `getBorder()` — for a real rendered border use the [`Panel`](widgets.md#panel) widget (which
+> takes `borderStyle`/`title` as direct parameters). The accessors exist so a **custom**
+> `MeasurePolicy` can draw the border itself. Note `Panel` maps `BorderStyle.Dashed` to plain
+> ASCII (Mordant has no dashed border type).
 
 The characters for each style are exposed via `object BorderCharacters` (`BorderChars` for each
 style plus `forStyle(style)`), in case you draw borders manually.
@@ -136,6 +149,10 @@ fun Modifier.getScrollConfig(): ScrollConfig
 ```
 
 Marks a node as scrollable.
+
+> **Currently inert.** Nothing in the runtime reads these markers — no viewport state or key
+> handling is attached, so a "scrollable" `Column` just clips to its bounds. For real interactive
+> scrolling use [`ScrollableList`](widgets.md#scrollablelist) or [`LazyColumn`](widgets.md#lazycolumn).
 
 ```kotlin
 data class ScrollConfig(val horizontal: Boolean, val vertical: Boolean) {
