@@ -27,6 +27,10 @@ class DispatchConfig : DispatchLifecycleHooks {
     var exitTimeoutOnDoublePress: Duration = 1500.milliseconds
     var exitKeyBindings: List<ExitKeyBinding> = listOf(ExitKeyBinding.ctrl("C"))
     var exitKeyPredicate: ((KeyboardEvent) -> Boolean)? = null
+    @Deprecated(
+        "Has no effect — the renderer always guards its own writes internally and this flag is " +
+            "never read. Will be removed once real stdout/stderr capture is implemented.",
+    )
     var captureSystemOutput: Boolean = true
 
     /** Idle hibernation settings. Enabled by default; see [HibernationConfig]. */

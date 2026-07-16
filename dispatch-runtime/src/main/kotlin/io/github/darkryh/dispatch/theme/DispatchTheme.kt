@@ -66,42 +66,42 @@ data class DispatchTheme(
     /**
      * Apply primary style to text.
      */
-    fun primary(text: String): String = primary(text)
+    fun primary(text: String): String = primary.invoke(text)
 
     /**
      * Apply secondary style to text.
      */
-    fun secondary(text: String): String = secondary(text)
+    fun secondary(text: String): String = secondary.invoke(text)
 
     /**
      * Apply muted style to text.
      */
-    fun muted(text: String): String = muted(text)
+    fun muted(text: String): String = muted.invoke(text)
 
     /**
      * Apply accent style to text.
      */
-    fun accent(text: String): String = accent(text)
+    fun accent(text: String): String = accent.invoke(text)
 
     /**
      * Apply success style to text.
      */
-    fun success(text: String): String = success(text)
+    fun success(text: String): String = success.invoke(text)
 
     /**
      * Apply warning style to text.
      */
-    fun warning(text: String): String = warning(text)
+    fun warning(text: String): String = warning.invoke(text)
 
     /**
      * Apply error style to text.
      */
-    fun error(text: String): String = error(text)
+    fun error(text: String): String = error.invoke(text)
 
     /**
      * Apply info style to text.
      */
-    fun info(text: String): String = info(text)
+    fun info(text: String): String = info.invoke(text)
 
     companion object {
         /**

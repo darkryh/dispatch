@@ -68,21 +68,34 @@ val LocalDispatchConfig =
 /**
  * CompositionLocal providing whether the current element is focused.
  */
+@Deprecated(
+    "Never provided by the framework — it is always false. Read focus through " +
+        "LocalFocusRegistry.current.isFocused(token) on a Modifier.focusable(token) node instead.",
+)
 val LocalFocused = compositionLocalOf { false }
 
 /**
  * CompositionLocal providing whether the current element is enabled.
  */
+@Deprecated(
+    "Never provided by the framework — it is always true. Pass an enabled parameter to your " +
+        "composable (as the built-in widgets do) instead.",
+)
 val LocalEnabled = compositionLocalOf { true }
 
 /**
  * CompositionLocal providing the current content alpha (opacity).
  */
+@Deprecated(
+    "Never provided or read by the framework; terminals have no alpha channel. Style text via " +
+        "TextStyle (e.g. dim) instead.",
+)
 val LocalContentAlpha = compositionLocalOf { 1.0f }
 
 /**
  * CompositionLocal providing the absolute position in the terminal.
  */
+@Deprecated("Never provided by the framework — it is always Position(0, 0).")
 val LocalPosition = compositionLocalOf { Position(0, 0) }
 
 /**
