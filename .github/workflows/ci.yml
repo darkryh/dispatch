@@ -22,7 +22,7 @@ jobs:
     runs-on: ubuntu-latest # PTY tests are terminal-geometry sensitive, not OS sensitive — never pay macOS 10x
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
       # `check` already runs unit/render tests + detekt(detektMain/detektTest, type resolution) + ktlint
       # + apiCheck per module. terminalE2eTest is NOT in `check` (decoupled), so this stays fast & green.
@@ -30,7 +30,7 @@ jobs:
         run: ./gradlew check verifyModuleBoundaries --stacktrace
       - name: Upload reports
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: validation-reports
           path: '**/build/reports/'
@@ -42,7 +42,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
         with:
           cache-read-only: 'true' # build-test-quality owns the cache write on push; don't race it
@@ -53,7 +53,7 @@ jobs:
         run: ./gradlew :dispatch-sample:terminalE2eTest --stacktrace
       - name: Upload e2e report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: terminal-e2e-report
           path: dispatch-sample/build/reports/
