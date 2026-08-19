@@ -7,6 +7,61 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0-beta04] - 2026-08-19
+
+### Fixed
+
+- **The terminal no longer presents half-drawn frames.** Dispatch built each frame in a single
+  buffer and issued a single `rawPrint`, and treated that as an atomic presentation. It is not: the
+  JDK builds `System.out` over an 8 KB `BufferedOutputStream`, so a 68 KB frame left the process as
+  nine `write(2)` calls split at arbitrary offsets (measured on JDK 21). Because a frame begins by
+  erasing the rows it is about to repaint, a terminal painting between the erase and the repaint
+  showed a blank screen. Two changes close this: `FrameOutput` installs a 1 MB non-auto-flushing
+  stdout so one frame is one write, and every frame is now wrapped in DEC 2026 synchronized output
+  (`ESC[?2026h` / `ESC[?2026l`) so the terminal buffers the update even when the kernel still splits
+  it. Terminals that do not implement DEC 2026 ignore the private mode.
+- **A one-line change no longer repaints the whole screen.** `rewriteViewport` gained a line diff:
+  only rows that actually changed are addressed, using an absolute cursor move and no per-row erase
+  (the layout engine already pads every row to the terminal width, so the erase was redundant — and
+  it was what made a torn frame show a blank row instead of stale text).
+- **`updateActiveArea` no longer repaints every sibling when one line changes.** It computed
+  `forceRedraw = oldLineCount != newLineCount || hasAnyContentChange`, which made the per-line
+  comparison below it unreachable. Redrawing every row is now reserved for an actual change of
+  shape, which is the case where the relative anchor moves. This is the path an app takes when
+  `activeAreaHeight` spans the viewport, where changing one footer character repainted every row.
+- **Resizing the terminal no longer destroys the scrollback.** `clearScrollback` gated both
+  `ESC[3J` (discard history) and `ESC[J` (erase the visible screen); they are now separate. A resize
+  erases the screen without taking the user's history with it. Navigating between screens still
+  clears scrollback, deliberately.
+
+### Added
+
+- `dispatch-vt`, an internal render-invariant harness (not published). It models a terminal screen —
+  cell grid, cursor, scrollback, deferred last-column wrap, character display widths — parses the
+  ANSI stream incrementally, and judges the sequence of *visible screen states* rather than the
+  bytes. It replays the PTY recordings the e2e suite already produced, and its frame segmentation
+  self-validates by reproducing the application's own `terminal_write` count.
+- CI now runs those render invariants, and adds a (non-required) macOS PTY job. Presentation timing
+  is exactly where terminal emulators and PTY buffering differ per platform.
+
+### Changed
+
+- **Breaking (binary):** `TerminalRenderer.rewriteViewport` takes a new `eraseScreen` parameter, and
+  `FrameOutput` is new public API. Source-compatible for callers using named or default arguments;
+  recompilation is required.
+- `TerminalReliabilityReport.blinkCandidates` is replaced by `destructiveScreenWrites`. The old
+  metric counted only `ESC[2J`, which the render pipeline never emits, so it reported `0` on every
+  run while the screen was visibly blinking. The replacement counts `ESC[3J` and `ESC[J`, the
+  sequences actually used.
+
+### Known issues
+
+- `scrolling_content_reset` still clears scrollback on any shrink of the scrolling region, not only
+  on a genuine content reset. Narrowing it by shape is incorrect, so it awaits a declarative policy
+  where a screen states that it resets history.
+- `:dispatch-sample:terminalStressTest` fails independently of rendering (the runtime hibernates
+  mid-run around the 100th message) and is documented in CI rather than wired in.
+
 ## [1.0.0-beta03] - 2026-07-16
 
 ### Fixed

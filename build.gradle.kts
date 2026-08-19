@@ -24,7 +24,7 @@ allprojects {
     group = "io.github.darkryh.dispatch"
     // Version is supplied by the release pipeline via -PVERSION_NAME=<git tag without the leading 'v'>.
     // Local/dev builds default to a SNAPSHOT so they never collide with a published release.
-    version = providers.gradleProperty("VERSION_NAME").getOrElse("1.0.0-beta03-SNAPSHOT")
+    version = providers.gradleProperty("VERSION_NAME").getOrElse("1.0.0-beta04-SNAPSHOT")
 
     repositories {
         google()

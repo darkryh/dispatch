@@ -61,6 +61,10 @@ class CorpusReplayTest {
 
     @Test
     fun `recordings are newer than the renderer they describe`() {
+        // Only meaningful where the corpus is actually required — i.e. straight after the PTY suite
+        // has run. Under a plain `check` the renderer is recompiled without re-recording, so every
+        // recording is legitimately "older" than the renderer and this would fail for no reason.
+        if (System.getProperty("dispatch.vt.requireCorpus") != "true") return
         val scenarios = Corpus.directory() ?: return
         val rendererClasses =
             java.io.File(scenarios.parentFile.parentFile.parentFile.parentFile, "dispatch-renderer/build/classes")
