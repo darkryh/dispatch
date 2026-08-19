@@ -38,15 +38,12 @@ jobs:
           retention-days: 7
 
   pty-e2e:
+    # NOTE: this job's name is a REQUIRED status check on master. Do not rename it, and do not give
+    # it a matrix — a matrix makes GitHub publish the check as "PTY end-to-end (ubuntu-latest)",
+    # which would leave the required check "PTY end-to-end" permanently unsatisfiable and block
+    # every merge. macOS coverage is a separate, non-required job below.
     name: PTY end-to-end
-    # Flicker is a presentation-timing defect, and presentation timing is precisely where terminal
-    # emulators and PTY buffering differ between platforms. The previous "PTY tests are not OS
-    # sensitive" assumption is why a macOS-only blink survived a green Linux CI.
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-    runs-on: ${{ matrix.os }}
+    runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
@@ -71,7 +68,38 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: terminal-e2e-report-${{ matrix.os }}
+          name: terminal-e2e-report-ubuntu
+          path: |
+            dispatch-sample/build/reports/
+            dispatch-vt/build/reports/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  pty-e2e-macos:
+    # Flicker is a presentation-timing defect, and presentation timing is precisely where terminal
+    # emulators and PTY buffering differ between platforms. The old "PTY tests are terminal-geometry
+    # sensitive, not OS sensitive" assumption is why a macOS-only blink survived a green Linux CI.
+    #
+    # Deliberately NOT a required status check: it is the more expensive runner, and it must be
+    # possible to add it without making master unmergeable. Promote it once it has proven stable.
+    name: PTY end-to-end (macOS)
+    runs-on: macos-latest
+    timeout-minutes: 25
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/setup
+        with:
+          cache-read-only: 'true'
+      - name: Terminal e2e
+        run: ./gradlew :dispatch-sample:terminalE2eTest --stacktrace
+      - name: Render invariants
+        run: ./gradlew :dispatch-vt:test -Ddispatch.vt.requireCorpus=true --stacktrace
+      - name: Upload e2e report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: terminal-e2e-report-macos
           path: |
             dispatch-sample/build/reports/
             dispatch-vt/build/reports/
