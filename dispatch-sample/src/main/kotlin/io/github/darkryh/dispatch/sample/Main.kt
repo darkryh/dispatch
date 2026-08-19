@@ -11,6 +11,12 @@ import kotlin.time.Duration.Companion.milliseconds
 /** Sample-only idle timeout: hibernate after this long with no input so the demo shows it quickly. */
 private const val DEFAULT_SAMPLE_IDLE_TIMEOUT_MS = 5_000L
 
+/** The framework default active-area height, kept explicit so the render override below reads clearly. */
+private const val DEFAULT_SAMPLE_ACTIVE_AREA_HEIGHT = 12
+
+/** The sample's normal frame rate. */
+private const val DEFAULT_SAMPLE_TARGET_FPS = 60
+
 fun main(args: Array<String>) =
     DispatchApplication(args) {
         config {
@@ -20,7 +26,14 @@ fun main(args: Array<String>) =
             version = "1.0.0"
             description = "Offline terminal UI and navigation showcase"
             theme = DispatchTheme.Dark
-            targetFps = 60
+            // Render settings are overridable from the environment so the PTY reliability harness can
+            // replay a downstream app's configuration (e.g. an active area that covers the whole
+            // viewport at 24 fps) without changing what a normal `./dispatch-sample` run does:
+            //   DISPATCH_SAMPLE_ACTIVE_AREA_HEIGHT=500 DISPATCH_SAMPLE_TARGET_FPS=24 ./dispatch-sample
+            targetFps = System.getenv("DISPATCH_SAMPLE_TARGET_FPS")?.toIntOrNull() ?: DEFAULT_SAMPLE_TARGET_FPS
+            activeAreaHeight =
+                System.getenv("DISPATCH_SAMPLE_ACTIVE_AREA_HEIGHT")?.toIntOrNull()
+                    ?: DEFAULT_SAMPLE_ACTIVE_AREA_HEIGHT
             exitKeys(ExitKeyBinding.ctrl("C"))
             requireExitDoublePress = true
             exitTimeoutOnDoublePress = 1_500.milliseconds

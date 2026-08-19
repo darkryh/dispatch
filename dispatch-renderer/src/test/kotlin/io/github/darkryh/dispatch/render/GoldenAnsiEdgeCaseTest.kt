@@ -4,6 +4,7 @@ import io.github.darkryh.dispatch.render.AnsiGolden.CL
 import io.github.darkryh.dispatch.render.AnsiGolden.CR
 import io.github.darkryh.dispatch.render.AnsiGolden.LF
 import io.github.darkryh.dispatch.render.AnsiGolden.delta
+import io.github.darkryh.dispatch.render.AnsiGolden.frame
 import io.github.darkryh.dispatch.render.AnsiGolden.recordingRenderer
 import io.github.darkryh.dispatch.render.AnsiGolden.trailingRowClears
 import io.github.darkryh.dispatch.render.AnsiGolden.visualizeEscapes
@@ -17,7 +18,8 @@ import kotlin.test.assertTrue
  * P0.1 — Golden ANSI byte-stream edge cases: ANSI-styled blank lines (isDisplayBlank /
  * ansiEscapeLength), active-area grow/shrink cursor arithmetic, empty/zero-height frames, and
  * width/height coercion to the 40x10 floor. All expectations are built from [AnsiCodes] and derived
- * by tracing `TerminalRenderer.kt`.
+ * by tracing `TerminalRenderer.kt`. Every emitted frame is wrapped in the DEC 2026
+ * synchronized-output guard, so each expectation uses one [AnsiGolden.frame] block per `flushBuffer`.
  */
 class GoldenAnsiEdgeCaseTest {
     @BeforeTest
@@ -49,10 +51,10 @@ class GoldenAnsiEdgeCaseTest {
         val out = delta(recorder, before)
 
         // Trace: trailingBlankLineCount()=2 (both styled rows are display-blank) ->
-        // targetRow = (10 - 2).coerceAtLeast(1).coerceAtMost(24) = 8.
-        val expected = AnsiCodes.moveTo(8, 1) + AnsiCodes.CLEAR_LINE + LF
+        // targetRow = (10 - 2).coerceAtLeast(1).coerceAtMost(24) = 8. One flushBuffer -> one frame.
+        val expected = frame(AnsiCodes.moveTo(8, 1) + AnsiCodes.CLEAR_LINE + LF)
         assertEquals(expected, out, visualizeEscapes(out))
-        assertTrue(out.endsWith(LF))
+        assertTrue(out.removeSuffix(AnsiCodes.SYNC_END).endsWith(LF))
     }
 
     // ---------------------------------------------------------------------------------------------
@@ -70,11 +72,13 @@ class GoldenAnsiEdgeCaseTest {
 
         // Trace: oldLineCount=1 -> moveToActiveAreaTop emits nothing (needs >1). forceRedraw=true ->
         // idx0 \r CLEAR_LINE L1 \n, idx1 \r CLEAR_LINE L2 \n, idx2 \r CLEAR_LINE L3 (no \n).
-        // newLineCount(3) !in 1..<oldLineCount(1) -> no trailing moveUp.
+        // newLineCount(3) !in 1..<oldLineCount(1) -> no trailing moveUp. One flushBuffer -> one frame.
         val expected =
-            CR + CL + "L1" + LF +
-                CR + CL + "L2" + LF +
-                CR + CL + "L3"
+            frame(
+                CR + CL + "L1" + LF,
+                CR + CL + "L2" + LF,
+                CR + CL + "L3",
+            )
         assertEquals(expected, out, visualizeEscapes(out))
         assertFalse(out.contains(AnsiCodes.moveUp(1)), "growing must not move the cursor up")
     }
@@ -95,13 +99,15 @@ class GoldenAnsiEdgeCaseTest {
         // Trace: oldLineCount=3 -> moveToActiveAreaTop emits moveUp(2). maxLineCount=3, forceRedraw:
         // idx0 \r CLEAR_LINE X1 \n; idx1 newLine==null -> \r CLEAR_LINE \n; idx2 newLine==null ->
         // \r CLEAR_LINE (no \n). newLineCount(1) in 1..<oldLineCount(3) -> moveCursorAfterShrink
-        // emits moveUp(3-1)=moveUp(2).
+        // emits moveUp(3-1)=moveUp(2). One flushBuffer -> one frame.
         val expected =
-            AnsiCodes.moveUp(2) +
-                CR + CL + "X1" + LF +
-                CR + CL + LF +
-                CR + CL +
-                AnsiCodes.moveUp(2)
+            frame(
+                AnsiCodes.moveUp(2),
+                CR + CL + "X1" + LF,
+                CR + CL + LF,
+                CR + CL,
+                AnsiCodes.moveUp(2),
+            )
         assertEquals(expected, out, visualizeEscapes(out))
     }
 
@@ -129,13 +135,16 @@ class GoldenAnsiEdgeCaseTest {
         renderer.rewriteViewport(scrollingLines = emptyList(), activeLines = emptyList())
         val out = delta(recorder, before)
 
-        // Trace: clearScrollback defaults true -> CLEAR_SCROLLBACK + CURSOR_HOME + CLEAR_TO_END
-        // (full visible-screen wipe so a scrolled previous screen cannot ghost). contentLineCount=0
-        // -> no body. clearViewportRowsAfter(0): firstBlankRow=1 -> clear rows 1..24. No final moveTo
-        // (contentLineCount==0).
+        // Trace: clearScrollback defaults true, so eraseScreen is true and the diff path is refused
+        // -> CLEAR_SCROLLBACK + CURSOR_HOME + CLEAR_TO_END (full visible-screen wipe so a scrolled
+        // previous screen cannot ghost). contentLineCount=0 -> no body. clearViewportRowsAfter(0):
+        // firstBlankRow=1 -> clear rows 1..24. No final moveTo (contentLineCount==0). One
+        // flushBuffer -> one frame.
         val expected =
-            AnsiCodes.CLEAR_SCROLLBACK + AnsiCodes.CURSOR_HOME + AnsiCodes.CLEAR_TO_END +
-                trailingRowClears(1, 24)
+            frame(
+                AnsiCodes.CLEAR_SCROLLBACK + AnsiCodes.CURSOR_HOME + AnsiCodes.CLEAR_TO_END,
+                trailingRowClears(1, 24),
+            )
         assertEquals(expected, out, visualizeEscapes(out))
         assertFalse(out.contains(AnsiCodes.CLEAR_SCREEN))
     }
@@ -159,14 +168,18 @@ class GoldenAnsiEdgeCaseTest {
         )
         val out = delta(recorder, before)
 
-        // Trace: contentLineCount=2 -> firstBlankRow=3; terminalHeight is the coerced floor (10), so
-        // trailing clears span rows 3..10; final moveTo(2.coerceAtMost(10),1)=moveTo(2,1).
+        // Trace: first rewriteViewport on this renderer -> no recorded viewport, full repaint in one
+        // flushBuffer -> one frame. contentLineCount=2 -> firstBlankRow=3; terminalHeight is the
+        // coerced floor (10), so trailing clears span rows 3..10; final
+        // moveTo(2.coerceAtMost(10),1)=moveTo(2,1).
         val expected =
-            AnsiCodes.CURSOR_HOME +
-                CR + CL + "H1" + LF +
-                CR + CL + ">in" +
-                trailingRowClears(3, 10) +
-                AnsiCodes.moveTo(2, 1)
+            frame(
+                AnsiCodes.CURSOR_HOME,
+                CR + CL + "H1" + LF,
+                CR + CL + ">in",
+                trailingRowClears(3, 10),
+                AnsiCodes.moveTo(2, 1),
+            )
         assertEquals(expected, out, visualizeEscapes(out))
         // The erase reaches the floor row, proving height coercion (recorder height was only 5).
         assertTrue(out.contains(AnsiCodes.moveTo(10, 1)))

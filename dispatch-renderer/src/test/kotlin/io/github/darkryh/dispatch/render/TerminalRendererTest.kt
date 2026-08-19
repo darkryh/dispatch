@@ -204,7 +204,7 @@ class TerminalRendererTest {
         assertFalse(output.contains(AnsiCodes.CLEAR_SCREEN))
         assertTrue(output.contains("History 1"))
         assertTrue(output.contains("> input"))
-        assertFalse(output.endsWith("\n"))
+        assertFalse(output.removeSuffix(AnsiCodes.SYNC_END).endsWith("\n"))
     }
 
     @Test
@@ -289,7 +289,9 @@ class TerminalRendererTest {
 
         assertTrue(delta.contains(AnsiCodes.moveTo(12, 1)))
         assertTrue(delta.contains(AnsiCodes.CLEAR_LINE))
-        assertTrue(delta.endsWith("\n"))
+        // Every frame is wrapped in the DEC 2026 sync guard, so the newline is the last byte of the
+        // frame *content*, not of the delta.
+        assertTrue(delta.removeSuffix(AnsiCodes.SYNC_END).endsWith("\n"))
     }
 
     @Test
@@ -305,7 +307,9 @@ class TerminalRendererTest {
 
         assertTrue(delta.contains(AnsiCodes.moveTo(15, 1)))
         assertTrue(delta.contains(AnsiCodes.CLEAR_LINE))
-        assertTrue(delta.endsWith("\n"))
+        // Every frame is wrapped in the DEC 2026 sync guard, so the newline is the last byte of the
+        // frame *content*, not of the delta.
+        assertTrue(delta.removeSuffix(AnsiCodes.SYNC_END).endsWith("\n"))
     }
 
     @Test
@@ -323,7 +327,9 @@ class TerminalRendererTest {
 
         assertTrue(delta.contains(AnsiCodes.moveTo(8, 1)))
         assertTrue(delta.contains(AnsiCodes.CLEAR_LINE))
-        assertTrue(delta.endsWith("\n"))
+        // Every frame is wrapped in the DEC 2026 sync guard, so the newline is the last byte of the
+        // frame *content*, not of the delta.
+        assertTrue(delta.removeSuffix(AnsiCodes.SYNC_END).endsWith("\n"))
     }
 
     @Test
@@ -394,7 +400,7 @@ class TerminalRendererTest {
     }
 
     @Test
-    fun `updateActiveArea redraws sibling lines when one line changes`() {
+    fun `updateActiveArea repaints only the line that changed`() {
         val (renderer, recorder) = createRenderer()
 
         renderer.updateActiveArea(listOf("Line A", "Line B"))
@@ -404,8 +410,25 @@ class TerminalRendererTest {
         val delta = recorder.output().removePrefix(before)
 
         val clearCount = delta.windowed(AnsiCodes.CLEAR_LINE.length).count { it == AnsiCodes.CLEAR_LINE }
-        assertTrue(clearCount >= 2, "expected both active lines to be cleared/redrawn")
-        assertTrue(delta.contains("Line A*"))
-        assertTrue(delta.contains("Line B"))
+        assertEquals(1, clearCount, "only the changed row should be erased and redrawn")
+        assertTrue(delta.contains("Line A*"), "the changed row is repainted")
+        assertFalse(delta.contains("Line B"), "the unchanged sibling must not be repainted")
+    }
+
+    @Test
+    fun `updateActiveArea repaints every line when the active area changes shape`() {
+        // A shape change moves the relative anchor this path positions from, so the siblings are
+        // redrawn deliberately — that is what keeps them stable when an external input method
+        // momentarily desynchronizes output.
+        val (renderer, recorder) = createRenderer()
+
+        renderer.updateActiveArea(listOf("Line A", "Line B"))
+        val before = recorder.output()
+
+        renderer.updateActiveArea(listOf("Line A", "Line B", "Line C"))
+        val delta = recorder.output().removePrefix(before)
+
+        assertTrue(delta.contains("Line A"), "a shape change repaints every row")
+        assertTrue(delta.contains("Line C"), "including the newly added one")
     }
 }

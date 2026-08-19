@@ -1,37 +1,18 @@
-# Project exclude paths
-/.kotlin/
-/.gradle/
-/build-logic/.gradle/
-/build-logic/build/
-/dispatch-core/build/
-/dispatch-koin/build/
-/dispatch-layout/build/
-/dispatch-lifecycle/build/
-/dispatch-navigation/build/
-/dispatch-reliability/build/
-/dispatch-renderer/build/
-/dispatch-runtime/build/
-/dispatch-sample/build/
-/dispatch-update/build/
-/dispatch-update-apt/build/
-/dispatch-update-brew/build/
-/dispatch-update-github/build/
-/dispatch-update-scoop/build/
-/dispatch-workspace/build/
-/dispatch-viewmodel/build/
-/dispatch-widgets/build/
-/dispatch-benchmarks/build/
+# Gradle build output and caches.
+#
+# These are deliberately GENERIC rather than one entry per module. The previous per-module
+# enumeration silently failed the moment a module was added: dispatch-vt/build was not listed, so
+# its compiled .class files were staged for commit. A generic rule covers every module, including
+# ones that do not exist yet.
+build/
+.gradle/
+.kotlin/
 /*/bin/
 
 # Initializr (standalone Kotlin/Wasm + Compose Multiplatform build).
 # Ignore generated output and caches; keep sources and kotlin-js-store/ (the yarn lockfile,
 # committed for reproducible CI/Pages builds).
-/initializr/.gradle/
-/initializr/.kotlin/
-/initializr/build/
-
-# Root aggregate build output (reports, etc.) — generated, never source
-/build/
+# (covered by the generic build/ .gradle/ .kotlin/ rules above)
 
 # Secrets — never commit signing keys or local credential files (CI uses repo secrets)
 *.gpg
@@ -44,10 +25,12 @@ secret*.properties
 
 # macOS / editor cruft
 .DS_Store
-/koog-context-orchestrator/build/
-/koog-agent-benchmark-core/build/
-/koog-agent-benchmark-koog/build/
 # IDE state and machine-local config — never source
 .idea/
 local.properties
 **/local.properties
+
+# Runtime/debug artifacts. These were committed in the initial import and are not sources:
+# dispatch-debug.log is written by an old diagnostics path, dispatch-terminal-info.txt by a probe.
+dispatch-debug.log
+dispatch-terminal-info.txt

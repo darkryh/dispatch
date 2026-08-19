@@ -1,1 +1,0 @@
-TerminalInfo(ansiLevel=NONE, ansiHyperLinks=false, outputInteractive=false, inputInteractive=false, supportsAnsiCursor=false)

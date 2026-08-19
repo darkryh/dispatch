@@ -22,6 +22,7 @@ import io.github.darkryh.dispatch.sample.navigation.HomeRoute
 import io.github.darkryh.dispatch.sample.navigation.InputsRoute
 import io.github.darkryh.dispatch.sample.navigation.LayoutRoute
 import io.github.darkryh.dispatch.sample.navigation.ListsRoute
+import io.github.darkryh.dispatch.sample.navigation.PollingTableRoute
 import io.github.darkryh.dispatch.sample.navigation.ProgressRoute
 import io.github.darkryh.dispatch.sample.navigation.ReviewRoute
 import io.github.darkryh.dispatch.sample.navigation.SurfacesRoute
@@ -34,6 +35,7 @@ import io.github.darkryh.dispatch.sample.presentation.home.HomeScreen
 import io.github.darkryh.dispatch.sample.presentation.inputs.InputsScreen
 import io.github.darkryh.dispatch.sample.presentation.layout.LayoutScreen
 import io.github.darkryh.dispatch.sample.presentation.lists.ListsScreen
+import io.github.darkryh.dispatch.sample.presentation.polling.PollingTableScreen
 import io.github.darkryh.dispatch.sample.presentation.progress.ProgressScreen
 import io.github.darkryh.dispatch.sample.presentation.review.ReviewScreen
 import io.github.darkryh.dispatch.sample.presentation.surfaces.SurfacesScreen
@@ -68,6 +70,7 @@ fun DispatchSampleApp() {
                     entry<LayoutRoute> { LayoutScreen() }
                     entry<ReviewRoute> { ReviewScreen() }
                     entry<ChatRoute> { ChatScreen() }
+                    entry<PollingTableRoute> { PollingTableScreen() }
                 },
         )
     }

@@ -30,6 +30,7 @@ enum class CatalogDestination(
     LAYOUT("Layout", "▤", "Boxes, rows & flows", LayoutRoute),
     REVIEW("Diff & Review", "±", "File diffs & review", ReviewRoute),
     CHAT("Chat", "💬", "Live streaming chat", ChatRoute()),
+    POLLING("Polling Table", "⟳", "Background-polled fleet", PollingTableRoute),
     ;
 
     companion object {

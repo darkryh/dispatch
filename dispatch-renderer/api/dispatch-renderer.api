@@ -10,6 +10,8 @@ public final class io/github/darkryh/dispatch/render/AnsiCodes {
 	public static final field INSTANCE Lio/github/darkryh/dispatch/render/AnsiCodes;
 	public static final field RESTORE_CURSOR Ljava/lang/String;
 	public static final field SAVE_CURSOR Ljava/lang/String;
+	public static final field SYNC_BEGIN Ljava/lang/String;
+	public static final field SYNC_END Ljava/lang/String;
 	public final fun appendMoveTo (Ljava/lang/StringBuilder;II)V
 	public final fun moveDown (I)Ljava/lang/String;
 	public static synthetic fun moveDown$default (Lio/github/darkryh/dispatch/render/AnsiCodes;IILjava/lang/Object;)Ljava/lang/String;
@@ -24,6 +26,14 @@ public final class io/github/darkryh/dispatch/render/AnsiCodes {
 	public static synthetic fun scrollDown$default (Lio/github/darkryh/dispatch/render/AnsiCodes;IILjava/lang/Object;)Ljava/lang/String;
 	public final fun scrollUp (I)Ljava/lang/String;
 	public static synthetic fun scrollUp$default (Lio/github/darkryh/dispatch/render/AnsiCodes;IILjava/lang/Object;)Ljava/lang/String;
+}
+
+public final class io/github/darkryh/dispatch/render/FrameOutput {
+	public static final field $stable I
+	public static final field INSTANCE Lio/github/darkryh/dispatch/render/FrameOutput;
+	public final fun install ()V
+	public final fun isInstalled ()Z
+	public final fun uninstall ()V
 }
 
 public final class io/github/darkryh/dispatch/render/OutputCapture {
@@ -55,10 +65,11 @@ public final class io/github/darkryh/dispatch/render/TerminalRenderer {
 	public final fun getTerminalWidth ()I
 	public final fun handoffToShellPrompt ()V
 	public final fun hideCursor ()V
+	public final fun invalidateViewportDiff ()V
 	public final fun markVisibleContentHeight (I)V
 	public final fun moveCursor (II)V
-	public final fun rewriteViewport (Ljava/util/List;Ljava/util/List;Z)V
-	public static synthetic fun rewriteViewport$default (Lio/github/darkryh/dispatch/render/TerminalRenderer;Ljava/util/List;Ljava/util/List;ZILjava/lang/Object;)V
+	public final fun rewriteViewport (Ljava/util/List;Ljava/util/List;ZZ)V
+	public static synthetic fun rewriteViewport$default (Lio/github/darkryh/dispatch/render/TerminalRenderer;Ljava/util/List;Ljava/util/List;ZZILjava/lang/Object;)V
 	public final fun showCursor ()V
 	public final fun updateActiveArea (Ljava/util/List;)V
 }

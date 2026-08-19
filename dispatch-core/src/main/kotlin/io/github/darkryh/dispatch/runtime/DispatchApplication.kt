@@ -10,6 +10,7 @@ import com.github.ajalt.mordant.terminal.Terminal
 import io.github.darkryh.dispatch.constraints.Constraints
 import io.github.darkryh.dispatch.layout.*
 import io.github.darkryh.dispatch.modifier.Modifier
+import io.github.darkryh.dispatch.render.FrameOutput
 import io.github.darkryh.dispatch.render.RenderDiagnostics
 import io.github.darkryh.dispatch.render.TerminalRenderer
 import io.github.darkryh.dispatch.theme.DispatchTheme
@@ -176,6 +177,10 @@ internal class DispatchRuntimeEngine(
     }
 
     private fun initializeTerminal() {
+        // Take ownership of stdout before anything is written. The JDK's default System.out buffers
+        // at 8 KB, which splits a full-screen frame across several write(2) calls and lets the
+        // terminal paint a half-applied frame. See FrameOutput.
+        FrameOutput.install()
         val shadowColor = rgb("#24218c")
         terminal =
             Terminal(

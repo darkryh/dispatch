@@ -17,8 +17,22 @@ internal data class TerminalReliabilityReport(
     val cursorHideCount: Int,
     val cursorShowCount: Int,
     val rawClearScreenSequences: Int,
+    val clearScrollbackSequences: Int,
+    val clearToEndSequences: Int,
 ) {
-    val blinkCandidates: Int get() = maxOf(clearScreenWrites, rawClearScreenSequences)
+    /**
+     * Destructive full-screen operations actually emitted.
+     *
+     * This replaces the old `blinkCandidates`, which counted only `ESC[2J`. The render pipeline
+     * never emits `ESC[2J` — measured zero across the whole corpus — so that metric read 0 on every
+     * run while the screen was visibly blinking, and six e2e assertions were built on it. The
+     * sequences that actually erase are `ESC[3J` (scrollback) and `ESC[J` (to end of screen).
+     *
+     * Note this counts *destructiveness*, not flicker. Flicker is a property of what the screen
+     * showed over time and cannot be measured from the byte stream at all; `dispatch-vt` replays
+     * these recordings through a terminal model and judges that.
+     */
+    val destructiveScreenWrites: Int get() = clearScrollbackSequences + clearToEndSequences
 
     fun toText(): String =
         buildString {
@@ -26,14 +40,16 @@ internal data class TerminalReliabilityReport(
             appendLine("renderFrames=$renderFrames terminalWrites=$terminalWrites")
             appendLine("fullRewrites=$fullRewrites unexpectedFullRewrites=$unexpectedFullRewrites")
             appendLine("clearScreenWrites=$clearScreenWrites rawClearScreenSequences=$rawClearScreenSequences")
-            appendLine("blinkCandidates=$blinkCandidates")
+            appendLine(
+                "destructiveScreenWrites=$destructiveScreenWrites clearScrollback=$clearScrollbackSequences clearToEnd=$clearToEndSequences",
+            )
             appendLine("heapPeakBytes=$maximumHeapUsedBytes")
             appendLine("rssFirstKb=$firstRssKb rssPeakKb=$maximumRssKb rssLastKb=$lastRssKb")
             appendLine("cursorHideCount=$cursorHideCount cursorShowCount=$cursorShowCount")
         }
 
     fun toJson(): String =
-        """{"scenario":"${scenario.jsonEscape()}","renderFrames":$renderFrames,"terminalWrites":$terminalWrites,"fullRewrites":$fullRewrites,"unexpectedFullRewrites":$unexpectedFullRewrites,"clearScreenWrites":$clearScreenWrites,"blinkCandidates":$blinkCandidates,"maximumHeapUsedBytes":$maximumHeapUsedBytes,"firstRssKb":$firstRssKb,"maximumRssKb":$maximumRssKb,"lastRssKb":$lastRssKb,"cursorHideCount":$cursorHideCount,"cursorShowCount":$cursorShowCount,"rawClearScreenSequences":$rawClearScreenSequences}\n"""
+        """{"scenario":"${scenario.jsonEscape()}","renderFrames":$renderFrames,"terminalWrites":$terminalWrites,"fullRewrites":$fullRewrites,"unexpectedFullRewrites":$unexpectedFullRewrites,"clearScreenWrites":$clearScreenWrites,"destructiveScreenWrites":$destructiveScreenWrites,"clearScrollbackSequences":$clearScrollbackSequences,"clearToEndSequences":$clearToEndSequences,"maximumHeapUsedBytes":$maximumHeapUsedBytes,"firstRssKb":$firstRssKb,"maximumRssKb":$maximumRssKb,"lastRssKb":$lastRssKb,"cursorHideCount":$cursorHideCount,"cursorShowCount":$cursorShowCount,"rawClearScreenSequences":$rawClearScreenSequences}\n"""
 
     companion object {
         fun analyze(
@@ -80,6 +96,10 @@ internal data class TerminalReliabilityReport(
                 cursorHideCount = diagnostics.count { it.contains("\"event\":\"cursor\"") && it.contains("\"visible\":false") },
                 cursorShowCount = diagnostics.count { it.contains("\"event\":\"cursor\"") && it.contains("\"visible\":true") },
                 rawClearScreenSequences = raw.countOccurrences("\u001B[2J"),
+                // The sequences the renderer actually emits to erase. ESC[3J discards the
+                // terminal's scrollback; ESC[J erases from the cursor to the end of the screen.
+                clearScrollbackSequences = raw.countOccurrences("\u001B[3J"),
+                clearToEndSequences = raw.countOccurrences("\u001B[J"),
             )
         }
 

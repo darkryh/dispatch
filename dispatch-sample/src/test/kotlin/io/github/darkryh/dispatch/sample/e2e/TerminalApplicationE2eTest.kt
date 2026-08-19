@@ -350,6 +350,78 @@ class TerminalApplicationE2eTest {
         }
     }
 
+    @Test
+    fun `katalyst shaped polling screen survives arrow bursts against background ticks`() {
+        PtyTerminalSession
+            .start(scenario = "katalyst-shaped-navigation", environment = KATALYST_SHAPED_ENVIRONMENT)
+            .use { terminal ->
+                terminal.awaitText(HOME_TITLE)
+                val start = terminal.checkpoint()
+                terminal.sendCtrlP()
+                awaitPaletteOpen(terminal, after = start)
+                repeat(CatalogDestination.POLLING.ordinal + 1) { terminal.sendDown() }
+                terminal.sendEnter()
+                terminal.awaitText(POLLING_ANCHOR, after = start, timeout = Duration.ofSeconds(12))
+
+                // Sync to a known point on the screen's own 1500 ms poll, then aim the first key
+                // burst at the *next* tick: 15 repeats ~30 ms apart starting 1200 ms in straddles the
+                // boundary, so a background repaint lands in the middle of the held arrow key instead
+                // of neatly between two of them.
+                awaitPollTick(terminal, tick = 1, after = start)
+                Thread.sleep(MID_TICK_OFFSET_MILLIS)
+                sendArrowRepeats(terminal, count = 15)
+
+                // Enter opens the detail pane and ← closes it again: the same key stream mixes cheap
+                // selection repaints with a whole-content transition, which is why the real app's
+                // flicker is intermittent.
+                terminal.sendEnter()
+                Thread.sleep(KEY_REPEAT_MILLIS)
+                terminal.sendLeft()
+                Thread.sleep(KEY_REPEAT_MILLIS)
+
+                // A longer hold: 60 repeats span more than one poll period, so at least one further
+                // background tick is guaranteed to interleave with the keys.
+                val coherenceStart = terminal.checkpoint()
+                sendArrowRepeats(terminal, count = 60)
+
+                // Deliberately no flicker assertion: this scenario exists to *produce* the recording
+                // (terminal-chunks.tsv + render-diagnostics.jsonl) that dispatch-vt replays and judges.
+                // All this test owns is that the screen is still coherent afterwards.
+                terminal.awaitQuiet()
+                // NOTE: asserted against the whole transcript, not `after = coherenceStart`.
+                // The renderer no longer re-transmits rows that did not change, so a static header
+                // is painted once and never sent again — it stays on screen while being absent from
+                // any later slice of the byte stream. A checkpointed awaitText would therefore be
+                // asserting that the renderer is wasteful, not that the screen is correct.
+                // Screen-state assertions belong in :dispatch-vt, which replays this recording
+                // through a terminal model; this test's job is to produce the recording.
+                terminal.awaitText(POLLING_ANCHOR, timeout = Duration.ofSeconds(12))
+            }
+    }
+
+    /** Holds ArrowDown for [count] key repeats at a realistic terminal auto-repeat interval. */
+    private fun sendArrowRepeats(
+        terminal: PtyTerminalSession,
+        count: Int,
+    ) {
+        repeat(count) {
+            terminal.sendDown()
+            Thread.sleep(KEY_REPEAT_MILLIS)
+        }
+    }
+
+    /**
+     * Waits until the polling screen's footer gauge reports the [tick]-th completed background poll,
+     * which is how this suite synchronises with a cadence no keystroke controls.
+     */
+    private fun awaitPollTick(
+        terminal: PtyTerminalSession,
+        tick: Int,
+        after: Int,
+    ) {
+        terminal.awaitText("poll #$tick", after = after, timeout = Duration.ofSeconds(12))
+    }
+
     private fun enterChat(terminal: PtyTerminalSession) {
         terminal.awaitText(HOME_TITLE)
         val start = terminal.checkpoint()
@@ -420,5 +492,29 @@ class TerminalApplicationE2eTest {
 
         /** The left-bar glyph the shared TitleBanner prefixes every screen title with. */
         const val BANNER = "▌"
+
+        /** Realistic key-repeat gap, so a burst interleaves with the polling screen's 1500 ms ticks. */
+        const val KEY_REPEAT_MILLIS = 30L
+
+        /**
+         * Offset from an observed poll tick at which the first key burst starts. The screen polls
+         * every 1500 ms; starting 1200 ms in makes a 15-repeat (~450 ms) burst straddle the next tick.
+         */
+        const val MID_TICK_OFFSET_MILLIS = 1_200L
+
+        /** The subtitle only the polling screen paints; it never appears in the palette listing. */
+        const val POLLING_ANCHOR = "Katalyst-shaped polling monitor"
+
+        /**
+         * Reproduces a downstream app's render configuration for the polling scenario only: an active
+         * area taller than any terminal (so the whole viewport is repainted in place) at 24 fps, and
+         * the framework's long hibernation default instead of the sample's 5-second demo timeout.
+         */
+        val KATALYST_SHAPED_ENVIRONMENT =
+            mapOf(
+                "DISPATCH_SAMPLE_ACTIVE_AREA_HEIGHT" to "500",
+                "DISPATCH_SAMPLE_TARGET_FPS" to "24",
+                "DISPATCH_SAMPLE_IDLE_TIMEOUT_MS" to "300000",
+            )
     }
 }

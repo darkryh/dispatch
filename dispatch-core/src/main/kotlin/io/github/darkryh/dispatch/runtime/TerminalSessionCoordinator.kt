@@ -2,6 +2,7 @@ package io.github.darkryh.dispatch.runtime
 
 import com.github.ajalt.mordant.input.enterRawMode
 import com.github.ajalt.mordant.terminal.Terminal
+import io.github.darkryh.dispatch.render.FrameOutput
 import io.github.darkryh.dispatch.render.TerminalRenderer
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -67,6 +68,9 @@ internal class TerminalSessionCoordinator(
             renderer.handoffToShellPrompt()
         } finally {
             renderer.showCursor()
+            // Hand stdout back, flushing anything still buffered. Matters for the embedded case,
+            // where the host JVM keeps running after the TUI exits.
+            FrameOutput.uninstall()
         }
     }
 }

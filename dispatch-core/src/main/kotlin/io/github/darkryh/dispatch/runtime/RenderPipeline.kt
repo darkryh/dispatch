@@ -81,7 +81,12 @@ internal class RenderPipeline(
                         scrollUpdate = ScrollUpdate.rewrite(scrollingLines),
                         confidencePercent = 100,
                         reason = if (forceRewrite) "terminal_resize" else "screen_transition",
-                        clearScrollback = true,
+                        // Entering a new screen is a declared reason to destroy history: the
+                        // previous screen must not remain above the new one when the user scrolls
+                        // back. A resize is not — it needs the visible screen erased so the old
+                        // frame's shape leaves no residue, but the history stays.
+                        clearScrollback = screenTransition,
+                        eraseScreen = true,
                     )
                 } else {
                     classifyRenderDecision(
@@ -119,7 +124,7 @@ internal class RenderPipeline(
                         // entire committed history would push it through the viewport again when
                         // an overlay changes the active-area boundary (palette, selector, prompt).
                         val renderedScrollingLines =
-                            if (update.clearScrollback) {
+                            if (update.eraseScreen) {
                                 scrollingLines
                             } else {
                                 viewportScrollingLines(scrollingLines, activeLines, height)
@@ -128,6 +133,7 @@ internal class RenderPipeline(
                             scrollingLines = renderedScrollingLines,
                             activeLines = activeLines,
                             clearScrollback = update.clearScrollback,
+                            eraseScreen = update.eraseScreen,
                         )
                         scrollingContentTracker.sync(scrollingLines)
                         true
@@ -213,7 +219,20 @@ internal data class RenderDecision(
     val scrollUpdate: ScrollUpdate,
     val confidencePercent: Int,
     val reason: String,
+    /**
+     * Destroy the terminal's scrollback (`ESC[3J`).
+     *
+     * This throws away the user's history, so it is reserved for the cases that genuinely make the
+     * history obsolete: entering a different screen, and resetting the scrolling content to empty.
+     */
     val clearScrollback: Boolean = false,
+    /**
+     * Erase the visible screen before repainting (`ESC[J`).
+     *
+     * Independent of [clearScrollback]. A resize needs this — the previous, differently-shaped
+     * frame leaves rows the new frame never addresses — but it must not take the history with it.
+     */
+    val eraseScreen: Boolean = false,
 )
 
 internal fun classifyRenderDecision(
@@ -236,7 +255,17 @@ internal fun classifyRenderDecision(
             scrollUpdate = ScrollUpdate.rewrite(current.scrollingLines),
             confidencePercent = 100,
             reason = "scrolling_content_reset",
+            // NOTE: this still destroys scrollback, and it fires on ANY shrink of the scrolling
+            // region — not only on a genuine content reset. That is too broad: a list filtering by
+            // one row deletes the user's history just as surely as clearing a chat does.
+            //
+            // It is left as-is deliberately. Narrowing it by shape (e.g. "only when the new content
+            // is empty") is wrong — clearing the sample chat leaves 9 header rows, not 0, and the
+            // e2e suite correctly rejects that. The real fix is to let a screen or widget DECLARE
+            // that it resets history, rather than inferring intent from a line count. Until that
+            // policy exists, preserving the current product behaviour beats guessing at it.
             clearScrollback = true,
+            eraseScreen = true,
         )
     }
 

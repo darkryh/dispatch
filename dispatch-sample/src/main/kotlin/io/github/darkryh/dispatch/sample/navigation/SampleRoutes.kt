@@ -68,3 +68,12 @@ data object ReviewRoute : NavKey
 data class ChatRoute(
     val conversationId: String = "sample",
 ) : NavKey
+
+/**
+ * The polling-table screen. It carries no arguments: the screen exists to reproduce a plain
+ * full-height `Column` app whose content changes on a background timer, so the render-reliability
+ * harness has that shape under test.
+ */
+@Serializable
+@SerialName("polling")
+data object PollingTableRoute : NavKey

@@ -91,6 +91,12 @@ object AppKeyPriority {
     /** Chat Esc-to-cancel while a response is streaming. Chat only. */
     const val CHAT_CANCEL = 100
 
+    /**
+     * Polling-table selection (↑/↓), detail (Enter) and ←-as-back. That screen only; it is the one
+     * sample screen with no [AppScaffold] around it, so it owns its own way out.
+     */
+    const val POLLING_TABLE = 80
+
     /** Per-screen playground controls (Tab / ←→ / Space). Disabled while a text field has focus. */
     const val PLAYGROUND = 60
 

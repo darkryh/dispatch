@@ -39,7 +39,14 @@ jobs:
 
   pty-e2e:
     name: PTY end-to-end
-    runs-on: ubuntu-latest
+    # Flicker is a presentation-timing defect, and presentation timing is precisely where terminal
+    # emulators and PTY buffering differ between platforms. The previous "PTY tests are not OS
+    # sensitive" assumption is why a macOS-only blink survived a green Linux CI.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
@@ -51,11 +58,22 @@ jobs:
       # slow-runner key timing.
       - name: Terminal e2e
         run: ./gradlew :dispatch-sample:terminalE2eTest --stacktrace
+      # NOTE: :dispatch-sample:terminalStressTest is deliberately NOT wired in yet. It fails on
+      # unmodified master too (verified by stashing all render changes and re-running): around the
+      # ~100th message the runtime hibernates mid-run, stops repainting, and the next awaitText
+      # times out. That is a pre-existing defect in the stress scenario, unrelated to rendering.
+      # Wire it in once that is fixed — it is the only suite that produces the reliability report.
+      # Replay every recording through the terminal model and judge what the screen showed.
+      # This is the only gate that can see flicker; the byte-level assertions structurally cannot.
+      - name: Render invariants
+        run: ./gradlew :dispatch-vt:test -Ddispatch.vt.requireCorpus=true --stacktrace
       - name: Upload e2e report
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: terminal-e2e-report
-          path: dispatch-sample/build/reports/
+          name: terminal-e2e-report-${{ matrix.os }}
+          path: |
+            dispatch-sample/build/reports/
+            dispatch-vt/build/reports/
           if-no-files-found: ignore
           retention-days: 7

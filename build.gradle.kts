@@ -12,6 +12,9 @@ plugins {
 apiValidation {
     ignoredProjects += "dispatch-sample"
     ignoredProjects += "dispatch-benchmarks"
+    // dispatch-vt is the render-invariant test harness (a terminal model + the flicker analyzer).
+    // It is never published, so it has no public ABI to guard.
+    ignoredProjects += "dispatch-vt"
 }
 
 allprojects {

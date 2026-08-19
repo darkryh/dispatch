@@ -56,6 +56,9 @@ object AnsiGolden {
         before: String,
     ): String = recorder.output().removePrefix(before)
 
+    /** One flushed frame: the renderer wraps every frame in the DEC 2026 synchronized-output guard. */
+    fun frame(vararg parts: String): String = AnsiCodes.SYNC_BEGIN + parts.joinToString("") + AnsiCodes.SYNC_END
+
     /**
      * The block emitted by `clearViewportRowsAfter`: `moveTo(row,1) + CLEAR_LINE` for each row in
      * `fromRow..toRow`. `AnsiCodes.appendMoveTo` produces the byte-identical sequence to
@@ -76,11 +79,13 @@ object AnsiGolden {
      * Map an ANSI byte stream to readable tokens for human-legible assertion messages.
      *
      * Tokens: `<ESC>`, `<CR>`, `<LF>`, `<CLEAR_LINE>`, `<CLEAR_SCROLLBACK>`, `<CLEAR_SCREEN>`,
-     * `<CURSOR_HOME>`, `<MOVE r=.. c=..>`, `<UP n>`.
+     * `<CURSOR_HOME>`, `<SYNC_BEGIN>`, `<SYNC_END>`, `<MOVE r=.. c=..>`, `<UP n>`.
      */
     fun visualizeEscapes(text: String): String {
         var out = text
         // Specific multi-char CSI codes first so the generic <ESC> fallback never eats them.
+        out = out.replace(AnsiCodes.SYNC_BEGIN, "<SYNC_BEGIN>")
+        out = out.replace(AnsiCodes.SYNC_END, "<SYNC_END>")
         out = out.replace(AnsiCodes.CLEAR_SCROLLBACK, "<CLEAR_SCROLLBACK>")
         out = out.replace(AnsiCodes.CLEAR_SCREEN, "<CLEAR_SCREEN>")
         out = out.replace(AnsiCodes.CLEAR_LINE, "<CLEAR_LINE>")
