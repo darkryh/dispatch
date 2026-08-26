@@ -7,6 +7,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0-beta05] - 2026-08-26
+
+### Fixed
+
+- **Quitting no longer intermittently prints a stack trace.** The layout tree is single-threaded by
+  design — every mutation (the recomposer's applier) and every walk (measure, focus sync) happens on
+  the UI dispatcher — but shutdown runs on the `runBlocking` caller thread, and it tore down before
+  it silenced the producers. `TerminalSessionCoordinator.shutdown` disposed the composition and only
+  then stopped the frame scheduler, so `Composition.dispose()` cleared `LayoutNode` children on one
+  thread while a frame already in flight iterated that same list on the other; the engine's teardown
+  likewise disposed before closing the recomposer, leaving the applier free to write into a tree
+  being cleared. When the dispose landed inside a frame the coroutine died with a
+  `ConcurrentModificationException` which — no handler being installed on the UI scope — reached the
+  default uncaught-exception handler and printed over the terminal as it was handed back to the
+  shell. Occasional by nature, and likelier the busier the application. Shutdown now joins any
+  in-flight frame (`FrameScheduler.stopAndJoin`), cancels input, closes the recomposer and joins it,
+  and only then disposes — on the UI dispatcher. The coordinator's priming frame is dispatched there
+  too, closing the mirror-image race at startup. Measured with a PTY harness quitting a
+  full-viewport app with a stream mid-flight: 1 crash in 25 quits before, 0 in 100 after.
+- **The command palette's selected row is visible again.** `label` and `selectedLabel` both defaulted
+  to plain white and `selectionIndicator` defaults to null, so with a list of similar-length commands
+  the only difference between the selected row and the rest was two adjacent greys on the description
+  column. Selection is now carried by the label — bright and bold against dimmed siblings — so it
+  survives a caller that renders no indicator and no descriptions.
+
+### Added
+
+- `CommandPaletteTextStyles.selectedRowFill`, off by default: a full-width highlight bar behind the
+  selected row, for palettes that sit in a surface of their own (a footer prompt, a docked panel).
+- `FrameScheduler.stopAndJoin()`, for callers on a teardown path. `stop()` only guarantees that no
+  FURTHER frame starts; `onFrame` has no suspension point, so `cancel()` cannot interrupt one that is
+  already running.
+- A PTY end-to-end guard (`ShutdownRaceE2eTest`) that quits a busy application repeatedly and fails
+  on any printed stack trace, plus unit coverage for the frame-join and layout-tree contracts.
+
+### Changed
+
+- **Breaking (binary):** `CommandPaletteTextStyles` gained a ninth parameter, so its previous
+  constructor and `copy()` are gone. Source-compatible for named/default-argument callers. The
+  changed default colours are visible to anyone taking the defaults, deliberately.
+
 ## [1.0.0-beta04] - 2026-08-19
 
 ### Fixed
