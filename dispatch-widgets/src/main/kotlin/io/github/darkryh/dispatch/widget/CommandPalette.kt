@@ -9,6 +9,7 @@ import com.github.ajalt.mordant.rendering.TextStyle
 import io.github.darkryh.dispatch.layout.Column
 import io.github.darkryh.dispatch.layout.Row
 import io.github.darkryh.dispatch.modifier.Modifier
+import io.github.darkryh.dispatch.modifier.fillMaxWidth
 import io.github.darkryh.dispatch.runtime.LocalKeyboardInterceptor
 import io.github.darkryh.dispatch.runtime.rememberCallback
 
@@ -33,6 +34,14 @@ data class CommandOption<T>(
 /**
  * Text styles for the command palette.
  *
+ * The defaults exist to make the selected row *obvious*, which the original ones did not: `label`
+ * and `selectedLabel` were both plain white and [selectionIndicator] defaults to null, so with
+ * descriptions the only difference between the chosen command and the others was two nearly
+ * identical greys (`#6F7279` vs `#898D92`) on the description column. On a list of same-length
+ * commands that reads as "no selection at all". Selection is now carried by the label itself —
+ * bright and bold against dimmed siblings — so it survives even when a caller renders no indicator
+ * and no descriptions.
+ *
  * @param prefix Style for the selection prefix of unselected items.
  * @param selectedPrefix Style for the selection prefix of the selected item.
  * @param label Style for the label text of unselected items.
@@ -41,16 +50,22 @@ data class CommandOption<T>(
  * @param selectedDescription Style for the description text of the selected item.
  * @param disabledLabel Style for disabled item labels.
  * @param noResultsText Style for the "no results" message.
+ * @param selectedRowFill Optional full-width background for the selected row, off by default.
+ * Set it to get a highlight bar behind the whole row instead of coloured text alone — worth it when
+ * the palette sits in a surface of its own (a footer prompt, a docked panel) where a bar reads as
+ * part of the chrome. A foreground colour is accepted and used as the background, matching
+ * [SurfaceStyle.fill]; give the selected text colours enough contrast against it.
  */
 data class CommandPaletteTextStyles(
-    val prefix: TextStyle? = rgb("#ffffff"),
-    val selectedPrefix: TextStyle? = rgb("#00BFFF") + TextStyle(bold = false),
-    val label: TextStyle? = rgb("#ffffff"),
-    val selectedLabel: TextStyle? = rgb("#ffffff") + TextStyle(bold = false),
+    val prefix: TextStyle? = rgb("#6F7279"),
+    val selectedPrefix: TextStyle? = rgb("#00BFFF") + TextStyle(bold = true),
+    val label: TextStyle? = rgb("#C9D1D9"),
+    val selectedLabel: TextStyle? = rgb("#00BFFF") + TextStyle(bold = true),
     val description: TextStyle? = rgb("#6F7279"),
-    val selectedDescription: TextStyle? = rgb("#898D92"),
+    val selectedDescription: TextStyle? = rgb("#C9D1D9"),
     val disabledLabel: TextStyle? = rgb("#6F7279"),
     val noResultsText: TextStyle? = rgb("#898D92"),
+    val selectedRowFill: TextStyle? = null,
 )
 
 /**
@@ -389,26 +404,41 @@ private fun <T> CommandPaletteItem(
             displayLabel
         }
 
-    Row {
-        if (!prefixText.isNullOrEmpty()) {
-            Text(text = prefixText, style = prefixStyle)
-        }
+    val row: @Composable () -> Unit = {
+        Row {
+            if (!prefixText.isNullOrEmpty()) {
+                Text(text = prefixText, style = prefixStyle)
+            }
 
-        // Icon (if enabled and present)
-        if (showIcon && !option.icon.isNullOrEmpty()) {
-            Text(text = "${option.icon} ", style = labelStyle)
-        }
+            // Icon (if enabled and present)
+            if (showIcon && !option.icon.isNullOrEmpty()) {
+                Text(text = "${option.icon} ", style = labelStyle)
+            }
 
-        // Label
-        Text(text = labelText, style = labelStyle)
+            // Label
+            Text(text = labelText, style = labelStyle)
 
-        // Description (if enabled and present)
-        if (showDescription && option.description.isNotEmpty()) {
-            Text(text = " ".repeat(15), style = descriptionStyle)
-            Text(text = option.description, style = descriptionStyle)
+            // Description (if enabled and present)
+            if (showDescription && option.description.isNotEmpty()) {
+                Text(text = " ".repeat(DESCRIPTION_GAP), style = descriptionStyle)
+                Text(text = option.description, style = descriptionStyle)
+            }
         }
     }
+
+    val fill = textStyles.selectedRowFill
+    if (isSelected && fill != null) {
+        // No box: SurfaceStyle.fill(...) would add vertical padding and turn a one-line option into
+        // three. A bare fill pads each content line out to the full width and tints it, which is
+        // exactly a highlight bar.
+        Surface(modifier = Modifier.fillMaxWidth(), style = SurfaceStyle(fill = fill)) { row() }
+    } else {
+        row()
+    }
 }
+
+/** Columns of whitespace between a command label and its description. */
+private const val DESCRIPTION_GAP = 15
 
 private fun <T> commandLabelFor(
     option: CommandOption<T>,
