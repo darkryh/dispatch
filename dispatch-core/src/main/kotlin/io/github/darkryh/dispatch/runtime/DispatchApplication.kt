@@ -16,6 +16,7 @@ import io.github.darkryh.dispatch.render.TerminalRenderer
 import io.github.darkryh.dispatch.theme.DispatchTheme
 import io.github.darkryh.dispatch.viewmodel.ViewModelStore
 import kotlinx.coroutines.*
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.system.exitProcess
 import kotlin.time.Duration.Companion.milliseconds
@@ -59,6 +60,12 @@ internal class DispatchRuntimeEngine(
 
     @Volatile
     private var exitCode = 0
+
+    /**
+     * Guards [disposeComposition] against running twice — the terminal session tears down on its
+     * way out, and [run]'s `finally` then calls [teardown] on every path including that one.
+     */
+    private val compositionDisposed = AtomicBoolean(false)
 
     private lateinit var uiScope: CoroutineScope
     private lateinit var backgroundScope: CoroutineScope
@@ -130,7 +137,8 @@ internal class DispatchRuntimeEngine(
 
     /**
      * Release engine resources on every exit path (including early returns and throws before the
-     * terminal session starts). Idempotent: [teardown] may have already torn parts down.
+     * terminal session starts). Idempotent: the terminal session's own shutdown normally got here
+     * first, in which case [disposeComposition] is a no-op.
      */
     private suspend fun teardown() {
         withContext(NonCancellable) {
@@ -139,15 +147,45 @@ internal class DispatchRuntimeEngine(
             keyEventHandler = null
             mouseEventHandler = null
             if (!initialized) return@withContext
-            if (::composition.isInitialized) {
-                runCatching { composition.dispose() }
-            }
+            disposeComposition()
+        }
+    }
+
+    /**
+     * Tear the composition down in the only order that is safe, and run the part that touches the
+     * layout tree on the thread that owns it.
+     *
+     * Two things mutate the retained `LayoutNode` tree: the recomposer applying changes, and
+     * `Composition.dispose()` clearing it. The first always runs on [uiDispatcher] (the recomposer
+     * coroutine lives on `uiScope`); the second used to run wherever teardown was called from,
+     * which on the shutdown path is the `runBlocking` caller thread. Disposing FIRST — as this did
+     * — meant clearing the tree while the recomposer was still free to apply into it, one thread
+     * each, over the same plain `ArrayList`.
+     *
+     * Hence: stop the producer, wait for it to actually be gone, and only then dispose — on
+     * [uiDispatcher], so the "the tree is single-threaded" invariant holds unconditionally rather
+     * than by argument about who could still be running.
+     *
+     * Every step is guarded: teardown must not turn one failure into a second one, and it is
+     * reached from the error path too.
+     */
+    private suspend fun disposeComposition() {
+        if (!compositionDisposed.compareAndSet(false, true)) return
+        withContext(NonCancellable) {
+            // 1. Refuse new recomposition, then wait out the work already scheduled.
             if (::recomposer.isInitialized) {
                 runCatching { recomposer.close() }
             }
             if (::recomposerJob.isInitialized) {
                 runCatching { recomposerJob.cancelAndJoin() }
             }
+            // 2. Nothing else can touch the tree now; dispose on the thread that owned it anyway.
+            if (::composition.isInitialized) {
+                runCatching {
+                    withContext(uiDispatcher) { composition.dispose() }
+                }
+            }
+            // 3. Snapshot notifications have nothing left to notify.
             if (::snapshotManager.isInitialized) {
                 runCatching { snapshotManager.close() }
             }
@@ -291,15 +329,17 @@ internal class DispatchRuntimeEngine(
             resizeCoordinator = resizeCoordinator,
         ).run(
             onInputLoop = { readEvent -> runInputLoop(readEvent) },
-            onFrameComposeAndRender = { composeAndRender() },
+            // The scheduler's own frames already run on uiDispatcher (its scope is uiScope). This
+            // is the coordinator's priming frame, which would otherwise paint from the runBlocking
+            // caller thread while the recomposer is applying the FIRST composition on uiDispatcher
+            // — the same tree, two threads. Confining it keeps every walk of the layout tree on one
+            // thread, startup included.
+            onFrameComposeAndRender = { withContext(uiDispatcher) { composeAndRender() } },
             awaitExit = { exitSignal.await() },
             onBeforeShutdown = {
                 hibernationController?.stop()
                 cancelExitPromptReset()
-                if (::composition.isInitialized) composition.dispose()
-                recomposer.close()
-                if (::recomposerJob.isInitialized) recomposerJob.cancelAndJoin()
-                if (::snapshotManager.isInitialized) snapshotManager.close()
+                disposeComposition()
             },
         )
     }

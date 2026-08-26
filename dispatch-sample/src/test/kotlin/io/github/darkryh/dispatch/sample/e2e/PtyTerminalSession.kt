@@ -121,6 +121,31 @@ internal class PtyTerminalSession private constructor(
 
     fun transcript(): String = synchronized(transcriptLock) { normalize(rawTranscript.toString()) }
 
+    /**
+     * Blocks until the application has actually exited and its output has been drained.
+     *
+     * Needed by anything asserting on what quitting PRINTS: a stack trace from a coroutine that
+     * outlived the exit request lands on stderr (merged into this transcript) after the last frame,
+     * so a check that only waits for the screen to go quiet would run too early and pass.
+     */
+    fun awaitExit(timeout: Duration = DEFAULT_TIMEOUT): Int {
+        check(process.waitFor(timeout.toMillis(), TimeUnit.MILLISECONDS)) {
+            "PTY process was still alive ${timeout.toMillis()} ms after exit was requested:\n${tail()}"
+        }
+        readerThread.join(2_000)
+        return process.exitValue()
+    }
+
+    /** The transcript with escape sequences stripped but line structure intact, for stack traces. */
+    fun plainTranscript(): String =
+        synchronized(transcriptLock) {
+            rawTranscript
+                .toString()
+                .replace(oscPattern, "")
+                .replace(csiPattern, "")
+                .replace("\u0000", "")
+        }
+
     fun diagnosticEvents(afterByte: Long = 0L): String {
         if (!Files.exists(diagnosticsFile)) return ""
         val bytes = Files.readAllBytes(diagnosticsFile)

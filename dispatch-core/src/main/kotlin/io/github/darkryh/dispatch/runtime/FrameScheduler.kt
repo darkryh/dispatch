@@ -62,6 +62,26 @@ internal class FrameScheduler(
         job = null
     }
 
+    /**
+     * [stop], and then wait for a frame that is already running to finish.
+     *
+     * [stop] alone is not enough before tearing anything the frame callback reads down. `onFrame`
+     * is an ordinary blocking call with no suspension points, so `job.cancel()` cannot interrupt it
+     * — it only guarantees no FURTHER frame starts. A frame that was already inside
+     * `composeAndRender` keeps walking the layout tree on the UI dispatcher while the caller
+     * proceeds to dispose the composition on its own thread, and the two race over the same
+     * `LayoutNode` children list.
+     *
+     * Callers on the shutdown path must use this instead of [stop].
+     */
+    suspend fun stopAndJoin() {
+        // Captured before stop(), which nulls the field — otherwise a second call would have
+        // nothing to join and would return while the first frame is still in flight.
+        val inFlight = job
+        stop()
+        inFlight?.join()
+    }
+
     fun requestFrame() {
         if (!running.get()) return
         frameRequests.trySend(Unit)
