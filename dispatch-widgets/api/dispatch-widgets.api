@@ -128,8 +128,8 @@ public final class io/github/darkryh/dispatch/widget/CommandPaletteState {
 public final class io/github/darkryh/dispatch/widget/CommandPaletteTextStyles {
 	public static final field $stable I
 	public fun <init> ()V
-	public fun <init> (Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;)V
-	public synthetic fun <init> (Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public fun <init> (Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;)V
+	public synthetic fun <init> (Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
 	public final fun component1 ()Lcom/github/ajalt/mordant/rendering/TextStyle;
 	public final fun component2 ()Lcom/github/ajalt/mordant/rendering/TextStyle;
 	public final fun component3 ()Lcom/github/ajalt/mordant/rendering/TextStyle;
@@ -138,8 +138,9 @@ public final class io/github/darkryh/dispatch/widget/CommandPaletteTextStyles {
 	public final fun component6 ()Lcom/github/ajalt/mordant/rendering/TextStyle;
 	public final fun component7 ()Lcom/github/ajalt/mordant/rendering/TextStyle;
 	public final fun component8 ()Lcom/github/ajalt/mordant/rendering/TextStyle;
-	public final fun copy (Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;)Lio/github/darkryh/dispatch/widget/CommandPaletteTextStyles;
-	public static synthetic fun copy$default (Lio/github/darkryh/dispatch/widget/CommandPaletteTextStyles;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;ILjava/lang/Object;)Lio/github/darkryh/dispatch/widget/CommandPaletteTextStyles;
+	public final fun component9 ()Lcom/github/ajalt/mordant/rendering/TextStyle;
+	public final fun copy (Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;)Lio/github/darkryh/dispatch/widget/CommandPaletteTextStyles;
+	public static synthetic fun copy$default (Lio/github/darkryh/dispatch/widget/CommandPaletteTextStyles;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;Lcom/github/ajalt/mordant/rendering/TextStyle;ILjava/lang/Object;)Lio/github/darkryh/dispatch/widget/CommandPaletteTextStyles;
 	public fun equals (Ljava/lang/Object;)Z
 	public final fun getDescription ()Lcom/github/ajalt/mordant/rendering/TextStyle;
 	public final fun getDisabledLabel ()Lcom/github/ajalt/mordant/rendering/TextStyle;
@@ -149,6 +150,7 @@ public final class io/github/darkryh/dispatch/widget/CommandPaletteTextStyles {
 	public final fun getSelectedDescription ()Lcom/github/ajalt/mordant/rendering/TextStyle;
 	public final fun getSelectedLabel ()Lcom/github/ajalt/mordant/rendering/TextStyle;
 	public final fun getSelectedPrefix ()Lcom/github/ajalt/mordant/rendering/TextStyle;
+	public final fun getSelectedRowFill ()Lcom/github/ajalt/mordant/rendering/TextStyle;
 	public fun hashCode ()I
 	public fun toString ()Ljava/lang/String;
 }
