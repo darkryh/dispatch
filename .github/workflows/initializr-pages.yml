@@ -33,7 +33,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: ./.github/actions/setup
       # Pin the generated projects (and the footer version) to the released Dispatch version, so the
       # live site tracks whatever tag was cut — alpha, beta, rc or stable. On a release it's the release
@@ -55,7 +55,7 @@ jobs:
         run: ./gradlew -p initializr wasmJsBrowserDistribution -PdispatchVersion="${{ steps.ver.outputs.version }}" --stacktrace
 
       - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           path: initializr/build/dist/wasmJs/productionExecutable
 
@@ -68,4 +68,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
