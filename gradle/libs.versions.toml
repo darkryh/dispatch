@@ -6,28 +6,28 @@ coroutines = "1.11.0"
 mordant = "3.0.2"
 serialization = "1.11.0"
 koin = "4.2.2"
-ktor = "3.5.1"
+ktor = "3.5.2"
 sqldelight = "2.3.2"
 multiplatform-settings = "1.3.0"
 appdirs = "1.5.0"
 
 # Testing
-kotest = "6.2.1"
-junit = "6.1.0"
+kotest = "6.2.4"
+junit = "6.1.3"
 
 # Quality tools
 detekt = "1.23.8"
 ktlint = "14.2.0"
-kover = "0.9.8"
+kover = "0.9.9"
 
 # Documentation & Publishing
 dokka = "2.2.0"
 maven-publish = "0.37.0"
 
 # Build tools
-graalvm-native = "1.1.3"
+graalvm-native = "1.1.11"
 binary-compatibility = "0.18.1"
-kotlinx-benchmark = "0.4.14"
+kotlinx-benchmark = "0.4.19"
 
 [libraries]
 # Mordant ecosystem
@@ -61,7 +61,7 @@ systemrules = "com.github.stefanbirkner:system-rules:1.19.0"
 
 # Utilities
 colormath = "com.github.ajalt.colormath:colormath:3.6.1"
-markdown = "org.jetbrains:markdown:0.7.5"
+markdown = "org.jetbrains:markdown:0.7.9"
 jna-core = "net.java.dev.jna:jna:5.19.1"
 r8 = "com.android.tools:r8:9.1.31"
 slf4j-nop = "org.slf4j:slf4j-nop:2.0.18"
@@ -74,7 +74,7 @@ multiplatform-settings-coroutines = { module = "com.russhwolf:multiplatform-sett
 multiplatform-settings-make-observable = { module = "com.russhwolf:multiplatform-settings-make-observable", version.ref = "multiplatform-settings" }
 
 # GraalVM
-graalvm-svm = "org.graalvm.nativeimage:svm:25.0.3"
+graalvm-svm = "org.graalvm.nativeimage:svm:25.0.4.1"
 
 # SQLDelight
 sqldelight-sqlite-driver = { module = "app.cash.sqldelight:sqlite-driver", version.ref = "sqldelight" }
