@@ -30,7 +30,7 @@ jobs:
     outputs:
       version: ${{ steps.ver.outputs.version }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0 # full history for release-note generation
       - uses: ./.github/actions/setup
@@ -84,7 +84,7 @@ jobs:
       contents: write # create the Release
       actions: write # dispatch the initializr-pages redeploy
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
       - name: Create GitHub Release
